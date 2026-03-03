@@ -65,7 +65,7 @@ const DataTable = ({
                   <TableRow key={row.id || rowIndex}>
                     {columns.map((col, colIndex) => (
                       <TableCell key={colIndex} align={col.align} className={col.className}>
-                        {col.render ? col.render(row) : col.accessor ? col.accessor(row) : ''}
+                        {col.cell ? col.cell(row) : col.render ? col.render(row) : (typeof col.accessor === 'function' ? col.accessor(row) : row[col.accessor] || '')}
                       </TableCell>
                     ))}
                   </TableRow>

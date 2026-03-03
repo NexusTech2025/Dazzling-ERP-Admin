@@ -1,0 +1,95 @@
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '../../../context/AuthContextCore';
+import { queryKeys } from '../../../lib/react-query/queryKeys';
+// IMPORT FROM MOCK API FOR DEVELOPMENT
+import { fetchCourses, fetchCourseDetail, createCourse, updateCourse, deleteCourse } from '../api/course.mockApi';
+
+/**
+ * Hook for fetching all courses
+ */
+export const useCoursesQuery = (filter = {}) => {
+  const { token } = useAuth();
+
+  return useQuery({
+    queryKey: queryKeys.courses.list(filter),
+    queryFn: async ({ signal }) => {
+      const response = await fetchCourses(token, filter, { signal });
+      if (!response.success) {
+        throw new Error(response.error?.message || response.message || 'Failed to fetch courses');
+      }
+      return response.data?.data || [];
+    },
+    enabled: !!token,
+  });
+};
+
+/**
+ * Hook for fetching a single course detail
+ */
+export const useCourseDetailQuery = (id) => {
+  const { token } = useAuth();
+
+  return useQuery({
+    queryKey: queryKeys.courses.detail(id),
+    queryFn: async ({ signal }) => {
+      const response = await fetchCourseDetail(token, id, { signal });
+      if (!response.success) {
+        throw new Error(response.error?.message || response.message || 'Failed to fetch course details');
+      }
+      return response.data?.data?.[0] || null;
+    },
+    enabled: !!token && !!id,
+  });
+};
+
+/**
+ * Hook for creating a new course
+ */
+export const useCreateCourseMutation = () => {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ data, options }) => createCourse(token, data, options),
+    onSuccess: (response) => {
+      if (response.success) {
+        queryClient.invalidateQueries({ queryKey: queryKeys.courses.all });
+      }
+    }
+  });
+};
+
+/**
+ * Hook for updating a course
+ */
+export const useUpdateCourseMutation = () => {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, data, options }) => updateCourse(token, id, data, options),
+    onSuccess: (response, { id }) => {
+      if (response.success) {
+        queryClient.invalidateQueries({ queryKey: queryKeys.courses.all });
+        queryClient.invalidateQueries({ queryKey: queryKeys.courses.detail(id) });
+      }
+    }
+  });
+};
+
+/**
+ * Hook for deleting a course
+ */
+export const useDeleteCourseMutation = () => {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, options }) => deleteCourse(token, id, options),
+    onSuccess: (response) => {
+      if (response.success) {
+        queryClient.invalidateQueries({ queryKey: queryKeys.courses.all });
+      }
+    }
+  });
+};

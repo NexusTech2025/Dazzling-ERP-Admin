@@ -11,11 +11,13 @@ const api = axios.create({
 
 /**
  * Common handler for Google Script POST requests
+ * Supports AbortController signal via options
  */
-export const postToGoogleScript = async (data) => {
+export const postToGoogleScript = async (data, options = {}) => {
   try {
     const response = await axios.post(API_URL, JSON.stringify(data), {
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      signal: options.signal
     });
     
     // Log logic errors from the server (GAS returns 200 even on failures)
@@ -25,7 +27,11 @@ export const postToGoogleScript = async (data) => {
     
     return response.data;
   } catch (error) {
-    console.error('API Network/System Error:', error);
+    if (axios.isCancel(error)) {
+      console.log('Request canceled:', error.message);
+    } else {
+      console.error('API Network/System Error:', error);
+    }
     throw error;
   }
 };
@@ -40,36 +46,30 @@ const createAdminPayload = (action, token, extraData = {}) => ({
 });
 
 // Generic Retrieval Actions (ORM Query Engine)
-export const query = (token, entity, filter = {}) => 
-  postToGoogleScript(createAdminPayload('query', token, { entity, filter }));
+export const query = (token, entity, filter = {}, options = {}) => 
+  postToGoogleScript(createAdminPayload('query', token, { entity, filter }), options);
 
-export const retrieve = (token, entity, id) => 
-  postToGoogleScript(createAdminPayload('retrieve', token, { entity, id }));
+export const retrieve = (token, entity, id, options = {}) => 
+  postToGoogleScript(createAdminPayload('retrieve', token, { entity, id }), options);
 
-// Student CRUD (Addition, Update, Deletion)
-export const addStudent = (token, userData, profileData) => {
-  const payload = createAdminPayload('addstudent', token, { userData, profileData });
-  console.log('Add Student Payload:', payload);
-  return postToGoogleScript(payload);
-};
+// Student CRUD
+export const addStudent = (token, userData, profileData, options = {}) => 
+  postToGoogleScript(createAdminPayload('addstudent', token, { userData, profileData }), options);
 
-export const updateStudent = (token, id, data) => 
-  postToGoogleScript(createAdminPayload('updatestudent', token, { id, data }));
+export const updateStudent = (token, id, data, options = {}) => 
+  postToGoogleScript(createAdminPayload('updatestudent', token, { id, data }), options);
 
-export const deleteStudent = (token, id) => 
-  postToGoogleScript(createAdminPayload('deletestudent', token, { id }));
+export const deleteStudent = (token, id, options = {}) => 
+  postToGoogleScript(createAdminPayload('deletestudent', token, { id }), options);
 
-// Teacher CRUD (Addition, Update, Deletion)
-export const addTeacher = (token, userData, profileData) => {
-  const payload = createAdminPayload('addteacher', token, { userData, profileData });
-  console.log('Add Teacher Payload:', payload);
-  return postToGoogleScript(payload);
-};
+// Teacher CRUD
+export const addTeacher = (token, userData, profileData, options = {}) => 
+  postToGoogleScript(createAdminPayload('addteacher', token, { userData, profileData }), options);
 
-export const updateTeacher = (token, id, data) => 
-  postToGoogleScript(createAdminPayload('updateteacher', token, { id, data }));
+export const updateTeacher = (token, id, data, options = {}) => 
+  postToGoogleScript(createAdminPayload('updateteacher', token, { id, data }), options);
 
-export const deleteTeacher = (token, id) => 
-  postToGoogleScript(createAdminPayload('deleteteacher', token, { id }));
+export const deleteTeacher = (token, id, options = {}) => 
+  postToGoogleScript(createAdminPayload('deleteteacher', token, { id }), options);
 
 export default api;

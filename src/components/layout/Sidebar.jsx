@@ -6,6 +6,8 @@ const Sidebar = () => {
 
   const menuItems = [
     { name: 'Dashboard', path: '/admin/dashboard', icon: 'dashboard' },
+    { name: 'Courses', path: '/admin/courses', icon: 'menu_book' },
+    { name: 'Finance', path: '/admin/finance', icon: 'payments' },
     { name: 'Students', path: '/admin/students', icon: 'school' },
     { name: 'Teachers', path: '/admin/teachers', icon: 'person_apron' },
   ];

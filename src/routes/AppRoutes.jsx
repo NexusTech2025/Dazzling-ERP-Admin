@@ -4,14 +4,22 @@ import AdminLayout from '../components/layout/AdminLayout';
 import LoginPage from '../pages/auth/LoginPage';
 import Dashboard from '../pages/admin/Dashboard';
 import Students from '../pages/admin/Students';
-import Students2 from '../pages/admin/Students2'; // Modular Table Test
 import Teachers from '../pages/admin/Teachers';
-import Teachers2 from '../pages/admin/Teachers2'; // Modular Table Test
 import Roles from '../pages/admin/Roles';
 import Reports from '../pages/admin/Reports';
 import Settings from '../pages/admin/Settings';
 import AddStudent from '../pages/admin/AddStudent';
 import AddTeacher from '../pages/admin/AddTeacher';
+
+// Feature Pages
+import Courses from '../features/course/Courses';
+import CourseDetails from '../features/course/CourseDetails';
+import AddCourse from '../features/course/AddCourse';
+import FinanceDashboard from '../features/finance/FinanceDashboard';
+import Installments from '../features/finance/Installments';
+import DelinquentAccounts from '../features/finance/DelinquentAccounts';
+import FeePlanWizard from '../features/finance/FeePlanWizard';
+import StudentFeeOverview from '../features/finance/StudentFeeOverview';
 
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated } = useAuth();
@@ -39,11 +47,22 @@ const AppRoutes = () => {
         <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="students" element={<Students />} />
-        <Route path="students2" element={<Students2 />} /> {/* Temporary Test Route */}
         <Route path="students/add" element={<AddStudent />} />
         <Route path="teachers" element={<Teachers />} />
-        <Route path="teachers2" element={<Teachers2 />} /> {/* Temporary Test Route */}
         <Route path="teachers/add" element={<AddTeacher />} />
+
+        {/* Course Management */}
+        <Route path="courses" element={<Courses />} />
+        <Route path="courses/add" element={<AddCourse />} />
+        <Route path="courses/:id" element={<CourseDetails />} />
+
+        {/* Finance Management */}
+        <Route path="finance" element={<FinanceDashboard />} />
+        <Route path="finance/installments" element={<Installments />} />
+        <Route path="finance/delinquent" element={<DelinquentAccounts />} />
+        <Route path="finance/fee-plan" element={<FeePlanWizard />} />
+        <Route path="finance/student/:id" element={<StudentFeeOverview />} />
+
         <Route path="roles" element={<Roles />} />
         <Route path="reports" element={<Reports />} />
         <Route path="settings" element={<Settings />} />
