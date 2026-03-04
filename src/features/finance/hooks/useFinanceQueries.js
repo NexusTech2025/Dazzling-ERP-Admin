@@ -5,7 +5,7 @@ import { queryKeys } from '../../../lib/react-query/queryKeys';
 import { 
   fetchInstallments, 
   fetchRevenueSummary, 
-  fetchDelinquentAccounts, 
+  fetchOverdueAccounts, 
   fetchStudentFeeOverview,
   recordPayment,
   generateFeePlan
@@ -50,17 +50,17 @@ export const useInstallmentsQuery = (filter = {}) => {
 };
 
 /**
- * Hook for fetching delinquent accounts (Overdue installments)
+ * Hook for fetching overdue accounts (Overdue installments)
  */
-export const useDelinquentAccountsQuery = (filter = {}) => {
+export const useOverdueAccountsQuery = (filter = {}) => {
   const { token } = useAuth();
 
   return useQuery({
-    queryKey: queryKeys.finance.delinquent(filter),
+    queryKey: queryKeys.finance.overdue(filter),
     queryFn: async ({ signal }) => {
-      const response = await fetchDelinquentAccounts(token, filter, { signal });
+      const response = await fetchOverdueAccounts(token, filter, { signal });
       if (!response.success) {
-        throw new Error(response.error?.message || response.message || 'Failed to fetch delinquent accounts');
+        throw new Error(response.error?.message || response.message || 'Failed to fetch overdue accounts');
       }
       return response.data?.data || [];
     },

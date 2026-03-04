@@ -38,7 +38,7 @@ export const queryKeys = {
       all: ['finance', 'revenue'],
       summary: ['finance', 'revenue', 'summary'],
     },
-    delinquent: (filter) => ['finance', 'delinquent', { filter }],
+    overdue: (filter) => ['finance', 'overdue', { filter }],
     payments: (filter) => ['finance', 'payments', { filter }],
   }
 };

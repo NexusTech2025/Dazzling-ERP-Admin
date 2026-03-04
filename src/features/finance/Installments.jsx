@@ -1,6 +1,9 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { useInstallmentsQuery } from './hooks/useFinanceQueries';
+import { useFilteredInstallments } from './hooks/useFilteredInstallments';
 import DataTable from '../../components/ui/DataTable';
+import { SearchInput, SelectFilter } from '../../components/ui/filters';
 import { LoadingState, ErrorState } from '../../components/ui/QueryStatus';
 import RefreshButton from '../../components/ui/btn/RefreshButton';
 import { queryKeys } from '../../lib/react-query/queryKeys';
@@ -12,6 +15,17 @@ import { useQueryClient } from '@tanstack/react-query';
 const Installments = () => {
   const queryClient = useQueryClient();
   const { data: installments = [], isLoading, isFetching, error } = useInstallmentsQuery();
+
+  const {
+    searchQuery,
+    setSearchQuery,
+    statusFilter,
+    setStatusFilter,
+    dateRange,
+    setDateRange,
+    filteredInstallments,
+    availableStatuses
+  } = useFilteredInstallments(installments);
 
   const getStatusStyle = (status) => {
     switch (status?.toLowerCase()) {
@@ -41,7 +55,9 @@ const Installments = () => {
       accessor: 'student_name',
       cell: (row) => (
         <div>
-          <div className="font-bold text-text-main dark:text-white">{row.student_name}</div>
+          <Link to={`/admin/finance/student/${row.student_id}`} className="font-bold text-text-main dark:text-white hover:text-primary transition-colors">
+            {row.student_name}
+          </Link>
           <div className="text-xs text-text-secondary">{row.course_name}</div>
         </div>
       )
@@ -79,19 +95,55 @@ const Installments = () => {
     }
   ];
 
+  const filters = (
+    <>
+      <div className="md:col-span-6 lg:col-span-4 relative">
+        <SearchInput 
+          value={searchQuery}
+          onChange={setSearchQuery}
+          placeholder="Search student or ID..."
+        />
+      </div>
+      <div className="md:col-span-6 lg:col-span-8 flex flex-wrap gap-3 items-center">
+        <SelectFilter 
+          value={statusFilter}
+          onChange={setStatusFilter}
+          options={availableStatuses}
+          defaultLabel="Status: All"
+        />
+        {/* Placeholder for Date Range Filter */}
+        <div className="flex-1 min-w-[200px] flex items-center bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-xl px-3 py-2 opacity-50 cursor-not-allowed">
+          <span className="material-symbols-outlined text-text-secondary mr-2 text-[20px]">calendar_today</span>
+          <span className="text-sm text-text-secondary">Date Range (Coming Soon)</span>
+        </div>
+        <button className="ml-auto text-primary text-sm font-medium flex items-center gap-1 hover:underline">
+          <span className="material-symbols-outlined text-lg">filter_list</span>
+          More Filters
+        </button>
+      </div>
+    </>
+  );
+
   if (isLoading) return <LoadingState message="Fetching installment records..." />;
   if (error) return <ErrorState message={error.message} onRetry={() => queryClient.invalidateQueries({ queryKey: queryKeys.finance.all })} />;
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-black text-text-main dark:text-white tracking-tight">Global Installments</h1>
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-black text-text-main dark:text-white tracking-tight">Global Installments</h1>
+          <Link to="/admin/finance/overdue" className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg text-sm font-bold transition-colors">
+            <span className="material-symbols-outlined text-[18px]">warning</span>
+            View Overdue
+          </Link>
+        </div>
         <p className="text-text-secondary max-w-2xl">Monitor and manage all fee installments across the academy curriculum.</p>
       </div>
 
       <DataTable 
-        data={installments}
+        data={filteredInstallments}
         columns={columns}
+        filters={filters}
         secondaryAction={
           <RefreshButton 
             isFetching={isFetching} 

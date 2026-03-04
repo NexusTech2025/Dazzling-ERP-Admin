@@ -16,7 +16,7 @@ export const fetchInstallments = (token, filter = {}, options = {}) =>
 export const fetchRevenueSummary = (token, options = {}) => 
   query(token, 'RevenueSummary', {}, options);
 
-export const fetchDelinquentAccounts = (token, filter = {}, options = {}) => 
+export const fetchOverdueAccounts = (token, filter = {}, options = {}) => 
   query(token, 'Installments', { ...filter, status: 'Overdue' }, options);
 
 export const fetchStudentFeeOverview = (token, studentId, options = {}) => 

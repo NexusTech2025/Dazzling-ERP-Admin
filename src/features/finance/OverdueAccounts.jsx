@@ -1,5 +1,6 @@
 import React from 'react';
-import { useDelinquentAccountsQuery } from './hooks/useFinanceQueries';
+import { Link, useNavigate } from 'react-router-dom';
+import { useOverdueAccountsQuery } from './hooks/useFinanceQueries';
 import DataTable from '../../components/ui/DataTable';
 import { LoadingState, ErrorState } from '../../components/ui/QueryStatus';
 import RefreshButton from '../../components/ui/btn/RefreshButton';
@@ -7,12 +8,13 @@ import { queryKeys } from '../../lib/react-query/queryKeys';
 import { useQueryClient } from '@tanstack/react-query';
 
 /**
- * Delinquent Accounts Page
+ * Overdue Accounts Page
  * Specifically tracks overdue installments requiring immediate attention.
  */
-const DelinquentAccounts = () => {
+const OverdueAccounts = () => {
   const queryClient = useQueryClient();
-  const { data: accounts = [], isLoading, isFetching, error } = useDelinquentAccountsQuery();
+  const navigate = useNavigate();
+  const { data: accounts = [], isLoading, isFetching, error } = useOverdueAccountsQuery();
 
   const calculateTotalOverdue = () => accounts.reduce((sum, acc) => sum + (Number(acc.amount) - Number(acc.paid_amount)), 0);
 
@@ -26,7 +28,9 @@ const DelinquentAccounts = () => {
             {row.student_name.substring(0, 2).toUpperCase()}
           </div>
           <div>
-            <div className="font-bold text-text-main dark:text-white">{row.student_name}</div>
+            <Link to={`/admin/finance/student/${row.student_id}`} className="font-bold text-text-main dark:text-white hover:text-primary transition-colors">
+              {row.student_name}
+            </Link>
             <div className="text-[10px] text-text-secondary uppercase font-bold tracking-tight">ID: {row.student_id}</div>
           </div>
         </div>
@@ -64,20 +68,30 @@ const DelinquentAccounts = () => {
       header: 'Action',
       className: 'text-center',
       cell: (row) => (
-        <button className="px-3 py-1 bg-primary text-white text-[10px] font-black uppercase tracking-widest rounded-lg shadow-sm hover:bg-primary-dark transition-all active:scale-95">
-          Notify
+        <button 
+          onClick={() => navigate(`/admin/finance/student/${row.student_id}`)}
+          className="px-3 py-1 bg-primary text-white text-[10px] font-black uppercase tracking-widest rounded-lg shadow-sm hover:bg-primary-dark transition-all active:scale-95"
+        >
+          View Profile
         </button>
       )
     }
   ];
 
-  if (isLoading) return <LoadingState message="Scanning for delinquent accounts..." />;
+  if (isLoading) return <LoadingState message="Scanning for overdue accounts..." />;
   if (error) return <ErrorState message={error.message} onRetry={() => queryClient.invalidateQueries({ queryKey: queryKeys.finance.all })} />;
 
   return (
     <div className="space-y-8">
       <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-black text-text-main dark:text-white tracking-tight">Delinquent Accounts</h1>
+        <nav className="flex items-center gap-2 text-sm font-medium text-text-secondary mb-2">
+          <Link to="/admin/finance" className="hover:text-primary">Finance</Link>
+          <span className="material-symbols-outlined text-[16px]">chevron_right</span>
+          <Link to="/admin/finance/installments" className="hover:text-primary">Installments</Link>
+          <span className="material-symbols-outlined text-[16px]">chevron_right</span>
+          <span className="text-text-main dark:text-white">Overdue</span>
+        </nav>
+        <h1 className="text-3xl font-black text-text-main dark:text-white tracking-tight">Overdue Accounts</h1>
         <p className="text-text-secondary max-w-2xl">Track and prioritize actions for installments that have exceeded their due dates.</p>
       </div>
 
@@ -113,4 +127,4 @@ const DelinquentAccounts = () => {
   );
 };
 
-export default DelinquentAccounts;
+export default OverdueAccounts;

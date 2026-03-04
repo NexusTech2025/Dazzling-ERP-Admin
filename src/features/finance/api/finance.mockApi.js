@@ -28,7 +28,7 @@ export const fetchRevenueSummary = async (token, options = {}) => {
   return { success: true, data: { data: [mockRevenueSummary] } };
 };
 
-export const fetchDelinquentAccounts = async (token, filter = {}, options = {}) => {
+export const fetchOverdueAccounts = async (token, filter = {}, options = {}) => {
   await simulateDelay();
   
   let filtered = mockInstallments.filter(i => i.status === 'Overdue');

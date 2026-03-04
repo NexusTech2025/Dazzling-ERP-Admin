@@ -17,7 +17,7 @@ import CourseDetails from '../features/course/CourseDetails';
 import AddCourse from '../features/course/AddCourse';
 import FinanceDashboard from '../features/finance/FinanceDashboard';
 import Installments from '../features/finance/Installments';
-import DelinquentAccounts from '../features/finance/DelinquentAccounts';
+import OverdueAccounts from '../features/finance/OverdueAccounts';
 import FeePlanWizard from '../features/finance/FeePlanWizard';
 import StudentFeeOverview from '../features/finance/StudentFeeOverview';
 
@@ -59,7 +59,7 @@ const AppRoutes = () => {
         {/* Finance Management */}
         <Route path="finance" element={<FinanceDashboard />} />
         <Route path="finance/installments" element={<Installments />} />
-        <Route path="finance/delinquent" element={<DelinquentAccounts />} />
+        <Route path="finance/overdue" element={<OverdueAccounts />} />
         <Route path="finance/fee-plan" element={<FeePlanWizard />} />
         <Route path="finance/student/:id" element={<StudentFeeOverview />} />
 

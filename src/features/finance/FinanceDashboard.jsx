@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { useRevenueSummaryQuery, useInstallmentsQuery } from './hooks/useFinanceQueries';
 import { LoadingState, ErrorState } from '../../components/ui/QueryStatus';
 
@@ -36,7 +37,8 @@ const FinanceDashboard = () => {
       trend: '-2%', 
       color: 'text-red-600', 
       bg: 'bg-red-50 dark:bg-red-900/30', 
-      icon: 'warning' 
+      icon: 'warning',
+      link: '/admin/finance/delinquent'
     },
     { 
       label: 'Monthly Revenue', 
@@ -55,32 +57,45 @@ const FinanceDashboard = () => {
           <h1 className="text-3xl font-black text-text-main dark:text-white tracking-tight">Finance Dashboard</h1>
           <p className="text-text-secondary mt-1">Institutional financial health and revenue distribution.</p>
         </div>
-        <button className="flex items-center gap-2 bg-surface-light dark:bg-surface-dark hover:bg-gray-50 dark:hover:bg-gray-800 text-text-main dark:text-white font-bold py-2.5 px-5 rounded-xl transition-all border border-border-light dark:border-border-dark shadow-sm active:scale-95">
-          <span className="material-symbols-outlined text-[20px]">download</span>
-          <span>Export Report</span>
-        </button>
+        <div className="flex items-center gap-3">
+          <button className="flex items-center gap-2 bg-surface-light dark:bg-surface-dark hover:bg-gray-50 dark:hover:bg-gray-800 text-text-main dark:text-white font-bold py-2.5 px-4 rounded-xl transition-all border border-border-light dark:border-border-dark shadow-sm active:scale-95">
+            <span className="material-symbols-outlined text-[20px]">download</span>
+            <span className="hidden sm:inline">Export</span>
+          </button>
+          <Link to="/admin/finance/fee-plan" className="flex items-center gap-2 bg-primary hover:bg-primary-dark text-white font-bold py-2.5 px-5 rounded-xl transition-all shadow-md active:scale-95">
+            <span className="material-symbols-outlined text-[20px]">add_circle</span>
+            <span>Generate Fee Plan</span>
+          </Link>
+        </div>
       </div>
 
       {/* KPI Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {kpis.map((kpi, idx) => (
-          <div key={idx} className="bg-surface-light dark:bg-surface-dark rounded-2xl p-6 shadow-sm border border-border-light dark:border-border-dark flex flex-col justify-between h-40 group hover:border-primary/50 transition-all">
-            <div className="flex justify-between items-start">
-              <div className={`p-2 ${kpi.bg} rounded-lg text-primary`}>
-                <span className="material-symbols-outlined">{kpi.icon}</span>
+        {kpis.map((kpi, idx) => {
+          const CardContent = (
+            <div className={`bg-surface-light dark:bg-surface-dark rounded-2xl p-6 shadow-sm border border-border-light dark:border-border-dark flex flex-col justify-between h-40 group transition-all ${kpi.link ? 'hover:border-primary cursor-pointer hover:shadow-md' : 'hover:border-primary/50'}`}>
+              <div className="flex justify-between items-start">
+                <div className={`p-2 ${kpi.bg} rounded-lg text-primary`}>
+                  <span className="material-symbols-outlined">{kpi.icon}</span>
+                </div>
+                <span className={`flex items-center text-xs font-black ${kpi.color} bg-background-light dark:bg-background-dark px-2.5 py-1 rounded-full border border-border-light dark:border-border-dark`}>
+                  {kpi.trend}
+                </span>
               </div>
-              <span className={`flex items-center text-xs font-black ${kpi.color} bg-background-light dark:bg-background-dark px-2.5 py-1 rounded-full border border-border-light dark:border-border-dark`}>
-                {kpi.trend}
-              </span>
+              <div>
+                <p className="text-xs font-bold text-text-secondary uppercase tracking-wider">{kpi.label}</p>
+                <div className="flex items-center justify-between mt-1">
+                  <h3 className="text-2xl font-black text-text-main dark:text-white">
+                    ${Number(kpi.value).toLocaleString()}
+                  </h3>
+                  {kpi.link && <span className="material-symbols-outlined text-primary opacity-0 group-hover:opacity-100 transition-opacity">arrow_forward</span>}
+                </div>
+              </div>
             </div>
-            <div>
-              <p className="text-xs font-bold text-text-secondary uppercase tracking-wider">{kpi.label}</p>
-              <h3 className="text-2xl font-black text-text-main dark:text-white mt-1">
-                ${Number(kpi.value).toLocaleString()}
-              </h3>
-            </div>
-          </div>
-        ))}
+          );
+
+          return kpi.link ? <Link key={idx} to={kpi.link}>{CardContent}</Link> : <React.Fragment key={idx}>{CardContent}</React.Fragment>;
+        })}
       </div>
 
       {/* Main Insights */}
@@ -147,7 +162,9 @@ const FinanceDashboard = () => {
       <div className="bg-surface-light dark:bg-surface-dark rounded-2xl shadow-sm border border-border-light dark:border-border-dark overflow-hidden">
         <div className="p-6 border-b border-border-light dark:border-border-dark flex justify-between items-center">
           <h3 className="text-lg font-bold text-text-main dark:text-white tracking-tight">Recent Payments</h3>
-          <button className="text-sm font-bold text-primary hover:text-primary-dark transition-colors">View All Transactions</button>
+          <Link to="/admin/finance/installments" className="text-sm font-bold text-primary hover:text-primary-dark transition-colors flex items-center gap-1">
+            View All Installments <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
+          </Link>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
@@ -164,7 +181,9 @@ const FinanceDashboard = () => {
               {recentPayments.length > 0 ? recentPayments.map((p, i) => (
                 <tr key={i} className="hover:bg-background-light/50 dark:hover:bg-background-dark/50 transition-colors">
                   <td className="p-4">
-                    <span className="text-sm font-bold text-text-main dark:text-white">{p.student_name || 'Anonymous'}</span>
+                    <Link to={`/admin/finance/student/${p.student_id}`} className="text-sm font-bold text-text-main dark:text-white hover:text-primary transition-colors">
+                      {p.student_name || 'Anonymous'}
+                    </Link>
                   </td>
                   <td className="p-4 text-sm text-text-secondary">{p.course_name || 'General'}</td>
                   <td className="p-4 text-sm text-text-secondary">{new Date(p.due_date).toLocaleDateString()}</td>
