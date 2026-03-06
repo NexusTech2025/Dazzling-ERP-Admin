@@ -1,0 +1,40 @@
+{
+  "Teachers": [
+    {
+      "teacher_id": "TCH-001",
+      "branch_id": "BR-001",
+      "teacher_name": "Rahul Sharma",
+      "email": "rahul@academy.com",
+      "mobile": "9812345678",
+      "specialization": "Physics",
+      "status": "active"
+    },
+    {
+      "teacher_id": "TCH-002",
+      "branch_id": "BR-001",
+      "teacher_name": "Priya Singh",
+      "email": "priya@academy.com",
+      "mobile": "9812345679",
+      "specialization": "Mathematics",
+      "status": "active"
+    },
+    {
+      "teacher_id": "TCH-003",
+      "branch_id": "BR-002",
+      "teacher_name": "Amit Verma",
+      "email": "amit@academy.com",
+      "mobile": "9812345680",
+      "specialization": "Computer Applications",
+      "status": "active"
+    },
+    {
+      "teacher_id": "TCH-004",
+      "branch_id": "BR-002",
+      "teacher_name": "Neha Kapoor",
+      "email": "neha@academy.com",
+      "mobile": "9812345681",
+      "specialization": "Communication Skills",
+      "status": "active"
+    }
+  ]
+}

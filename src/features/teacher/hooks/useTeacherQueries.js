@@ -1,7 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../../context/AuthContextCore';
 import { queryKeys } from '../../../lib/react-query/queryKeys';
-import { fetchTeachers, createTeacher, removeTeacher } from '../api/teacher.api';
+// IMPORT FROM MOCK API FOR DEVELOPMENT
+import { fetchTeachers, createTeacher, removeTeacher } from '../api/teacher.mockApi';
 
 /**
  * Hook for fetching all teachers
@@ -49,10 +50,11 @@ export const useDeleteTeacherMutation = () => {
 
   return useMutation({
     mutationFn: ({ id, options }) => removeTeacher(token, id, options),
-    onSuccess: (response) => {
+    onSuccess: (response, { id }) => {
       if (response.success) {
         queryClient.invalidateQueries({ queryKey: queryKeys.teachers.all });
       }
     }
   });
 };
+

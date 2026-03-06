@@ -1,7 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../../context/AuthContextCore';
 import { queryKeys } from '../../../lib/react-query/queryKeys';
-import { fetchStudents, createStudent, removeStudent } from '../api/student.api';
+// IMPORT FROM MOCK API FOR DEVELOPMENT
+import { fetchStudents, createStudent, modifyStudent, removeStudent } from '../api/student.mockApi';
 
 /**
  * Hook for fetching all students with optional filtering
@@ -35,6 +36,24 @@ export const useCreateStudentMutation = () => {
     onSuccess: (response) => {
       if (response.success) {
         queryClient.invalidateQueries({ queryKey: queryKeys.students.all });
+      }
+    }
+  });
+};
+
+/**
+ * Hook for updating an existing student
+ */
+export const useUpdateStudentMutation = () => {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, data, options }) => modifyStudent(token, id, data, options),
+    onSuccess: (response, { id }) => {
+      if (response.success) {
+        queryClient.invalidateQueries({ queryKey: queryKeys.students.all });
+        queryClient.invalidateQueries({ queryKey: queryKeys.students.detail(id) });
       }
     }
   });

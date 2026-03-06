@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../context/AuthContextCore';
-import { deleteTeacher } from '../../services/api';
-import { useTeachers } from '../../hooks/useTeachers';
+import { useTeachersQuery, useDeleteTeacherMutation } from '../../features/teacher/hooks/useTeacherQueries';
 import { useFilteredTeachers } from '../../hooks/useFilteredTeachers';
 import DataTable from '../../components/ui/DataTable';
 import { SearchInput, SelectFilter } from '../../components/ui/filters';
@@ -14,6 +13,7 @@ import RefreshButton from '../../components/ui/btn/RefreshButton';
 const Teachers = () => {
   const { token } = useAuth();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   
   // Modal State
   const [deleteModal, setDeleteModal] = useState({ 
@@ -24,8 +24,9 @@ const Teachers = () => {
     resultMessage: null
   });
 
-  // 1. Fetch raw data from server
-  const { data: teachers = [], isLoading, isFetching, error } = useTeachers();
+  // 1. Fetch raw data from mock API
+  const { data: teachers = [], isLoading, isFetching, error } = useTeachersQuery();
+  const deleteMutation = useDeleteTeacherMutation();
 
   // 2. Pass raw data to filtering hook
   const {
@@ -37,39 +38,10 @@ const Teachers = () => {
     availableDepartments
   } = useFilteredTeachers(teachers);
 
-  // 3. Optimized Deletion
-  const deleteMutation = useMutation({
-    mutationFn: (id) => deleteTeacher(token, id),
-    onSuccess: (response, deletedId) => {
-      if (response.success) {
-        queryClient.setQueryData(['teachers', {}], (old = []) => 
-          old.filter(teacher => teacher.id !== deletedId)
-        );
-        setDeleteModal(prev => ({ 
-          ...prev, 
-          status: 'success',
-          resultMessage: response.message || 'Faculty record has been successfully removed.'
-        }));
-      } else {
-        setDeleteModal(prev => ({ 
-          ...prev, 
-          status: 'error',
-          resultMessage: response.error?.message || response.message || 'Failed to delete faculty member.'
-        }));
-      }
-    },
-    onError: (err) => {
-      console.error('Delete Teacher Error:', err);
-      setDeleteModal(prev => ({ 
-        ...prev, 
-        status: 'error',
-        resultMessage: err.message || 'Connection error. Please check your network.'
-      }));
-    }
-  });
-
   // 4. Define handlers for the schema
   const handlers = {
+    onView: (teacher) => navigate(`/admin/teachers/${teacher.teacher_id}`),
+    onEdit: (teacher) => console.log('Edit Teacher', teacher),
     onDelete: (id, name) => {
       setDeleteModal({ 
         isOpen: true, 
@@ -80,8 +52,6 @@ const Teachers = () => {
       });
     },
     isDeleting: deleteMutation.isPending,
-    // onView: (teacher) => navigate(`/admin/teachers/${teacher.id}`), // Example
-    // onEdit: (teacher) => navigate(`/admin/teachers/${teacher.id}/edit`), // Example
   };
 
   // 5. Generate columns dynamically
@@ -153,7 +123,7 @@ const Teachers = () => {
         onClose={handleCloseModal}
         onConfirm={() => {
           setDeleteModal(prev => ({ ...prev, status: 'processing' }));
-          deleteMutation.mutate(deleteModal.id);
+          deleteMutation.mutate({ id: deleteModal.id });
         }}
         status={deleteModal.status}
         resultMessage={deleteModal.resultMessage}

@@ -3,13 +3,6 @@ import { ProfileCell, BadgeCell, ActionCell } from '../../../components/ui/table
 
 /**
  * Creates the column schema for the Teacher table.
- * 
- * @param {Object} handlers - Callbacks for user interactions.
- * @param {Function} [handlers.onView] - (teacher) => void
- * @param {Function} [handlers.onEdit] - (teacher) => void
- * @param {Function} [handlers.onDelete] - (id, name) => void
- * @param {boolean} [handlers.isDeleting] - Global loading state for delete mutation
- * @returns {Array} Array of column configuration objects compatible with DataTable.
  */
 export const createTeacherColumns = ({ onView, onEdit, onDelete, isDeleting } = {}) => {
   return [
@@ -17,31 +10,36 @@ export const createTeacherColumns = ({ onView, onEdit, onDelete, isDeleting } = 
       header: 'Faculty Name',
       render: (teacher) => (
         <ProfileCell 
-          name={teacher.name} 
+          name={teacher.teacher_name} 
           subtitle={teacher.email} 
-          avatarUrl={teacher.avatarUrl} 
+          avatarUrl={teacher.avatar} 
           fallbackIcon="person"
         />
       )
     },
     {
       header: 'ID',
-      accessor: (teacher) => teacher.employee_id || teacher.id,
+      accessor: 'teacher_id',
       className: 'font-mono text-xs'
     },
     {
-      header: 'Department',
-      accessor: (teacher) => teacher.department || teacher.subject_code,
-      className: 'text-text-main dark:text-white'
+      header: 'Contact',
+      accessor: 'mobile',
+      className: 'text-text-secondary'
+    },
+    {
+      header: 'Specialization',
+      accessor: 'specialization',
+      className: 'text-text-main dark:text-white font-medium'
     },
     {
       header: 'Qualification',
-      accessor: (teacher) => teacher.qualification || 'N/A'
+      render: (teacher) => teacher.qualification || 'PhD (Mock)' // Placeholder until added to JSON
     },
     {
       header: 'Status',
       align: 'center',
-      render: (teacher) => <BadgeCell status={teacher.status || 'Active'} />
+      render: (teacher) => <BadgeCell status={teacher.status === 'active' ? 'Active' : 'Inactive'} />
     },
     {
       header: 'Actions',
@@ -50,7 +48,7 @@ export const createTeacherColumns = ({ onView, onEdit, onDelete, isDeleting } = 
         <ActionCell 
           onView={onView ? () => onView(teacher) : null}
           onEdit={onEdit ? () => onEdit(teacher) : null}
-          onDelete={onDelete ? () => onDelete(teacher.id, teacher.name) : null}
+          onDelete={onDelete ? () => onDelete(teacher.teacher_id, teacher.teacher_name) : null}
           isDeleting={isDeleting}
         />
       )

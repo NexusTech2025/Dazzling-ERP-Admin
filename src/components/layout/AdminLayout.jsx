@@ -2,6 +2,7 @@ import React from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Header from './Header';
+import PageErrorBoundary from '../ui/PageErrorBoundary';
 
 const AdminLayout = () => {
   return (
@@ -11,7 +12,9 @@ const AdminLayout = () => {
         <Sidebar />
         <main className="flex-1 bg-background-light dark:bg-background-dark overflow-y-auto p-6 lg:p-10">
           <div className="w-full">
-            <Outlet />
+            <PageErrorBoundary>
+              <Outlet />
+            </PageErrorBoundary>
           </div>
         </main>
       </div>

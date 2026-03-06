@@ -1,19 +1,20 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { Link, useNavigate } from 'react-router-dom';
+import { useQueryClient, useMutation } from '@tanstack/react-query';
 import { useAuth } from '../../context/AuthContextCore';
-import { deleteStudent } from '../../services/api';
-import { useStudents } from '../../hooks/useStudents';
+import { useStudentsQuery, useUpdateStudentMutation, useDeleteStudentMutation } from '../../features/student/hooks/useStudentQueries';
 import { useFilteredStudents } from '../../hooks/useFilteredStudents';
 import DataTable from '../../components/ui/DataTable';
 import { SearchInput, SelectFilter } from '../../components/ui/filters';
 import { createStudentColumns } from './schemas/studentSchema';
 import ConfirmModal from '../../components/ui/ConfirmModal';
 import RefreshButton from '../../components/ui/btn/RefreshButton';
+import StudentDetailModal from '../../features/student/components/StudentDetailModal';
+import StudentEditModal from '../../features/student/components/StudentEditModal';
 
 const Students = () => {
-  const { token } = useAuth();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   
   // Modal State
   const [deleteModal, setDeleteModal] = useState({ 
@@ -24,8 +25,12 @@ const Students = () => {
     resultMessage: null
   });
 
+  const [selectedStudentForView, setSelectedStudentForView] = useState(null);
+  const [selectedStudentForEdit, setSelectedStudentForEdit] = useState(null);
+
   // 1. Fetch raw data from server
-  const { data: students = [], isLoading, isFetching, error } = useStudents();
+  const { data: students = [], isLoading, isFetching, error } = useStudentsQuery();
+  const updateMutation = useUpdateStudentMutation();
 
   // 2. Pass raw data to filtering hook
   const {
@@ -73,6 +78,8 @@ const Students = () => {
 
   // 4. Define handlers for the schema
   const handlers = {
+    onView: (student) => navigate(`/admin/students/${student.student_id}`),
+    onEdit: (student) => setSelectedStudentForEdit(student),
     onDelete: (id, name) => {
       setDeleteModal({ 
         isOpen: true, 
@@ -87,6 +94,36 @@ const Students = () => {
 
   // 5. Generate columns dynamically
   const columns = createStudentColumns(handlers);
+
+  const handleSaveStudent = (updatedData) => {
+    updateMutation.mutate({ 
+      id: updatedData.student_id, 
+      data: updatedData 
+    }, {
+      onSuccess: () => setSelectedStudentForEdit(null)
+    });
+  };
+
+  const handleConfirmDelete = () => {
+    setDeleteModal(prev => ({ ...prev, status: 'processing' }));
+    deleteMutation.mutate({ id: deleteModal.id }, {
+      onSuccess: (response) => {
+        if (response.success) {
+          setDeleteModal(prev => ({ 
+            ...prev, 
+            status: 'success',
+            resultMessage: response.message || 'Student record removed.'
+          }));
+        } else {
+          setDeleteModal(prev => ({ 
+            ...prev, 
+            status: 'error',
+            resultMessage: response.message || 'Failed to delete student.'
+          }));
+        }
+      }
+    });
+  };
 
   // 6. Define reusable filters
   const filters = (
@@ -166,6 +203,19 @@ const Students = () => {
         resultMessage={deleteModal.resultMessage}
         title="Delete Student"
         message={`Are you sure you want to permanently delete ${deleteModal.name}? This action cannot be undone.`}
+      />
+
+      <StudentDetailModal 
+        isOpen={!!selectedStudentForView}
+        onClose={() => setSelectedStudentForView(null)}
+        student={selectedStudentForView}
+      />
+
+      <StudentEditModal 
+        isOpen={!!selectedStudentForEdit}
+        onClose={() => setSelectedStudentForEdit(null)}
+        student={selectedStudentForEdit}
+        onSave={handleSaveStudent}
       />
     </>
   );

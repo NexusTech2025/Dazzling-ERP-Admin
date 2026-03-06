@@ -1,0 +1,18 @@
+{
+  "Branches": [
+    {
+      "branch_id": "BR-001",
+      "branch_name": "Main Campus",
+      "location": "North Delhi",
+      "contact_number": "011-23456789",
+      "status": "active"
+    },
+    {
+      "branch_id": "BR-002",
+      "branch_name": "City Center",
+      "location": "South Delhi",
+      "contact_number": "011-98765432",
+      "status": "active"
+    }
+  ]
+}

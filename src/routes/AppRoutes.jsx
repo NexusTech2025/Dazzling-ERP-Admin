@@ -4,7 +4,13 @@ import AdminLayout from '../components/layout/AdminLayout';
 import LoginPage from '../pages/auth/LoginPage';
 import Dashboard from '../pages/admin/Dashboard';
 import Students from '../pages/admin/Students';
+import StudentProfile from '../pages/admin/StudentProfile';
+import Batches from '../features/batch/Batches';
+import AddBatch from '../features/batch/AddBatch';
+import BatchProfile from '../pages/admin/BatchProfile';
+import Schedule from '../features/batch/Schedule';
 import Teachers from '../pages/admin/Teachers';
+import TeacherProfile from '../pages/admin/TeacherProfile';
 import Roles from '../pages/admin/Roles';
 import Reports from '../pages/admin/Reports';
 import Settings from '../pages/admin/Settings';
@@ -48,8 +54,17 @@ const AppRoutes = () => {
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="students" element={<Students />} />
         <Route path="students/add" element={<AddStudent />} />
+        <Route path="students/:id" element={<StudentProfile />} />
+        
+        {/* Batch Management */}
+        <Route path="batches" element={<Batches />} />
+        <Route path="batches/add" element={<AddBatch />} />
+        <Route path="batches/:id" element={<BatchProfile />} />
+        <Route path="schedule" element={<Schedule />} />
+
         <Route path="teachers" element={<Teachers />} />
         <Route path="teachers/add" element={<AddTeacher />} />
+        <Route path="teachers/:id" element={<TeacherProfile />} />
 
         {/* Course Management */}
         <Route path="courses" element={<Courses />} />

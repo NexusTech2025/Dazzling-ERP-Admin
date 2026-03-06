@@ -17,34 +17,26 @@ export const createStudentColumns = ({ onView, onEdit, onDelete, isDeleting } = 
       header: 'Student Name',
       render: (student) => (
         <ProfileCell 
-          name={student.name} 
+          name={student.student_name} 
           subtitle={student.email} 
-          avatarUrl={student.avatarUrl} 
+          avatarUrl={student.avatar} 
         />
       )
     },
     {
       header: 'ID',
-      accessor: (student) => student.enrollment_no || student.id,
+      accessor: 'student_id',
       className: 'font-mono text-xs'
     },
     {
-      header: 'Course',
-      accessor: (student) => student.course || student.class || student.grade,
-      className: 'text-text-main dark:text-white'
-    },
-    {
-      header: 'Batch',
-      render: (student) => (
-        <span className="inline-flex items-center rounded-md bg-background-light dark:bg-background-dark px-2 py-1 text-xs font-medium ring-1 ring-inset ring-border-light dark:ring-border-dark">
-          {student.batch || student.grade || student.class}
-        </span>
-      )
+      header: 'Branch',
+      accessor: 'branch_id',
+      className: 'text-text-secondary'
     },
     {
       header: 'Status',
       align: 'center',
-      render: (student) => <BadgeCell status={student.feeStatus || student.status || 'Active'} />
+      render: (student) => <BadgeCell status={student.status === 'active' ? 'Active' : 'Suspended'} />
     },
     {
       header: 'Actions',
@@ -53,7 +45,7 @@ export const createStudentColumns = ({ onView, onEdit, onDelete, isDeleting } = 
         <ActionCell 
           onView={onView ? () => onView(student) : null}
           onEdit={onEdit ? () => onEdit(student) : null}
-          onDelete={onDelete ? () => onDelete(student.id, student.name) : null}
+          onDelete={onDelete ? () => onDelete(student.student_id, student.student_name) : null}
           isDeleting={isDeleting}
         />
       )

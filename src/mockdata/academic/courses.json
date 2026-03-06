@@ -1,0 +1,118 @@
+{
+  "CourseType": [
+    {
+      "segment_id": "SEG-ACA",
+      "segment_name": "Academic Courses",
+      "entity_label": "Subject",
+      "description": "School academic subjects",
+      "status": "active"
+    },
+    {
+      "segment_id": "SEG-FND",
+      "segment_name": "Foundation Courses",
+      "entity_label": "Program",
+      "description": "Skill and personality development courses",
+      "status": "active"
+    },
+    {
+      "segment_id": "SEG-CMP",
+      "segment_name": "Computer Courses",
+      "entity_label": "Course",
+      "description": "Professional computer training courses",
+      "status": "active"
+    }
+  ],
+
+  "Course": [
+    {
+      "course_id": "ITEM-ACA-001",
+      "segment_id": "SEG-ACA",
+      "item_name": "Physics",
+      "short_code": "PHY",
+      "description": "Physics coaching for class 11 and 12",
+      "duration_value": 12,
+      "duration_unit": "months",
+      "metadata_json": {
+        "type": "academic",
+        "class": "11-12",
+        "board": "CBSE"
+      },
+      "status": "active",
+      "base_fee": 1500
+    },
+    {
+      "course_id": "ITEM-ACA-002",
+      "segment_id": "SEG-ACA",
+      "item_name": "Mathematics",
+      "short_code": "MATH",
+      "description": "Mathematics coaching for class 10",
+      "duration_value": 10,
+      "duration_unit": "months",
+      "metadata_json": {
+        "type": "academic",
+        "class": "10",
+        "board": "CBSE"
+      },
+      "status": "active",
+      "base_fee": 1500
+    },
+    {
+      "course_id": "ITEM-FND-001",
+      "segment_id": "SEG-FND",
+      "item_name": "English Speaking",
+      "short_code": "ENG-SPK",
+      "description": "Spoken English training program",
+      "duration_value": 3,
+      "duration_unit": "months",
+      "metadata_json": {
+        "type": "foundation",
+        "level": "beginner"
+      },
+      "status": "active",
+      "base_fee": 1200
+    },
+    {
+      "course_id": "ITEM-FND-002",
+      "segment_id": "SEG-FND",
+      "item_name": "Personality Development",
+      "short_code": "PD",
+      "description": "Confidence and communication training",
+      "duration_value": 2,
+      "duration_unit": "months",
+      "metadata_json": {
+        "type": "foundation"
+      },
+      "status": "active",
+      "base_fee": 1200
+    },
+    {
+      "course_id": "ITEM-CMP-001",
+      "segment_id": "SEG-CMP",
+      "item_name": "Diploma in Computer Applications",
+      "short_code": "DCA",
+      "description": "Basic computer applications training",
+      "duration_value": 6,
+      "duration_unit": "months",
+      "metadata_json": {
+        "type": "computer_course",
+        "certificate": true
+      },
+      "status": "active",
+      "base_fee": 2500
+    },
+    {
+      "course_id": "ITEM-CMP-002",
+      "segment_id": "SEG-CMP",
+      "item_name": "Tally with GST",
+      "short_code": "TALLY",
+      "description": "Accounting software training",
+      "duration_value": 3,
+      "duration_unit": "months",
+      "metadata_json": {
+        "type": "computer_course"
+      },
+      "status": "active",
+      "base_fee": 2500
+    }
+  ]
+}

@@ -1,19 +1,23 @@
-import { mockCourses, simulateDelay } from '../../../lib/mockData';
+import initialCourses from '../../../mockdata/academic/courses.json';
+import { simulateDelay } from '../../../lib/mockData';
 
 /**
  * Course Mock API Layer
  * Replaces actual GAS calls with local mock data for testing UI.
  */
 
+// Maintain local state for course persistence
+let mockCourses = [...initialCourses.Course];
+
 export const fetchCourses = async (token, filter = {}, options = {}) => {
   await simulateDelay();
   
   let filtered = [...mockCourses];
-  if (filter.status === 'Active') filtered = filtered.filter(c => c.is_active);
-  if (filter.status === 'Inactive') filtered = filtered.filter(c => !c.is_active);
+  if (filter.status === 'Active') filtered = filtered.filter(c => c.status === 'active');
+  if (filter.status === 'Inactive') filtered = filtered.filter(c => c.status !== 'active');
   if (filter.search) {
     const s = filter.search.toLowerCase();
-    filtered = filtered.filter(c => c.name.toLowerCase().includes(s) || c.course_id.toLowerCase().includes(s));
+    filtered = filtered.filter(c => c.item_name.toLowerCase().includes(s) || c.course_id.toLowerCase().includes(s));
   }
 
   return { success: true, data: { data: filtered } };
@@ -41,9 +45,7 @@ export const updateCourse = async (token, id, data, options = {}) => {
   const index = mockCourses.findIndex(c => c.course_id === id);
   if (index === -1) return { success: false, message: "Course not found" };
   
-  // Note: in a real environment we wouldn't mutate the export directly like this,
-  // but for a mock development setup it works to simulate state.
-  Object.assign(mockCourses[index], data);
+  mockCourses[index] = { ...mockCourses[index], ...data };
   return { success: true, message: "Course updated successfully" };
 };
 

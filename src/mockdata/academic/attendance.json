@@ -1,0 +1,84 @@
+{
+  "Attendance": [
+    {
+      "attendance_id": "ATT-001",
+      "enrollment_id": "ENR-001",
+      "date": "2026-03-04",
+      "status": "Present",
+      "remarks": "On time",
+      "created_at": "2026-03-04T09:00:00Z"
+    },
+    {
+      "attendance_id": "ATT-002",
+      "enrollment_id": "ENR-003",
+      "date": "2026-03-04",
+      "status": "Present",
+      "remarks": "",
+      "created_at": "2026-03-04T09:00:00Z"
+    },
+    {
+      "attendance_id": "ATT-003",
+      "enrollment_id": "ENR-010",
+      "date": "2026-03-04",
+      "status": "Absent",
+      "remarks": "Medical leave",
+      "created_at": "2026-03-04T09:05:00Z"
+    },
+    {
+      "attendance_id": "ATT-004",
+      "enrollment_id": "ENR-014",
+      "date": "2026-03-04",
+      "status": "Late",
+      "remarks": "Bus delay",
+      "created_at": "2026-03-04T09:15:00Z"
+    },
+    {
+      "attendance_id": "ATT-005",
+      "enrollment_id": "ENR-001",
+      "date": "2026-03-03",
+      "status": "Present",
+      "remarks": "",
+      "created_at": "2026-03-03T09:00:00Z"
+    },
+    {
+      "attendance_id": "ATT-006",
+      "enrollment_id": "ENR-003",
+      "date": "2026-03-03",
+      "status": "Present",
+      "remarks": "",
+      "created_at": "2026-03-03T09:00:00Z"
+    },
+    {
+      "attendance_id": "ATT-007",
+      "enrollment_id": "ENR-010",
+      "date": "2026-03-03",
+      "status": "Present",
+      "remarks": "",
+      "created_at": "2026-03-03T09:00:00Z"
+    },
+    {
+      "attendance_id": "ATT-008",
+      "enrollment_id": "ENR-014",
+      "date": "2026-03-03",
+      "status": "Present",
+      "remarks": "",
+      "created_at": "2026-03-03T09:00:00Z"
+    },
+    {
+      "attendance_id": "ATT-009",
+      "enrollment_id": "ENR-006",
+      "date": "2026-03-04",
+      "status": "Present",
+      "remarks": "",
+      "created_at": "2026-03-04T10:00:00Z"
+    },
+    {
+      "attendance_id": "ATT-010",
+      "enrollment_id": "ENR-009",
+      "date": "2026-03-04",
+      "status": "Present",
+      "remarks": "",
+      "created_at": "2026-03-04T10:00:00Z"
+    }
+  ]
+}

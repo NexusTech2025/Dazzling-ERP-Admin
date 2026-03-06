@@ -1,0 +1,70 @@
+{
+  "Batches": [
+    {
+      "batch_id": "BAT-001",
+      "branch_id": "BR-001",
+      "item_id": "ITEM-ACA-001",
+      "teacher_id": "TCH-001",
+      "batch_name": "Physics Morning Batch",
+      "start_date": "2026-04-01",
+      "end_date": "2027-03-30",
+      "capacity": 40,
+      "status": "active"
+    },
+    {
+      "batch_id": "BAT-002",
+      "branch_id": "BR-001",
+      "item_id": "ITEM-ACA-002",
+      "teacher_id": "TCH-002",
+      "batch_name": "Mathematics Evening Batch",
+      "start_date": "2026-04-01",
+      "end_date": "2027-02-28",
+      "capacity": 35,
+      "status": "active"
+    },
+    {
+      "batch_id": "BAT-003",
+      "branch_id": "BR-002",
+      "item_id": "ITEM-CMP-001",
+      "teacher_id": "TCH-003",
+      "batch_name": "DCA Morning Batch",
+      "start_date": "2026-05-01",
+      "end_date": "2026-11-01",
+      "capacity": 25,
+      "status": "active"
+    },
+    {
+      "batch_id": "BAT-004",
+      "branch_id": "BR-002",
+      "item_id": "ITEM-CMP-002",
+      "teacher_id": "TCH-003",
+      "batch_name": "Tally Evening Batch",
+      "start_date": "2026-05-01",
+      "end_date": "2026-08-01",
+      "capacity": 20,
+      "status": "active"
+    },
+    {
+      "batch_id": "BAT-005",
+      "branch_id": "BR-001",
+      "item_id": "ITEM-FND-001",
+      "teacher_id": "TCH-004",
+      "batch_name": "English Speaking Weekend",
+      "start_date": "2026-04-15",
+      "end_date": "2026-07-15",
+      "capacity": 30,
+      "status": "active"
+    },
+    {
+      "batch_id": "BAT-006",
+      "branch_id": "BR-002",
+      "item_id": "ITEM-FND-002",
+      "teacher_id": "TCH-004",
+      "batch_name": "Personality Development Batch",
+      "start_date": "2026-04-10",
+      "end_date": "2026-06-10",
+      "capacity": 25,
+      "status": "active"
+    }
+  ]
+}
