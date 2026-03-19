@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../../context/AuthContextCore';
 import { queryKeys } from '../../../lib/react-query/queryKeys';
 // IMPORT FROM MOCK API FOR DEVELOPMENT
-import { fetchCourses, fetchCourseDetail, createCourse, updateCourse, deleteCourse, fetchCourseTypes, createCourseType, fetchPackages, createPackage } from '../api/course.mockApi';
+import { fetchCourses, fetchCourseDetail, createCourse, updateCourse, deleteCourse, fetchCourseTypes, createCourseType, fetchPackages, createPackage, fetchPackageDetail, updatePackage } from '../api/course.mockApi';
 
 // --- COURSE TYPES ---
 
@@ -144,6 +144,21 @@ export const usePackagesQuery = (filter = {}) => {
   });
 };
 
+export const usePackageDetailQuery = (id) => {
+  const { token } = useAuth();
+  return useQuery({
+    queryKey: ['packages', 'detail', id],
+    queryFn: async ({ signal }) => {
+      const response = await fetchPackageDetail(token, id, { signal });
+      if (!response.success) {
+        throw new Error(response.error?.message || response.message || 'Failed to fetch package details');
+      }
+      return response.data?.data?.[0] || null;
+    },
+    enabled: !!token && !!id,
+  });
+};
+
 export const useCreatePackageMutation = () => {
   const { token } = useAuth();
   const queryClient = useQueryClient();
@@ -153,6 +168,21 @@ export const useCreatePackageMutation = () => {
     onSuccess: (response) => {
       if (response.success) {
         queryClient.invalidateQueries({ queryKey: ['packages'] });
+      }
+    }
+  });
+};
+
+export const useUpdatePackageMutation = () => {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, data, options }) => updatePackage(token, id, data, options),
+    onSuccess: (response, { id }) => {
+      if (response.success) {
+        queryClient.invalidateQueries({ queryKey: ['packages'] });
+        queryClient.invalidateQueries({ queryKey: ['packages', 'detail', id] });
       }
     }
   });

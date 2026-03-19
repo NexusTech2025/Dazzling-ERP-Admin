@@ -1,3 +1,82 @@
 {
-  "Packages": []
+  "Packages": [
+    {
+      "package_id": "PKG-09-CBSE-E",
+      "name": "Class 9 CBSE (English Medium)",
+      "description": "All-in-one academic bundle for Class 9 CBSE students including Math, Science, SST, and English.",
+      "target_class": "9",
+      "board": "CBSE",
+      "month": 12,
+      "package_fee": 45000,
+      "base_fee": 45000,
+      "discount_percent": 15,
+      "status": "active",
+      "included_courses": ["MAT09-C", "SCI09-C", "SST09-C", "ENG09-C"]
+    },
+    {
+      "package_id": "PKG-09-RBSE-H",
+      "name": "Class 9 RBSE (Hindi Medium)",
+      "description": "Complete curriculum bundle for Class 9 RBSE Hindi medium students.",
+      "target_class": "9",
+      "board": "RBSE",
+      "month": 12,
+      "package_fee": 24000,
+      "base_fee": 24000,
+      "discount_percent": 10,
+      "status": "active",
+      "included_courses": ["MAT09-R", "SCI09-R", "SST09-R", "ENG09-R"]
+    },
+    {
+      "package_id": "PKG-09-RBSE-E",
+      "name": "Class 9 RBSE (English Medium)",
+      "description": "Academic bundle for Class 9 RBSE English medium students.",
+      "target_class": "9",
+      "board": "RBSE",
+      "month": 12,
+      "package_fee": 28000,
+      "base_fee": 28000,
+      "discount_percent": 10,
+      "status": "active",
+      "included_courses": ["MAT09-RE", "SCI09-RE", "SST09-RE", "ENG09-RE"]
+    },
+    {
+      "package_id": "PKG-10-CBSE-E",
+      "name": "Class 10 CBSE (English Medium)",
+      "description": "Comprehensive Class 10 CBSE academic bundle including Math, Science, SST, and English.",
+      "target_class": "10",
+      "board": "CBSE",
+      "month": 12,
+      "package_fee": 45000,
+      "base_fee": 45000,
+      "discount_percent": 15,
+      "status": "active",
+      "included_courses": ["MAT10-C", "SCI10-C", "SST10-C", "ENG10-C"]
+    },
+    {
+      "package_id": "PKG-10-RBSE-H",
+      "name": "Class 10 RBSE (Hindi Medium)",
+      "description": "Full curriculum bundle for Class 10 RBSE Hindi medium coaching.",
+      "target_class": "10",
+      "board": "RBSE",
+      "month": 12,
+      "package_fee": 30000,
+      "base_fee": 30000,
+      "discount_percent": 12,
+      "status": "active",
+      "included_courses": ["MAT10-R", "SCI10-R", "SST10-R", "ENG10-R"]
+    },
+    {
+      "package_id": "PKG-10-RBSE-E",
+      "name": "Class 10 RBSE (English Medium)",
+      "description": "Complete academic bundle for Class 10 RBSE English medium students.",
+      "target_class": "10",
+      "board": "RBSE",
+      "month": 12,
+      "package_fee": 34000,
+      "base_fee": 34000,
+      "discount_percent": 10,
+      "status": "active",
+      "included_courses": ["MAT10-RE", "SCI10-RE", "SST10-RE", "ENG10-RE"]
+    }
+  ]
 }

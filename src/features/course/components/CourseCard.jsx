@@ -21,14 +21,22 @@ const CourseCard = ({ course, onDelete }) => {
             {course.segment_id === 'SEG-CMP' ? 'computer' : course.segment_id === 'SEG-FND' ? 'star' : 'school'}
           </span>
         </div>
-        <span className="rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-black text-white backdrop-blur-sm uppercase tracking-wider">
-          {course.short_code || course.course_id}
-        </span>
+        
+        <div className="flex flex-col items-end gap-2">
+          <span className="rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-black text-white backdrop-blur-sm uppercase tracking-wider">
+            {course.short_code || course.course_id}
+          </span>
+          {course.language_medium && (
+            <span className="rounded-full bg-black/20 px-2 py-0.5 text-[9px] font-black text-white backdrop-blur-sm uppercase tracking-widest border border-white/10">
+              {course.language_medium}
+            </span>
+          )}
+        </div>
         
         {/* Absolute delete button for admin */}
         <button 
           onClick={() => onDelete(course.course_id, course.name)}
-          className="absolute top-2 right-2 p-1.5 bg-black/10 hover:bg-red-500 text-white rounded-lg transition-all opacity-0 group-hover:opacity-100 backdrop-blur-sm"
+          className="absolute top-2 left-2 p-1.5 bg-black/10 hover:bg-red-500 text-white rounded-lg transition-all opacity-0 group-hover:opacity-100 backdrop-blur-sm"
         >
           <span className="material-symbols-outlined text-[18px]">delete</span>
         </button>

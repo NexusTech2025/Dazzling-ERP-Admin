@@ -16,12 +16,14 @@ import Reports from '../pages/admin/Reports';
 import Settings from '../pages/admin/Settings';
 import AddStudent from '../pages/admin/AddStudent';
 import AddTeacher from '../pages/admin/AddTeacher';
+import TestFilters from '../pages/admin/TestFilters';
 
 // Feature Pages
 import Courses from '../features/course/Courses';
 import CourseDetails from '../features/course/CourseDetails';
+import PackageDetails from '../features/course/PackageDetails';
+import CoursePackagesForm from '../features/course/CoursePackagesForm';
 import AddCourse from '../features/course/AddCourse';
-import CoursePackages from '../features/course/CoursePackages';
 import FinanceDashboard from '../features/finance/FinanceDashboard';
 import Installments from '../features/finance/Installments';
 import OverdueAccounts from '../features/finance/OverdueAccounts';
@@ -70,8 +72,12 @@ const AppRoutes = () => {
         {/* Course Management */}
         <Route path="courses" element={<Courses />} />
         <Route path="courses/add" element={<AddCourse />} />
-        <Route path="courses/packages" element={<CoursePackages />} />
+        <Route path="courses/packages" element={<CoursePackagesForm />} />
         <Route path="courses/:id" element={<CourseDetails />} />
+        
+        {/* Package specialized routes */}
+        <Route path="packages/:id" element={<PackageDetails />} />
+        <Route path="packages/edit/:id" element={<CoursePackagesForm />} />
 
         {/* Finance Management */}
         <Route path="finance" element={<FinanceDashboard />} />
@@ -83,6 +89,7 @@ const AppRoutes = () => {
         <Route path="roles" element={<Roles />} />
         <Route path="reports" element={<Reports />} />
         <Route path="settings" element={<Settings />} />
+        <Route path="test-filters" element={<TestFilters />} />
       </Route>
       
       <Route path="/" element={<Navigate to="/admin" replace />} />

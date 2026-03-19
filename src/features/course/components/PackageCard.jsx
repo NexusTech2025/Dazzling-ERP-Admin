@@ -57,14 +57,20 @@ const PackageCard = ({ pkg }) => {
 
         {/* Action Buttons */}
         <div className="mt-auto grid grid-cols-2 gap-3">
-          <button className="flex items-center justify-center gap-2 rounded-xl border border-border-light dark:border-border-dark bg-white dark:bg-slate-800 px-3 py-2.5 text-xs font-black text-text-secondary dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all active:scale-95">
+          <Link 
+            to={`/admin/packages/${pkg.package_id}`}
+            className="flex items-center justify-center gap-2 rounded-xl border border-border-light dark:border-border-dark bg-white dark:bg-slate-800 px-3 py-2.5 text-xs font-black text-text-secondary dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all active:scale-95"
+          >
             <span className="material-symbols-outlined text-lg">visibility</span>
             View
-          </button>
-          <button className="flex items-center justify-center gap-2 rounded-xl bg-primary/10 px-3 py-2.5 text-xs font-black text-primary hover:bg-primary hover:text-white transition-all active:scale-95 shadow-lg shadow-primary/5 hover:shadow-primary/20">
+          </Link>
+          <Link 
+            to={`/admin/packages/edit/${pkg.package_id}`}
+            className="flex items-center justify-center gap-2 rounded-xl bg-primary/10 px-3 py-2.5 text-xs font-black text-primary hover:bg-primary hover:text-white transition-all active:scale-95 shadow-lg shadow-primary/5 hover:shadow-primary/20"
+          >
             <span className="material-symbols-outlined text-lg">edit</span>
             Edit
-          </button>
+          </Link>
         </div>
       </div>
     </div>

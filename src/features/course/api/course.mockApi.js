@@ -1,5 +1,7 @@
 import initialCourses from '../../../mockdata/academic/courses.json';
 import initialPackages from '../../../mockdata/academic/packages.json';
+import initialPackageCourses from '../../../mockdata/academic/packageCourses.json';
+import initialPackagePerks from '../../../mockdata/academic/packagePerks.json';
 import { simulateDelay } from '../../../lib/mockData';
 
 /**
@@ -11,6 +13,8 @@ import { simulateDelay } from '../../../lib/mockData';
 let mockCourses = [...initialCourses.Course];
 let mockCourseTypes = [...initialCourses.CourseType];
 let mockPackages = [...initialPackages.Packages];
+let mockPackageCourses = [...initialPackageCourses.PackageCourses];
+let mockPackagePerks = [...initialPackagePerks.PackagePerks];
 
 // --- COURSE TYPES (SEGMENTS) ---
 
@@ -95,6 +99,35 @@ export const fetchPackages = async (token, filter = {}, options = {}) => {
   return { success: true, data: { data: filtered } };
 };
 
+export const fetchPackageDetail = async (token, id, options = {}) => {
+  await simulateDelay();
+  const pkg = mockPackages.find(p => p.package_id === id);
+  if (!pkg) return { success: false, message: "Package not found" };
+
+  // Relational Join: Get Courses
+  const mappedCourseIds = mockPackageCourses
+    .filter(pc => pc.package_id === id)
+    .map(pc => pc.course_id);
+  
+  const relatedCourses = mockCourses.filter(c => mappedCourseIds.includes(c.course_id));
+
+  // Relational Join: Get Perks
+  const relatedPerks = mockPackagePerks
+    .filter(prk => prk.package_id === id)
+    .sort((a, b) => (a.display_order || 0) - (b.display_order || 0));
+
+  return { 
+    success: true, 
+    data: { 
+      data: [{
+        ...pkg,
+        courses: relatedCourses,
+        perks: relatedPerks
+      }] 
+    } 
+  };
+};
+
 export const createPackage = async (token, data, options = {}) => {
   await simulateDelay(800);
   const newPackage = {
@@ -103,4 +136,13 @@ export const createPackage = async (token, data, options = {}) => {
   };
   mockPackages.push(newPackage);
   return { success: true, message: "Package created successfully", data: newPackage };
+};
+
+export const updatePackage = async (token, id, data, options = {}) => {
+  await simulateDelay(800);
+  const index = mockPackages.findIndex(p => p.package_id === id);
+  if (index === -1) return { success: false, message: "Package not found" };
+  
+  mockPackages[index] = { ...mockPackages[index], ...data };
+  return { success: true, message: "Package updated successfully" };
 };

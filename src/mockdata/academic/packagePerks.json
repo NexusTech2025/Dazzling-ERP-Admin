@@ -1,0 +1,8 @@
+{
+  "PackagePerks": [
+    { "perk_id": "PRK-001", "package_id": "PKG-09-CBSE-E", "perk_title": "CBSE Question Bank", "perk_description": "Previous 10 years solved papers.", "icon": "description", "display_order": 1 },
+    { "perk_id": "PRK-002", "package_id": "PKG-09-CBSE-E", "perk_title": "Weekly Mock Tests", "perk_description": "Simulated board exam environment.", "icon": "quiz", "display_order": 2 },
+    { "perk_id": "PRK-003", "package_id": "PKG-09-RBSE-H", "perk_title": "Hindi Medium Notes", "perk_description": "Handwritten notes by expert faculty.", "icon": "edit_note", "display_order": 1 },
+    { "perk_id": "PRK-004", "package_id": "PKG-10-CBSE-E", "perk_title": "Career Counseling", "perk_description": "Personalized session for stream selection.", "icon": "psychology", "display_order": 1 }
+  ]
+}
