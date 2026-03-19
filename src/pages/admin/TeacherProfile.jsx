@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { useTeachersQuery } from '../../features/teacher/hooks/useTeacherQueries';
+import { useTeacherDetailQuery } from '../../features/teacher/hooks/useTeacherQueries';
 
 // Sub-components
 import TeacherProfileHeader from '../../features/teacher/components/profile/TeacherProfileHeader';
@@ -8,16 +8,13 @@ import TeacherPersonalInfo from '../../features/teacher/components/profile/Teach
 import TeacherContactDetails from '../../features/teacher/components/profile/TeacherContactDetails';
 import TeacherProfessionalLog from '../../features/teacher/components/profile/TeacherProfessionalLog';
 import TeacherSalarySnapshot from '../../features/teacher/components/profile/TeacherSalarySnapshot';
-import Card from '../../components/ui/Card';
-import Badge from '../../components/ui/Badge';
 
 const TeacherProfile = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('Overview');
 
-  const { data: teachers = [], isLoading } = useTeachersQuery();
-  const teacher = teachers.find(t => t.teacher_id === id);
+  const { data: teacher, isLoading } = useTeacherDetailQuery(id);
 
   if (isLoading) {
     return (

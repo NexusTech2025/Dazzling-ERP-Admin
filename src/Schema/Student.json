@@ -1,0 +1,17 @@
+{
+  "entity": "Student",
+  "description": "Core identity and status of a student.",
+  "fields": [
+    { "name": "student_id", "type": "string", "isPrimary": true },
+    { "name": "student_name", "type": "string", "required": true },
+    { "name": "email", "type": "string", "isUnique": true },
+    { "name": "phone", "type": "string" },
+    { "name": "gender", "type": "enum", "values": ["Male", "Female", "Other"] },
+    { "name": "dob", "type": "date" },
+    { "name": "mother_name", "type": "string" },
+    { "name": "father_name", "type": "string" },
+    { "name": "avatarUrl", "type": "string" },
+    { "name": "status", "type": "enum", "values": ["active", "inactive", "applicant"], "default": "active" },
+    { "name": "created_at", "type": "datetime" }
+  ]
+}

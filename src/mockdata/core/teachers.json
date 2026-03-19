@@ -2,39 +2,55 @@
   "Teachers": [
     {
       "teacher_id": "TCH-001",
-      "branch_id": "BR-001",
+      "username": "rahul_physics",
       "teacher_name": "Rahul Sharma",
       "email": "rahul@academy.com",
       "mobile": "9812345678",
-      "specialization": "Physics",
-      "status": "active"
+      "department": "Physics",
+      "subject_code": "PHY-101",
+      "designation": "Senior Lecturer",
+      "branch_id": "BR-001",
+      "status": "active",
+      "avatarUrl": "https://api.dicebear.com/7.x/avataaars/svg?seed=Rahul"
     },
     {
       "teacher_id": "TCH-002",
-      "branch_id": "BR-001",
+      "username": "priya_math",
       "teacher_name": "Priya Singh",
       "email": "priya@academy.com",
       "mobile": "9812345679",
-      "specialization": "Mathematics",
-      "status": "active"
+      "department": "Mathematics",
+      "subject_code": "MATH-201",
+      "designation": "Assistant Professor",
+      "branch_id": "BR-001",
+      "status": "active",
+      "avatarUrl": "https://api.dicebear.com/7.x/avataaars/svg?seed=Priya"
     },
     {
       "teacher_id": "TCH-003",
-      "branch_id": "BR-002",
+      "username": "amit_comp",
       "teacher_name": "Amit Verma",
       "email": "amit@academy.com",
       "mobile": "9812345680",
-      "specialization": "Computer Applications",
-      "status": "active"
+      "department": "Computer Applications",
+      "subject_code": "COMP-301",
+      "designation": "HOD Computer Science",
+      "branch_id": "BR-002",
+      "status": "active",
+      "avatarUrl": "https://api.dicebear.com/7.x/avataaars/svg?seed=Amit"
     },
     {
       "teacher_id": "TCH-004",
-      "branch_id": "BR-002",
+      "username": "neha_comm",
       "teacher_name": "Neha Kapoor",
       "email": "neha@academy.com",
       "mobile": "9812345681",
-      "specialization": "Communication Skills",
-      "status": "active"
+      "department": "Communication Skills",
+      "subject_code": "COMM-101",
+      "designation": "Soft Skills Trainer",
+      "branch_id": "BR-002",
+      "status": "active",
+      "avatarUrl": "https://api.dicebear.com/7.x/avataaars/svg?seed=Neha"
     }
   ]
 }

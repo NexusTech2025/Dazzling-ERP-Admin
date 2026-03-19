@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../../context/AuthContextCore';
 import { queryKeys } from '../../../lib/react-query/queryKeys';
 // IMPORT FROM MOCK API FOR DEVELOPMENT
-import { fetchTeachers, createTeacher, removeTeacher } from '../api/teacher.mockApi';
+import { fetchTeachers, fetchTeacherDetail, createTeacher, updateTeacher, removeTeacher } from '../api/teacher.mockApi';
 
 /**
  * Hook for fetching all teachers
@@ -20,6 +20,25 @@ export const useTeachersQuery = (filter = {}) => {
       return response.data?.data || [];
     },
     enabled: !!token,
+  });
+};
+
+/**
+ * Hook for fetching a single teacher detail
+ */
+export const useTeacherDetailQuery = (id) => {
+  const { token } = useAuth();
+
+  return useQuery({
+    queryKey: queryKeys.teachers.detail(id),
+    queryFn: async ({ signal }) => {
+      const response = await fetchTeacherDetail(token, id, { signal });
+      if (!response.success) {
+        throw new Error(response.error?.message || response.message || 'Failed to fetch teacher details');
+      }
+      return response.data?.data || null;
+    },
+    enabled: !!token && !!id,
   });
 };
 
@@ -42,6 +61,24 @@ export const useCreateTeacherMutation = () => {
 };
 
 /**
+ * Hook for updating a teacher
+ */
+export const useUpdateTeacherMutation = () => {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, data, options }) => updateTeacher(token, id, data, options),
+    onSuccess: (response, { id }) => {
+      if (response.success) {
+        queryClient.invalidateQueries({ queryKey: queryKeys.teachers.all });
+        queryClient.invalidateQueries({ queryKey: queryKeys.teachers.detail(id) });
+      }
+    }
+  });
+};
+
+/**
  * Hook for deleting a teacher
  */
 export const useDeleteTeacherMutation = () => {
@@ -50,11 +87,10 @@ export const useDeleteTeacherMutation = () => {
 
   return useMutation({
     mutationFn: ({ id, options }) => removeTeacher(token, id, options),
-    onSuccess: (response, { id }) => {
+    onSuccess: (response) => {
       if (response.success) {
         queryClient.invalidateQueries({ queryKey: queryKeys.teachers.all });
       }
     }
   });
 };
-

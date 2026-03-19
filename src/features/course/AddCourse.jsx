@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useCreateCourseMutation } from './hooks/useCourseQueries';
+import { useCreateCourseMutation, useCourseTypesQuery, useCreateCourseTypeMutation } from './hooks/useCourseQueries';
 
 /**
  * Add Course Page
@@ -9,14 +9,33 @@ import { useCreateCourseMutation } from './hooks/useCourseQueries';
 const AddCourse = () => {
   const navigate = useNavigate();
   const createMutation = useCreateCourseMutation();
+  const { data: courseTypes = [], isLoading: isLoadingTypes } = useCourseTypesQuery();
+  const createTypeMutation = useCreateCourseTypeMutation();
+  
   const [error, setError] = useState(null);
 
   const [formData, setFormData] = useState({
     name: '',
+    short_code: '',
+    entity_type: 'subject', // 'subject' or 'course'
     description: '',
+    segment_id: '',
+    duration_value: 12,
+    duration_unit: 'months',
+    class_level: '',
+    min_class: '',
+    max_class: '',
+    board: '',
     base_fee: '',
     default_installment_count: 1,
     is_active: true
+  });
+
+  const [isCreatingType, setIsCreatingType] = useState(false);
+  const [newTypeData, setNewTypeData] = useState({
+    segment_name: '',
+    entity_label: 'Course',
+    description: ''
   });
 
   const handleChange = (e) => {
@@ -34,23 +53,49 @@ const AddCourse = () => {
     }));
   };
 
+  const handleCreateType = async () => {
+    if (!newTypeData.segment_name) return;
+    
+    createTypeMutation.mutate({ data: newTypeData }, {
+      onSuccess: (res) => {
+        if (res.success) {
+          setFormData(prev => ({ ...prev, segment_id: res.data.segment_id }));
+          setIsCreatingType(false);
+          setNewTypeData({ segment_name: '', entity_label: 'Course', description: '' });
+        }
+      }
+    });
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     setError(null);
 
     // Basic validation
-    if (!formData.name || !formData.base_fee) {
-      setError('Please fill in all required fields.');
+    if (!formData.name || !formData.base_fee || !formData.segment_id || !formData.short_code) {
+      setError('Please fill in all required fields, including the Short Code and Course Category.');
       return;
     }
 
+    const metadata = formData.entity_type === 'subject' 
+      ? { class: formData.class_level, board: formData.board }
+      : { min_class: formData.min_class, max_class: formData.max_class, is_skill_based: true };
+
+    const payload = {
+      ...formData,
+      course_id: `CRS-${Date.now().toString().slice(-6)}`,
+      base_fee: Number(formData.base_fee),
+      default_installment_count: Number(formData.default_installment_count),
+      duration_value: Number(formData.duration_value),
+      metadata: metadata
+    };
+
+    // Clean up temporary UI fields
+    const fieldsToRemove = ['class_level', 'min_class', 'max_class', 'board'];
+    fieldsToRemove.forEach(f => delete payload[f]);
+
     createMutation.mutate({
-      data: {
-        ...formData,
-        base_fee: Number(formData.base_fee),
-        default_installment_count: Number(formData.default_installment_count),
-        course_id: `CRS-${Date.now().toString().slice(-6)}` // Temporary client-side ID generation
-      }
+      data: payload
     }, {
       onSuccess: (res) => {
         if (res.success) {
@@ -77,8 +122,8 @@ const AddCourse = () => {
       </nav>
 
       <div className="flex flex-col gap-1">
-        <h1 className="text-3xl font-black text-text-main dark:text-white tracking-tight">Create New Course</h1>
-        <p className="text-text-secondary text-base">Register a new academic course with pricing and installment configurations.</p>
+        <h1 className="text-3xl font-black text-text-main dark:text-white tracking-tight">Create New Item</h1>
+        <p className="text-text-secondary text-base">Register a new subject or skill-based course in the curriculum.</p>
       </div>
 
       {error && (
@@ -90,35 +135,234 @@ const AddCourse = () => {
 
       <form onSubmit={handleSubmit} className="bg-surface-light dark:bg-surface-dark rounded-2xl border border-border-light dark:border-border-dark shadow-sm overflow-hidden">
         <div className="p-8 space-y-8">
+          {/* Entity Type Selector */}
+          <div className="flex items-center gap-2 p-1 bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-2xl w-fit">
+            <button 
+              type="button"
+              onClick={() => setFormData(prev => ({...prev, entity_type: 'subject'}))}
+              className={`px-6 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 ${formData.entity_type === 'subject' ? 'bg-primary text-white shadow-lg' : 'text-text-secondary hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+            >
+              <span className="material-symbols-outlined text-base">menu_book</span>
+              Academic Subject
+            </button>
+            <button 
+              type="button"
+              onClick={() => setFormData(prev => ({...prev, entity_type: 'course'}))}
+              className={`px-6 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 ${formData.entity_type === 'course' ? 'bg-primary text-white shadow-lg' : 'text-text-secondary hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+            >
+              <span className="material-symbols-outlined text-base">psychology</span>
+              Skill Course
+            </button>
+          </div>
+
           {/* Basic Info */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="md:col-span-2">
-              <h3 className="text-lg font-bold text-text-main dark:text-white mb-1">Course Details</h3>
-              <p className="text-sm text-text-secondary">General information about the academic offering.</p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="md:col-span-3">
+              <h3 className="text-lg font-bold text-text-main dark:text-white mb-1">Identity</h3>
+              <p className="text-sm text-text-secondary">Official name and code.</p>
             </div>
 
             <div className="md:col-span-2 space-y-2">
-              <label className="text-sm font-bold text-text-main dark:text-white">Course Name <span className="text-red-500">*</span></label>
+              <label className="text-sm font-bold text-text-main dark:text-white">{formData.entity_type === 'subject' ? 'Subject Name' : 'Course Name'} <span className="text-red-500">*</span></label>
               <input 
                 required
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
                 className="w-full bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-xl py-3 px-4 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all"
-                placeholder="e.g. Advanced Financial Accounting"
+                placeholder={formData.entity_type === 'subject' ? "e.g. Mathematics 10" : "e.g. Graphic Design Basics"}
               />
             </div>
 
-            <div className="md:col-span-2 space-y-2">
-              <label className="text-sm font-bold text-text-main dark:text-white">Description</label>
-              <textarea 
-                name="description"
-                value={formData.description}
+            <div className="md:col-span-1 space-y-2">
+              <label className="text-sm font-bold text-text-main dark:text-white">Short Code <span className="text-red-500">*</span></label>
+              <input 
+                required
+                name="short_code"
+                value={formData.short_code}
                 onChange={handleChange}
-                rows={4}
-                className="w-full bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-xl py-3 px-4 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all resize-none"
-                placeholder="Course objectives, content summary, and prerequisites..."
+                className="w-full bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-xl py-3 px-4 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all font-mono"
+                placeholder="e.g. MAT10"
               />
+            </div>
+
+            <div className="md:col-span-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-bold text-text-main dark:text-white">Category / Segment <span className="text-red-500">*</span></label>
+                <button 
+                  type="button" 
+                  onClick={() => setIsCreatingType(!isCreatingType)}
+                  className="text-xs font-bold text-primary hover:underline flex items-center gap-1"
+                >
+                  <span className="material-symbols-outlined text-[16px]">{isCreatingType ? 'list' : 'add'}</span>
+                  {isCreatingType ? 'Select Existing' : 'Create New'}
+                </button>
+              </div>
+
+              {isCreatingType ? (
+                <div className="bg-background-light dark:bg-background-dark/50 p-4 rounded-xl border border-border-light dark:border-border-dark space-y-4 animate-in fade-in zoom-in-95">
+                  <div className="flex gap-4">
+                    <div className="flex-1 space-y-1">
+                      <label className="text-xs font-bold text-text-secondary uppercase">Category Name</label>
+                      <input 
+                        value={newTypeData.segment_name}
+                        onChange={(e) => setNewTypeData({...newTypeData, segment_name: e.target.value})}
+                        className="w-full bg-white dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-lg py-2 px-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                        placeholder="e.g. Summer Camp 2026"
+                      />
+                    </div>
+                    <div className="w-1/3 space-y-1">
+                      <label className="text-xs font-bold text-text-secondary uppercase">Label</label>
+                      <select 
+                        value={newTypeData.entity_label}
+                        onChange={(e) => setNewTypeData({...newTypeData, entity_label: e.target.value})}
+                        className="w-full bg-white dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-lg py-2 px-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                      >
+                        <option value="Course">Course</option>
+                        <option value="Subject">Subject</option>
+                        <option value="Program">Program</option>
+                        <option value="Camp">Camp</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div className="flex justify-end">
+                    <button 
+                      type="button"
+                      onClick={handleCreateType}
+                      disabled={createTypeMutation.isPending || !newTypeData.segment_name}
+                      className="px-4 py-2 bg-text-main dark:bg-white text-white dark:text-text-main text-xs font-bold rounded-lg shadow-sm hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center gap-2"
+                    >
+                      {createTypeMutation.isPending ? 'Creating...' : 'Save & Select'}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <select 
+                  required
+                  name="segment_id"
+                  value={formData.segment_id}
+                  onChange={handleChange}
+                  className="w-full bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-xl py-3 px-4 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all appearance-none cursor-pointer"
+                >
+                  <option value="">{isLoadingTypes ? 'Loading...' : 'Select Category'}</option>
+                  {courseTypes.map(type => (
+                    <option key={type.segment_id} value={type.segment_id}>
+                      {type.segment_name} ({type.entity_label})
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+          </div>
+
+          {/* Classification & Duration */}
+          <div className="pt-8 border-t border-border-light dark:border-border-dark space-y-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="md:col-span-2">
+                <h3 className="text-lg font-bold text-text-main dark:text-white mb-1">
+                  {formData.entity_type === 'subject' ? 'Academic Classification' : 'Eligibility & Range'}
+                </h3>
+                <p className="text-sm text-text-secondary">Define target audience constraints.</p>
+              </div>
+
+              {formData.entity_type === 'subject' ? (
+                <>
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-text-main dark:text-white">Target Class</label>
+                    <select 
+                      name="class_level"
+                      value={formData.class_level}
+                      onChange={handleChange}
+                      className="w-full bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-xl py-3 px-4 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                    >
+                      <option value="">Select Class</option>
+                      {[...Array(12)].map((_, i) => (
+                        <option key={i+1} value={i+1}>Class {i+1}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-text-main dark:text-white">Educational Board</label>
+                    <select 
+                      name="board"
+                      value={formData.board}
+                      onChange={handleChange}
+                      className="w-full bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-xl py-3 px-4 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                    >
+                      <option value="">Select Board</option>
+                      <option value="CBSE">CBSE</option>
+                      <option value="RBSE">RBSE</option>
+                      <option value="ICSE">ICSE</option>
+                      <option value="IB">IB</option>
+                    </select>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-text-main dark:text-white">Min Class Eligibility</label>
+                    <select 
+                      name="min_class"
+                      value={formData.min_class}
+                      onChange={handleChange}
+                      className="w-full bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-xl py-3 px-4 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                    >
+                      <option value="">No Minimum</option>
+                      {[...Array(12)].map((_, i) => (
+                        <option key={i+1} value={i+1}>Class {i+1}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-text-main dark:text-white">Max Class Eligibility</label>
+                    <select 
+                      name="max_class"
+                      value={formData.max_class}
+                      onChange={handleChange}
+                      className="w-full bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-xl py-3 px-4 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                    >
+                      <option value="">No Maximum</option>
+                      {[...Array(12)].map((_, i) => (
+                        <option key={i+1} value={i+1}>Class {i+1}</option>
+                      ))}
+                    </select>
+                  </div>
+                </>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="md:col-span-2">
+                <h3 className="text-lg font-bold text-text-main dark:text-white mb-1">Duration Details</h3>
+                <p className="text-sm text-text-secondary">Define time commitment.</p>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-text-main dark:text-white">Duration Value <span className="text-red-500">*</span></label>
+                <input 
+                  required
+                  type="number"
+                  name="duration_value"
+                  value={formData.duration_value}
+                  onChange={handleChange}
+                  className="w-full bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-xl py-3 px-4 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                  placeholder="e.g. 12"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-text-main dark:text-white">Duration Unit</label>
+                <select 
+                  name="duration_unit"
+                  value={formData.duration_unit}
+                  onChange={handleChange}
+                  className="w-full bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-xl py-3 px-4 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all appearance-none cursor-pointer"
+                >
+                  <option value="months">Months</option>
+                  <option value="weeks">Weeks</option>
+                  <option value="days">Days</option>
+                </select>
+              </div>
             </div>
           </div>
 
@@ -126,7 +370,7 @@ const AddCourse = () => {
           <div className="pt-8 border-t border-border-light dark:border-border-dark grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="md:col-span-2">
               <h3 className="text-lg font-bold text-text-main dark:text-white mb-1">Pricing & Billing</h3>
-              <p className="text-sm text-text-secondary">Configure the fee structure and default payment plans.</p>
+              <p className="text-sm text-text-secondary">Configure the fee structure.</p>
             </div>
 
             <div className="space-y-2">
@@ -137,7 +381,7 @@ const AddCourse = () => {
                 name="base_fee"
                 value={formData.base_fee}
                 onChange={handleChange}
-                className="w-full bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-xl py-3 px-4 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                className="w-full bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-xl py-3 px-4 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all font-black text-primary"
                 placeholder="0.00"
               />
             </div>
@@ -168,7 +412,7 @@ const AddCourse = () => {
             <div className="md:col-span-2 flex items-center justify-between p-4 bg-background-light dark:bg-background-dark/50 rounded-2xl border border-border-light dark:border-border-dark">
               <div>
                 <span className="block text-sm font-bold text-text-main dark:text-white">Active Status</span>
-                <span className="text-xs text-text-secondary">Enable this course for student enrollment immediately.</span>
+                <span className="text-xs text-text-secondary">Enable immediately.</span>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input 
@@ -203,7 +447,7 @@ const AddCourse = () => {
                 <div className="size-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                 Saving...
               </>
-            ) : 'Save Course'}
+            ) : 'Save Item'}
           </button>
         </div>
       </form>

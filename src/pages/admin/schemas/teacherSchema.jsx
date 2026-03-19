@@ -12,7 +12,7 @@ export const createTeacherColumns = ({ onView, onEdit, onDelete, isDeleting } = 
         <ProfileCell 
           name={teacher.teacher_name} 
           subtitle={teacher.email} 
-          avatarUrl={teacher.avatar} 
+          avatarUrl={teacher.avatarUrl} 
           fallbackIcon="person"
         />
       )
@@ -28,13 +28,13 @@ export const createTeacherColumns = ({ onView, onEdit, onDelete, isDeleting } = 
       className: 'text-text-secondary'
     },
     {
-      header: 'Specialization',
-      accessor: 'specialization',
+      header: 'Department',
+      accessor: 'department',
       className: 'text-text-main dark:text-white font-medium'
     },
     {
-      header: 'Qualification',
-      render: (teacher) => teacher.qualification || 'PhD (Mock)' // Placeholder until added to JSON
+      header: 'Designation',
+      accessor: 'designation'
     },
     {
       header: 'Status',

@@ -206,7 +206,7 @@ const EnrollmentStep = ({
                     key={course.course_id}
                     program={{
                       id: course.course_id,
-                      name: course.item_name,
+                      name: course.name,
                       base_fee: course.base_fee || 0,
                       batch: '2026 January Batch',
                       type: 'Full-time',

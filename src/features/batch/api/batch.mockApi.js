@@ -21,10 +21,10 @@ export const fetchBatches = async (token, filter = {}, options = {}) => {
     
     return {
       ...batch,
-      course_name: course ? course.item_name : 'Unknown Course',
+      course_name: course ? course.name : 'Unknown Course',
       teacher_name: teacher ? teacher.teacher_name : 'Unassigned',
-      schedule_days: batch.schedule_json?.days_of_week?.join('/') || 'N/A',
-      schedule_time: batch.schedule_json?.start_time || 'N/A'
+      schedule_days: batch.schedule?.days_of_week?.join('/') || 'N/A',
+      schedule_time: batch.schedule?.start_time || 'N/A'
     };
   });
 
@@ -59,10 +59,10 @@ export const fetchBatchDetails = async (token, id, options = {}) => {
   
   const enrichedBatch = {
     ...batch,
-    course_name: course ? course.item_name : 'Unknown Course',
+    course_name: course ? course.name : 'Unknown Course',
     teacher_name: teacher ? teacher.teacher_name : 'Unassigned',
-    schedule_days: batch.schedule_json?.days_of_week?.join(', ') || 'N/A',
-    schedule_time: `${batch.schedule_json?.start_time || ''} - ${batch.schedule_json?.end_time || ''}`
+    schedule_days: batch.schedule?.days_of_week?.join(', ') || 'N/A',
+    schedule_time: `${batch.schedule?.start_time || ''} - ${batch.schedule?.end_time || ''}`
   };
 
   return { success: true, data: { data: enrichedBatch } };
@@ -196,7 +196,7 @@ export const fetchMasterTimetable = async (token, day = 'Monday', options = {}) 
       return {
         id: `${batch.batch_id}-${idx}`,
         time,
-        subject: course?.item_name || "General Session",
+        subject: course?.name || "General Session",
         teacher: teacher?.teacher_name || "Faculty",
         room: `Room ${100 + idx + 1}`,
         color: idx % 2 === 0 ? 'teal' : 'blue'

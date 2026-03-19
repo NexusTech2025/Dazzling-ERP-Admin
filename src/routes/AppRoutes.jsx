@@ -21,6 +21,7 @@ import AddTeacher from '../pages/admin/AddTeacher';
 import Courses from '../features/course/Courses';
 import CourseDetails from '../features/course/CourseDetails';
 import AddCourse from '../features/course/AddCourse';
+import CoursePackages from '../features/course/CoursePackages';
 import FinanceDashboard from '../features/finance/FinanceDashboard';
 import Installments from '../features/finance/Installments';
 import OverdueAccounts from '../features/finance/OverdueAccounts';
@@ -69,6 +70,7 @@ const AppRoutes = () => {
         {/* Course Management */}
         <Route path="courses" element={<Courses />} />
         <Route path="courses/add" element={<AddCourse />} />
+        <Route path="courses/packages" element={<CoursePackages />} />
         <Route path="courses/:id" element={<CourseDetails />} />
 
         {/* Finance Management */}

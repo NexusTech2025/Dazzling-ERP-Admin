@@ -1,0 +1,34 @@
+{
+  "Installments": [
+    {
+      "installment_id": "INST-001",
+      "student_fee_id": "SFA-2026-001",
+      "installment_number": 1,
+      "due_amount": 500,
+      "paid_amount": 500,
+      "late_fee_amount": 0,
+      "due_date": "2026-03-18",
+      "status": "paid"
+    },
+    {
+      "installment_id": "INST-002",
+      "student_fee_id": "SFA-2026-001",
+      "installment_number": 2,
+      "due_amount": 425,
+      "paid_amount": 0,
+      "late_fee_amount": 0,
+      "due_date": "2026-05-01",
+      "status": "pending"
+    },
+    {
+      "installment_id": "INST-003",
+      "student_fee_id": "SFA-2026-001",
+      "installment_number": 3,
+      "due_amount": 425,
+      "paid_amount": 0,
+      "late_fee_amount": 0,
+      "due_date": "2026-08-01",
+      "status": "pending"
+    }
+  ]
+}

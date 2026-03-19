@@ -1,0 +1,30 @@
+{
+  "entity": "Course",
+  "description": "Individual subjects or academic offerings provided by the institute. Supports both strict curriculum subjects and flexible skill-based courses.",
+  "fields": [
+    { "name": "course_id", "type": "string", "isPrimary": true },
+    { "name": "segment_id", "type": "string", "isForeignKey": true, "references": "CourseType.segment_id" },
+    { 
+      "name": "entity_type", 
+      "type": "enum", 
+      "values": ["subject", "course"], 
+      "description": "'subject' for strict curriculum items, 'course' for flexible/skill-based programs."
+    },
+    { "name": "name", "type": "string", "required": true },
+    { "name": "short_code", "type": "string", "isUnique": true },
+    { "name": "description", "type": "string" },
+    { "name": "duration_value", "type": "integer" },
+    { "name": "duration_unit", "type": "enum", "values": ["months", "days", "weeks"], "default": "months" },
+    { "name": "base_fee", "type": "number", "required": true },
+    { "name": "default_installment_count", "type": "integer", "default": 1 },
+    { "name": "status", "type": "enum", "values": ["active", "inactive"], "default": "active" },
+    { 
+      "name": "metadata", 
+      "type": "json", 
+      "description": "Dynamic attributes. For subjects: {class, board}. For courses: {min_class, max_class, is_skill_based}." 
+    }
+  ],
+  "relations": [
+    { "type": "N:1", "target": "CourseType", "field": "segment_id" }
+  ]
+}

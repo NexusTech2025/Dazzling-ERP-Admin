@@ -1,0 +1,16 @@
+{
+  "entity": "FeeAdjustment",
+  "description": "Financial adjustments like scholarships or referral discounts applied to a student's balance.",
+  "fields": [
+    { "name": "adjustment_id", "type": "string", "isPrimary": true },
+    { "name": "student_fee_id", "type": "string", "isForeignKey": true, "references": "StudentFeeAccount.student_fee_id" },
+    { "name": "adjustment_type", "type": "enum", "values": ["scholarship", "coupon", "referral", "manual"] },
+    { "name": "amount", "type": "number", "required": true },
+    { "name": "reason", "type": "string" },
+    { "name": "created_by", "type": "string" },
+    { "name": "created_at", "type": "datetime" }
+  ],
+  "relations": [
+    { "type": "N:1", "target": "StudentFeeAccount", "field": "student_fee_id" }
+  ]
+}

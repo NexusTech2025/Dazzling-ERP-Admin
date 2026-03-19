@@ -1,4 +1,5 @@
 import initialCourses from '../../../mockdata/academic/courses.json';
+import initialPackages from '../../../mockdata/academic/packages.json';
 import { simulateDelay } from '../../../lib/mockData';
 
 /**
@@ -8,6 +9,29 @@ import { simulateDelay } from '../../../lib/mockData';
 
 // Maintain local state for course persistence
 let mockCourses = [...initialCourses.Course];
+let mockCourseTypes = [...initialCourses.CourseType];
+let mockPackages = [...initialPackages.Packages];
+
+// --- COURSE TYPES (SEGMENTS) ---
+
+export const fetchCourseTypes = async (token, options = {}) => {
+  await simulateDelay();
+  return { success: true, data: { data: [...mockCourseTypes] } };
+};
+
+export const createCourseType = async (token, data, options = {}) => {
+  await simulateDelay(600);
+  const newType = {
+    segment_id: `SEG-${Date.now().toString().slice(-4)}`,
+    status: 'active',
+    ...data
+  };
+  mockCourseTypes.push(newType);
+  return { success: true, message: "Course Type created successfully", data: newType };
+};
+
+
+// --- COURSES ---
 
 export const fetchCourses = async (token, filter = {}, options = {}) => {
   await simulateDelay();
@@ -17,7 +41,7 @@ export const fetchCourses = async (token, filter = {}, options = {}) => {
   if (filter.status === 'Inactive') filtered = filtered.filter(c => c.status !== 'active');
   if (filter.search) {
     const s = filter.search.toLowerCase();
-    filtered = filtered.filter(c => c.item_name.toLowerCase().includes(s) || c.course_id.toLowerCase().includes(s));
+    filtered = filtered.filter(c => c.name.toLowerCase().includes(s) || c.course_id.toLowerCase().includes(s));
   }
 
   return { success: true, data: { data: filtered } };
@@ -56,4 +80,27 @@ export const deleteCourse = async (token, id, options = {}) => {
   
   mockCourses.splice(index, 1);
   return { success: true, message: "Course deleted successfully" };
+};
+
+
+// --- PACKAGES ---
+
+export const fetchPackages = async (token, filter = {}, options = {}) => {
+  await simulateDelay();
+  let filtered = [...mockPackages];
+  if (filter.search) {
+    const s = filter.search.toLowerCase();
+    filtered = filtered.filter(p => p.name.toLowerCase().includes(s) || p.package_id.toLowerCase().includes(s));
+  }
+  return { success: true, data: { data: filtered } };
+};
+
+export const createPackage = async (token, data, options = {}) => {
+  await simulateDelay(800);
+  const newPackage = {
+    ...data,
+    created_at: new Date().toISOString()
+  };
+  mockPackages.push(newPackage);
+  return { success: true, message: "Package created successfully", data: newPackage };
 };

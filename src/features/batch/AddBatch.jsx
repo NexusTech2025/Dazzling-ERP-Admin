@@ -24,7 +24,7 @@ const AddBatch = () => {
     capacity: 30,
     start_date: '',
     end_date: '',
-    schedule_json: {
+    schedule: {
       days_of_week: ['Mon', 'Wed', 'Fri'],
       start_time: '09:00',
       end_time: '11:00'
@@ -41,7 +41,7 @@ const AddBatch = () => {
         capacity: batchToEdit.capacity || 30,
         start_date: batchToEdit.start_date || '',
         end_date: batchToEdit.end_date || '',
-        schedule_json: batchToEdit.schedule_json || {
+        schedule: batchToEdit.schedule || {
           days_of_week: ['Mon', 'Wed', 'Fri'],
           start_time: '09:00',
           end_time: '11:00'
@@ -52,11 +52,11 @@ const AddBatch = () => {
 
   const handleDayToggle = (day) => {
     setFormData(prev => {
-      const days = [...prev.schedule_json.days_of_week];
+      const days = [...prev.schedule.days_of_week];
       if (days.includes(day)) {
-        return { ...prev, schedule_json: { ...prev.schedule_json, days_of_week: days.filter(d => d !== day) } };
+        return { ...prev, schedule: { ...prev.schedule, days_of_week: days.filter(d => d !== day) } };
       } else {
-        return { ...prev, schedule_json: { ...prev.schedule_json, days_of_week: [...days, day] } };
+        return { ...prev, schedule: { ...prev.schedule, days_of_week: [...days, day] } };
       }
     });
   };
@@ -116,7 +116,7 @@ const AddBatch = () => {
                   className="w-full rounded-lg border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark focus:ring-primary focus:border-primary h-12 px-4 transition-colors"
                 >
                   <option value="" disabled>Select Course</option>
-                  {courses.map(c => <option key={c.course_id} value={c.course_id}>{c.item_name}</option>)}
+                  {courses.map(c => <option key={c.course_id} value={c.course_id}>{c.name}</option>)}
                 </select>
               </div>
 
@@ -193,7 +193,7 @@ const AddBatch = () => {
               <label className="text-sm font-medium text-text-secondary">Batch Schedule (Days)</label>
               <div className="flex flex-wrap gap-3">
                 {daysOfWeek.map(day => {
-                  const isSelected = formData.schedule_json.days_of_week.includes(day);
+                  const isSelected = formData.schedule.days_of_week.includes(day);
                   return (
                     <label key={day} className="cursor-pointer">
                       <input 
@@ -220,8 +220,8 @@ const AddBatch = () => {
                 <label className="text-sm font-medium text-text-secondary">Start Time</label>
                 <input 
                   type="time"
-                  value={formData.schedule_json.start_time}
-                  onChange={e => setFormData({...formData, schedule_json: {...formData.schedule_json, start_time: e.target.value}})}
+                  value={formData.schedule.start_time}
+                  onChange={e => setFormData({...formData, schedule: {...formData.schedule, start_time: e.target.value}})}
                   className="w-full px-4 rounded-lg border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark focus:ring-primary focus:border-primary h-12 transition-colors"
                 />
               </div>
@@ -229,8 +229,8 @@ const AddBatch = () => {
                 <label className="text-sm font-medium text-text-secondary">End Time</label>
                 <input 
                   type="time"
-                  value={formData.schedule_json.end_time}
-                  onChange={e => setFormData({...formData, schedule_json: {...formData.schedule_json, end_time: e.target.value}})}
+                  value={formData.schedule.end_time}
+                  onChange={e => setFormData({...formData, schedule: {...formData.schedule, end_time: e.target.value}})}
                   className="w-full px-4 rounded-lg border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark focus:ring-primary focus:border-primary h-12 transition-colors"
                 />
               </div>

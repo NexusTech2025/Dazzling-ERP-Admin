@@ -1,0 +1,44 @@
+{
+  "StudentFeeAccounts": [
+    {
+      "student_fee_id": "SFA-2026-001",
+      "enrollment_id": "ENR-001",
+      "fee_plan_id": "FPL-ACA-001",
+      "total_fee": 1500,
+      "discount": 150,
+      "adjustment_type": "scholarship",
+      "coupon_code": null,
+      "final_fee": 1350,
+      "amount_paid": 500,
+      "balance_due": 850,
+      "is_overdue": false,
+      "penalty_amount": 0,
+      "next_due_date": "2026-05-01",
+      "status": "active",
+      "remarks": "Merit scholarship applied based on entrance score.",
+      "created_by": "ADMIN-01",
+      "created_at": "2026-03-18T10:30:00Z",
+      "updated_at": "2026-03-18T10:30:00Z"
+    },
+    {
+      "student_fee_id": "SFA-2026-002",
+      "enrollment_id": "ENR-002",
+      "fee_plan_id": "FPL-CMP-001",
+      "total_fee": 2500,
+      "discount": 0,
+      "adjustment_type": "none",
+      "coupon_code": null,
+      "final_fee": 2500,
+      "amount_paid": 2500,
+      "balance_due": 0,
+      "is_overdue": false,
+      "penalty_amount": 0,
+      "next_due_date": null,
+      "status": "completed",
+      "remarks": "Full payment made at time of admission.",
+      "created_by": "ADMIN-01",
+      "created_at": "2026-03-18T11:00:00Z",
+      "updated_at": "2026-03-18T11:00:00Z"
+    }
+  ]
+}

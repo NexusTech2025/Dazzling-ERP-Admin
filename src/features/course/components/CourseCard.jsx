@@ -27,7 +27,7 @@ const CourseCard = ({ course, onDelete }) => {
         
         {/* Absolute delete button for admin */}
         <button 
-          onClick={() => onDelete(course.course_id, course.item_name)}
+          onClick={() => onDelete(course.course_id, course.name)}
           className="absolute top-2 right-2 p-1.5 bg-black/10 hover:bg-red-500 text-white rounded-lg transition-all opacity-0 group-hover:opacity-100 backdrop-blur-sm"
         >
           <span className="material-symbols-outlined text-[18px]">delete</span>
@@ -37,7 +37,7 @@ const CourseCard = ({ course, onDelete }) => {
       <div className="flex flex-1 flex-col p-6">
         <div className="mb-4">
           <h4 className="text-lg font-bold text-text-main dark:text-white line-clamp-1">
-            {course.item_name}
+            {course.name}
           </h4>
           <p className="text-xs font-bold text-text-secondary uppercase tracking-tighter mt-1">
             {course.segment_name || 'Academic'} • {course.duration_value} {course.duration_unit}

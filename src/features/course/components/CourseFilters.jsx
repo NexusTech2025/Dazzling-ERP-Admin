@@ -8,7 +8,8 @@ const CourseFilters = ({
   onSegmentChange,
   viewMode,
   onViewModeChange,
-  availableSegments = [] 
+  availableSegments = [],
+  showSegmentFilter = true
 }) => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-12 gap-4 rounded-xl border border-border-light dark:border-border-dark bg-surface-light dark:bg-surface-dark p-4 shadow-sm">
@@ -23,14 +24,16 @@ const CourseFilters = ({
 
       {/* Segment / Department Filter */}
       <div className="md:col-span-7 lg:col-span-8 flex flex-wrap gap-3 items-center">
-        <div className="min-w-[160px]">
-          <SelectFilter 
-            value={segmentFilter}
-            onChange={onSegmentChange}
-            options={availableSegments}
-            defaultLabel="All Segments"
-          />
-        </div>
+        {showSegmentFilter && (
+          <div className="min-w-[160px]">
+            <SelectFilter 
+              value={segmentFilter}
+              onChange={onSegmentChange}
+              options={availableSegments}
+              defaultLabel="All Segments"
+            />
+          </div>
+        )}
 
         {/* View Mode Toggles */}
         <div className="ml-auto flex items-center gap-2 bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-xl p-1 shadow-inner">

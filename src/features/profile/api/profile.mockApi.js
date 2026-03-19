@@ -42,7 +42,7 @@ export const fetchProfileDetails = async (token, studentId, options = {}) => {
       
       return {
         ...enr,
-        course_name: course ? course.item_name : "Unknown Course",
+        course_name: course ? course.name : "Unknown Course",
         batch_name: batch ? batch.batch_name : "Unknown Batch",
         duration: course ? `${course.duration_value} ${course.duration_unit}` : "N/A"
       };

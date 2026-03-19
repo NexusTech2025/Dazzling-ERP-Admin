@@ -2,7 +2,40 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../../context/AuthContextCore';
 import { queryKeys } from '../../../lib/react-query/queryKeys';
 // IMPORT FROM MOCK API FOR DEVELOPMENT
-import { fetchCourses, fetchCourseDetail, createCourse, updateCourse, deleteCourse } from '../api/course.mockApi';
+import { fetchCourses, fetchCourseDetail, createCourse, updateCourse, deleteCourse, fetchCourseTypes, createCourseType, fetchPackages, createPackage } from '../api/course.mockApi';
+
+// --- COURSE TYPES ---
+
+export const useCourseTypesQuery = () => {
+  const { token } = useAuth();
+  return useQuery({
+    queryKey: ['courseTypes'], // You can add this to queryKeys if needed
+    queryFn: async ({ signal }) => {
+      const response = await fetchCourseTypes(token, { signal });
+      if (!response.success) {
+        throw new Error(response.error?.message || response.message || 'Failed to fetch course types');
+      }
+      return response.data?.data || [];
+    },
+    enabled: !!token,
+  });
+};
+
+export const useCreateCourseTypeMutation = () => {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ data, options }) => createCourseType(token, data, options),
+    onSuccess: (response) => {
+      if (response.success) {
+        queryClient.invalidateQueries({ queryKey: ['courseTypes'] });
+      }
+    }
+  });
+};
+
+// --- COURSES ---
 
 /**
  * Hook for fetching all courses
@@ -89,6 +122,37 @@ export const useDeleteCourseMutation = () => {
     onSuccess: (response) => {
       if (response.success) {
         queryClient.invalidateQueries({ queryKey: queryKeys.courses.all });
+      }
+    }
+  });
+};
+
+// --- PACKAGES ---
+
+export const usePackagesQuery = (filter = {}) => {
+  const { token } = useAuth();
+  return useQuery({
+    queryKey: ['packages', filter],
+    queryFn: async ({ signal }) => {
+      const response = await fetchPackages(token, filter, { signal });
+      if (!response.success) {
+        throw new Error(response.error?.message || response.message || 'Failed to fetch packages');
+      }
+      return response.data?.data || [];
+    },
+    enabled: !!token,
+  });
+};
+
+export const useCreatePackageMutation = () => {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ data, options }) => createPackage(token, data, options),
+    onSuccess: (response) => {
+      if (response.success) {
+        queryClient.invalidateQueries({ queryKey: ['packages'] });
       }
     }
   });

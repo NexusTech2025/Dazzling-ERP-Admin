@@ -9,7 +9,12 @@
       "start_date": "2026-04-01",
       "end_date": "2027-03-30",
       "capacity": 40,
-      "status": "active"
+      "status": "active",
+      "schedule": {
+        "days_of_week": ["Mon", "Wed", "Fri"],
+        "start_time": "09:00",
+        "end_time": "11:00"
+      }
     },
     {
       "batch_id": "BAT-002",
@@ -20,7 +25,12 @@
       "start_date": "2026-04-01",
       "end_date": "2027-02-28",
       "capacity": 35,
-      "status": "active"
+      "status": "active",
+      "schedule": {
+        "days_of_week": ["Tue", "Thu", "Sat"],
+        "start_time": "16:00",
+        "end_time": "18:00"
+      }
     },
     {
       "batch_id": "BAT-003",
@@ -31,7 +41,12 @@
       "start_date": "2026-05-01",
       "end_date": "2026-11-01",
       "capacity": 25,
-      "status": "active"
+      "status": "active",
+      "schedule": {
+        "days_of_week": ["Mon", "Tue", "Wed", "Thu", "Fri"],
+        "start_time": "10:00",
+        "end_time": "12:00"
+      }
     },
     {
       "batch_id": "BAT-004",
@@ -42,7 +57,12 @@
       "start_date": "2026-05-01",
       "end_date": "2026-08-01",
       "capacity": 20,
-      "status": "active"
+      "status": "active",
+      "schedule": {
+        "days_of_week": ["Mon", "Wed", "Fri"],
+        "start_time": "18:30",
+        "end_time": "20:30"
+      }
     },
     {
       "batch_id": "BAT-005",
@@ -53,7 +73,12 @@
       "start_date": "2026-04-15",
       "end_date": "2026-07-15",
       "capacity": 30,
-      "status": "active"
+      "status": "active",
+      "schedule": {
+        "days_of_week": ["Sat", "Sun"],
+        "start_time": "09:00",
+        "end_time": "13:00"
+      }
     },
     {
       "batch_id": "BAT-006",
@@ -64,7 +89,12 @@
       "start_date": "2026-04-10",
       "end_date": "2026-06-10",
       "capacity": 25,
-      "status": "active"
+      "status": "active",
+      "schedule": {
+        "days_of_week": ["Tue", "Thu"],
+        "start_time": "14:00",
+        "end_time": "16:00"
+      }
     }
   ]
 }

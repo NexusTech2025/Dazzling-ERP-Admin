@@ -1,0 +1,18 @@
+{
+  "entity": "ContactInfo",
+  "description": "Communication and emergency contact details for students.",
+  "fields": [
+    { "name": "contact_id", "type": "string", "isPrimary": true },
+    { "name": "student_id", "type": "string", "isForeignKey": true, "references": "Student.student_id" },
+    { "name": "address_id", "type": "string", "isForeignKey": true, "references": "Address.address_id" },
+    { "name": "email", "type": "string" },
+    { "name": "mobile_number", "type": "string" },
+    { "name": "emergency_name", "type": "string" },
+    { "name": "emergency_phone", "type": "string" },
+    { "name": "emergency_relationship", "type": "string" }
+  ],
+  "relations": [
+    { "type": "1:1", "target": "Student", "field": "student_id" },
+    { "type": "N:1", "target": "Address", "field": "address_id" }
+  ]
+}

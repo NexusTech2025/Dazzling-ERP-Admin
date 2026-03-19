@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 const StatCard = ({ title, value, trend, trendValue, icon, iconBg, iconColor }) => (
   <div className="bg-surface-light dark:bg-surface-dark p-6 rounded-xl border border-border-light dark:border-border-dark shadow-sm">
@@ -35,10 +36,13 @@ const Dashboard = () => {
             <span className="material-symbols-outlined text-lg">download</span>
             Export Report
           </button>
-          <button className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-dark transition-colors shadow-sm shadow-primary/30">
+          <Link 
+            to="/admin/students/add" 
+            className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-dark transition-colors shadow-sm shadow-primary/30"
+          >
             <span className="material-symbols-outlined text-lg">add</span>
             New Registration
-          </button>
+          </Link>
         </div>
       </div>
 

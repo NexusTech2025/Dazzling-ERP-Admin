@@ -1,0 +1,17 @@
+{
+  "entity": "Enrollment",
+  "description": "Academic link between a student, their course/package, and their specific batch.",
+  "fields": [
+    { "name": "enrollment_id", "type": "string", "isPrimary": true },
+    { "name": "student_id", "type": "string", "isForeignKey": true, "references": "Student.student_id" },
+    { "name": "item_id", "type": "string", "description": "References either Course.course_id or Package.package_id" },
+    { "name": "batch_id", "type": "string", "isForeignKey": true, "references": "Batch.batch_id" },
+    { "name": "roll_number", "type": "integer" },
+    { "name": "enrollment_date", "type": "date" },
+    { "name": "status", "type": "enum", "values": ["active", "completed", "withdrawn"], "default": "active" }
+  ],
+  "relations": [
+    { "type": "N:1", "target": "Student", "field": "student_id" },
+    { "type": "N:1", "target": "Batch", "field": "batch_id" }
+  ]
+}

@@ -1,13 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useAuth } from '../../context/AuthContextCore';
-import { addTeacher } from '../../services/api';
+import { useCreateTeacherMutation } from '../../features/teacher/hooks/useTeacherQueries';
 
 const AddTeacher = () => {
-  const { token } = useAuth();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const [error, setError] = useState(null);
 
   const [formData, setFormData] = useState({
@@ -18,7 +14,9 @@ const AddTeacher = () => {
     // Profile Data
     name: '',
     subject_code: '',
+    department: '',
     designation: '',
+    mobile: '',
     avatarUrl: ''
   });
 
@@ -27,23 +25,7 @@ const AddTeacher = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const addMutation = useMutation({
-    mutationFn: (data) => addTeacher(token, data.userData, data.profileData),
-    onSuccess: (response) => {
-      if (response.success) {
-        queryClient.invalidateQueries({ queryKey: ['teachers'] });
-        alert('Teacher registered successfully!');
-        navigate('/admin/teachers');
-      } else {
-        console.error('Add Teacher API Error:', response);
-        setError(response.error?.message || response.message || 'Failed to register teacher');
-      }
-    },
-    onError: (err) => {
-      console.error('Add Teacher Page Error:', err);
-      setError('Connection error. Please try again.');
-    }
-  });
+  const addMutation = useCreateTeacherMutation();
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -58,11 +40,25 @@ const AddTeacher = () => {
     const profileData = {
       name: formData.name,
       subject_code: formData.subject_code,
+      department: formData.department,
       designation: formData.designation,
+      mobile: formData.mobile,
       avatarUrl: formData.avatarUrl
     };
 
-    addMutation.mutate({ userData, profileData });
+    addMutation.mutate({ userData, profileData }, {
+      onSuccess: (response) => {
+        if (response.success) {
+          alert('Teacher registered successfully!');
+          navigate('/admin/teachers');
+        } else {
+          setError(response.error?.message || response.message || 'Failed to register teacher');
+        }
+      },
+      onError: (err) => {
+        setError(err.message || 'Connection error. Please try again.');
+      }
+    });
   };
 
   return (
@@ -163,7 +159,18 @@ const AddTeacher = () => {
               />
             </div>
             <div>
-              <label className="block text-sm font-semibold mb-2">Subject Code / Department</label>
+              <label className="block text-sm font-semibold mb-2">Department</label>
+              <input 
+                required
+                name="department"
+                value={formData.department}
+                onChange={handleChange}
+                className="w-full bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-xl py-2.5 px-4 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
+                placeholder="e.g. Physics Department"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold mb-2">Subject Code</label>
               <input 
                 required
                 name="subject_code"
@@ -171,6 +178,17 @@ const AddTeacher = () => {
                 onChange={handleChange}
                 className="w-full bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-xl py-2.5 px-4 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
                 placeholder="e.g. PHY-101"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold mb-2">Mobile Number</label>
+              <input 
+                required
+                name="mobile"
+                value={formData.mobile}
+                onChange={handleChange}
+                className="w-full bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-xl py-2.5 px-4 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
+                placeholder="e.g. 9812345678"
               />
             </div>
             <div className="md:col-span-2">

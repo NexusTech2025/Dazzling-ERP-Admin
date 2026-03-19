@@ -1,0 +1,20 @@
+{
+  "entity": "Teacher",
+  "description": "Faculty member profiles and professional data.",
+  "fields": [
+    { "name": "teacher_id", "type": "string", "isPrimary": true },
+    { "name": "username", "type": "string", "isUnique": true },
+    { "name": "teacher_name", "type": "string", "required": true },
+    { "name": "email", "type": "string", "isUnique": true },
+    { "name": "mobile", "type": "string" },
+    { "name": "department", "type": "string" },
+    { "name": "subject_code", "type": "string" },
+    { "name": "designation", "type": "string" },
+    { "name": "branch_id", "type": "string", "isForeignKey": true, "references": "Branch.branch_id" },
+    { "name": "avatarUrl", "type": "string" },
+    { "name": "status", "type": "enum", "values": ["active", "inactive"], "default": "active" }
+  ],
+  "relations": [
+    { "type": "N:1", "target": "Branch", "field": "branch_id" }
+  ]
+}

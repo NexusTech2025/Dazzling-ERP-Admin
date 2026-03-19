@@ -1,0 +1,44 @@
+{
+  "FeePlans": [
+    {
+      "fee_plan_id": "FPL-ACA-001",
+      "entity_id": "ITEM-ACA-001",
+      "entity_type": "course",
+      "plan_name": "Standard Physics 12-Month",
+      "total_fee": 1500,
+      "discount_allowed": true,
+      "installment_allowed": true,
+      "created_at": "2026-03-18T10:00:00Z"
+    },
+    {
+      "fee_plan_id": "FPL-ACA-002",
+      "entity_id": "ITEM-ACA-002",
+      "entity_type": "course",
+      "plan_name": "Standard Math 10-Month",
+      "total_fee": 1500,
+      "discount_allowed": true,
+      "installment_allowed": true,
+      "created_at": "2026-03-18T10:00:00Z"
+    },
+    {
+      "fee_plan_id": "FPL-CMP-001",
+      "entity_id": "ITEM-CMP-001",
+      "entity_type": "course",
+      "plan_name": "DCA Full Program",
+      "total_fee": 2500,
+      "discount_allowed": false,
+      "installment_allowed": true,
+      "created_at": "2026-03-18T10:00:00Z"
+    },
+    {
+      "fee_plan_id": "FPL-PKG-001",
+      "entity_id": "PKG-2024-001",
+      "entity_type": "package",
+      "plan_name": "Science Bundle Discounted",
+      "total_fee": 399,
+      "discount_allowed": false,
+      "installment_allowed": false,
+      "created_at": "2026-03-18T10:00:00Z"
+    }
+  ]
+}

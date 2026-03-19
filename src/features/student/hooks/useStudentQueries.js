@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../../context/AuthContextCore';
 import { queryKeys } from '../../../lib/react-query/queryKeys';
 // IMPORT FROM MOCK API FOR DEVELOPMENT
-import { fetchStudents, createStudent, modifyStudent, removeStudent } from '../api/student.mockApi';
+import { fetchStudents, createStudent, modifyStudent, removeStudent, registerStudentTransaction } from '../api/student.mockApi';
 
 /**
  * Hook for fetching all students with optional filtering
@@ -24,7 +24,25 @@ export const useStudentsQuery = (filter = {}) => {
 };
 
 /**
- * Hook for creating a new student
+ * Hook for the full 5-step registration wizard transaction
+ */
+export const useRegisterStudentMutation = () => {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (registrationData) => 
+      registerStudentTransaction(token, registrationData),
+    onSuccess: (response) => {
+      if (response.success) {
+        queryClient.invalidateQueries({ queryKey: queryKeys.students.all });
+      }
+    }
+  });
+};
+
+/**
+ * Hook for creating a new student (simple profile)
  */
 export const useCreateStudentMutation = () => {
   const { token } = useAuth();
@@ -70,7 +88,6 @@ export const useDeleteStudentMutation = () => {
     mutationFn: ({ id, options }) => removeStudent(token, id, options),
     onSuccess: (response, { id }) => {
       if (response.success) {
-        // Optimistic cache update or broad invalidation
         queryClient.invalidateQueries({ queryKey: queryKeys.students.all });
       }
     }

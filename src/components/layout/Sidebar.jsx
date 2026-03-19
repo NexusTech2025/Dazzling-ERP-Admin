@@ -20,7 +20,14 @@ const Sidebar = () => {
         { name: 'OverDue', path: '/admin/finance/overdue' }
       ]
     },
-    { name: 'Students', path: '/admin/students', icon: 'school' },
+    { 
+      name: 'Students', 
+      icon: 'school',
+      subItems: [
+        { name: 'Student Directory', path: '/admin/students' },
+        { name: 'New Registration', path: '/admin/students/add' }
+      ]
+    },
     { name: 'Teachers', path: '/admin/teachers', icon: 'person_apron' },
   ];
 
