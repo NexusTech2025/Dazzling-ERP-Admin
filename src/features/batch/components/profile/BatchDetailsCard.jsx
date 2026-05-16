@@ -14,7 +14,7 @@ const BatchDetailsCard = ({ batch }) => {
         <DetailItem 
           icon="person" 
           label="Primary Instructor" 
-          value={batch.instructor_name || batch.teacher_name} 
+          value={batch.instructor_name} 
           subValue="Faculty" 
         />
         <DetailItem 
@@ -26,7 +26,7 @@ const BatchDetailsCard = ({ batch }) => {
         <DetailItem 
           icon="location_on" 
           label="Branch" 
-          value={batch.branch_id === 'BR-001' ? 'Main Campus' : 'City Center'} 
+          value={batch.branch_name} 
           subValue="Classroom 101" 
         />
         <DetailItem 

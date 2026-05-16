@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useBatchDetailQuery, useBatchStudentsQuery } from '../../features/batch/hooks/useBatchQueries';
+import { useCourseDetailQuery } from '../../features/course/hooks/useCourseQueries';
+import { useTeacherDetailQuery } from '../../features/teacher/hooks/useTeacherQueries';
 
 // Sub-components
 import BatchProfileHeader from '../../features/batch/components/profile/BatchProfileHeader';
@@ -16,8 +18,22 @@ const BatchProfile = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('Overview');
 
-  const { data: batch, isLoading: isBatchLoading, error: batchError } = useBatchDetailQuery(id);
+  const { data: rawBatch, isLoading: isBatchLoading, error: batchError } = useBatchDetailQuery(id);
   const { data: students = [], isLoading: isStudentsLoading } = useBatchStudentsQuery(id);
+  
+  // Independent related data hooks (Cache-First)
+  const { data: course } = useCourseDetailQuery(rawBatch?.course_id);
+  const { data: teacher } = useTeacherDetailQuery(rawBatch?.teacher_id);
+
+  // Merge descriptive data for UI consumption
+  const batch = useMemo(() => {
+    if (!rawBatch) return null;
+    return {
+      ...rawBatch,
+      course_name: course?.name || rawBatch.course_name,
+      instructor_name: teacher?.teacher_name || teacher?.full_name || rawBatch.instructor_name
+    };
+  }, [rawBatch, course, teacher]);
 
   if (isBatchLoading) {
     return (

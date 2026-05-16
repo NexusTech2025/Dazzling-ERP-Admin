@@ -39,6 +39,7 @@ export const useTeachersQuery = (filter = EMPTY_FILTER) => {
  */
 export const useTeacherDetailQuery = (id) => {
   const { token } = useAuth();
+  const queryClient = useQueryClient();
 
   return useQuery({
     queryKey: queryKeys.teacher.detail(id),
@@ -50,6 +51,22 @@ export const useTeacherDetailQuery = (id) => {
       return response.data?.data || null;
     },
     enabled: !!token && !!id,
+    initialData: () => {
+      if (!id) return undefined;
+      const cachedDetail = queryClient.getQueryData(queryKeys.teacher.detail(id));
+      if (cachedDetail) return cachedDetail;
+
+      const listQueries = queryClient.getQueriesData({ queryKey: queryKeys.teacher.lists() });
+      for (const [key, listData] of listQueries) {
+        if (Array.isArray(listData)) {
+          const item = listData.find(t => t.teacher_id === id || t.id === id);
+          if (item) return item;
+        }
+      }
+      return undefined;
+    },
+    initialDataUpdatedAt: () => queryClient.getQueryState(queryKeys.teacher.detail(id))?.dataUpdatedAt,
+    staleTime: 1000 * 60 * 5,
   });
 };
 

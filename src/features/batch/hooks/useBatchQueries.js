@@ -3,10 +3,11 @@ import { useAuth } from '../../../context/AuthContextCore';
 import { apiClient } from '../../../services/apiClient';
 import { API_REGISTRY } from '../../../services/apiRegistry';
 import { queryKeys, EMPTY_FILTER } from '../../../lib/react-query/queryKeys';
-import { transformBatchList, transformBatchRecord } from '../utils/batchMappers';
+import { transformBatchList, transformBatchRecord, resolveBatchRelations } from '../utils/batchMappers';
 
 export const useBatchesQuery = (filter = EMPTY_FILTER) => {
   const { token } = useAuth();
+  const queryClient = useQueryClient();
 
   return useQuery({
     queryKey: queryKeys.batch.list(filter),
@@ -26,7 +27,7 @@ export const useBatchesQuery = (filter = EMPTY_FILTER) => {
       return response.data?.data || [];
     },
     enabled: !!token,
-    select: transformBatchList,
+    select: (data) => transformBatchList(data).map(b => resolveBatchRelations(b, queryClient)),
     staleTime: Infinity,
     refetchOnMount: false,
     refetchOnWindowFocus: false,
@@ -35,6 +36,8 @@ export const useBatchesQuery = (filter = EMPTY_FILTER) => {
 
 export const useBatchDetailQuery = (id) => {
   const { token } = useAuth();
+  const queryClient = useQueryClient();
+
   return useQuery({
     queryKey: queryKeys.batch.detail(id),
     queryFn: async ({ signal }) => {
@@ -53,7 +56,27 @@ export const useBatchDetailQuery = (id) => {
       return response.data?.data?.[0] || null;
     },
     enabled: !!token && !!id,
-    select: transformBatchRecord,
+    select: (data) => resolveBatchRelations(transformBatchRecord(data), queryClient),
+    initialData: () => {
+      if (!id) return undefined;
+      
+      // 1. First look into the specific detail cache
+      const cachedDetail = queryClient.getQueryData(queryKeys.batch.detail(id));
+      if (cachedDetail) return cachedDetail;
+
+      // 2. Fallback: Look into all cached list data
+      // Search across any list query (regardless of filter)
+      const listQueries = queryClient.getQueriesData({ queryKey: queryKeys.batch.lists() });
+      for (const [key, listData] of listQueries) {
+        if (Array.isArray(listData)) {
+          const item = listData.find(b => b.batch_id === id || b.id === id);
+          if (item) return item;
+        }
+      }
+      return undefined;
+    },
+    initialDataUpdatedAt: () => queryClient.getQueryState(queryKeys.batch.detail(id))?.dataUpdatedAt,
+    staleTime: 1000 * 60 * 5, 
   });
 };
 
@@ -125,7 +148,7 @@ export const useCreateBatchMutation = () => {
       apiClient.executeAction(API_REGISTRY.BATCH.CREATE, data, token, options),
     onSuccess: (response) => {
       if (response.success) {
-        queryClient.invalidateQueries({ queryKey: queryKeys.batch.all });
+        queryClient.refetchQueries({ queryKey: queryKeys.batch.all });
       }
     }
   });
@@ -149,8 +172,8 @@ export const useUpdateBatchMutation = () => {
       ),
     onSuccess: (response, { id }) => {
       if (response.success) {
-        queryClient.invalidateQueries({ queryKey: queryKeys.batch.all });
-        queryClient.invalidateQueries({ queryKey: queryKeys.batch.detail(id) });
+        queryClient.refetchQueries({ queryKey: queryKeys.batch.all });
+        queryClient.refetchQueries({ queryKey: queryKeys.batch.detail(id) });
       }
     }
   });
@@ -170,7 +193,7 @@ export const useBulkUpdateBatchesMutation = () => {
       ),
     onSuccess: (response) => {
       if (response.success) {
-        queryClient.invalidateQueries({ queryKey: queryKeys.batch.all });
+        queryClient.refetchQueries({ queryKey: queryKeys.batch.all });
       }
     }
   });
@@ -193,7 +216,7 @@ export const useDeleteBatchMutation = () => {
       ),
     onSuccess: (response) => {
       if (response.success) {
-        queryClient.invalidateQueries({ queryKey: queryKeys.batch.all });
+        queryClient.refetchQueries({ queryKey: queryKeys.batch.all });
       }
     }
   });

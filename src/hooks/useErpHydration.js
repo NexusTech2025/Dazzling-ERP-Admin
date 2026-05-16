@@ -20,6 +20,7 @@ export const useErpHydration = () => {
     'Teacher': { query_key: queryKeys.teacher, response_key: 'teachers' },
     'Student': { query_key: queryKeys.student, response_key: 'students' },
     'Batch': { query_key: queryKeys.batch, response_key: 'batches' },
+    'Branch': { query_key: queryKeys.branch, response_key: 'branches' },
   };
 
   const HYDRATION_TARGETS = Object.keys(HYDRATION_CONFIG);

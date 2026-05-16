@@ -20,13 +20,18 @@ const AddBatch = () => {
   const createMutation = useCreateBatchMutation();
   const updateMutation = useUpdateBatchMutation();
   const { data: batchToEdit, isLoading: isBatchLoading } = useBatchDetailQuery(id);
-  const { data: courses = [] } = useCoursesQuery({ status: 'Active' });
-  const { data: teachers = [] } = useTeachersQuery({ status: 'active' });
+  
+  // Fetch unfiltered lists to leverage the instant hydration cache, then filter locally
+  const { data: allCourses = [] } = useCoursesQuery();
+  const { data: allTeachers = [] } = useTeachersQuery();
+
+  const courses = allCourses.filter(c => c.status?.toLowerCase() === 'active');
+  const teachers = allTeachers.filter(t => t.status?.toLowerCase() === 'active');
 
   const [formData, setFormData] = useState({
     batch_name: '',
     branch_id: 'BR-001', // Default
-    item_id: '',
+    course_id: '',
     teacher_id: '',
     batch_type: 'Academy',
     status: 'active',
@@ -45,7 +50,7 @@ const AddBatch = () => {
       setFormData({
         batch_name: batchToEdit.batch_name || '',
         branch_id: batchToEdit.branch_id || 'BR-001',
-        item_id: batchToEdit.item_id || '',
+        course_id: batchToEdit.course_id || '',
         teacher_id: batchToEdit.teacher_id || '',
         batch_type: batchToEdit.batch_type || 'Academy',
         status: batchToEdit.status || 'active',
@@ -110,8 +115,8 @@ const AddBatch = () => {
           <FormSection title="Basic Details" icon="info">
             <FormField label="Course" required>
               <SelectInput
-                value={formData.item_id}
-                onChange={val => setFormData({...formData, item_id: val})}
+                value={formData.course_id}
+                onChange={val => setFormData({...formData, course_id: val})}
                 options={courses.map(c => ({ label: c.name, value: c.course_id }))}
                 placeholder="Select Course"
               />

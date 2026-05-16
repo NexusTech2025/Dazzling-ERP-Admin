@@ -84,6 +84,7 @@ export const useCoursesQuery = (filter = EMPTY_FILTER) => {
  */
 export const useCourseDetailQuery = (id) => {
   const { token } = useAuth();
+  const queryClient = useQueryClient();
 
   return useQuery({
     queryKey: queryKeys.course.detail(id),
@@ -95,6 +96,22 @@ export const useCourseDetailQuery = (id) => {
       return response.data?.data?.[0] || null;
     },
     enabled: !!token && !!id,
+    initialData: () => {
+      if (!id) return undefined;
+      const cachedDetail = queryClient.getQueryData(queryKeys.course.detail(id));
+      if (cachedDetail) return cachedDetail;
+
+      const listQueries = queryClient.getQueriesData({ queryKey: queryKeys.course.lists() });
+      for (const [key, listData] of listQueries) {
+        if (Array.isArray(listData)) {
+          const item = listData.find(c => c.course_id === id || c.id === id);
+          if (item) return item;
+        }
+      }
+      return undefined;
+    },
+    initialDataUpdatedAt: () => queryClient.getQueryState(queryKeys.course.detail(id))?.dataUpdatedAt,
+    staleTime: 1000 * 60 * 5,
   });
 };
 
