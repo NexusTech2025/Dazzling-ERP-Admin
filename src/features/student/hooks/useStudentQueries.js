@@ -1,17 +1,17 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../../context/AuthContextCore';
-import { queryKeys } from '../../../lib/react-query/queryKeys';
+import { queryKeys, EMPTY_FILTER } from '../../../lib/react-query/queryKeys';
 // IMPORT FROM MOCK API FOR DEVELOPMENT
 import { fetchStudents, createStudent, modifyStudent, removeStudent, registerStudentTransaction } from '../api/student.mockApi';
 
 /**
  * Hook for fetching all students with optional filtering
  */
-export const useStudentsQuery = (filter = {}) => {
+export const useStudentsQuery = (filter = EMPTY_FILTER) => {
   const { token } = useAuth();
 
   return useQuery({
-    queryKey: queryKeys.students.list(filter),
+    queryKey: queryKeys.student.list(filter),
     queryFn: async ({ signal }) => {
       const response = await fetchStudents(token, filter, { signal });
       if (!response.success) {
@@ -20,6 +20,9 @@ export const useStudentsQuery = (filter = {}) => {
       return response.data?.data || [];
     },
     enabled: !!token,
+    staleTime: Infinity,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 };
 
@@ -35,7 +38,7 @@ export const useRegisterStudentMutation = () => {
       registerStudentTransaction(token, registrationData),
     onSuccess: (response) => {
       if (response.success) {
-        queryClient.invalidateQueries({ queryKey: queryKeys.students.all });
+        queryClient.invalidateQueries({ queryKey: queryKeys.student.all });
       }
     }
   });
@@ -53,7 +56,7 @@ export const useCreateStudentMutation = () => {
       createStudent(token, userData, profileData, options),
     onSuccess: (response) => {
       if (response.success) {
-        queryClient.invalidateQueries({ queryKey: queryKeys.students.all });
+        queryClient.invalidateQueries({ queryKey: queryKeys.student.all });
       }
     }
   });
@@ -70,8 +73,8 @@ export const useUpdateStudentMutation = () => {
     mutationFn: ({ id, data, options }) => modifyStudent(token, id, data, options),
     onSuccess: (response, { id }) => {
       if (response.success) {
-        queryClient.invalidateQueries({ queryKey: queryKeys.students.all });
-        queryClient.invalidateQueries({ queryKey: queryKeys.students.detail(id) });
+        queryClient.invalidateQueries({ queryKey: queryKeys.student.all });
+        queryClient.invalidateQueries({ queryKey: queryKeys.student.detail(id) });
       }
     }
   });
@@ -88,7 +91,7 @@ export const useDeleteStudentMutation = () => {
     mutationFn: ({ id, options }) => removeStudent(token, id, options),
     onSuccess: (response, { id }) => {
       if (response.success) {
-        queryClient.invalidateQueries({ queryKey: queryKeys.students.all });
+        queryClient.invalidateQueries({ queryKey: queryKeys.student.all });
       }
     }
   });

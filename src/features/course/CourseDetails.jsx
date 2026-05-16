@@ -18,7 +18,7 @@ const CourseDetails = () => {
   const { data: course, isLoading, error } = useCourseDetailQuery(id);
 
   if (isLoading) return <LoadingState message="Analyzing course data..." />;
-  if (error) return <ErrorState message={error.message} onRetry={() => queryClient.invalidateQueries({ queryKey: queryKeys.courses.detail(id) })} />;
+  if (error) return <ErrorState message={error.message} onRetry={() => queryClient.invalidateQueries({ queryKey: queryKeys.course.detail(id) })} />;
   if (!course) return <ErrorState title="Course Not Found" message="The requested course could not be located." onRetry={() => navigate('/admin/courses')} />;
 
   const tabs = [
@@ -46,7 +46,7 @@ const CourseDetails = () => {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <button className="px-4 py-2 bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-xl text-text-main dark:text-white text-sm font-bold hover:bg-gray-50 dark:hover:bg-gray-800 transition-all flex items-center gap-2">
+          <button onClick={() => navigate(`/admin/courses/edit/${course.course_id}`)} className="px-4 py-2 bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-xl text-text-main dark:text-white text-sm font-bold hover:bg-gray-50 dark:hover:bg-gray-800 transition-all flex items-center gap-2">
             <span className="material-symbols-outlined text-[18px]">edit</span>
             Edit Course
           </button>
@@ -131,6 +131,15 @@ const CourseDetails = () => {
                 </span>
               </div>
               <div className="p-5 space-y-4">
+                <div className="flex items-center gap-3 p-3 bg-background-light dark:bg-background-dark rounded-xl border border-border-light dark:border-border-dark">
+                  <div className="size-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+                    <span className="material-symbols-outlined text-sm">category</span>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black text-text-secondary uppercase">Category</p>
+                    <p className="text-xs font-bold text-text-main dark:text-white">{course.segment_name}</p>
+                  </div>
+                </div>
                 <p className="text-sm text-text-secondary italic">"{course.description || 'No description provided for this course.'}"</p>
                 <div className="pt-4 border-t border-dashed border-border-light dark:border-border-dark">
                   <div className="flex justify-between items-center text-xs text-text-secondary mb-1 uppercase font-bold tracking-wider">

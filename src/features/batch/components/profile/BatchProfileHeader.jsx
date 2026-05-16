@@ -14,12 +14,12 @@ const BatchProfileHeader = ({ batch, activeTab, onTabChange }) => {
             <h1 className="text-3xl font-bold leading-tight text-text-main dark:text-white">
               Batch: {batch.batch_name}
             </h1>
-            <Badge variant={batch.status === 'active' ? 'primary' : 'default'} className="uppercase tracking-wider">
+            <Badge variant={batch.is_active ? 'primary' : 'default'} className="uppercase tracking-wider">
               {batch.status}
             </Badge>
           </div>
           <p className="text-text-secondary text-sm font-medium">
-            {batch.course_name} • {batch.schedule_days} ({batch.schedule_time})
+            {batch.course_name} • {batch.schedule.days_of_week.join(', ')} ({batch.schedule.start_time} - {batch.schedule.end_time})
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -28,7 +28,7 @@ const BatchProfileHeader = ({ batch, activeTab, onTabChange }) => {
             <span>Options</span>
           </button>
           <Link 
-            to={`/admin/batches/add?id=${batch.batch_id}`}
+            to={`/admin/batches/add?id=${batch.id}`}
             className="flex items-center justify-center gap-2 rounded-lg h-10 px-5 bg-primary text-white hover:bg-primary-dark transition-all text-sm font-bold shadow-sm active:scale-95"
           >
             <span className="material-symbols-outlined text-[20px]">edit</span>

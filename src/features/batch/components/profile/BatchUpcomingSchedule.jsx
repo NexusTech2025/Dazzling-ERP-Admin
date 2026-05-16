@@ -18,19 +18,19 @@ const BatchUpcomingSchedule = ({ batch }) => {
           <tbody>
             <tr className="border-b border-border-light dark:border-border-dark/50 hover:bg-slate-50 dark:hover:bg-slate-700/20 transition-colors">
               <td className="py-4">
-                <div className="text-sm font-medium text-text-main dark:text-white">Today, {batch.schedule_time?.split(' - ')[0] || '08:00 AM'}</div>
+                <div className="text-sm font-medium text-text-main dark:text-white">Today, {batch.schedule?.start_time || '08:00 AM'}</div>
               </td>
               <td className="py-4 text-sm text-text-secondary">{batch.course_name}</td>
               <td className="py-4 text-sm text-text-secondary">Module 1 Intro</td>
-              <td className="py-4 text-sm text-text-secondary">{batch.teacher_name}</td>
+              <td className="py-4 text-sm text-text-secondary">{batch.instructor_name || batch.teacher_name}</td>
             </tr>
             <tr className="hover:bg-slate-50 dark:hover:bg-slate-700/20 transition-colors">
               <td className="py-4">
-                <div className="text-sm font-medium text-text-main dark:text-white">Tomorrow, {batch.schedule_time?.split(' - ')[0] || '08:00 AM'}</div>
+                <div className="text-sm font-medium text-text-main dark:text-white">Tomorrow, {batch.schedule?.start_time || '08:00 AM'}</div>
               </td>
               <td className="py-4 text-sm text-text-secondary">{batch.course_name}</td>
               <td className="py-4 text-sm text-text-secondary">Review & Practice</td>
-              <td className="py-4 text-sm text-text-secondary">{batch.teacher_name}</td>
+              <td className="py-4 text-sm text-text-secondary">{batch.instructor_name || batch.teacher_name}</td>
             </tr>
           </tbody>
         </table>

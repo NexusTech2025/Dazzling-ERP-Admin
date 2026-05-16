@@ -11,7 +11,7 @@ export const useBranchesQuery = (filter = {}) => {
   const { token } = useAuth();
 
   return useQuery({
-    queryKey: ['branches', { filter }],
+    queryKey: queryKeys.branch.list(filter),
     queryFn: async ({ signal }) => {
       const response = await fetchBranches(token, filter, { signal });
       if (!response.success) {

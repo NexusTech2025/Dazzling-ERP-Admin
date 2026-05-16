@@ -41,7 +41,7 @@ const Teachers = () => {
   // 4. Define handlers for the schema
   const handlers = {
     onView: (teacher) => navigate(`/admin/teachers/${teacher.teacher_id}`),
-    onEdit: (teacher) => console.log('Edit Teacher', teacher),
+    onEdit: (teacher) => navigate(`/admin/teachers/edit/${teacher.teacher_id}`),
     onDelete: (id, name) => {
       setDeleteModal({ 
         isOpen: true, 

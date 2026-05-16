@@ -1,0 +1,87 @@
+{
+  "entity": "TeacherAttendance",
+  "description": "Captures the daily attendance of teachers within the institute. This entity serves as the foundational layer for payroll calculation, performance tracking, and operational monitoring. Each record represents a single teacher's attendance for a specific date and includes status, working hours, source of marking, and audit information. It supports both manual and automated attendance systems and is designed to scale toward class-level attendance and biometric integrations in the future.",
+  "fields": [
+    {
+      "name": "attendance_id",
+      "type": "string",
+      "isPrimary": true,
+      "description": "Unique identifier for each attendance record. Typically a UUID or structured ID used to uniquely track each attendance entry."
+    },
+    {
+      "name": "teacher_id",
+      "type": "string",
+      "required": true,
+      "isForeignKey": true,
+      "references": "Teacher.teacher_id",
+      "description": "Reference to the teacher whose attendance is being recorded. Links this record to the Teacher entity."
+    },
+    {
+      "name": "attendance_date",
+      "type": "date",
+      "required": true,
+      "description": "The specific calendar date for which attendance is recorded. Only one record per teacher per date should exist."
+    },
+    {
+      "name": "status",
+      "type": "enum",
+      "values": ["present", "absent", "leave", "half_day"],
+      "required": true,
+      "description": "Indicates the attendance status of the teacher for the given date. Used directly in salary calculations and attendance reporting."
+    },
+    {
+      "name": "check_in_time",
+      "type": "datetime",
+      "description": "Timestamp when the teacher checked in for the day. Useful for tracking punctuality and working duration."
+    },
+    {
+      "name": "check_out_time",
+      "type": "datetime",
+      "description": "Timestamp when the teacher checked out. Helps determine total working hours and verify attendance accuracy."
+    },
+    {
+      "name": "working_hours",
+      "type": "number",
+      "description": "Total number of hours worked by the teacher on the given day. Can be calculated from check-in and check-out or manually entered for flexibility."
+    },
+    {
+      "name": "is_paid_leave",
+      "type": "boolean",
+      "default": false,
+      "description": "Indicates whether a leave day is considered paid or unpaid. Critical for accurate payroll calculations and leave policy enforcement."
+    },
+    {
+      "name": "attendance_source",
+      "type": "enum",
+      "values": ["manual", "biometric", "system"],
+      "description": "Specifies how the attendance was recorded. Enables tracking of manual entries versus automated systems like biometric devices."
+    },
+    {
+      "name": "notes",
+      "type": "string",
+      "description": "Optional remarks or comments related to the attendance entry, such as reasons for leave, late arrival, or special conditions."
+    },
+    {
+      "name": "marked_by",
+      "type": "string",
+      "description": "Identifier of the admin or system user who recorded or updated the attendance. Useful for accountability and audit tracking."
+    },
+    {
+      "name": "created_at",
+      "type": "datetime",
+      "description": "Timestamp when the attendance record was initially created in the system."
+    },
+    {
+      "name": "updated_at",
+      "type": "datetime",
+      "description": "Timestamp of the most recent update to the attendance record. Ensures traceability of modifications."
+    }
+  ],
+  "relations": [
+    {
+      "type": "N:1",
+      "target": "Teacher",
+      "field": "teacher_id"
+    }
+  ]
+}

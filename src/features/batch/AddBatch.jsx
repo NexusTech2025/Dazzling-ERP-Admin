@@ -3,6 +3,13 @@ import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useCreateBatchMutation, useUpdateBatchMutation, useBatchDetailQuery } from './hooks/useBatchQueries';
 import { useCoursesQuery } from '../course/hooks/useCourseQueries';
 import { useTeachersQuery } from '../teacher/hooks/useTeacherQueries';
+import ButtonGroupFilter from '../../components/ui/filters/ButtonGroupFilter';
+import FormSection from '../../components/ui/v2/FormSection';
+import FormField from '../../components/ui/v2/FormField';
+import SelectInput from '../../components/ui/v2/SelectInput';
+import TextInput from '../../components/ui/v2/TextInput';
+import DateInput from '../../components/ui/v2/DateInput';
+import BaseInput from '../../components/ui/v2/BaseInput';
 
 const AddBatch = () => {
   const [searchParams] = useSearchParams();
@@ -21,6 +28,8 @@ const AddBatch = () => {
     branch_id: 'BR-001', // Default
     item_id: '',
     teacher_id: '',
+    batch_type: 'Academy',
+    status: 'active',
     capacity: 30,
     start_date: '',
     end_date: '',
@@ -38,14 +47,12 @@ const AddBatch = () => {
         branch_id: batchToEdit.branch_id || 'BR-001',
         item_id: batchToEdit.item_id || '',
         teacher_id: batchToEdit.teacher_id || '',
+        batch_type: batchToEdit.batch_type || 'Academy',
+        status: batchToEdit.status || 'active',
         capacity: batchToEdit.capacity || 30,
         start_date: batchToEdit.start_date || '',
         end_date: batchToEdit.end_date || '',
-        schedule: batchToEdit.schedule || {
-          days_of_week: ['Mon', 'Wed', 'Fri'],
-          start_time: '09:00',
-          end_time: '11:00'
-        }
+        schedule: batchToEdit.schedule
       });
     }
   }, [isEditMode, batchToEdit]);
@@ -100,97 +107,83 @@ const AddBatch = () => {
         <div className="p-8 space-y-8">
           
           {/* Basic Details */}
-          <div className="space-y-6">
-            <div className="flex items-center gap-2 border-b border-border-light dark:border-border-dark pb-2">
-              <span className="material-symbols-outlined text-primary">info</span>
-              <h3 className="text-lg font-semibold text-text-main dark:text-white">Basic Details</h3>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-medium text-text-secondary">Course <span className="text-red-500">*</span></label>
-                <select 
-                  required
-                  value={formData.item_id}
-                  onChange={e => setFormData({...formData, item_id: e.target.value})}
-                  className="w-full rounded-lg border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark focus:ring-primary focus:border-primary h-12 px-4 transition-colors"
-                >
-                  <option value="" disabled>Select Course</option>
-                  {courses.map(c => <option key={c.course_id} value={c.course_id}>{c.name}</option>)}
-                </select>
-              </div>
+          <FormSection title="Basic Details" icon="info">
+            <FormField label="Course" required>
+              <SelectInput
+                value={formData.item_id}
+                onChange={val => setFormData({...formData, item_id: val})}
+                options={courses.map(c => ({ label: c.name, value: c.course_id }))}
+                placeholder="Select Course"
+              />
+            </FormField>
 
-              <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-medium text-text-secondary">Batch Name <span className="text-red-500">*</span></label>
-                <input 
-                  required
-                  type="text"
-                  placeholder="e.g. JEE Alpha 2024"
-                  value={formData.batch_name}
-                  onChange={e => setFormData({...formData, batch_name: e.target.value})}
-                  className="w-full rounded-lg border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark focus:ring-primary focus:border-primary h-12 px-4 transition-colors"
-                />
-              </div>
+            <TextInput
+              label="Batch Name"
+              required
+              placeholder="e.g. JEE Alpha 2024"
+              value={formData.batch_name}
+              onChange={e => setFormData({...formData, batch_name: e.target.value})}
+            />
 
-              <div className="flex flex-col gap-1.5 md:col-span-2">
-                <label className="text-sm font-medium text-text-secondary">Primary Teacher</label>
-                <select 
-                  value={formData.teacher_id}
-                  onChange={e => setFormData({...formData, teacher_id: e.target.value})}
-                  className="w-full rounded-lg border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark focus:ring-primary focus:border-primary h-12 px-4 transition-colors"
-                >
-                  <option value="">Assign Teacher</option>
-                  {teachers.map(t => <option key={t.teacher_id} value={t.teacher_id}>{t.teacher_name} ({t.specialization})</option>)}
-                </select>
-              </div>
-            </div>
-          </div>
+            <FormField label="Batch Type" className="md:col-span-2">
+              <ButtonGroupFilter
+                options={[
+                  { label: 'Academy', value: 'Academy' },
+                  { label: 'Computer', value: 'Computer' },
+                  { label: 'Foundation', value: 'Foundation' },
+                  { label: 'Competitive', value: 'Competitive' },
+                ]}
+                value={formData.batch_type}
+                onChange={(val) => setFormData(prev => ({ ...prev, batch_type: val }))}
+                size="md"
+                variant="secondary"
+              />
+            </FormField>
+
+            <SelectInput
+              label="Primary Teacher"
+              value={formData.teacher_id}
+              onChange={val => setFormData({...formData, teacher_id: val})}
+              options={teachers.map(t => ({ label: `${t.teacher_name} (${t.specialization})`, value: t.teacher_id }))}
+              placeholder="Assign Teacher"
+            />
+
+            <SelectInput
+              label="Status"
+              value={formData.status}
+              onChange={val => setFormData({...formData, status: val})}
+              options={[
+                { label: 'Active', value: 'active' },
+                { label: 'Completed', value: 'completed' },
+                { label: 'Cancelled', value: 'cancelled' }
+              ]}
+            />
+          </FormSection>
 
           {/* Schedule Section */}
-          <div className="space-y-6">
-            <div className="flex items-center gap-2 border-b border-border-light dark:border-border-dark pb-2">
-              <span className="material-symbols-outlined text-primary">calendar_month</span>
-              <h3 className="text-lg font-semibold text-text-main dark:text-white">Schedule & Capacity</h3>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-medium text-text-secondary">Student Capacity</label>
-                <div className="relative">
-                  <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary text-sm">group</span>
-                  <input 
-                    type="number"
-                    min="1" max="500"
-                    value={formData.capacity}
-                    onChange={e => setFormData({...formData, capacity: Number(e.target.value)})}
-                    className="w-full pl-10 pr-4 rounded-lg border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark focus:ring-primary focus:border-primary h-12 transition-colors"
-                  />
-                </div>
-              </div>
+          <FormSection title="Schedule & Capacity" icon="calendar_month">
+            <BaseInput
+              label="Student Capacity"
+              leftIcon="group"
+              type="number"
+              min="1" max="500"
+              value={formData.capacity}
+              onChange={e => setFormData({...formData, capacity: Number(e.target.value)})}
+            />
 
-              <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-medium text-text-secondary">Start Date</label>
-                <input 
-                  type="date"
-                  value={formData.start_date}
-                  onChange={e => setFormData({...formData, start_date: e.target.value})}
-                  className="w-full px-4 rounded-lg border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark focus:ring-primary focus:border-primary h-12 transition-colors"
-                />
-              </div>
+            <DateInput
+              label="Start Date"
+              value={formData.start_date}
+              onChange={e => setFormData({...formData, start_date: e.target.value})}
+            />
 
-              <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-medium text-text-secondary">End Date</label>
-                <input 
-                  type="date"
-                  value={formData.end_date}
-                  onChange={e => setFormData({...formData, end_date: e.target.value})}
-                  className="w-full px-4 rounded-lg border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark focus:ring-primary focus:border-primary h-12 transition-colors"
-                />
-              </div>
-            </div>
+            <DateInput
+              label="End Date"
+              value={formData.end_date}
+              onChange={e => setFormData({...formData, end_date: e.target.value})}
+            />
 
-            <div className="flex flex-col gap-3 pt-2">
-              <label className="text-sm font-medium text-text-secondary">Batch Schedule (Days)</label>
+            <FormField label="Batch Schedule (Days)" className="md:col-span-2">
               <div className="flex flex-wrap gap-3">
                 {daysOfWeek.map(day => {
                   const isSelected = formData.schedule.days_of_week.includes(day);
@@ -213,30 +206,21 @@ const AddBatch = () => {
                   );
                 })}
               </div>
-            </div>
+            </FormField>
 
-            <div className="grid grid-cols-2 gap-6 pt-2">
-              <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-medium text-text-secondary">Start Time</label>
-                <input 
-                  type="time"
-                  value={formData.schedule.start_time}
-                  onChange={e => setFormData({...formData, schedule: {...formData.schedule, start_time: e.target.value}})}
-                  className="w-full px-4 rounded-lg border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark focus:ring-primary focus:border-primary h-12 transition-colors"
-                />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-medium text-text-secondary">End Time</label>
-                <input 
-                  type="time"
-                  value={formData.schedule.end_time}
-                  onChange={e => setFormData({...formData, schedule: {...formData.schedule, end_time: e.target.value}})}
-                  className="w-full px-4 rounded-lg border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark focus:ring-primary focus:border-primary h-12 transition-colors"
-                />
-              </div>
-            </div>
-
-          </div>
+            <BaseInput
+              label="Start Time"
+              type="time"
+              value={formData.schedule.start_time}
+              onChange={e => setFormData({...formData, schedule: {...formData.schedule, start_time: e.target.value}})}
+            />
+            <BaseInput
+              label="End Time"
+              type="time"
+              value={formData.schedule.end_time}
+              onChange={e => setFormData({...formData, schedule: {...formData.schedule, end_time: e.target.value}})}
+            />
+          </FormSection>
         </div>
 
         <div className="bg-slate-50 dark:bg-slate-800/50 px-6 py-4 border-t border-border-light dark:border-border-dark flex justify-end gap-3">

@@ -18,7 +18,7 @@ const StudentRegistrationWizard = () => {
     // Step 1: Profile
     fullName: '',
     gender: '',
-    dob: '',
+    date_of_birth: '',
     motherName: '',
     fatherName: '',
     email: '',

@@ -1,0 +1,1802 @@
+[
+  {
+    "attendance_id": "ATT-TCH-001-20260201",
+    "teacher_id": "TCH-001",
+    "attendance_date": "2026-02-01",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:30:00",
+    "check_out_time": "17:18:00",
+    "working_hours": 8.8
+  },
+  {
+    "attendance_id": "ATT-TCH-002-20260201",
+    "teacher_id": "TCH-002",
+    "attendance_date": "2026-02-01",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:52:00",
+    "check_out_time": "16:54:00",
+    "working_hours": 8.03
+  },
+  {
+    "attendance_id": "ATT-TCH-003-20260201",
+    "teacher_id": "TCH-003",
+    "attendance_date": "2026-02-01",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:46:00",
+    "check_out_time": "16:34:00",
+    "working_hours": 7.8
+  },
+  {
+    "attendance_id": "ATT-TCH-004-20260201",
+    "teacher_id": "TCH-004",
+    "attendance_date": "2026-02-01",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "09:05:00",
+    "check_out_time": "17:28:00",
+    "working_hours": 8.38
+  },
+  {
+    "attendance_id": "ATT-TCH-001-20260202",
+    "teacher_id": "TCH-001",
+    "attendance_date": "2026-02-02",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:57:00",
+    "check_out_time": "17:22:00",
+    "working_hours": 8.42
+  },
+  {
+    "attendance_id": "ATT-TCH-002-20260202",
+    "teacher_id": "TCH-002",
+    "attendance_date": "2026-02-02",
+    "status": "absent",
+    "attendance_source": "system",
+    "check_in_time": null,
+    "check_out_time": null,
+    "working_hours": 0
+  },
+  {
+    "attendance_id": "ATT-TCH-003-20260202",
+    "teacher_id": "TCH-003",
+    "attendance_date": "2026-02-02",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:48:00",
+    "check_out_time": "17:16:00",
+    "working_hours": 8.47
+  },
+  {
+    "attendance_id": "ATT-TCH-004-20260202",
+    "teacher_id": "TCH-004",
+    "attendance_date": "2026-02-02",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:51:00",
+    "check_out_time": "17:30:00",
+    "working_hours": 8.65
+  },
+  {
+    "attendance_id": "ATT-TCH-001-20260203",
+    "teacher_id": "TCH-001",
+    "attendance_date": "2026-02-03",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:54:00",
+    "check_out_time": "16:56:00",
+    "working_hours": 8.03
+  },
+  {
+    "attendance_id": "ATT-TCH-002-20260203",
+    "teacher_id": "TCH-002",
+    "attendance_date": "2026-02-03",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:35:00",
+    "check_out_time": "16:44:00",
+    "working_hours": 8.15
+  },
+  {
+    "attendance_id": "ATT-TCH-003-20260203",
+    "teacher_id": "TCH-003",
+    "attendance_date": "2026-02-03",
+    "status": "leave",
+    "attendance_source": "system",
+    "check_in_time": null,
+    "check_out_time": null,
+    "working_hours": 0
+  },
+  {
+    "attendance_id": "ATT-TCH-004-20260203",
+    "teacher_id": "TCH-004",
+    "attendance_date": "2026-02-03",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:31:00",
+    "check_out_time": "16:37:00",
+    "working_hours": 8.1
+  },
+  {
+    "attendance_id": "ATT-TCH-001-20260204",
+    "teacher_id": "TCH-001",
+    "attendance_date": "2026-02-04",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:47:00",
+    "check_out_time": "16:42:00",
+    "working_hours": 7.92
+  },
+  {
+    "attendance_id": "ATT-TCH-002-20260204",
+    "teacher_id": "TCH-002",
+    "attendance_date": "2026-02-04",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:48:00",
+    "check_out_time": "16:38:00",
+    "working_hours": 7.83
+  },
+  {
+    "attendance_id": "ATT-TCH-003-20260204",
+    "teacher_id": "TCH-003",
+    "attendance_date": "2026-02-04",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:40:00",
+    "check_out_time": "16:58:00",
+    "working_hours": 8.3
+  },
+  {
+    "attendance_id": "ATT-TCH-004-20260204",
+    "teacher_id": "TCH-004",
+    "attendance_date": "2026-02-04",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:39:00",
+    "check_out_time": "17:17:00",
+    "working_hours": 8.63
+  },
+  {
+    "attendance_id": "ATT-TCH-001-20260205",
+    "teacher_id": "TCH-001",
+    "attendance_date": "2026-02-05",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "09:12:00",
+    "check_out_time": "16:47:00",
+    "working_hours": 7.58
+  },
+  {
+    "attendance_id": "ATT-TCH-002-20260205",
+    "teacher_id": "TCH-002",
+    "attendance_date": "2026-02-05",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:38:00",
+    "check_out_time": "17:18:00",
+    "working_hours": 8.67
+  },
+  {
+    "attendance_id": "ATT-TCH-003-20260205",
+    "teacher_id": "TCH-003",
+    "attendance_date": "2026-02-05",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:35:00",
+    "check_out_time": "16:58:00",
+    "working_hours": 8.38
+  },
+  {
+    "attendance_id": "ATT-TCH-004-20260205",
+    "teacher_id": "TCH-004",
+    "attendance_date": "2026-02-05",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:52:00",
+    "check_out_time": "16:46:00",
+    "working_hours": 7.9
+  },
+  {
+    "attendance_id": "ATT-TCH-001-20260206",
+    "teacher_id": "TCH-001",
+    "attendance_date": "2026-02-06",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:49:00",
+    "check_out_time": "17:04:00",
+    "working_hours": 8.25
+  },
+  {
+    "attendance_id": "ATT-TCH-002-20260206",
+    "teacher_id": "TCH-002",
+    "attendance_date": "2026-02-06",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:53:00",
+    "check_out_time": "17:29:00",
+    "working_hours": 8.6
+  },
+  {
+    "attendance_id": "ATT-TCH-003-20260206",
+    "teacher_id": "TCH-003",
+    "attendance_date": "2026-02-06",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:57:00",
+    "check_out_time": "17:06:00",
+    "working_hours": 8.15
+  },
+  {
+    "attendance_id": "ATT-TCH-004-20260206",
+    "teacher_id": "TCH-004",
+    "attendance_date": "2026-02-06",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:52:00",
+    "check_out_time": "16:50:00",
+    "working_hours": 7.97
+  },
+  {
+    "attendance_id": "ATT-TCH-001-20260207",
+    "teacher_id": "TCH-001",
+    "attendance_date": "2026-02-07",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:59:00",
+    "check_out_time": "17:21:00",
+    "working_hours": 8.37
+  },
+  {
+    "attendance_id": "ATT-TCH-002-20260207",
+    "teacher_id": "TCH-002",
+    "attendance_date": "2026-02-07",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:31:00",
+    "check_out_time": "16:54:00",
+    "working_hours": 8.38
+  },
+  {
+    "attendance_id": "ATT-TCH-003-20260207",
+    "teacher_id": "TCH-003",
+    "attendance_date": "2026-02-07",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:53:00",
+    "check_out_time": "17:21:00",
+    "working_hours": 8.47
+  },
+  {
+    "attendance_id": "ATT-TCH-004-20260207",
+    "teacher_id": "TCH-004",
+    "attendance_date": "2026-02-07",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "09:01:00",
+    "check_out_time": "17:27:00",
+    "working_hours": 8.43
+  },
+  {
+    "attendance_id": "ATT-TCH-001-20260208",
+    "teacher_id": "TCH-001",
+    "attendance_date": "2026-02-08",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:45:00",
+    "check_out_time": "16:32:00",
+    "working_hours": 7.78
+  },
+  {
+    "attendance_id": "ATT-TCH-002-20260208",
+    "teacher_id": "TCH-002",
+    "attendance_date": "2026-02-08",
+    "status": "absent",
+    "attendance_source": "system",
+    "check_in_time": null,
+    "check_out_time": null,
+    "working_hours": 0
+  },
+  {
+    "attendance_id": "ATT-TCH-003-20260208",
+    "teacher_id": "TCH-003",
+    "attendance_date": "2026-02-08",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:37:00",
+    "check_out_time": "17:13:00",
+    "working_hours": 8.6
+  },
+  {
+    "attendance_id": "ATT-TCH-004-20260208",
+    "teacher_id": "TCH-004",
+    "attendance_date": "2026-02-08",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:39:00",
+    "check_out_time": "17:23:00",
+    "working_hours": 8.73
+  },
+  {
+    "attendance_id": "ATT-TCH-001-20260209",
+    "teacher_id": "TCH-001",
+    "attendance_date": "2026-02-09",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "09:10:00",
+    "check_out_time": "17:26:00",
+    "working_hours": 8.27
+  },
+  {
+    "attendance_id": "ATT-TCH-002-20260209",
+    "teacher_id": "TCH-002",
+    "attendance_date": "2026-02-09",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "09:01:00",
+    "check_out_time": "17:27:00",
+    "working_hours": 8.43
+  },
+  {
+    "attendance_id": "ATT-TCH-003-20260209",
+    "teacher_id": "TCH-003",
+    "attendance_date": "2026-02-09",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:54:00",
+    "check_out_time": "16:37:00",
+    "working_hours": 7.72
+  },
+  {
+    "attendance_id": "ATT-TCH-004-20260209",
+    "teacher_id": "TCH-004",
+    "attendance_date": "2026-02-09",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "09:09:00",
+    "check_out_time": "17:10:00",
+    "working_hours": 8.02
+  },
+  {
+    "attendance_id": "ATT-TCH-001-20260210",
+    "teacher_id": "TCH-001",
+    "attendance_date": "2026-02-10",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:56:00",
+    "check_out_time": "17:19:00",
+    "working_hours": 8.38
+  },
+  {
+    "attendance_id": "ATT-TCH-002-20260210",
+    "teacher_id": "TCH-002",
+    "attendance_date": "2026-02-10",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "09:05:00",
+    "check_out_time": "17:02:00",
+    "working_hours": 7.95
+  },
+  {
+    "attendance_id": "ATT-TCH-003-20260210",
+    "teacher_id": "TCH-003",
+    "attendance_date": "2026-02-10",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:46:00",
+    "check_out_time": "16:54:00",
+    "working_hours": 8.13
+  },
+  {
+    "attendance_id": "ATT-TCH-004-20260210",
+    "teacher_id": "TCH-004",
+    "attendance_date": "2026-02-10",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:34:00",
+    "check_out_time": "17:13:00",
+    "working_hours": 8.65
+  },
+  {
+    "attendance_id": "ATT-TCH-001-20260211",
+    "teacher_id": "TCH-001",
+    "attendance_date": "2026-02-11",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "09:10:00",
+    "check_out_time": "17:17:00",
+    "working_hours": 8.12
+  },
+  {
+    "attendance_id": "ATT-TCH-002-20260211",
+    "teacher_id": "TCH-002",
+    "attendance_date": "2026-02-11",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:32:00",
+    "check_out_time": "17:24:00",
+    "working_hours": 8.87
+  },
+  {
+    "attendance_id": "ATT-TCH-003-20260211",
+    "teacher_id": "TCH-003",
+    "attendance_date": "2026-02-11",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:31:00",
+    "check_out_time": "17:23:00",
+    "working_hours": 8.87
+  },
+  {
+    "attendance_id": "ATT-TCH-004-20260211",
+    "teacher_id": "TCH-004",
+    "attendance_date": "2026-02-11",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:57:00",
+    "check_out_time": "16:51:00",
+    "working_hours": 7.9
+  },
+  {
+    "attendance_id": "ATT-TCH-001-20260212",
+    "teacher_id": "TCH-001",
+    "attendance_date": "2026-02-12",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:54:00",
+    "check_out_time": "17:24:00",
+    "working_hours": 8.5
+  },
+  {
+    "attendance_id": "ATT-TCH-002-20260212",
+    "teacher_id": "TCH-002",
+    "attendance_date": "2026-02-12",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:31:00",
+    "check_out_time": "17:24:00",
+    "working_hours": 8.88
+  },
+  {
+    "attendance_id": "ATT-TCH-003-20260212",
+    "teacher_id": "TCH-003",
+    "attendance_date": "2026-02-12",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:52:00",
+    "check_out_time": "16:52:00",
+    "working_hours": 8
+  },
+  {
+    "attendance_id": "ATT-TCH-004-20260212",
+    "teacher_id": "TCH-004",
+    "attendance_date": "2026-02-12",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:38:00",
+    "check_out_time": "16:38:00",
+    "working_hours": 8
+  },
+  {
+    "attendance_id": "ATT-TCH-001-20260213",
+    "teacher_id": "TCH-001",
+    "attendance_date": "2026-02-13",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:38:00",
+    "check_out_time": "16:46:00",
+    "working_hours": 8.13
+  },
+  {
+    "attendance_id": "ATT-TCH-002-20260213",
+    "teacher_id": "TCH-002",
+    "attendance_date": "2026-02-13",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:47:00",
+    "check_out_time": "16:46:00",
+    "working_hours": 7.98
+  },
+  {
+    "attendance_id": "ATT-TCH-003-20260213",
+    "teacher_id": "TCH-003",
+    "attendance_date": "2026-02-13",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:35:00",
+    "check_out_time": "16:57:00",
+    "working_hours": 8.37
+  },
+  {
+    "attendance_id": "ATT-TCH-004-20260213",
+    "teacher_id": "TCH-004",
+    "attendance_date": "2026-02-13",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:58:00",
+    "check_out_time": "16:41:00",
+    "working_hours": 7.72
+  },
+  {
+    "attendance_id": "ATT-TCH-001-20260214",
+    "teacher_id": "TCH-001",
+    "attendance_date": "2026-02-14",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:57:00",
+    "check_out_time": "17:06:00",
+    "working_hours": 8.15
+  },
+  {
+    "attendance_id": "ATT-TCH-002-20260214",
+    "teacher_id": "TCH-002",
+    "attendance_date": "2026-02-14",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:30:00",
+    "check_out_time": "17:00:00",
+    "working_hours": 8.5
+  },
+  {
+    "attendance_id": "ATT-TCH-003-20260214",
+    "teacher_id": "TCH-003",
+    "attendance_date": "2026-02-14",
+    "status": "absent",
+    "attendance_source": "system",
+    "check_in_time": null,
+    "check_out_time": null,
+    "working_hours": 0
+  },
+  {
+    "attendance_id": "ATT-TCH-004-20260214",
+    "teacher_id": "TCH-004",
+    "attendance_date": "2026-02-14",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "09:00:00",
+    "check_out_time": "17:19:00",
+    "working_hours": 8.32
+  },
+  {
+    "attendance_id": "ATT-TCH-001-20260215",
+    "teacher_id": "TCH-001",
+    "attendance_date": "2026-02-15",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:58:00",
+    "check_out_time": "17:00:00",
+    "working_hours": 8.03
+  },
+  {
+    "attendance_id": "ATT-TCH-002-20260215",
+    "teacher_id": "TCH-002",
+    "attendance_date": "2026-02-15",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "09:13:00",
+    "check_out_time": "16:40:00",
+    "working_hours": 7.45
+  },
+  {
+    "attendance_id": "ATT-TCH-003-20260215",
+    "teacher_id": "TCH-003",
+    "attendance_date": "2026-02-15",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:42:00",
+    "check_out_time": "16:46:00",
+    "working_hours": 8.07
+  },
+  {
+    "attendance_id": "ATT-TCH-004-20260215",
+    "teacher_id": "TCH-004",
+    "attendance_date": "2026-02-15",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:42:00",
+    "check_out_time": "17:22:00",
+    "working_hours": 8.67
+  },
+  {
+    "attendance_id": "ATT-TCH-001-20260216",
+    "teacher_id": "TCH-001",
+    "attendance_date": "2026-02-16",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:39:00",
+    "check_out_time": "17:28:00",
+    "working_hours": 8.82
+  },
+  {
+    "attendance_id": "ATT-TCH-002-20260216",
+    "teacher_id": "TCH-002",
+    "attendance_date": "2026-02-16",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:48:00",
+    "check_out_time": "16:49:00",
+    "working_hours": 8.02
+  },
+  {
+    "attendance_id": "ATT-TCH-003-20260216",
+    "teacher_id": "TCH-003",
+    "attendance_date": "2026-02-16",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:34:00",
+    "check_out_time": "16:31:00",
+    "working_hours": 7.95
+  },
+  {
+    "attendance_id": "ATT-TCH-004-20260216",
+    "teacher_id": "TCH-004",
+    "attendance_date": "2026-02-16",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:37:00",
+    "check_out_time": "17:20:00",
+    "working_hours": 8.72
+  },
+  {
+    "attendance_id": "ATT-TCH-001-20260217",
+    "teacher_id": "TCH-001",
+    "attendance_date": "2026-02-17",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:42:00",
+    "check_out_time": "17:05:00",
+    "working_hours": 8.38
+  },
+  {
+    "attendance_id": "ATT-TCH-002-20260217",
+    "teacher_id": "TCH-002",
+    "attendance_date": "2026-02-17",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "09:06:00",
+    "check_out_time": "16:31:00",
+    "working_hours": 7.42
+  },
+  {
+    "attendance_id": "ATT-TCH-003-20260217",
+    "teacher_id": "TCH-003",
+    "attendance_date": "2026-02-17",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:40:00",
+    "check_out_time": "17:11:00",
+    "working_hours": 8.52
+  },
+  {
+    "attendance_id": "ATT-TCH-004-20260217",
+    "teacher_id": "TCH-004",
+    "attendance_date": "2026-02-17",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:56:00",
+    "check_out_time": "17:21:00",
+    "working_hours": 8.42
+  },
+  {
+    "attendance_id": "ATT-TCH-001-20260218",
+    "teacher_id": "TCH-001",
+    "attendance_date": "2026-02-18",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "09:08:00",
+    "check_out_time": "16:51:00",
+    "working_hours": 7.72
+  },
+  {
+    "attendance_id": "ATT-TCH-002-20260218",
+    "teacher_id": "TCH-002",
+    "attendance_date": "2026-02-18",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:35:00",
+    "check_out_time": "16:39:00",
+    "working_hours": 8.07
+  },
+  {
+    "attendance_id": "ATT-TCH-003-20260218",
+    "teacher_id": "TCH-003",
+    "attendance_date": "2026-02-18",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:42:00",
+    "check_out_time": "17:12:00",
+    "working_hours": 8.5
+  },
+  {
+    "attendance_id": "ATT-TCH-004-20260218",
+    "teacher_id": "TCH-004",
+    "attendance_date": "2026-02-18",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "09:03:00",
+    "check_out_time": "17:02:00",
+    "working_hours": 7.98
+  },
+  {
+    "attendance_id": "ATT-TCH-001-20260219",
+    "teacher_id": "TCH-001",
+    "attendance_date": "2026-02-19",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:48:00",
+    "check_out_time": "17:04:00",
+    "working_hours": 8.27
+  },
+  {
+    "attendance_id": "ATT-TCH-002-20260219",
+    "teacher_id": "TCH-002",
+    "attendance_date": "2026-02-19",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "09:10:00",
+    "check_out_time": "16:45:00",
+    "working_hours": 7.58
+  },
+  {
+    "attendance_id": "ATT-TCH-003-20260219",
+    "teacher_id": "TCH-003",
+    "attendance_date": "2026-02-19",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:37:00",
+    "check_out_time": "16:40:00",
+    "working_hours": 8.05
+  },
+  {
+    "attendance_id": "ATT-TCH-004-20260219",
+    "teacher_id": "TCH-004",
+    "attendance_date": "2026-02-19",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "09:00:00",
+    "check_out_time": "16:38:00",
+    "working_hours": 7.63
+  },
+  {
+    "attendance_id": "ATT-TCH-001-20260220",
+    "teacher_id": "TCH-001",
+    "attendance_date": "2026-02-20",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:56:00",
+    "check_out_time": "17:04:00",
+    "working_hours": 8.13
+  },
+  {
+    "attendance_id": "ATT-TCH-002-20260220",
+    "teacher_id": "TCH-002",
+    "attendance_date": "2026-02-20",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:48:00",
+    "check_out_time": "17:24:00",
+    "working_hours": 8.6
+  },
+  {
+    "attendance_id": "ATT-TCH-003-20260220",
+    "teacher_id": "TCH-003",
+    "attendance_date": "2026-02-20",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "09:01:00",
+    "check_out_time": "16:46:00",
+    "working_hours": 7.75
+  },
+  {
+    "attendance_id": "ATT-TCH-004-20260220",
+    "teacher_id": "TCH-004",
+    "attendance_date": "2026-02-20",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:45:00",
+    "check_out_time": "16:30:00",
+    "working_hours": 7.75
+  },
+  {
+    "attendance_id": "ATT-TCH-001-20260221",
+    "teacher_id": "TCH-001",
+    "attendance_date": "2026-02-21",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:47:00",
+    "check_out_time": "17:19:00",
+    "working_hours": 8.53
+  },
+  {
+    "attendance_id": "ATT-TCH-002-20260221",
+    "teacher_id": "TCH-002",
+    "attendance_date": "2026-02-21",
+    "status": "leave",
+    "attendance_source": "system",
+    "check_in_time": null,
+    "check_out_time": null,
+    "working_hours": 0
+  },
+  {
+    "attendance_id": "ATT-TCH-003-20260221",
+    "teacher_id": "TCH-003",
+    "attendance_date": "2026-02-21",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:37:00",
+    "check_out_time": "17:07:00",
+    "working_hours": 8.5
+  },
+  {
+    "attendance_id": "ATT-TCH-004-20260221",
+    "teacher_id": "TCH-004",
+    "attendance_date": "2026-02-21",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:59:00",
+    "check_out_time": "16:33:00",
+    "working_hours": 7.57
+  },
+  {
+    "attendance_id": "ATT-TCH-001-20260222",
+    "teacher_id": "TCH-001",
+    "attendance_date": "2026-02-22",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:37:00",
+    "check_out_time": "17:19:00",
+    "working_hours": 8.7
+  },
+  {
+    "attendance_id": "ATT-TCH-002-20260222",
+    "teacher_id": "TCH-002",
+    "attendance_date": "2026-02-22",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:34:00",
+    "check_out_time": "16:32:00",
+    "working_hours": 7.97
+  },
+  {
+    "attendance_id": "ATT-TCH-003-20260222",
+    "teacher_id": "TCH-003",
+    "attendance_date": "2026-02-22",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "09:13:00",
+    "check_out_time": "17:07:00",
+    "working_hours": 7.9
+  },
+  {
+    "attendance_id": "ATT-TCH-004-20260222",
+    "teacher_id": "TCH-004",
+    "attendance_date": "2026-02-22",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:36:00",
+    "check_out_time": "17:07:00",
+    "working_hours": 8.52
+  },
+  {
+    "attendance_id": "ATT-TCH-001-20260223",
+    "teacher_id": "TCH-001",
+    "attendance_date": "2026-02-23",
+    "status": "absent",
+    "attendance_source": "system",
+    "check_in_time": null,
+    "check_out_time": null,
+    "working_hours": 0
+  },
+  {
+    "attendance_id": "ATT-TCH-002-20260223",
+    "teacher_id": "TCH-002",
+    "attendance_date": "2026-02-23",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:45:00",
+    "check_out_time": "16:37:00",
+    "working_hours": 7.87
+  },
+  {
+    "attendance_id": "ATT-TCH-003-20260223",
+    "teacher_id": "TCH-003",
+    "attendance_date": "2026-02-23",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "09:08:00",
+    "check_out_time": "17:00:00",
+    "working_hours": 7.87
+  },
+  {
+    "attendance_id": "ATT-TCH-004-20260223",
+    "teacher_id": "TCH-004",
+    "attendance_date": "2026-02-23",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "09:02:00",
+    "check_out_time": "16:50:00",
+    "working_hours": 7.8
+  },
+  {
+    "attendance_id": "ATT-TCH-001-20260224",
+    "teacher_id": "TCH-001",
+    "attendance_date": "2026-02-24",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:41:00",
+    "check_out_time": "17:19:00",
+    "working_hours": 8.63
+  },
+  {
+    "attendance_id": "ATT-TCH-002-20260224",
+    "teacher_id": "TCH-002",
+    "attendance_date": "2026-02-24",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:59:00",
+    "check_out_time": "17:21:00",
+    "working_hours": 8.37
+  },
+  {
+    "attendance_id": "ATT-TCH-003-20260224",
+    "teacher_id": "TCH-003",
+    "attendance_date": "2026-02-24",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "09:03:00",
+    "check_out_time": "17:28:00",
+    "working_hours": 8.42
+  },
+  {
+    "attendance_id": "ATT-TCH-004-20260224",
+    "teacher_id": "TCH-004",
+    "attendance_date": "2026-02-24",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:36:00",
+    "check_out_time": "16:57:00",
+    "working_hours": 8.35
+  },
+  {
+    "attendance_id": "ATT-TCH-001-20260225",
+    "teacher_id": "TCH-001",
+    "attendance_date": "2026-02-25",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:32:00",
+    "check_out_time": "17:26:00",
+    "working_hours": 8.9
+  },
+  {
+    "attendance_id": "ATT-TCH-002-20260225",
+    "teacher_id": "TCH-002",
+    "attendance_date": "2026-02-25",
+    "status": "absent",
+    "attendance_source": "system",
+    "check_in_time": null,
+    "check_out_time": null,
+    "working_hours": 0
+  },
+  {
+    "attendance_id": "ATT-TCH-003-20260225",
+    "teacher_id": "TCH-003",
+    "attendance_date": "2026-02-25",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:58:00",
+    "check_out_time": "16:48:00",
+    "working_hours": 7.83
+  },
+  {
+    "attendance_id": "ATT-TCH-004-20260225",
+    "teacher_id": "TCH-004",
+    "attendance_date": "2026-02-25",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:30:00",
+    "check_out_time": "17:10:00",
+    "working_hours": 8.67
+  },
+  {
+    "attendance_id": "ATT-TCH-001-20260226",
+    "teacher_id": "TCH-001",
+    "attendance_date": "2026-02-26",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:36:00",
+    "check_out_time": "16:32:00",
+    "working_hours": 7.93
+  },
+  {
+    "attendance_id": "ATT-TCH-002-20260226",
+    "teacher_id": "TCH-002",
+    "attendance_date": "2026-02-26",
+    "status": "absent",
+    "attendance_source": "system",
+    "check_in_time": null,
+    "check_out_time": null,
+    "working_hours": 0
+  },
+  {
+    "attendance_id": "ATT-TCH-003-20260226",
+    "teacher_id": "TCH-003",
+    "attendance_date": "2026-02-26",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "09:09:00",
+    "check_out_time": "16:57:00",
+    "working_hours": 7.8
+  },
+  {
+    "attendance_id": "ATT-TCH-004-20260226",
+    "teacher_id": "TCH-004",
+    "attendance_date": "2026-02-26",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:53:00",
+    "check_out_time": "16:37:00",
+    "working_hours": 7.73
+  },
+  {
+    "attendance_id": "ATT-TCH-001-20260227",
+    "teacher_id": "TCH-001",
+    "attendance_date": "2026-02-27",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "09:09:00",
+    "check_out_time": "17:04:00",
+    "working_hours": 7.92
+  },
+  {
+    "attendance_id": "ATT-TCH-002-20260227",
+    "teacher_id": "TCH-002",
+    "attendance_date": "2026-02-27",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:49:00",
+    "check_out_time": "17:24:00",
+    "working_hours": 8.58
+  },
+  {
+    "attendance_id": "ATT-TCH-003-20260227",
+    "teacher_id": "TCH-003",
+    "attendance_date": "2026-02-27",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:54:00",
+    "check_out_time": "16:34:00",
+    "working_hours": 7.67
+  },
+  {
+    "attendance_id": "ATT-TCH-004-20260227",
+    "teacher_id": "TCH-004",
+    "attendance_date": "2026-02-27",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:55:00",
+    "check_out_time": "16:37:00",
+    "working_hours": 7.7
+  },
+  {
+    "attendance_id": "ATT-TCH-001-20260228",
+    "teacher_id": "TCH-001",
+    "attendance_date": "2026-02-28",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:47:00",
+    "check_out_time": "16:33:00",
+    "working_hours": 7.77
+  },
+  {
+    "attendance_id": "ATT-TCH-002-20260228",
+    "teacher_id": "TCH-002",
+    "attendance_date": "2026-02-28",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:41:00",
+    "check_out_time": "16:50:00",
+    "working_hours": 8.15
+  },
+  {
+    "attendance_id": "ATT-TCH-003-20260228",
+    "teacher_id": "TCH-003",
+    "attendance_date": "2026-02-28",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:55:00",
+    "check_out_time": "16:38:00",
+    "working_hours": 7.72
+  },
+  {
+    "attendance_id": "ATT-TCH-004-20260228",
+    "teacher_id": "TCH-004",
+    "attendance_date": "2026-02-28",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:39:00",
+    "check_out_time": "16:58:00",
+    "working_hours": 8.32
+  },
+  {
+    "attendance_id": "ATT-TCH-001-20260301",
+    "teacher_id": "TCH-001",
+    "attendance_date": "2026-03-01",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:30:00",
+    "check_out_time": "17:06:00",
+    "working_hours": 8.6
+  },
+  {
+    "attendance_id": "ATT-TCH-002-20260301",
+    "teacher_id": "TCH-002",
+    "attendance_date": "2026-03-01",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:41:00",
+    "check_out_time": "16:39:00",
+    "working_hours": 7.97
+  },
+  {
+    "attendance_id": "ATT-TCH-003-20260301",
+    "teacher_id": "TCH-003",
+    "attendance_date": "2026-03-01",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "09:10:00",
+    "check_out_time": "16:49:00",
+    "working_hours": 7.65
+  },
+  {
+    "attendance_id": "ATT-TCH-004-20260301",
+    "teacher_id": "TCH-004",
+    "attendance_date": "2026-03-01",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:40:00",
+    "check_out_time": "17:14:00",
+    "working_hours": 8.57
+  },
+  {
+    "attendance_id": "ATT-TCH-001-20260302",
+    "teacher_id": "TCH-001",
+    "attendance_date": "2026-03-02",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "09:07:00",
+    "check_out_time": "17:07:00",
+    "working_hours": 8
+  },
+  {
+    "attendance_id": "ATT-TCH-002-20260302",
+    "teacher_id": "TCH-002",
+    "attendance_date": "2026-03-02",
+    "status": "absent",
+    "attendance_source": "system",
+    "check_in_time": null,
+    "check_out_time": null,
+    "working_hours": 0
+  },
+  {
+    "attendance_id": "ATT-TCH-003-20260302",
+    "teacher_id": "TCH-003",
+    "attendance_date": "2026-03-02",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:57:00",
+    "check_out_time": "16:34:00",
+    "working_hours": 7.62
+  },
+  {
+    "attendance_id": "ATT-TCH-004-20260302",
+    "teacher_id": "TCH-004",
+    "attendance_date": "2026-03-02",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:32:00",
+    "check_out_time": "16:59:00",
+    "working_hours": 8.45
+  },
+  {
+    "attendance_id": "ATT-TCH-001-20260303",
+    "teacher_id": "TCH-001",
+    "attendance_date": "2026-03-03",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:54:00",
+    "check_out_time": "17:27:00",
+    "working_hours": 8.55
+  },
+  {
+    "attendance_id": "ATT-TCH-002-20260303",
+    "teacher_id": "TCH-002",
+    "attendance_date": "2026-03-03",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:38:00",
+    "check_out_time": "17:27:00",
+    "working_hours": 8.82
+  },
+  {
+    "attendance_id": "ATT-TCH-003-20260303",
+    "teacher_id": "TCH-003",
+    "attendance_date": "2026-03-03",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:59:00",
+    "check_out_time": "16:43:00",
+    "working_hours": 7.73
+  },
+  {
+    "attendance_id": "ATT-TCH-004-20260303",
+    "teacher_id": "TCH-004",
+    "attendance_date": "2026-03-03",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:58:00",
+    "check_out_time": "16:41:00",
+    "working_hours": 7.72
+  },
+  {
+    "attendance_id": "ATT-TCH-001-20260304",
+    "teacher_id": "TCH-001",
+    "attendance_date": "2026-03-04",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:48:00",
+    "check_out_time": "16:59:00",
+    "working_hours": 8.18
+  },
+  {
+    "attendance_id": "ATT-TCH-002-20260304",
+    "teacher_id": "TCH-002",
+    "attendance_date": "2026-03-04",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:47:00",
+    "check_out_time": "16:43:00",
+    "working_hours": 7.93
+  },
+  {
+    "attendance_id": "ATT-TCH-003-20260304",
+    "teacher_id": "TCH-003",
+    "attendance_date": "2026-03-04",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:50:00",
+    "check_out_time": "17:03:00",
+    "working_hours": 8.22
+  },
+  {
+    "attendance_id": "ATT-TCH-004-20260304",
+    "teacher_id": "TCH-004",
+    "attendance_date": "2026-03-04",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "09:09:00",
+    "check_out_time": "16:38:00",
+    "working_hours": 7.48
+  },
+  {
+    "attendance_id": "ATT-TCH-001-20260305",
+    "teacher_id": "TCH-001",
+    "attendance_date": "2026-03-05",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "09:06:00",
+    "check_out_time": "17:15:00",
+    "working_hours": 8.15
+  },
+  {
+    "attendance_id": "ATT-TCH-002-20260305",
+    "teacher_id": "TCH-002",
+    "attendance_date": "2026-03-05",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:40:00",
+    "check_out_time": "17:11:00",
+    "working_hours": 8.52
+  },
+  {
+    "attendance_id": "ATT-TCH-003-20260305",
+    "teacher_id": "TCH-003",
+    "attendance_date": "2026-03-05",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:39:00",
+    "check_out_time": "16:41:00",
+    "working_hours": 8.03
+  },
+  {
+    "attendance_id": "ATT-TCH-004-20260305",
+    "teacher_id": "TCH-004",
+    "attendance_date": "2026-03-05",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:52:00",
+    "check_out_time": "17:24:00",
+    "working_hours": 8.53
+  },
+  {
+    "attendance_id": "ATT-TCH-001-20260306",
+    "teacher_id": "TCH-001",
+    "attendance_date": "2026-03-06",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:53:00",
+    "check_out_time": "17:24:00",
+    "working_hours": 8.52
+  },
+  {
+    "attendance_id": "ATT-TCH-002-20260306",
+    "teacher_id": "TCH-002",
+    "attendance_date": "2026-03-06",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:32:00",
+    "check_out_time": "16:37:00",
+    "working_hours": 8.08
+  },
+  {
+    "attendance_id": "ATT-TCH-003-20260306",
+    "teacher_id": "TCH-003",
+    "attendance_date": "2026-03-06",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:44:00",
+    "check_out_time": "17:05:00",
+    "working_hours": 8.35
+  },
+  {
+    "attendance_id": "ATT-TCH-004-20260306",
+    "teacher_id": "TCH-004",
+    "attendance_date": "2026-03-06",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:50:00",
+    "check_out_time": "16:31:00",
+    "working_hours": 7.68
+  },
+  {
+    "attendance_id": "ATT-TCH-001-20260307",
+    "teacher_id": "TCH-001",
+    "attendance_date": "2026-03-07",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "09:08:00",
+    "check_out_time": "17:08:00",
+    "working_hours": 8
+  },
+  {
+    "attendance_id": "ATT-TCH-002-20260307",
+    "teacher_id": "TCH-002",
+    "attendance_date": "2026-03-07",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:51:00",
+    "check_out_time": "17:11:00",
+    "working_hours": 8.33
+  },
+  {
+    "attendance_id": "ATT-TCH-003-20260307",
+    "teacher_id": "TCH-003",
+    "attendance_date": "2026-03-07",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "09:13:00",
+    "check_out_time": "17:19:00",
+    "working_hours": 8.1
+  },
+  {
+    "attendance_id": "ATT-TCH-004-20260307",
+    "teacher_id": "TCH-004",
+    "attendance_date": "2026-03-07",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:47:00",
+    "check_out_time": "17:26:00",
+    "working_hours": 8.65
+  },
+  {
+    "attendance_id": "ATT-TCH-001-20260308",
+    "teacher_id": "TCH-001",
+    "attendance_date": "2026-03-08",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "09:12:00",
+    "check_out_time": "16:54:00",
+    "working_hours": 7.7
+  },
+  {
+    "attendance_id": "ATT-TCH-002-20260308",
+    "teacher_id": "TCH-002",
+    "attendance_date": "2026-03-08",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:55:00",
+    "check_out_time": "16:30:00",
+    "working_hours": 7.58
+  },
+  {
+    "attendance_id": "ATT-TCH-003-20260308",
+    "teacher_id": "TCH-003",
+    "attendance_date": "2026-03-08",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:35:00",
+    "check_out_time": "17:03:00",
+    "working_hours": 8.47
+  },
+  {
+    "attendance_id": "ATT-TCH-004-20260308",
+    "teacher_id": "TCH-004",
+    "attendance_date": "2026-03-08",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "09:10:00",
+    "check_out_time": "17:00:00",
+    "working_hours": 7.83
+  },
+  {
+    "attendance_id": "ATT-TCH-001-20260309",
+    "teacher_id": "TCH-001",
+    "attendance_date": "2026-03-09",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:44:00",
+    "check_out_time": "16:32:00",
+    "working_hours": 7.8
+  },
+  {
+    "attendance_id": "ATT-TCH-002-20260309",
+    "teacher_id": "TCH-002",
+    "attendance_date": "2026-03-09",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:58:00",
+    "check_out_time": "17:01:00",
+    "working_hours": 8.05
+  },
+  {
+    "attendance_id": "ATT-TCH-003-20260309",
+    "teacher_id": "TCH-003",
+    "attendance_date": "2026-03-09",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:49:00",
+    "check_out_time": "16:49:00",
+    "working_hours": 8
+  },
+  {
+    "attendance_id": "ATT-TCH-004-20260309",
+    "teacher_id": "TCH-004",
+    "attendance_date": "2026-03-09",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:40:00",
+    "check_out_time": "16:53:00",
+    "working_hours": 8.22
+  },
+  {
+    "attendance_id": "ATT-TCH-001-20260310",
+    "teacher_id": "TCH-001",
+    "attendance_date": "2026-03-10",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "09:09:00",
+    "check_out_time": "16:32:00",
+    "working_hours": 7.38
+  },
+  {
+    "attendance_id": "ATT-TCH-002-20260310",
+    "teacher_id": "TCH-002",
+    "attendance_date": "2026-03-10",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "09:08:00",
+    "check_out_time": "16:41:00",
+    "working_hours": 7.55
+  },
+  {
+    "attendance_id": "ATT-TCH-003-20260310",
+    "teacher_id": "TCH-003",
+    "attendance_date": "2026-03-10",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:40:00",
+    "check_out_time": "16:50:00",
+    "working_hours": 8.17
+  },
+  {
+    "attendance_id": "ATT-TCH-004-20260310",
+    "teacher_id": "TCH-004",
+    "attendance_date": "2026-03-10",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "09:15:00",
+    "check_out_time": "16:34:00",
+    "working_hours": 7.32
+  },
+  {
+    "attendance_id": "ATT-TCH-001-20260311",
+    "teacher_id": "TCH-001",
+    "attendance_date": "2026-03-11",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:47:00",
+    "check_out_time": "17:14:00",
+    "working_hours": 8.45
+  },
+  {
+    "attendance_id": "ATT-TCH-002-20260311",
+    "teacher_id": "TCH-002",
+    "attendance_date": "2026-03-11",
+    "status": "absent",
+    "attendance_source": "system",
+    "check_in_time": null,
+    "check_out_time": null,
+    "working_hours": 0
+  },
+  {
+    "attendance_id": "ATT-TCH-003-20260311",
+    "teacher_id": "TCH-003",
+    "attendance_date": "2026-03-11",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "09:14:00",
+    "check_out_time": "16:51:00",
+    "working_hours": 7.62
+  },
+  {
+    "attendance_id": "ATT-TCH-004-20260311",
+    "teacher_id": "TCH-004",
+    "attendance_date": "2026-03-11",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:51:00",
+    "check_out_time": "17:20:00",
+    "working_hours": 8.48
+  },
+  {
+    "attendance_id": "ATT-TCH-001-20260312",
+    "teacher_id": "TCH-001",
+    "attendance_date": "2026-03-12",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "09:09:00",
+    "check_out_time": "17:30:00",
+    "working_hours": 8.35
+  },
+  {
+    "attendance_id": "ATT-TCH-002-20260312",
+    "teacher_id": "TCH-002",
+    "attendance_date": "2026-03-12",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "09:10:00",
+    "check_out_time": "16:58:00",
+    "working_hours": 7.8
+  },
+  {
+    "attendance_id": "ATT-TCH-003-20260312",
+    "teacher_id": "TCH-003",
+    "attendance_date": "2026-03-12",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "09:02:00",
+    "check_out_time": "17:22:00",
+    "working_hours": 8.33
+  },
+  {
+    "attendance_id": "ATT-TCH-004-20260312",
+    "teacher_id": "TCH-004",
+    "attendance_date": "2026-03-12",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:52:00",
+    "check_out_time": "16:36:00",
+    "working_hours": 7.73
+  },
+  {
+    "attendance_id": "ATT-TCH-001-20260313",
+    "teacher_id": "TCH-001",
+    "attendance_date": "2026-03-13",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:56:00",
+    "check_out_time": "16:54:00",
+    "working_hours": 7.97
+  },
+  {
+    "attendance_id": "ATT-TCH-002-20260313",
+    "teacher_id": "TCH-002",
+    "attendance_date": "2026-03-13",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:58:00",
+    "check_out_time": "17:18:00",
+    "working_hours": 8.33
+  },
+  {
+    "attendance_id": "ATT-TCH-003-20260313",
+    "teacher_id": "TCH-003",
+    "attendance_date": "2026-03-13",
+    "status": "leave",
+    "attendance_source": "system",
+    "check_in_time": null,
+    "check_out_time": null,
+    "working_hours": 0
+  },
+  {
+    "attendance_id": "ATT-TCH-004-20260313",
+    "teacher_id": "TCH-004",
+    "attendance_date": "2026-03-13",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:36:00",
+    "check_out_time": "16:33:00",
+    "working_hours": 7.95
+  },
+  {
+    "attendance_id": "ATT-TCH-001-20260314",
+    "teacher_id": "TCH-001",
+    "attendance_date": "2026-03-14",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "09:08:00",
+    "check_out_time": "16:31:00",
+    "working_hours": 7.38
+  },
+  {
+    "attendance_id": "ATT-TCH-002-20260314",
+    "teacher_id": "TCH-002",
+    "attendance_date": "2026-03-14",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:35:00",
+    "check_out_time": "17:20:00",
+    "working_hours": 8.75
+  },
+  {
+    "attendance_id": "ATT-TCH-003-20260314",
+    "teacher_id": "TCH-003",
+    "attendance_date": "2026-03-14",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:44:00",
+    "check_out_time": "16:47:00",
+    "working_hours": 8.05
+  },
+  {
+    "attendance_id": "ATT-TCH-004-20260314",
+    "teacher_id": "TCH-004",
+    "attendance_date": "2026-03-14",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:33:00",
+    "check_out_time": "16:49:00",
+    "working_hours": 8.27
+  },
+  {
+    "attendance_id": "ATT-TCH-001-20260315",
+    "teacher_id": "TCH-001",
+    "attendance_date": "2026-03-15",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:52:00",
+    "check_out_time": "17:21:00",
+    "working_hours": 8.48
+  },
+  {
+    "attendance_id": "ATT-TCH-002-20260315",
+    "teacher_id": "TCH-002",
+    "attendance_date": "2026-03-15",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "09:10:00",
+    "check_out_time": "17:05:00",
+    "working_hours": 7.92
+  },
+  {
+    "attendance_id": "ATT-TCH-003-20260315",
+    "teacher_id": "TCH-003",
+    "attendance_date": "2026-03-15",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "09:03:00",
+    "check_out_time": "16:54:00",
+    "working_hours": 7.85
+  },
+  {
+    "attendance_id": "ATT-TCH-004-20260315",
+    "teacher_id": "TCH-004",
+    "attendance_date": "2026-03-15",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:37:00",
+    "check_out_time": "16:42:00",
+    "working_hours": 8.08
+  },
+  {
+    "attendance_id": "ATT-TCH-001-20260316",
+    "teacher_id": "TCH-001",
+    "attendance_date": "2026-03-16",
+    "status": "absent",
+    "attendance_source": "system",
+    "check_in_time": null,
+    "check_out_time": null,
+    "working_hours": 0
+  },
+  {
+    "attendance_id": "ATT-TCH-002-20260316",
+    "teacher_id": "TCH-002",
+    "attendance_date": "2026-03-16",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:42:00",
+    "check_out_time": "17:01:00",
+    "working_hours": 8.32
+  },
+  {
+    "attendance_id": "ATT-TCH-003-20260316",
+    "teacher_id": "TCH-003",
+    "attendance_date": "2026-03-16",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:52:00",
+    "check_out_time": "16:46:00",
+    "working_hours": 7.9
+  },
+  {
+    "attendance_id": "ATT-TCH-004-20260316",
+    "teacher_id": "TCH-004",
+    "attendance_date": "2026-03-16",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:50:00",
+    "check_out_time": "16:33:00",
+    "working_hours": 7.72
+  },
+  {
+    "attendance_id": "ATT-TCH-001-20260317",
+    "teacher_id": "TCH-001",
+    "attendance_date": "2026-03-17",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:34:00",
+    "check_out_time": "17:00:00",
+    "working_hours": 8.43
+  },
+  {
+    "attendance_id": "ATT-TCH-002-20260317",
+    "teacher_id": "TCH-002",
+    "attendance_date": "2026-03-17",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:50:00",
+    "check_out_time": "16:37:00",
+    "working_hours": 7.78
+  },
+  {
+    "attendance_id": "ATT-TCH-003-20260317",
+    "teacher_id": "TCH-003",
+    "attendance_date": "2026-03-17",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:43:00",
+    "check_out_time": "16:58:00",
+    "working_hours": 8.25
+  },
+  {
+    "attendance_id": "ATT-TCH-004-20260317",
+    "teacher_id": "TCH-004",
+    "attendance_date": "2026-03-17",
+    "status": "present",
+    "attendance_source": "system",
+    "check_in_time": "08:32:00",
+    "check_out_time": "17:01:00",
+    "working_hours": 8.48
+  }
+]

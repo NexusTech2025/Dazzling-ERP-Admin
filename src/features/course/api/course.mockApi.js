@@ -16,6 +16,15 @@ let mockPackages = [...initialPackages.Packages];
 let mockPackageCourses = [...initialPackageCourses.PackageCourses];
 let mockPackagePerks = [...initialPackagePerks.PackagePerks];
 
+// Helper to enrich course with segment name
+const enrichCourse = (course) => {
+  const segment = mockCourseTypes.find(t => t.segment_id === course.segment_id);
+  return {
+    ...course,
+    segment_name: segment ? segment.segment_name : 'Academic'
+  };
+};
+
 // --- COURSE TYPES (SEGMENTS) ---
 
 export const fetchCourseTypes = async (token, options = {}) => {
@@ -48,14 +57,17 @@ export const fetchCourses = async (token, filter = {}, options = {}) => {
     filtered = filtered.filter(c => c.name.toLowerCase().includes(s) || c.course_id.toLowerCase().includes(s));
   }
 
-  return { success: true, data: { data: filtered } };
+  // Enrich with segment names
+  const enriched = filtered.map(enrichCourse);
+
+  return { success: true, data: { data: enriched } };
 };
 
 export const fetchCourseDetail = async (token, id, options = {}) => {
   await simulateDelay();
   const course = mockCourses.find(c => c.course_id === id);
   if (!course) return { success: false, message: "Course not found" };
-  return { success: true, data: { data: [course] } };
+  return { success: true, data: { data: [enrichCourse(course)] } };
 };
 
 export const createCourse = async (token, data, options = {}) => {
@@ -109,7 +121,7 @@ export const fetchPackageDetail = async (token, id, options = {}) => {
     .filter(pc => pc.package_id === id)
     .map(pc => pc.course_id);
   
-  const relatedCourses = mockCourses.filter(c => mappedCourseIds.includes(c.course_id));
+  const relatedCourses = mockCourses.filter(c => mappedCourseIds.includes(c.course_id)).map(enrichCourse);
 
   // Relational Join: Get Perks
   const relatedPerks = mockPackagePerks

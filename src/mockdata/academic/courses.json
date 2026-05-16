@@ -382,6 +382,36 @@
       "default_installment_count": 2,
       "status": "active",
       "metadata": { "class": 10, "board": "RBSE" }
+    },
+    {
+      "course_id": "CRS-WEB-DEV",
+      "segment_id": "SEG-CMP",
+      "entity_type": "course",
+      "name": "Full Stack Web Development",
+      "short_code": "WD-FS",
+      "language_medium": "English",
+      "description": "Comprehensive MERN stack development course from scratch.",
+      "duration_value": 6,
+      "duration_unit": "months",
+      "base_fee": 25000,
+      "default_installment_count": 6,
+      "status": "active",
+      "metadata": { "min_class": 10, "max_class": 12 }
+    },
+    {
+      "course_id": "CRS-PYTHON-PROG",
+      "segment_id": "SEG-CMP",
+      "entity_type": "course",
+      "name": "Python Programming Masterclass",
+      "short_code": "PY-MC",
+      "language_medium": "English",
+      "description": "Advanced Python programming with Data Science and AI basics.",
+      "duration_value": 4,
+      "duration_unit": "months",
+      "base_fee": 18000,
+      "default_installment_count": 3,
+      "status": "active",
+      "metadata": { "min_class": 8, "max_class": 12 }
     }
   ]
 }

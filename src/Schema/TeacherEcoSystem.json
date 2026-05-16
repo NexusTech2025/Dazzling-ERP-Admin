@@ -1,0 +1,159 @@
+{
+  "domain": "Staff & Resource Management",
+  "description": "Consolidated schema for faculty profiles, subjects, salary configurations, and payment history.",
+  "entities": {
+    "Teacher": {
+      "description": "Stores core identity and professional information of teachers without authentication data.",
+      "fields": [
+        { "name": "teacher_id", "type": "string", "isPrimary": true },
+        { "name": "full_name", "type": "string", "required": true },
+        { "name": "mobile_number", "type": "string", "required": true, "isUnique": true },
+        { "name": "email", "type": "string" },
+        { "name": "gender", "type": "enum", "values": ["male", "female", "other"] },
+        { "name": "date_of_birth", "type": "date" },
+        { "name": "profile_photo_url", "type": "string" },
+        { "name": "experience_years", "type": "number", "required": true },
+        { "name": "qualification", "type": "string" },
+        { "name": "specialization", "type": "string" },
+        { "name": "previous_institute", "type": "string" },
+        { 
+          "name": "teacher_type", 
+          "type": "enum", 
+          "values": ["full_time", "part_time", "guest"], 
+          "required": true 
+        },
+        { "name": "joining_date", "type": "date", "required": true },
+        { 
+          "name": "status", 
+          "type": "enum", 
+          "values": ["active", "inactive", "pending"], 
+          "default": "active" 
+        },
+        { "name": "notes", "type": "string" },
+        { "name": "created_at", "type": "datetime" },
+        { "name": "updated_at", "type": "datetime" },
+        { "name": "created_by", "type": "string" }
+      ],
+      "relations": [
+        { "type": "1:N", "target": "TeacherSubject", "field": "teacher_id" },
+        { "type": "1:N", "target": "TeacherSalaryConfig", "field": "teacher_id" },
+        { "type": "1:N", "target": "TeacherDocument", "field": "teacher_id" },
+        { "type": "1:N", "target": "TeacherPaymentTransaction", "field": "teacher_id" }
+      ]
+    },
+    "TeacherSubject": {
+      "description": "Maps teachers to subjects they can teach (many-to-many relationship).",
+      "fields": [
+        { "name": "teacher_subject_id", "type": "string", "isPrimary": true },
+        { 
+          "name": "teacher_id", 
+          "type": "string", 
+          "required": true, 
+          "isForeignKey": true, 
+          "references": "Teacher.teacher_id" 
+        },
+        { 
+          "name": "subject_id", 
+          "type": "string", 
+          "required": true, 
+          "isForeignKey": true, 
+          "references": "Subject.subject_id" 
+        }
+      ],
+      "relations": [
+        { "type": "N:1", "target": "Teacher", "field": "teacher_id" },
+        { "type": "N:1", "target": "Subject", "field": "subject_id" }
+      ]
+    },
+    "TeacherSalaryConfig": {
+      "description": "Stores salary configuration and history for teachers.",
+      "fields": [
+        { "name": "salary_config_id", "type": "string", "isPrimary": true },
+        { 
+          "name": "teacher_id", 
+          "type": "string", 
+          "required": true, 
+          "isForeignKey": true, 
+          "references": "Teacher.teacher_id" 
+        },
+        { 
+          "name": "salary_type", 
+          "type": "enum", 
+          "values": ["monthly", "per_class"], 
+          "required": true 
+        },
+        { "name": "base_amount", "type": "number", "required": true },
+        { "name": "effective_from", "type": "date", "required": true }
+      ],
+      "relations": [
+        { "type": "N:1", "target": "Teacher", "field": "teacher_id" }
+      ]
+    },
+    "TeacherDocument": {
+      "description": "Stores uploaded documents related to teachers such as resume and ID proof.",
+      "fields": [
+        { "name": "document_id", "type": "string", "isPrimary": true },
+        { 
+          "name": "teacher_id", 
+          "type": "string", 
+          "required": true, 
+          "isForeignKey": true, 
+          "references": "Teacher.teacher_id" 
+        },
+        { 
+          "name": "document_type", 
+          "type": "enum", 
+          "values": ["id_proof", "resume", "other"] 
+        },
+        { "name": "file_url", "type": "string", "required": true },
+        { "name": "uploaded_at", "type": "datetime" }
+      ],
+      "relations": [
+        { "type": "N:1", "target": "Teacher", "field": "teacher_id" }
+      ]
+    },
+    "TeacherPaymentTransaction": {
+      "description": "Tracks all payment transactions made to teachers including salary, advances, bonuses, and deductions.",
+      "fields": [
+        { "name": "transaction_id", "type": "string", "isPrimary": true },
+        { 
+          "name": "teacher_id", 
+          "type": "string", 
+          "required": true, 
+          "isForeignKey": true, 
+          "references": "Teacher.teacher_id" 
+        },
+        { 
+          "name": "salary_config_id", 
+          "type": "string", 
+          "isForeignKey": true, 
+          "references": "TeacherSalaryConfig.salary_config_id",
+          "description": "Optional reference to salary config used"
+        },
+        { 
+          "name": "payment_type", 
+          "type": "enum", 
+          "values": ["salary", "advance", "bonus", "deduction"], 
+          "required": true 
+        },
+        { "name": "amount", "type": "number", "required": true },
+        { 
+          "name": "payment_mode", 
+          "type": "enum", 
+          "values": ["cash", "bank_transfer", "upi", "cheque"], 
+          "required": true 
+        },
+        { "name": "transaction_date", "type": "date", "required": true },
+        { "name": "reference_number", "type": "string" },
+        { "name": "notes", "type": "string" },
+        { "name": "salary_month", "type": "string", "description": "Format: YYYY-MM for payroll tracking" },
+        { "name": "created_at", "type": "datetime" },
+        { "name": "created_by", "type": "string" }
+      ],
+      "relations": [
+        { "type": "N:1", "target": "Teacher", "field": "teacher_id" },
+        { "type": "N:1", "target": "TeacherSalaryConfig", "field": "salary_config_id" }
+      ]
+    }
+  }
+}

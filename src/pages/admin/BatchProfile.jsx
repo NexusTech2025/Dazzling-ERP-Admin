@@ -77,7 +77,7 @@ const BatchProfile = () => {
   };
 
   return (
-    <div className="max-w-[1200px] mx-auto space-y-6 pb-10">
+    <div className="space-y-6 pb-10">
       <nav className="flex items-center gap-2 text-sm font-medium text-text-secondary px-4">
         <Link to="/admin/dashboard" className="hover:text-primary transition-colors">Home</Link>
         <span className="material-symbols-outlined text-[16px]">chevron_right</span>

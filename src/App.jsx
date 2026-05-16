@@ -1,6 +1,7 @@
 import { BrowserRouter as Router } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
 import AppRoutes from './routes/AppRoutes';
 import './App.css';
 
@@ -17,14 +18,26 @@ const queryClient = new QueryClient({
 // This code is for all users
 window.__TANSTACK_QUERY_CLIENT__ = queryClient;
 
+// 🕵️ DEBUG: Global Query Cache Logger
+queryClient.getQueryCache().subscribe((event) => {
+  if (event.type === 'updated' && event.action.type === 'success') {
+    console.groupCollapsed(`📦 Cache Updated: ${JSON.stringify(event.query.queryKey)}`);
+    console.log('Data:', event.action.data);
+    console.log('Query Instance:', event.query);
+    console.groupEnd();
+  }
+});
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <Router>
-        <AuthProvider>
-          <AppRoutes />
-        </AuthProvider>
-      </Router>
+      <ThemeProvider>
+        <Router>
+          <AuthProvider>
+            <AppRoutes />
+          </AuthProvider>
+        </Router>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }

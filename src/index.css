@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:is(.dark *));
+
 @theme {
   --color-primary: #137fec;
   --color-primary-content: #ffffff;
@@ -20,6 +22,23 @@
   --radius-default: 0.25rem;
   --radius-lg: 0.5rem;
   --radius-xl: 0.75rem;
+
+  @keyframes bounce-slow {
+    0%, 100% { transform: translateY(-5%); animation-timing-function: cubic-bezier(0.8, 0, 1, 1); }
+    50% { transform: translateY(0); animation-timing-function: cubic-bezier(0, 0, 0.2, 1); }
+  }
+  @keyframes ping-slow {
+    75%, 100% { transform: scale(1.5); opacity: 0; }
+  }
+  @keyframes progress-indeterminate {
+    0% { transform: translateX(-100%) scaleX(0.2); }
+    50% { transform: translateX(0%) scaleX(0.5); }
+    100% { transform: translateX(100%) scaleX(0.2); }
+  }
+
+  --animate-bounce-slow: bounce-slow 2s infinite;
+  --animate-ping-slow: ping-slow 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+  --animate-progress-indeterminate: progress-indeterminate 2s linear infinite;
 }
 
 @layer base {
@@ -44,4 +63,3 @@
   white-space: nowrap;
   direction: ltr;
 }
-$content

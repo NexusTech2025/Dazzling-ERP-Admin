@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { postToGoogleScript } from '../services/api';
+import { executeAction } from '../services/apiClient';
 import { AuthContext } from './AuthContextCore';
 
 export const AuthProvider = ({ children }) => {
@@ -21,8 +21,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (username, password) => {
     try {
-      const response = await postToGoogleScript({
-        action: 'login',
+      const response = await executeAction('AUTH.LOGIN', {
         username,
         password
       });
@@ -52,7 +51,7 @@ export const AuthProvider = ({ children }) => {
       }
     } catch (error) {
       console.error('Login Context Error:', error);
-      return { success: false, message: 'Server error. Please try again later.' };
+      return { success: false, message: error.message || 'Server error. Please try again later.' };
     }
   };
 
@@ -60,10 +59,7 @@ export const AuthProvider = ({ children }) => {
     try {
       if (token) {
         // Send logout action to server as per auth.md
-        await postToGoogleScript({
-          action: 'logout',
-          token: token
-        });
+        await executeAction('AUTH.LOGOUT', {}, token);
       }
     } catch (error) {
       console.error('Logout API Error:', error);

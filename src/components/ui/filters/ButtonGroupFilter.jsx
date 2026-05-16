@@ -48,6 +48,7 @@ const ButtonGroupFilter = ({
         {options.map((opt) => (
           <button
             key={opt.value}
+            type="button"
             onClick={() => onChange(opt.value)}
             className={getButtonClasses(value === opt.value)}
           >

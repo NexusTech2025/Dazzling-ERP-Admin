@@ -1,15 +1,32 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../../context/AuthContextCore';
-import { queryKeys } from '../../../lib/react-query/queryKeys';
-// IMPORT FROM MOCK API FOR DEVELOPMENT
-import { fetchCourses, fetchCourseDetail, createCourse, updateCourse, deleteCourse, fetchCourseTypes, createCourseType, fetchPackages, createPackage, fetchPackageDetail, updatePackage } from '../api/course.mockApi';
+import { queryKeys, EMPTY_FILTER } from '../../../lib/react-query/queryKeys';
+
+// IMPORT FROM REAL API
+import { 
+  fetchCourses, 
+  fetchCourseDetail, 
+  createCourse, 
+  updateCourse, 
+  deleteCourse, 
+  fetchCourseTypes, 
+  createCourseType 
+} from '../api/course.api';
+
+// IMPORT FROM MOCK API FOR REMAINING FEATURES (PACKAGES)
+import { 
+  fetchPackages, 
+  createPackage, 
+  fetchPackageDetail, 
+  updatePackage 
+} from '../api/course.mockApi';
 
 // --- COURSE TYPES ---
 
 export const useCourseTypesQuery = () => {
   const { token } = useAuth();
   return useQuery({
-    queryKey: ['courseTypes'], // You can add this to queryKeys if needed
+    queryKey: queryKeys.course.type.list(),
     queryFn: async ({ signal }) => {
       const response = await fetchCourseTypes(token, { signal });
       if (!response.success) {
@@ -18,6 +35,9 @@ export const useCourseTypesQuery = () => {
       return response.data?.data || [];
     },
     enabled: !!token,
+    staleTime: Infinity,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 };
 
@@ -29,7 +49,7 @@ export const useCreateCourseTypeMutation = () => {
     mutationFn: ({ data, options }) => createCourseType(token, data, options),
     onSuccess: (response) => {
       if (response.success) {
-        queryClient.invalidateQueries({ queryKey: ['courseTypes'] });
+        queryClient.invalidateQueries({ queryKey: queryKeys.course.type.all });
       }
     }
   });
@@ -40,11 +60,11 @@ export const useCreateCourseTypeMutation = () => {
 /**
  * Hook for fetching all courses
  */
-export const useCoursesQuery = (filter = {}) => {
+export const useCoursesQuery = (filter = EMPTY_FILTER) => {
   const { token } = useAuth();
 
   return useQuery({
-    queryKey: queryKeys.courses.list(filter),
+    queryKey: queryKeys.course.list(filter),
     queryFn: async ({ signal }) => {
       const response = await fetchCourses(token, filter, { signal });
       if (!response.success) {
@@ -53,6 +73,9 @@ export const useCoursesQuery = (filter = {}) => {
       return response.data?.data || [];
     },
     enabled: !!token,
+    staleTime: Infinity,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 };
 
@@ -63,7 +86,7 @@ export const useCourseDetailQuery = (id) => {
   const { token } = useAuth();
 
   return useQuery({
-    queryKey: queryKeys.courses.detail(id),
+    queryKey: queryKeys.course.detail(id),
     queryFn: async ({ signal }) => {
       const response = await fetchCourseDetail(token, id, { signal });
       if (!response.success) {
@@ -86,7 +109,7 @@ export const useCreateCourseMutation = () => {
     mutationFn: ({ data, options }) => createCourse(token, data, options),
     onSuccess: (response) => {
       if (response.success) {
-        queryClient.invalidateQueries({ queryKey: queryKeys.courses.all });
+        queryClient.invalidateQueries({ queryKey: queryKeys.course.all });
       }
     }
   });
@@ -103,8 +126,8 @@ export const useUpdateCourseMutation = () => {
     mutationFn: ({ id, data, options }) => updateCourse(token, id, data, options),
     onSuccess: (response, { id }) => {
       if (response.success) {
-        queryClient.invalidateQueries({ queryKey: queryKeys.courses.all });
-        queryClient.invalidateQueries({ queryKey: queryKeys.courses.detail(id) });
+        queryClient.invalidateQueries({ queryKey: queryKeys.course.all });
+        queryClient.invalidateQueries({ queryKey: queryKeys.course.detail(id) });
       }
     }
   });
@@ -121,7 +144,7 @@ export const useDeleteCourseMutation = () => {
     mutationFn: ({ id, options }) => deleteCourse(token, id, options),
     onSuccess: (response) => {
       if (response.success) {
-        queryClient.invalidateQueries({ queryKey: queryKeys.courses.all });
+        queryClient.invalidateQueries({ queryKey: queryKeys.course.all });
       }
     }
   });
@@ -129,10 +152,10 @@ export const useDeleteCourseMutation = () => {
 
 // --- PACKAGES ---
 
-export const usePackagesQuery = (filter = {}) => {
+export const usePackagesQuery = (filter = EMPTY_FILTER) => {
   const { token } = useAuth();
   return useQuery({
-    queryKey: ['packages', filter],
+    queryKey: queryKeys.course.package.list(filter),
     queryFn: async ({ signal }) => {
       const response = await fetchPackages(token, filter, { signal });
       if (!response.success) {
@@ -141,13 +164,16 @@ export const usePackagesQuery = (filter = {}) => {
       return response.data?.data || [];
     },
     enabled: !!token,
+    staleTime: Infinity,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 };
 
 export const usePackageDetailQuery = (id) => {
   const { token } = useAuth();
   return useQuery({
-    queryKey: ['packages', 'detail', id],
+    queryKey: queryKeys.course.package.detail(id),
     queryFn: async ({ signal }) => {
       const response = await fetchPackageDetail(token, id, { signal });
       if (!response.success) {
@@ -167,7 +193,7 @@ export const useCreatePackageMutation = () => {
     mutationFn: ({ data, options }) => createPackage(token, data, options),
     onSuccess: (response) => {
       if (response.success) {
-        queryClient.invalidateQueries({ queryKey: ['packages'] });
+        queryClient.invalidateQueries({ queryKey: queryKeys.course.package.all });
       }
     }
   });
@@ -181,8 +207,8 @@ export const useUpdatePackageMutation = () => {
     mutationFn: ({ id, data, options }) => updatePackage(token, id, data, options),
     onSuccess: (response, { id }) => {
       if (response.success) {
-        queryClient.invalidateQueries({ queryKey: ['packages'] });
-        queryClient.invalidateQueries({ queryKey: ['packages', 'detail', id] });
+        queryClient.invalidateQueries({ queryKey: queryKeys.course.package.all });
+        queryClient.invalidateQueries({ queryKey: queryKeys.course.package.detail(id) });
       }
     }
   });

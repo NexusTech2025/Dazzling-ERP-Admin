@@ -4,6 +4,7 @@ import masterPerksData from '../../../mockdata/academic/masterPerks.json';
 /**
  * Modern Perks Selection Modal
  * Supports multi-selection from a library and custom perk creation.
+ * Width increased to full width with 2rem margin.
  */
 const PerksSelectionModal = ({ isOpen, onClose, onSelect, selectedPerks = [] }) => {
   const [tempSelected, setTempSelected] = useState(selectedPerks);
@@ -43,7 +44,7 @@ const PerksSelectionModal = ({ isOpen, onClose, onSelect, selectedPerks = [] }) 
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300" onClick={onClose}></div>
       
-      <div className="relative bg-white dark:bg-slate-900 w-full max-w-2xl rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-300">
+      <div className="relative bg-white dark:bg-slate-900 w-full max-w-[calc(100%-4rem)] rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-300">
         {/* Modal Header */}
         <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
           <div>
@@ -58,7 +59,7 @@ const PerksSelectionModal = ({ isOpen, onClose, onSelect, selectedPerks = [] }) 
         {/* Modal Body */}
         <div className="p-6 overflow-y-auto space-y-8 flex-1 custom-scrollbar">
           {/* Library Section */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {masterPerksData.MasterPerks.map((perk) => {
               const isSelected = tempSelected.find(p => p.perk_title === perk.perk_title);
               return (

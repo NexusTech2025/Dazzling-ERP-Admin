@@ -72,10 +72,13 @@ const CourseCard = ({ course, onDelete }) => {
             <span className="material-symbols-outlined text-[18px]">analytics</span>
             Details
           </Link>
-          <button className="flex items-center justify-center gap-2 rounded-lg bg-primary/10 px-3 py-2 text-sm font-bold text-primary hover:bg-primary/20 transition-colors">
+          <Link 
+            to={`/admin/courses/edit/${course.course_id}`}
+            className="flex items-center justify-center gap-2 rounded-lg bg-primary/10 px-3 py-2 text-sm font-bold text-primary hover:bg-primary/20 transition-colors"
+          >
             <span className="material-symbols-outlined text-[18px]">edit</span>
             Edit
-          </button>
+          </Link>
         </div>
       </div>
     </div>

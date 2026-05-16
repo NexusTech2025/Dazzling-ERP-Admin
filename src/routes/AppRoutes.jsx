@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContextCore';
+import HydrationGuard from '../components/guards/HydrationGuard';
 import AdminLayout from '../components/layout/AdminLayout';
 import LoginPage from '../pages/auth/LoginPage';
 import Dashboard from '../pages/admin/Dashboard';
@@ -17,6 +18,8 @@ import Settings from '../pages/admin/Settings';
 import AddStudent from '../pages/admin/AddStudent';
 import AddTeacher from '../pages/admin/AddTeacher';
 import TestFilters from '../pages/admin/TestFilters';
+import TestButtons from '../pages/admin/TestButtons';
+import TestProfileComponents from '../pages/admin/TestProfileComponents';
 
 // Feature Pages
 import Courses from '../features/course/Courses';
@@ -32,7 +35,13 @@ import StudentFeeOverview from '../features/finance/StudentFeeOverview';
 
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated } = useAuth();
-  return isAuthenticated ? children : <Navigate to="/login" replace />;
+  return isAuthenticated ? (
+    <HydrationGuard>
+      {children}
+    </HydrationGuard>
+  ) : (
+    <Navigate to="/login" replace />
+  );
 };
 
 const AppRoutes = () => {
@@ -67,11 +76,13 @@ const AppRoutes = () => {
 
         <Route path="teachers" element={<Teachers />} />
         <Route path="teachers/add" element={<AddTeacher />} />
+        <Route path="teachers/edit/:id" element={<AddTeacher />} />
         <Route path="teachers/:id" element={<TeacherProfile />} />
 
         {/* Course Management */}
         <Route path="courses" element={<Courses />} />
         <Route path="courses/add" element={<AddCourse />} />
+        <Route path="courses/edit/:id" element={<AddCourse />} />
         <Route path="courses/packages" element={<CoursePackagesForm />} />
         <Route path="courses/:id" element={<CourseDetails />} />
         
@@ -89,7 +100,13 @@ const AppRoutes = () => {
         <Route path="roles" element={<Roles />} />
         <Route path="reports" element={<Reports />} />
         <Route path="settings" element={<Settings />} />
-        <Route path="test-filters" element={<TestFilters />} />
+        
+        {/* Development Showcase Pages */}
+        <Route path="test-pages">
+          <Route path="filters" element={<TestFilters />} />
+          <Route path="buttons" element={<TestButtons />} />
+          <Route path="profile-core" element={<TestProfileComponents />} />
+        </Route>
       </Route>
       
       <Route path="/" element={<Navigate to="/admin" replace />} />

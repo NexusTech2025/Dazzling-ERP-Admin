@@ -91,7 +91,7 @@ const StudentProfile = () => {
   };
 
   return (
-    <div className="max-w-[1200px] mx-auto space-y-6 pb-10">
+    <div className="space-y-6 pb-10">
       {/* Breadcrumbs */}
       <nav className="flex items-center gap-2 text-sm font-medium text-text-secondary px-4">
         <Link to="/admin/dashboard" className="hover:text-primary transition-colors">Home</Link>

@@ -13,6 +13,8 @@ import FormTextarea from '../../components/ui/form/FormTextarea';
 import FormSelect from '../../components/ui/form/FormSelect';
 import Badge from '../../components/ui/Badge';
 import PerksSelectionModal from './components/PerksSelectionModal';
+import CourseSelectionModal from './components/CourseSelectionModal';
+import ActionCardButton from '../../components/ui/buttons/ActionCardButton';
 
 /**
  * Course Package Form Page
@@ -46,8 +48,7 @@ const CoursePackagesForm = () => {
   });
 
   const [selectedCourses, setSelectedCourses] = useState([]);
-  const [courseSearch, setCourseSearch] = useState('');
-  const [showCourseDropdown, setShowDropdown] = useState(false);
+  const [isCourseModalOpen, setIsCourseModalOpen] = useState(false);
   const [perks, setPerks] = useState([]);
   const [isPerksModalOpen, setIsPerksModalOpen] = useState(false);
 
@@ -79,17 +80,24 @@ const CoursePackagesForm = () => {
       });
       setSelectedCourses(existingPkg.courses || []);
       setPerks(existingPkg.perks || []);
+    } else if (!isEditMode) {
+      // Reset state for "Create" mode if we were previously in "Edit" mode or ID changed
+      setSelectedCourses([]);
+      setPerks([]);
+      setFormData({
+        packageId: `PKG-${Date.now().toString().slice(-6)}`,
+        name: '',
+        description: '',
+        segmentId: 'SEG-ACA',
+        targetClass: '9',
+        board: 'CBSE',
+        month: 12,
+        packageFee: '0.00',
+        recurringBilling: false,
+        status: 'active'
+      });
     }
-  }, [isEditMode, existingPkg]);
-
-  const searchableCourses = useMemo(() => {
-    if (!courseSearch) return [];
-    return courses.filter(c => 
-      !selectedCourses.find(sc => sc.course_id === c.course_id) &&
-      (c.name.toLowerCase().includes(courseSearch.toLowerCase()) || 
-       c.course_id.toLowerCase().includes(courseSearch.toLowerCase()))
-    );
-  }, [courses, courseSearch, selectedCourses]);
+  }, [isEditMode, existingPkg, id]);
 
   const aggregateValue = useMemo(() => {
     return selectedCourses.reduce((sum, c) => sum + (c.base_fee || 0), 0);
@@ -107,16 +115,6 @@ const CoursePackagesForm = () => {
       ...prev,
       [name]: type === 'checkbox' ? checked : value
     }));
-  };
-
-  const addCourse = (course) => {
-    setSelectedCourses(prev => [...prev, course]);
-    setCourseSearch('');
-    setShowDropdown(false);
-  };
-
-  const addPerk = () => {
-    setIsPerksModalOpen(true);
   };
 
   const handleSave = () => {
@@ -137,14 +135,23 @@ const CoursePackagesForm = () => {
       courses: selectedCourses
     };
 
+    const mutationOptions = {
+      onSuccess: (res) => {
+        if (res.success) {
+          navigate(isEditMode ? `/admin/packages/${id}` : '/admin/courses');
+        } else {
+          setError(res.error?.message || 'Operation failed.');
+        }
+      },
+      onError: (err) => {
+        setError(err.message || 'An unexpected server error occurred.');
+      }
+    };
+
     if (isEditMode) {
-      updateMutation.mutate({ id, data: payload }, {
-        onSuccess: () => navigate(`/admin/packages/${id}`)
-      });
+      updateMutation.mutate({ id, data: payload }, mutationOptions);
     } else {
-      createMutation.mutate({ data: payload }, {
-        onSuccess: () => navigate('/admin/courses')
-      });
+      createMutation.mutate({ data: payload }, mutationOptions);
     }
   };
 
@@ -255,76 +262,94 @@ const CoursePackagesForm = () => {
             </div>
 
             <div className="space-y-6">
-              <div className="relative">
-                <FormInput 
-                  icon="search" 
-                  value={courseSearch} 
-                  onChange={(e) => { setCourseSearch(e.target.value); setShowDropdown(true); }} 
-                  onFocus={() => setShowDropdown(true)} 
-                  placeholder="Search and select existing courses..." 
+              {selectedCourses.length === 0 ? (
+                <ActionCardButton 
+                  variant="dashed"
+                  layout="centered"
+                  label="Select Courses to Bundle"
+                  description="Search and pick subjects or programs to include in this special package."
+                  icon="add_to_photos"
+                  onClick={() => setIsCourseModalOpen(true)}
                 />
-                
-                {showCourseDropdown && courseSearch && (
-                  <div className="absolute z-20 top-full left-0 w-full mt-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl max-h-64 overflow-y-auto overflow-x-hidden">
-                    {searchableCourses.map(c => (
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {selectedCourses.map(c => (
+                    <div key={c.course_id} className="flex items-center gap-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 group relative">
+                      <div className="size-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-black text-xs">
+                        {c.short_code || c.name.substring(0, 2).toUpperCase()}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{c.name}</p>
+                        <p className="text-[10px] font-black text-slate-500 uppercase mt-0.5">{c.course_id} • ${c.base_fee}</p>
+                      </div>
                       <button 
-                        key={c.course_id} 
-                        onClick={() => addCourse(c)} 
-                        className="w-full px-5 py-4 text-left hover:bg-primary/5 flex items-center justify-between border-b last:border-0 border-slate-100 dark:border-slate-800 group transition-colors"
+                        onClick={() => setSelectedCourses(prev => prev.filter(x => x.course_id !== c.course_id))}
+                        className="opacity-0 group-hover:opacity-100 p-1.5 text-slate-400 hover:text-rose-500 transition-all"
                       >
-                        <div>
-                          <p className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-primary transition-colors">{c.name}</p>
-                          <p className="text-[10px] font-black text-slate-500 uppercase mt-0.5">{c.course_id} • {c.language_medium}</p>
-                        </div>
-                        <span className="text-xs font-black text-primary bg-primary/10 px-2 py-1 rounded-lg">${c.base_fee}</span>
+                        <span className="material-symbols-outlined text-sm">delete</span>
                       </button>
-                    ))}
-                  </div>
-                )}
-              </div>
+                    </div>
+                  ))}
+                  <ActionCardButton 
+                    variant="solid"
+                    layout="grid"
+                    label="Add More"
+                    icon="add"
+                    onClick={() => setIsCourseModalOpen(true)}
+                    className="min-h-[72px]"
+                  />
+                </div>
+              )}
 
-              {/* Selected Courses Tags */}
-              <div className="flex flex-wrap gap-2 py-2">
-                {selectedCourses.map(c => (
-                  <span key={c.course_id} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary rounded-full text-sm font-bold border border-primary/20 animate-in zoom-in duration-200">
-                    {c.name}
-                    <button onClick={() => setSelectedCourses(prev => prev.filter(x => x.course_id !== c.course_id))} className="material-symbols-outlined text-xs hover:text-red-500">close</button>
-                  </span>
-                ))}
-              </div>
-
-              <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 border border-dashed border-slate-300 dark:border-slate-700 text-center">
-                <p className="text-sm text-slate-500">
-                  <span className="font-bold text-slate-900 dark:text-white">{selectedCourses.length}</span> courses currently selected. Total aggregate value: <span className="font-bold text-primary">${aggregateValue.toLocaleString()}</span>
-                </p>
-              </div>
+              {selectedCourses.length > 0 && (
+                <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 border border-dashed border-slate-300 dark:border-slate-700 text-center">
+                  <p className="text-sm text-slate-500 font-medium">
+                    <span className="font-black text-slate-900 dark:text-white">{selectedCourses.length}</span> items selected. Total value: <span className="font-black text-primary">${aggregateValue.toLocaleString()}</span>
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Perks & Features */}
             <div className="mt-10 pt-8 border-t border-slate-100 dark:border-slate-800">
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-2 text-slate-900 dark:text-white">
-                  <span className="material-symbols-outlined text-primary">featured_play_list</span>
-                  <h4 className="text-sm font-bold uppercase tracking-wider text-slate-500">Package Perks & Features</h4>
-                </div>
-                <button onClick={addPerk} className="text-xs font-black text-primary hover:underline flex items-center gap-1">
-                  <span className="material-symbols-outlined text-sm">add</span> Add Perk
-                </button>
+              <div className="flex items-center gap-2 text-slate-900 dark:text-white mb-6">
+                <span className="material-symbols-outlined text-primary">featured_play_list</span>
+                <h4 className="text-sm font-bold uppercase tracking-wider text-slate-500">Package Perks & Features</h4>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {perks.map((p, i) => (
-                  <div key={i} className="flex items-start gap-3 p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 group hover:border-primary/30 transition-all">
-                    <span className="material-symbols-outlined text-green-500 text-sm">{p.icon || 'check_circle'}</span>
-                    <div className="flex-1">
-                      <p className="text-sm font-bold text-slate-900 dark:text-white">{p.perk_title}</p>
-                      <p className="text-[11px] text-slate-500 font-medium mt-0.5">{p.perk_description}</p>
+
+              {perks.length === 0 ? (
+                <ActionCardButton 
+                  variant="dashed"
+                  layout="centered"
+                  label="Add Package Perks & Benefits"
+                  description="Highlight additional value like extra certificates, mentorship, or resources."
+                  icon="stars"
+                  onClick={() => setIsPerksModalOpen(true)}
+                />
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {perks.map((p, i) => (
+                    <div key={i} className="flex items-start gap-3 p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 group hover:border-primary/30 transition-all">
+                      <span className="material-symbols-outlined text-green-500 text-sm">{p.icon || 'check_circle'}</span>
+                      <div className="flex-1">
+                        <p className="text-sm font-bold text-slate-900 dark:text-white">{p.perk_title}</p>
+                        <p className="text-[11px] text-slate-500 font-medium mt-0.5">{p.perk_description}</p>
+                      </div>
+                      <button onClick={() => setPerks(prev => prev.filter((_, idx) => idx !== i))} className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-rose-500 transition-all">
+                        <span className="material-symbols-outlined text-sm">delete</span>
+                      </button>
                     </div>
-                    <button onClick={() => setPerks(prev => prev.filter((_, idx) => idx !== i))} className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-rose-500 transition-all">
-                      <span className="material-symbols-outlined text-sm">delete</span>
-                    </button>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                  <ActionCardButton 
+                    variant="solid"
+                    layout="grid"
+                    label="Add Another Perk"
+                    icon="add"
+                    onClick={() => setIsPerksModalOpen(true)}
+                    className="min-h-[74px]"
+                  />
+                </div>
+              )}
             </div>
           </section>
         </div>
@@ -430,6 +455,14 @@ const CoursePackagesForm = () => {
           </section>
         </div>
       </div>
+
+      <CourseSelectionModal 
+        isOpen={isCourseModalOpen}
+        onClose={() => setIsCourseModalOpen(false)}
+        onSelect={(selected) => setSelectedCourses(selected)}
+        selectedCourses={selectedCourses}
+        availableCourses={courses}
+      />
 
       <PerksSelectionModal 
         isOpen={isPerksModalOpen} 

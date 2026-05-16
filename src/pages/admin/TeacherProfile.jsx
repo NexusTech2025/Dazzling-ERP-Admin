@@ -8,6 +8,9 @@ import TeacherPersonalInfo from '../../features/teacher/components/profile/Teach
 import TeacherContactDetails from '../../features/teacher/components/profile/TeacherContactDetails';
 import TeacherProfessionalLog from '../../features/teacher/components/profile/TeacherProfessionalLog';
 import TeacherSalarySnapshot from '../../features/teacher/components/profile/TeacherSalarySnapshot';
+import TeacherProfessionalCard from '../../features/teacher/components/profile/TeacherProfessionalCard';
+import TeacherDocumentsCard from '../../features/teacher/components/profile/TeacherDocumentsCard';
+import TeachersAttendance from '../../features/teacher/components/profile/TeachersAttendance';
 
 const TeacherProfile = () => {
   const { id } = useParams();
@@ -40,14 +43,18 @@ const TeacherProfile = () => {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="lg:col-span-2 flex flex-col gap-6">
               <TeacherPersonalInfo teacher={teacher} />
+              <TeacherProfessionalCard teacher={teacher} />
               <TeacherContactDetails teacher={teacher} />
-              <TeacherSalarySnapshot />
+              <TeacherDocumentsCard documents={teacher.documents} />
             </div>
-            <div className="lg:col-span-1">
+            <div className="lg:col-span-1 flex flex-col gap-6">
+              <TeacherSalarySnapshot />
               <TeacherProfessionalLog />
             </div>
           </div>
         );
+      case 'Attendance':
+        return <TeachersAttendance teacherId={teacher.teacher_id} />;
       default:
         return (
           <div className="py-20 text-center animate-in fade-in zoom-in-95 bg-surface-light dark:bg-surface-dark rounded-xl border border-border-light dark:border-border-dark shadow-sm">
@@ -60,7 +67,7 @@ const TeacherProfile = () => {
   };
 
   return (
-    <div className="max-w-[1200px] mx-auto space-y-6 pb-10">
+    <div className="space-y-6 pb-10">
       <nav className="flex items-center gap-2 text-sm font-medium text-text-secondary px-4">
         <Link to="/admin/dashboard" className="hover:text-primary transition-colors">Home</Link>
         <span className="material-symbols-outlined text-[16px]">chevron_right</span>

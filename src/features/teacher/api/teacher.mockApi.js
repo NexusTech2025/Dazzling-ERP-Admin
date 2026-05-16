@@ -1,4 +1,5 @@
 import mockTeachers from '../../../mockdata/core/teachers.json';
+import mockAttendance from '../../../mockdata/core/teacherAttendance.json';
 import { simulateDelay } from '../../../lib/mockData';
 
 /**
@@ -6,6 +7,7 @@ import { simulateDelay } from '../../../lib/mockData';
  */
 
 let localTeachers = [...mockTeachers.Teachers];
+let localAttendance = [...mockAttendance];
 
 export const fetchTeachers = async (token, filter = {}, options = {}) => {
   await simulateDelay();
@@ -33,6 +35,43 @@ export const fetchTeacherDetail = async (token, id, options = {}) => {
   return { success: true, data: { data: teacher } };
 };
 
+export const fetchTeacherAttendance = async (token, teacherId, options = {}) => {
+  await simulateDelay();
+  const attendance = localAttendance.filter(a => a.teacher_id === teacherId);
+  return { success: true, data: { data: attendance } };
+};
+
+export const updateTeacherAttendance = async (token, { teacherId, date, data }, options = {}) => {
+  await simulateDelay(500);
+  
+  const recordIndex = localAttendance.findIndex(
+    a => a.teacher_id === teacherId && a.attendance_date === date
+  );
+
+  let updatedRecord;
+
+  if (recordIndex !== -1) {
+    updatedRecord = {
+      ...localAttendance[recordIndex],
+      ...data,
+      updated_at: new Date().toISOString()
+    };
+    localAttendance[recordIndex] = updatedRecord;
+  } else {
+    updatedRecord = {
+      attendance_id: `ATT-${teacherId}-${date.replace(/-/g, '')}`,
+      teacher_id: teacherId,
+      attendance_date: date,
+      attendance_source: 'manual',
+      created_at: new Date().toISOString(),
+      ...data
+    };
+    localAttendance.push(updatedRecord);
+  }
+
+  return { success: true, message: "Attendance updated successfully", data: updatedRecord };
+};
+
 export const createTeacher = async (token, userData, profileData, options = {}) => {
   await simulateDelay(1000);
   const newTeacher = {
@@ -53,8 +92,35 @@ export const updateTeacher = async (token, id, data, options = {}) => {
   const index = localTeachers.findIndex(t => t.teacher_id === id);
   if (index === -1) return { success: false, message: "Teacher not found" };
   
-  localTeachers[index] = { ...localTeachers[index], ...data, updated_at: new Date().toISOString() };
-  return { success: true, message: "Teacher profile updated successfully", data: localTeachers[index] };
+  // Create a clean update object based on schema
+  const updatedTeacher = {
+    ...localTeachers[index],
+    teacher_name: data.name || localTeachers[index].teacher_name,
+    mobile: data.mobile || localTeachers[index].mobile,
+    gender: data.gender || localTeachers[index].gender,
+    date_of_birth: data.date_of_birth || localTeachers[index].date_of_birth,
+    designation: data.designation || localTeachers[index].designation,
+    subject_code: data.subject_code || localTeachers[index].subject_code,
+    experience_years: data.experience_years || localTeachers[index].experience_years,
+    specialization: data.specialization || localTeachers[index].specialization,
+    teacher_type: data.teacher_type || localTeachers[index].teacher_type,
+    joining_date: data.joining_date || localTeachers[index].joining_date,
+    previous_institute: data.previous_institute || localTeachers[index].previous_institute,
+    status: data.status?.toLowerCase() || localTeachers[index].status,
+    updated_at: new Date().toISOString()
+  };
+
+  // Merge Metadata properly if it exists in data
+  if (data.metadata) {
+    updatedTeacher.metadata = {
+      ...(localTeachers[index].metadata || {}),
+      ...data.metadata
+    };
+  }
+
+  localTeachers[index] = updatedTeacher;
+  
+  return { success: true, message: "Teacher profile updated successfully", data: updatedTeacher };
 };
 
 export const removeTeacher = async (token, id, options = {}) => {

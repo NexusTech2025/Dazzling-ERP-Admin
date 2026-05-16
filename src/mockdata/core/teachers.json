@@ -2,55 +2,133 @@
   "Teachers": [
     {
       "teacher_id": "TCH-001",
-      "username": "rahul_physics",
-      "teacher_name": "Rahul Sharma",
-      "email": "rahul@academy.com",
-      "mobile": "9812345678",
-      "department": "Physics",
-      "subject_code": "PHY-101",
-      "designation": "Senior Lecturer",
-      "branch_id": "BR-001",
+      "username": "rahul_phy",
+      "teacher_name": "Dr. Rahul Sharma",
+      "email": "rahul.phy@meridian.com",
+      "mobile": "+91 98765 43210",
+      "gender": "male",
+      "date_of_birth": "1985-05-15",
+      "department": "Academic",
+      "subject_code": "Advanced Physics, Quantum Mechanics",
+      "designation": "Senior Physics Faculty",
+      "specialization": "Quantum Mechanics",
+      "experience_years": 12,
+      "teacher_type": "full_time",
+      "joining_date": "2020-01-10",
+      "previous_institute": "IIT Bombay",
       "status": "active",
-      "avatarUrl": "https://api.dicebear.com/7.x/avataaars/svg?seed=Rahul"
+      "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=Rahul1",
+      "metadata": {
+        "branch": "Downtown Campus",
+        "salary_type": "Monthly",
+        "base_salary": "5500",
+        "address": "42 Abbey Road, Liverpool, L8 0SS, UK",
+        "time_slots": ["Morning", "Evening"],
+        "internal_notes": "Expert in Particle Physics. Highly recommended for senior batches."
+      },
+      "documents": [
+        { "id": "DOC-001", "name": "Passport Copy", "type": "id_proof", "url": "#", "date": "2020-01-10" },
+        { "id": "DOC-002", "name": "PhD Certificate", "type": "resume", "url": "#", "date": "2020-01-10" }
+      ],
+      "transactions": [
+        { "id": "TRX-001", "type": "salary", "amount": 5500, "date": "2023-10-30", "status": "processed", "mode": "bank_transfer" },
+        { "id": "TRX-002", "type": "bonus", "amount": 500, "date": "2023-09-15", "status": "processed", "mode": "upi" }
+      ]
     },
     {
       "teacher_id": "TCH-002",
-      "username": "priya_math",
-      "teacher_name": "Priya Singh",
-      "email": "priya@academy.com",
-      "mobile": "9812345679",
-      "department": "Mathematics",
-      "subject_code": "MATH-201",
-      "designation": "Assistant Professor",
-      "branch_id": "BR-001",
+      "username": "rahul_math",
+      "teacher_name": "Rahul Verma",
+      "email": "rahul.math@meridian.com",
+      "mobile": "+91 91234 56780",
+      "gender": "male",
+      "date_of_birth": "1990-08-22",
+      "department": "Academic",
+      "subject_code": "Calculus BC, Linear Algebra",
+      "designation": "Mathematics Faculty",
+      "specialization": "Pure Mathematics",
+      "experience_years": 6,
+      "teacher_type": "full_time",
+      "joining_date": "2021-06-15",
+      "previous_institute": "Delhi Public School",
       "status": "active",
-      "avatarUrl": "https://api.dicebear.com/7.x/avataaars/svg?seed=Priya"
+      "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=Rahul2",
+      "metadata": {
+        "branch": "West Side Wing",
+        "salary_type": "Monthly",
+        "base_salary": "4200",
+        "address": "Sector 15, Rohini, New Delhi, India",
+        "time_slots": ["Morning"],
+        "internal_notes": "Strong student feedback for calculus."
+      },
+      "documents": [
+        { "id": "DOC-003", "name": "Aadhar Card", "type": "id_proof", "url": "#", "date": "2021-06-15" }
+      ],
+      "transactions": [
+        { "id": "TRX-003", "type": "salary", "amount": 4200, "date": "2023-10-30", "status": "processed", "mode": "bank_transfer" }
+      ]
     },
     {
       "teacher_id": "TCH-003",
-      "username": "amit_comp",
-      "teacher_name": "Amit Verma",
-      "email": "amit@academy.com",
-      "mobile": "9812345680",
-      "department": "Computer Applications",
-      "subject_code": "COMP-301",
-      "designation": "HOD Computer Science",
-      "branch_id": "BR-002",
+      "username": "manmohan_phy",
+      "teacher_name": "Manmohan Singh",
+      "email": "manmohan@meridian.com",
+      "mobile": "+91 99887 76655",
+      "gender": "male",
+      "date_of_birth": "1978-12-05",
+      "department": "Academic",
+      "subject_code": "Electromagnetism, Optics",
+      "designation": "HOD Physics",
+      "specialization": "Applied Physics",
+      "experience_years": 18,
+      "teacher_type": "full_time",
+      "joining_date": "2018-03-01",
+      "previous_institute": "St. Xaviers College",
       "status": "active",
-      "avatarUrl": "https://api.dicebear.com/7.x/avataaars/svg?seed=Amit"
+      "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=Manmohan",
+      "metadata": {
+        "branch": "Downtown Campus",
+        "salary_type": "Monthly",
+        "base_salary": "7500",
+        "address": "Model Town, Ludhiana, Punjab",
+        "time_slots": ["Morning", "Afternoon"],
+        "internal_notes": "Head of Department. Handles administrative scheduling as well."
+      },
+      "documents": [
+        { "id": "DOC-004", "name": "Experience Letter", "type": "resume", "url": "#", "date": "2018-03-01" }
+      ],
+      "transactions": [
+        { "id": "TRX-004", "type": "salary", "amount": 7500, "date": "2023-10-30", "status": "processed", "mode": "bank_transfer" }
+      ]
     },
     {
       "teacher_id": "TCH-004",
-      "username": "neha_comm",
-      "teacher_name": "Neha Kapoor",
-      "email": "neha@academy.com",
-      "mobile": "9812345681",
-      "department": "Communication Skills",
-      "subject_code": "COMM-101",
-      "designation": "Soft Skills Trainer",
-      "branch_id": "BR-002",
-      "status": "active",
-      "avatarUrl": "https://api.dicebear.com/7.x/avataaars/svg?seed=Neha"
+      "username": "dev_chem",
+      "teacher_name": "Dev Sharma",
+      "email": "dev.sharma@meridian.com",
+      "mobile": "+91 90123 45678",
+      "gender": "male",
+      "date_of_birth": "1992-03-12",
+      "department": "Academic",
+      "subject_code": "Organic Chemistry",
+      "designation": "Chemistry Faculty",
+      "specialization": "Bio-Chemistry",
+      "experience_years": 4,
+      "teacher_type": "part_time",
+      "joining_date": "2022-09-01",
+      "previous_institute": "Metropolis Academy",
+      "status": "pending",
+      "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=Dev",
+      "metadata": {
+        "branch": "Global Online",
+        "salary_type": "Per Class",
+        "base_salary": "150",
+        "address": "B-42, Sky Tower, Mumbai, India",
+        "time_slots": ["Evening"],
+        "internal_notes": "Part-time faculty for evening online sessions."
+      },
+      "documents": [],
+      "transactions": []
     }
   ]
 }

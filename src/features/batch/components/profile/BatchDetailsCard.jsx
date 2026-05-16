@@ -14,14 +14,14 @@ const BatchDetailsCard = ({ batch }) => {
         <DetailItem 
           icon="person" 
           label="Primary Instructor" 
-          value={batch.teacher_name} 
+          value={batch.instructor_name || batch.teacher_name} 
           subValue="Faculty" 
         />
         <DetailItem 
           icon="schedule" 
           label="Timings" 
-          value={batch.schedule_time} 
-          subValue={batch.schedule_days} 
+          value={batch.has_schedule ? `${batch.schedule.start_time} - ${batch.schedule.end_time}` : 'No schedule'} 
+          subValue={batch.has_schedule ? batch.schedule.days_of_week.join(', ') : ''} 
         />
         <DetailItem 
           icon="location_on" 
@@ -33,7 +33,7 @@ const BatchDetailsCard = ({ batch }) => {
           icon="menu_book" 
           label="Current Module" 
           value={batch.course_name} 
-          subValue={`Est. completion: ${new Date(batch.end_date).toLocaleDateString()}`} 
+          subValue={batch.end_date ? `Est. completion: ${new Date(batch.end_date).toLocaleDateString()}` : 'No end date'} 
         />
       </div>
     </Card>

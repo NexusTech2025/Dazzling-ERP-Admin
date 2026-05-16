@@ -37,7 +37,7 @@ export const useInstallmentsQuery = (filter = {}) => {
   const { token } = useAuth();
 
   return useQuery({
-    queryKey: queryKeys.finance.installments.list(filter),
+    queryKey: queryKeys.finance.installment.list(filter),
     queryFn: async ({ signal }) => {
       const response = await fetchInstallments(token, filter, { signal });
       if (!response.success) {
@@ -75,7 +75,7 @@ export const useStudentFeeOverviewQuery = (studentId) => {
   const { token } = useAuth();
 
   return useQuery({
-    queryKey: queryKeys.finance.installments.student(studentId),
+    queryKey: queryKeys.finance.installment.student(studentId),
     queryFn: async ({ signal }) => {
       const response = await fetchStudentFeeOverview(token, studentId, { signal });
       if (!response.success) {

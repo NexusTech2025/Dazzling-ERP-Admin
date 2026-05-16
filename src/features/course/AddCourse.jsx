@@ -1,20 +1,25 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { useCreateCourseMutation, useCourseTypesQuery, useCreateCourseTypeMutation } from './hooks/useCourseQueries';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, Link, useParams } from 'react-router-dom';
+import { useCreateCourseMutation, useCourseTypesQuery, useCreateCourseTypeMutation, useCourseDetailQuery, useUpdateCourseMutation } from './hooks/useCourseQueries';
+import { LoadingState, ErrorState } from '../../components/ui/QueryStatus';
 
 /**
  * Add Course Page
  * Handles the registration of new subjects or skill-based courses with medium and board support.
  */
 const AddCourse = () => {
+  const { id } = useParams();
   const navigate = useNavigate();
   const createMutation = useCreateCourseMutation();
+  const updateMutation = useUpdateCourseMutation();
   const { data: courseTypes = [], isLoading: isLoadingTypes } = useCourseTypesQuery();
+  const { data: existingCourse, isLoading: isLoadingCourse, error: courseDetailsError } = useCourseDetailQuery(id);
   const createTypeMutation = useCreateCourseTypeMutation();
   
   const [error, setError] = useState(null);
 
   const [formData, setFormData] = useState({
+    course_id: '',
     name: '',
     short_code: '',
     entity_type: 'subject', // 'subject' or 'course'
@@ -33,24 +38,50 @@ const AddCourse = () => {
   });
 
   const [isCreatingType, setIsCreatingType] = useState(false);
+  const generateSegmentId = () => "SEG-" + Date.now().toString().slice(-6);
   const [newTypeData, setNewTypeData] = useState({
+    segment_id: generateSegmentId(),
     segment_name: '',
     entity_label: 'Course',
     description: ''
   });
+
+  useEffect(() => {
+    if (id && existingCourse) {
+      setFormData({
+        course_id: existingCourse.course_id || '',
+        name: existingCourse.name || '',
+        short_code: existingCourse.short_code || '',
+        entity_type: existingCourse.entity_type || 'subject',
+        language_medium: existingCourse.language_medium || 'English',
+        description: existingCourse.description || '',
+        segment_id: existingCourse.segment_id || '',
+        duration_value: existingCourse.duration_value || 12,
+        duration_unit: existingCourse.duration_unit || 'months',
+        class_level: existingCourse.metadata?.class || '',
+        min_class: existingCourse.metadata?.min_class || '',
+        max_class: existingCourse.metadata?.max_class || '',
+        board: existingCourse.metadata?.board || '',
+        base_fee: existingCourse.base_fee || '',
+        default_installment_count: existingCourse.default_installment_count || 1,
+        is_active: existingCourse.is_active ?? (existingCourse.status === 'active')
+      });
+    }
+  }, [id, existingCourse]);
+
+  if ((id && isLoadingCourse) || isLoadingTypes) {
+    return <LoadingState message="Loading course form..." />;
+  }
+
+  if (courseDetailsError) {
+    return <ErrorState message={courseDetailsError.message} onRetry={() => window.location.reload()} />;
+  }
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value
-    }));
-  };
-
-  const handleInstallmentChange = (delta) => {
-    setFormData(prev => ({
-      ...prev,
-      default_installment_count: Math.max(1, Math.min(12, Number(prev.default_installment_count) + delta))
     }));
   };
 
@@ -62,7 +93,7 @@ const AddCourse = () => {
         if (res.success) {
           setFormData(prev => ({ ...prev, segment_id: res.data.segment_id }));
           setIsCreatingType(false);
-          setNewTypeData({ segment_name: '', entity_label: 'Course', description: '' });
+          setNewTypeData({ segment_id: generateSegmentId(), segment_name: '', entity_label: 'Course', description: '' });
         }
       }
     });
@@ -83,37 +114,59 @@ const AddCourse = () => {
       return;
     }
 
+    // --- SCHEMA ALIGNMENT OPERATION ---
+    
+    // 1. Construct dynamic metadata based on entity type
     const metadata = formData.entity_type === 'subject' 
       ? { class: formData.class_level, board: formData.board }
       : { min_class: formData.min_class, max_class: formData.max_class };
 
-    const payload = {
-      ...formData,
-      course_id: `CRS-${Date.now().toString().slice(-6)}`,
+    // 2. Assemble surgical payload matching full_schema.json
+    const alignedPayload = {
+      course_id: id ? formData.course_id || `CRS-${Date.now().toString().slice(-6)}` : `CRS-${Date.now().toString().slice(-6)}`,
+      segment_id: formData.segment_id,
+      entity_type: formData.entity_type,
+      name: formData.name,
+      short_code: formData.short_code.toUpperCase(),
+      language_medium: formData.language_medium,
+      description: formData.description,
+      duration_value: Number(formData.duration_value),
+      duration_unit: formData.duration_unit,
       base_fee: Number(formData.base_fee),
       default_installment_count: Number(formData.default_installment_count),
-      duration_value: Number(formData.duration_value),
-      metadata: metadata
+      metadata: metadata,
+      status: formData.is_active ? 'active' : 'inactive'
     };
 
-    // Clean up temporary UI fields not in schema
-    const fieldsToRemove = ['class_level', 'min_class', 'max_class', 'board'];
-    fieldsToRemove.forEach(f => delete payload[f]);
+    const successRedirect = () => navigate('/admin/courses');
 
-    createMutation.mutate({
-      data: payload
-    }, {
-      onSuccess: (res) => {
-        if (res.success) {
-          navigate('/admin/courses');
-        } else {
-          setError(res.error?.message || res.message || 'Failed to create item.');
+    if (id) {
+      updateMutation.mutate({ id, data: alignedPayload }, {
+        onSuccess: (res) => {
+          if (res.success) {
+            successRedirect();
+          } else {
+            setError(res.error?.message || res.message || 'Failed to update item.');
+          }
+        },
+        onError: (err) => {
+          setError(err.message || 'An unexpected error occurred.');
         }
-      },
-      onError: (err) => {
-        setError(err.message || 'An unexpected error occurred.');
-      }
-    });
+      });
+    } else {
+      createMutation.mutate({ data: alignedPayload }, {
+        onSuccess: (res) => {
+          if (res.success) {
+            successRedirect();
+          } else {
+            setError(res.error?.message || res.message || 'Failed to create item.');
+          }
+        },
+        onError: (err) => {
+          setError(err.message || 'An unexpected error occurred.');
+        }
+      });
+    }
   };
 
   return (
@@ -129,9 +182,9 @@ const AddCourse = () => {
 
       <div className="flex flex-col gap-1">
         <h1 className="text-3xl font-black text-text-main dark:text-white tracking-tight leading-tight">
-          Create New {formData.entity_type === 'subject' ? 'Academic Subject' : 'Skill Course'}
+          {id ? 'Edit' : 'Create New'} {formData.entity_type === 'subject' ? 'Academic Subject' : 'Skill Course'}
         </h1>
-        <p className="text-text-secondary text-base">Define a new offering with specific board, medium, and fee structure.</p>
+        <p className="text-text-secondary text-base">{id ? 'Update course details and save changes.' : 'Define a new offering with specific board, medium, and fee structure.'}</p>
       </div>
 
       {error && (

@@ -1,8 +1,10 @@
 import React from 'react';
 import { useAuth } from '../../context/AuthContextCore';
+import { useTheme } from '../../context/ThemeContext';
 
 const Header = () => {
   const { user } = useAuth();
+  const { theme, toggleTheme } = useTheme();
 
   return (
     <header className="flex items-center justify-between whitespace-nowrap border-b border-border-light bg-surface-light dark:bg-surface-dark dark:border-border-dark px-10 py-3 sticky top-0 z-50">
@@ -29,6 +31,17 @@ const Header = () => {
       </div>
 
       <div className="flex flex-1 justify-end gap-6 items-center">
+        {/* Theme Toggle */}
+        <button 
+          onClick={toggleTheme}
+          className="flex items-center justify-center rounded-full size-10 hover:bg-background-light dark:hover:bg-border-dark text-text-secondary transition-colors"
+          title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
+        >
+          <span className="material-symbols-outlined">
+            {theme === 'light' ? 'dark_mode' : 'light_mode'}
+          </span>
+        </button>
+
         <button className="relative flex items-center justify-center rounded-full size-10 hover:bg-background-light dark:hover:bg-border-dark text-text-secondary transition-colors">
           <span className="material-symbols-outlined">notifications</span>
           <span className="absolute top-2.5 right-2.5 size-2 bg-red-500 rounded-full border-2 border-surface-light dark:border-surface-dark"></span>

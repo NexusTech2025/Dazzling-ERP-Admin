@@ -27,7 +27,7 @@ const TestFilters = () => {
   ];
 
   return (
-    <div className="max-w-4xl mx-auto space-y-12 py-10">
+    <div className="space-y-12 py-10">
       <div className="flex flex-col gap-2">
         <h1 className="text-3xl font-black text-text-main dark:text-white">Component Showcase</h1>
         <p className="text-text-secondary font-medium">Testing our new reusable ButtonGroupFilter component.</p>

@@ -221,7 +221,7 @@ const Courses = () => {
   ];
 
   if (isLoadingCourses || isLoadingPackages) return <LoadingState message="Scanning curriculum library..." />;
-  if (coursesError || packagesError) return <ErrorState message={(coursesError || packagesError).message} onRetry={() => queryClient.invalidateQueries({ queryKey: queryKeys.courses.all })} />;
+  if (coursesError || packagesError) return <ErrorState message={(coursesError || packagesError).message} onRetry={() => queryClient.invalidateQueries({ queryKey: queryKeys.course.all })} />;
 
   return (
     <div className="max-w-7xl mx-auto space-y-6 pb-10">

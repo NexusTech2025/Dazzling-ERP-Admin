@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
-import { useBatchesQuery, useDeleteBatchMutation, queryKeys } from './hooks/useBatchQueries';
+import { useBatchesQuery, useDeleteBatchMutation } from './hooks/useBatchQueries';
+import { queryKeys } from '../../lib/react-query/queryKeys';
 import { useFilteredBatches } from '../../hooks/useFilteredBatches';
 import DataTable from '../../components/ui/DataTable';
 import { LoadingState, ErrorState } from '../../components/ui/QueryStatus';
@@ -66,7 +67,7 @@ const Batches = () => {
   );
 
   if (isLoading) return <LoadingState message="Fetching batch records..." />;
-  if (error) return <ErrorState message={error.message} onRetry={() => queryClient.invalidateQueries({ queryKey: queryKeys.all })} />;
+  if (error) return <ErrorState message={error.message} onRetry={() => queryClient.invalidateQueries({ queryKey: queryKeys.batch.all })} />;
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -85,7 +86,7 @@ const Batches = () => {
         secondaryAction={
           <RefreshButton 
             isFetching={isFetching} 
-            onRefresh={() => queryClient.invalidateQueries({ queryKey: queryKeys.all })} 
+            onRefresh={() => queryClient.invalidateQueries({ queryKey: queryKeys.batch.all })} 
           />
         }
       />

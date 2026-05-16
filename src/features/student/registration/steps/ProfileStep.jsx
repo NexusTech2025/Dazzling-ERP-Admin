@@ -74,8 +74,8 @@ const ProfileStep = ({ formData, setFormData, onNext, onCancel }) => {
                 <input 
                   className="w-full rounded-lg border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800 focus:border-primary focus:ring-primary h-12 px-4 transition-all" 
                   type="date"
-                  name="dob"
-                  value={formData.dob || ''}
+                  name="date_of_birth"
+                  value={formData.date_of_birth || ''}
                   onChange={handleChange}
                 />
               </div>

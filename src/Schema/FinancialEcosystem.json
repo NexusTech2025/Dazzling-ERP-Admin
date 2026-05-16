@@ -1,0 +1,96 @@
+{
+  "domain": "Financial & Fee Ecosystem",
+  "description": "Consolidated schema for all financial, billing, and payment entities.",
+  "entities": {
+    "FeePlan": {
+      "description": "Master price list and financial template for courses and packages.",
+      "fields": [
+        { "name": "fee_plan_id", "type": "string", "isPrimary": true },
+        { "name": "entity_id", "type": "string", "isForeignKey": true, "description": "References Course.course_id or Package.package_id" },
+        { "name": "entity_type", "type": "enum", "values": ["course", "package"] },
+        { "name": "plan_name", "type": "string", "required": true },
+        { "name": "total_fee", "type": "number", "required": true },
+        { "name": "discount_allowed", "type": "boolean", "default": true },
+        { "name": "installment_allowed", "type": "boolean", "default": true },
+        { "name": "created_at", "type": "datetime" }
+      ]
+    },
+    "StudentFeeAccount": {
+      "description": "The personal financial ledger for a student's enrollment.",
+      "fields": [
+        { "name": "student_fee_id", "type": "string", "isPrimary": true },
+        { "name": "enrollment_id", "type": "string", "isForeignKey": true, "references": "Enrollment.enrollment_id" },
+        { "name": "fee_plan_id", "type": "string", "isForeignKey": true, "references": "FeePlan.fee_plan_id" },
+        { "name": "total_fee", "type": "number", "description": "Base fee at time of enrollment" },
+        { "name": "discount", "type": "number", "default": 0 },
+        { "name": "adjustment_type", "type": "enum", "values": ["scholarship", "coupon", "referral", "manual_override", "none"] },
+        { "name": "coupon_code", "type": "string" },
+        { "name": "final_fee", "type": "number", "description": "Legally binding amount (total - discount)" },
+        { "name": "amount_paid", "type": "number", "default": 0 },
+        { "name": "balance_due", "type": "number" },
+        { "name": "is_overdue", "type": "boolean", "default": false },
+        { "name": "penalty_amount", "type": "number", "default": 0 },
+        { "name": "next_due_date", "type": "date" },
+        { "name": "status", "type": "enum", "values": ["active", "completed", "defaulted", "refunded"], "default": "active" },
+        { "name": "remarks", "type": "string" },
+        { "name": "created_by", "type": "string" },
+        { "name": "created_at", "type": "datetime" },
+        { "name": "updated_at", "type": "datetime" }
+      ],
+      "relations": [
+        { "type": "1:1", "target": "Enrollment", "field": "enrollment_id" },
+        { "type": "N:1", "target": "FeePlan", "field": "fee_plan_id" }
+      ]
+    },
+    "Installment": {
+      "description": "Breakdown of the final fee into dated payment requests.",
+      "fields": [
+        { "name": "installment_id", "type": "string", "isPrimary": true },
+        { "name": "student_fee_id", "type": "string", "isForeignKey": true, "references": "StudentFeeAccount.student_fee_id" },
+        { "name": "installment_number", "type": "integer" },
+        { "name": "due_amount", "type": "number", "required": true },
+        { "name": "paid_amount", "type": "number", "default": 0 },
+        { "name": "late_fee_amount", "type": "number", "default": 0 },
+        { "name": "due_date", "type": "date", "required": true },
+        { "name": "status", "type": "enum", "values": ["pending", "partially_paid", "paid", "overdue"], "default": "pending" }
+      ],
+      "relations": [
+        { "type": "N:1", "target": "StudentFeeAccount", "field": "student_fee_id" }
+      ]
+    },
+    "Payment": {
+      "description": "Record of a specific financial transaction applied to an installment.",
+      "fields": [
+        { "name": "payment_id", "type": "string", "isPrimary": true },
+        { "name": "installment_id", "type": "string", "isForeignKey": true, "references": "Installment.installment_id" },
+        { "name": "student_fee_id", "type": "string", "isForeignKey": true, "references": "StudentFeeAccount.student_fee_id" },
+        { "name": "amount_paid", "type": "number", "required": true },
+        { "name": "payment_date", "type": "datetime", "required": true },
+        { "name": "payment_method", "type": "enum", "values": ["cash", "upi", "bank_transfer", "cheque"] },
+        { "name": "transaction_reference", "type": "string" },
+        { "name": "status", "type": "enum", "values": ["success", "pending", "failed"], "default": "success" },
+        { "name": "remarks", "type": "string" },
+        { "name": "created_by", "type": "string" }
+      ],
+      "relations": [
+        { "type": "N:1", "target": "Installment", "field": "installment_id" },
+        { "type": "N:1", "target": "StudentFeeAccount", "field": "student_fee_id" }
+      ]
+    },
+    "FeeAdjustment": {
+      "description": "Financial adjustments like scholarships or referral discounts applied to a student's balance.",
+      "fields": [
+        { "name": "adjustment_id", "type": "string", "isPrimary": true },
+        { "name": "student_fee_id", "type": "string", "isForeignKey": true, "references": "StudentFeeAccount.student_fee_id" },
+        { "name": "adjustment_type", "type": "enum", "values": ["scholarship", "coupon", "referral", "manual"] },
+        { "name": "amount", "type": "number", "required": true },
+        { "name": "reason", "type": "string" },
+        { "name": "created_by", "type": "string" },
+        { "name": "created_at", "type": "datetime" }
+      ],
+      "relations": [
+        { "type": "N:1", "target": "StudentFeeAccount", "field": "student_fee_id" }
+      ]
+    }
+  }
+}
