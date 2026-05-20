@@ -1,0 +1,9 @@
+description = 'Synchronizes src/Schema/full_schema.json from the upstream DazzlingDB v3 schema.'
+prompt = '''
+Please perform the following schema synchronization:
+1. Research: Confirm the location of the upstream schema file at `..\..\GAS\DazzlingDB\full_schemav3.json`.
+2. Plan: Verify that the local `src/Schema/full_schema.json` is ready for an overwrite.
+3. Act: Copy the upstream schema to the local path.
+4. Logic: Ensure the version field inside the JSON remains as defined in the source.
+5. Validate: Verify the copy by reading the first and last 10 lines of the updated file.
+'''

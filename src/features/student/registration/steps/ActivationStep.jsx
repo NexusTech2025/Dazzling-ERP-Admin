@@ -124,7 +124,7 @@ const ActivationStep = ({ formData, setFormData, onFinish, onBack, isPending }) 
                 onClick={onBack}
                 className="w-full bg-transparent hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 text-sm font-medium py-2 px-4 rounded-lg transition-all"
               >
-                Back to Review
+                Back to Finance
               </button>
             </div>
           </div>

@@ -1,0 +1,15 @@
+{
+  "entity": "Package",
+  "description": "Bundled academic offerings where multiple courses are sold as a single program.",
+  "fields": [
+    { "name": "package_id", "type": "string", "isPrimary": true },
+    { "name": "name", "type": "string", "required": true },
+    { "name": "description", "type": "string" },
+    { "name": "target_class", "type": "string" },
+    { "name": "board", "type": "string" },
+    { "name": "month", "type": "integer", "description": "Duration in months" },
+    { "name": "package_fee", "type": "number", "required": true },
+    { "name": "discount_percent", "type": "number" },
+    { "name": "status", "type": "enum", "values": ["active", "inactive", "draft"], "default": "active" }
+  ]
+}

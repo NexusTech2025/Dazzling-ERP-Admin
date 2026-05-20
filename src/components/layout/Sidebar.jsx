@@ -32,6 +32,7 @@ const Sidebar = () => {
   ];
 
   const adminItems = [
+    { name: 'Branches', path: '/admin/branches', icon: 'hub' },
     { name: 'Roles & Permissions', path: '/admin/roles', icon: 'admin_panel_settings' },
     { name: 'Reports', path: '/admin/reports', icon: 'bar_chart' },
     { name: 'Settings', path: '/admin/settings', icon: 'settings' },

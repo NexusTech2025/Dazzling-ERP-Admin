@@ -3,6 +3,8 @@ import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useCreateBatchMutation, useUpdateBatchMutation, useBatchDetailQuery } from './hooks/useBatchQueries';
 import { useCoursesQuery } from '../course/hooks/useCourseQueries';
 import { useTeachersQuery } from '../teacher/hooks/useTeacherQueries';
+import CourseSelectionModal from '../course/components/CourseSelectionModal';
+import TeacherSelectionModal from '../teacher/components/TeacherSelectionModal';
 import ButtonGroupFilter from '../../components/ui/filters/ButtonGroupFilter';
 import FormSection from '../../components/ui/v2/FormSection';
 import FormField from '../../components/ui/v2/FormField';
@@ -10,6 +12,7 @@ import SelectInput from '../../components/ui/v2/SelectInput';
 import TextInput from '../../components/ui/v2/TextInput';
 import DateInput from '../../components/ui/v2/DateInput';
 import BaseInput from '../../components/ui/v2/BaseInput';
+import Avatar from '../../components/ui/v2/Avatar';
 
 const AddBatch = () => {
   const [searchParams] = useSearchParams();
@@ -21,12 +24,12 @@ const AddBatch = () => {
   const updateMutation = useUpdateBatchMutation();
   const { data: batchToEdit, isLoading: isBatchLoading } = useBatchDetailQuery(id);
   
-  // Fetch unfiltered lists to leverage the instant hydration cache, then filter locally
+  // Fetch unfiltered lists to leverage the instant hydration cache
   const { data: allCourses = [] } = useCoursesQuery();
   const { data: allTeachers = [] } = useTeachersQuery();
 
-  const courses = allCourses.filter(c => c.status?.toLowerCase() === 'active');
-  const teachers = allTeachers.filter(t => t.status?.toLowerCase() === 'active');
+  const [isCourseModalOpen, setIsCourseModalOpen] = useState(false);
+  const [isTeacherModalOpen, setIsTeacherModalOpen] = useState(false);
 
   const [formData, setFormData] = useState({
     batch_name: '',
@@ -44,6 +47,10 @@ const AddBatch = () => {
       end_time: '11:00'
     }
   });
+
+  // Resolve current selection names for UI
+  const selectedCourse = allCourses.find(c => c.course_id === formData.course_id);
+  const selectedTeacher = allTeachers.find(t => t.teacher_id === formData.teacher_id);
 
   useEffect(() => {
     if (isEditMode && batchToEdit) {
@@ -113,13 +120,27 @@ const AddBatch = () => {
           
           {/* Basic Details */}
           <FormSection title="Basic Details" icon="info">
-            <FormField label="Course" required>
-              <SelectInput
-                value={formData.course_id}
-                onChange={val => setFormData({...formData, course_id: val})}
-                options={courses.map(c => ({ label: c.name, value: c.course_id }))}
-                placeholder="Select Course"
-              />
+            <FormField label="Course Selection" required className="md:col-span-2">
+              <button 
+                type="button"
+                onClick={() => setIsCourseModalOpen(true)}
+                className="w-full text-left p-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-primary/50 transition-all group flex items-center justify-between"
+              >
+                <div className="flex items-center gap-4">
+                  <div className={`size-12 rounded-xl flex items-center justify-center font-black text-xs ${selectedCourse ? 'bg-primary/10 text-primary' : 'bg-slate-100 text-slate-400'}`}>
+                    {selectedCourse?.short_code || (selectedCourse?.name ? selectedCourse.name.substring(0,2).toUpperCase() : <span className="material-symbols-outlined">menu_book</span>)}
+                  </div>
+                  <div>
+                    <p className={`text-sm font-bold ${selectedCourse ? 'text-text-main dark:text-white' : 'text-text-secondary'}`}>
+                      {selectedCourse?.name || 'Assign Course to Batch'}
+                    </p>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-0.5">
+                      {selectedCourse ? `ID: ${selectedCourse.course_id} • ${selectedCourse.language_medium}` : 'Click to browse course catalog'}
+                    </p>
+                  </div>
+                </div>
+                <span className="material-symbols-outlined text-slate-300 group-hover:text-primary transition-colors">edit_square</span>
+              </button>
             </FormField>
 
             <TextInput
@@ -128,6 +149,7 @@ const AddBatch = () => {
               placeholder="e.g. JEE Alpha 2024"
               value={formData.batch_name}
               onChange={e => setFormData({...formData, batch_name: e.target.value})}
+              className="md:col-span-2"
             />
 
             <FormField label="Batch Type" className="md:col-span-2">
@@ -145,16 +167,35 @@ const AddBatch = () => {
               />
             </FormField>
 
-            <SelectInput
-              label="Primary Teacher"
-              value={formData.teacher_id}
-              onChange={val => setFormData({...formData, teacher_id: val})}
-              options={teachers.map(t => ({ label: `${t.teacher_name} (${t.specialization})`, value: t.teacher_id }))}
-              placeholder="Assign Teacher"
-            />
+            <FormField label="Faculty Assignment" className="md:col-span-2">
+              <button 
+                type="button"
+                onClick={() => setIsTeacherModalOpen(true)}
+                className="w-full text-left p-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-primary/50 transition-all group flex items-center justify-between"
+              >
+                <div className="flex items-center gap-4">
+                  {selectedTeacher ? (
+                    <Avatar name={selectedTeacher.teacher_name} size="md" className="rounded-xl" />
+                  ) : (
+                    <div className="size-12 rounded-xl bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-400">
+                      <span className="material-symbols-outlined">person_add</span>
+                    </div>
+                  )}
+                  <div>
+                    <p className={`text-sm font-bold ${selectedTeacher ? 'text-text-main dark:text-white' : 'text-text-secondary'}`}>
+                      {selectedTeacher?.teacher_name || 'Assign Primary Instructor'}
+                    </p>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-0.5">
+                      {selectedTeacher ? `${selectedTeacher.specialization || 'General Faculty'} • ID: ${selectedTeacher.teacher_id}` : 'Click to select from faculty directory'}
+                    </p>
+                  </div>
+                </div>
+                <span className="material-symbols-outlined text-slate-300 group-hover:text-primary transition-colors">person_search</span>
+              </button>
+            </FormField>
 
             <SelectInput
-              label="Status"
+              label="Operational Status"
               value={formData.status}
               onChange={val => setFormData({...formData, status: val})}
               options={[
@@ -162,6 +203,7 @@ const AddBatch = () => {
                 { label: 'Completed', value: 'completed' },
                 { label: 'Cancelled', value: 'cancelled' }
               ]}
+              className="md:col-span-2"
             />
           </FormSection>
 
@@ -250,6 +292,25 @@ const AddBatch = () => {
           </button>
         </div>
       </form>
+
+      {/* Modals */}
+      <CourseSelectionModal 
+        isOpen={isCourseModalOpen}
+        onClose={() => setIsCourseModalOpen(false)}
+        availableCourses={allCourses}
+        selectedCourses={selectedCourse ? [selectedCourse] : []}
+        onSelect={(course) => setFormData(prev => ({ ...prev, course_id: course?.course_id || '' }))}
+        singleSelect={true}
+      />
+
+      <TeacherSelectionModal 
+        isOpen={isTeacherModalOpen}
+        onClose={() => setIsTeacherModalOpen(false)}
+        availableTeachers={allTeachers}
+        selectedTeacher={selectedTeacher}
+        onSelect={(teacher) => setFormData(prev => ({ ...prev, teacher_id: teacher?.teacher_id || '' }))}
+        singleSelect={true}
+      />
     </div>
   );
 };

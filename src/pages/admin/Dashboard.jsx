@@ -32,6 +32,13 @@ const Dashboard = () => {
           <p className="text-text-secondary mt-1">Welcome back, Administrator. Here's what's happening today.</p>
         </div>
         <div className="flex gap-3">
+          <Link 
+            to="/admin/branches"
+            className="flex items-center gap-2 bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark text-text-main dark:text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+          >
+            <span className="material-symbols-outlined text-lg">hub</span>
+            Manage Branches
+          </Link>
           <button className="flex items-center gap-2 bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark text-text-main dark:text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
             <span className="material-symbols-outlined text-lg">download</span>
             Export Report

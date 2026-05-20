@@ -20,14 +20,13 @@ export const useFilteredTeachers = (initialTeachers = []) => {
       const searchLower = debouncedSearchQuery.toLowerCase();
       const matchesSearch = 
         !debouncedSearchQuery || 
-        teacher.name?.toLowerCase().includes(searchLower) ||
+        teacher.full_name?.toLowerCase().includes(searchLower) ||
         teacher.email?.toLowerCase().includes(searchLower) ||
-        teacher.employee_id?.toLowerCase().includes(searchLower) ||
-        teacher.id?.toLowerCase().includes(searchLower);
+        teacher.teacher_id?.toLowerCase().includes(searchLower);
 
-      // 2. Department Filter
-      const teacherDepartment = teacher.department || teacher.subject_code; // Handle schema variations
-      const matchesDepartment = departmentFilter === 'All' || teacherDepartment === departmentFilter;
+      // 2. Department Filter (Using specialization for teachers)
+      const teacherDept = teacher.specialization || teacher.subject_code; 
+      const matchesDepartment = departmentFilter === 'All' || teacherDept === departmentFilter;
 
       return matchesSearch && matchesDepartment;
     });
@@ -35,7 +34,7 @@ export const useFilteredTeachers = (initialTeachers = []) => {
 
   // Extract unique options for dropdowns dynamically
   const availableDepartments = useMemo(() => {
-    const departments = new Set(initialTeachers.map(t => t.department || t.subject_code).filter(Boolean));
+    const departments = new Set(initialTeachers.map(t => t.specialization || t.subject_code).filter(Boolean));
     return ['All', ...Array.from(departments).sort()];
   }, [initialTeachers]);
 

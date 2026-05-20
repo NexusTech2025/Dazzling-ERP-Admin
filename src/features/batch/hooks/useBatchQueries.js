@@ -28,6 +28,21 @@ export const useBatchesQuery = (filter = EMPTY_FILTER) => {
     },
     enabled: !!token,
     select: (data) => transformBatchList(data).map(b => resolveBatchRelations(b, queryClient)),
+    initialData: () => {
+      // 1. Check if the specific filtered list is already in cache
+      const cached = queryClient.getQueryData(queryKeys.batch.list(filter));
+      if (cached) return cached;
+
+      // 2. Fallback: Search across all batch list queries to find any list data
+      const listQueries = queryClient.getQueriesData({ queryKey: queryKeys.batch.lists() });
+      for (const [key, listData] of listQueries) {
+        if (Array.isArray(listData) && listData.length > 0) {
+          return listData;
+        }
+      }
+      return undefined;
+    },
+    initialDataUpdatedAt: () => queryClient.getQueryState(queryKeys.batch.list(filter))?.dataUpdatedAt,
     staleTime: Infinity,
     refetchOnMount: false,
     refetchOnWindowFocus: false,

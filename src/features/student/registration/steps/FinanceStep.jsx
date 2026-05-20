@@ -98,7 +98,7 @@ const FinanceStep = ({ formData, setFormData, onNext, onBack }) => {
               onClick={onBack}
               className="w-full bg-transparent hover:bg-primary/10 text-slate-600 dark:text-slate-400 font-medium py-2 px-4 rounded-lg transition-all text-sm"
             >
-              Back to Step 3
+              Back to Academic
             </button>
           </div>
         </div>

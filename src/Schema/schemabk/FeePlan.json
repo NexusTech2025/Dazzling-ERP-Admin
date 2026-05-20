@@ -1,0 +1,14 @@
+{
+  "entity": "FeePlan",
+  "description": "Master price list and financial template for courses and packages.",
+  "fields": [
+    { "name": "fee_plan_id", "type": "string", "isPrimary": true },
+    { "name": "entity_id", "type": "string", "isForeignKey": true, "description": "References Course.course_id or Package.package_id" },
+    { "name": "entity_type", "type": "enum", "values": ["course", "package"] },
+    { "name": "plan_name", "type": "string", "required": true },
+    { "name": "total_fee", "type": "number", "required": true },
+    { "name": "discount_allowed", "type": "boolean", "default": true },
+    { "name": "installment_allowed", "type": "boolean", "default": true },
+    { "name": "created_at", "type": "datetime" }
+  ]
+}

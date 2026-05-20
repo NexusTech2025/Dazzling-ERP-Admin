@@ -41,13 +41,13 @@ export const createCourse = (token, data, options = {}) =>
 
 export const updateCourse = (token, id, data, options = {}) => 
   executeAction('DATA.UPDATE', { 
-    target: 'Course', 
+    table: 'Course', 
     id: id, 
-    updates: data 
+    data 
   }, token);
 
 export const deleteCourse = (token, id, options = {}) => 
   executeAction('DATA.DELETE', { 
-    target: 'Course', 
+    table: 'Course', 
     id: id 
   }, token);

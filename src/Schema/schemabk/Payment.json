@@ -1,0 +1,20 @@
+{
+  "entity": "Payment",
+  "description": "Record of a specific financial transaction applied to an installment.",
+  "fields": [
+    { "name": "payment_id", "type": "string", "isPrimary": true },
+    { "name": "installment_id", "type": "string", "isForeignKey": true, "references": "Installment.installment_id" },
+    { "name": "student_fee_id", "type": "string", "isForeignKey": true, "references": "StudentFeeAccount.student_fee_id" },
+    { "name": "amount_paid", "type": "number", "required": true },
+    { "name": "payment_date", "type": "datetime", "required": true },
+    { "name": "payment_method", "type": "enum", "values": ["cash", "upi", "bank_transfer", "cheque"] },
+    { "name": "transaction_reference", "type": "string" },
+    { "name": "status", "type": "enum", "values": ["success", "pending", "failed"], "default": "success" },
+    { "name": "remarks", "type": "string" },
+    { "name": "created_by", "type": "string" }
+  ],
+  "relations": [
+    { "type": "N:1", "target": "Installment", "field": "installment_id" },
+    { "type": "N:1", "target": "StudentFeeAccount", "field": "student_fee_id" }
+  ]
+}

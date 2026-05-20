@@ -1,16 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../../context/AuthContextCore';
 import { queryKeys, EMPTY_FILTER } from '../../../lib/react-query/queryKeys';
-// IMPORT FROM MOCK API FOR DEVELOPMENT
-import { 
-  fetchTeachers, 
-  fetchTeacherDetail, 
-  fetchTeacherAttendance,
-  updateTeacherAttendance,
-  createTeacher, 
-  updateTeacher, 
-  removeTeacher 
-} from '../api/teacher.mockApi';
+import { apiClient } from '../../../services/apiClient';
+import { API_REGISTRY } from '../../../services/apiRegistry';
 
 /**
  * Hook for fetching all teachers
@@ -21,10 +13,12 @@ export const useTeachersQuery = (filter = EMPTY_FILTER) => {
   return useQuery({
     queryKey: queryKeys.teacher.list(filter),
     queryFn: async ({ signal }) => {
-      const response = await fetchTeachers(token, filter, { signal });
-      if (!response.success) {
-        throw new Error(response.error?.message || response.message || 'Failed to fetch teachers');
-      }
+      const response = await apiClient.executeAction(
+        API_REGISTRY.DATA.QUERY, 
+        { target: 'Teacher', where: filter }, 
+        token, 
+        { signal }
+      );
       return response.data?.data || [];
     },
     enabled: !!token,
@@ -44,11 +38,17 @@ export const useTeacherDetailQuery = (id) => {
   return useQuery({
     queryKey: queryKeys.teacher.detail(id),
     queryFn: async ({ signal }) => {
-      const response = await fetchTeacherDetail(token, id, { signal });
-      if (!response.success) {
-        throw new Error(response.error?.message || response.message || 'Failed to fetch teacher details');
-      }
-      return response.data?.data || null;
+      const response = await apiClient.executeAction(
+        API_REGISTRY.DATA.QUERY, 
+        { 
+          target: 'Teacher', 
+          where: { teacher_id: id }, 
+          pagination: { limit: 1 } 
+        }, 
+        token, 
+        { signal }
+      );
+      return response.data?.data?.[0] || null;
     },
     enabled: !!token && !!id,
     initialData: () => {
@@ -79,10 +79,12 @@ export const useTeacherAttendanceQuery = (teacherId) => {
   return useQuery({
     queryKey: [...queryKeys.teacher.detail(teacherId), 'attendance'],
     queryFn: async ({ signal }) => {
-      const response = await fetchTeacherAttendance(token, teacherId, { signal });
-      if (!response.success) {
-        throw new Error(response.error?.message || response.message || 'Failed to fetch attendance');
-      }
+      const response = await apiClient.executeAction(
+        API_REGISTRY.DATA.QUERY,
+        { target: 'TeacherAttendance', where: { teacher_id: teacherId } },
+        token,
+        { signal }
+      );
       return response.data?.data || [];
     },
     enabled: !!token && !!teacherId,
@@ -97,10 +99,16 @@ export const useUpdateTeacherAttendanceMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ teacherId, date, data, options }) => updateTeacherAttendance(token, { teacherId, date, data }, options),
+    mutationFn: ({ teacherId, date, data, options }) => 
+      apiClient.executeAction(
+        API_REGISTRY.STAFF.MARK_ATTENDANCE, 
+        { teacherId, date, ...data }, 
+        token, 
+        options
+      ),
     onSuccess: (response, { teacherId }) => {
       if (response.success) {
-        queryClient.invalidateQueries({ queryKey: [...queryKeys.teacher.detail(teacherId), 'attendance'] });
+        queryClient.refetchQueries({ queryKey: [...queryKeys.teacher.detail(teacherId), 'attendance'] });
       }
     }
   });
@@ -114,11 +122,15 @@ export const useCreateTeacherMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ userData, profileData, options }) => 
-      createTeacher(token, userData, profileData, options),
+    mutationFn: (payload) => 
+      apiClient.executeAction(
+        API_REGISTRY.STAFF.ONBOARD_TEACHER, 
+        payload, 
+        token
+      ),
     onSuccess: (response) => {
       if (response.success) {
-        queryClient.invalidateQueries({ queryKey: queryKeys.teacher.all });
+        queryClient.refetchQueries({ queryKey: queryKeys.teacher.list({}) });
       }
     }
   });
@@ -129,15 +141,20 @@ export const useCreateTeacherMutation = () => {
  */
 export const useUpdateTeacherMutation = () => {
   const { token } = useAuth();
-  const queryClient = useAuth(); // BUG FIXED IN TURN 3? No, Auth context doesn't have useQueryClient. Wait, useAuth was used.
-  const queryClientFixed = useQueryClient();
+  const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data, options }) => updateTeacher(token, id, data, options),
+    mutationFn: ({ id, data, options }) => 
+      apiClient.executeAction(
+        API_REGISTRY.DATA.UPDATE, 
+        { target: 'Teacher', where: { teacher_id: id }, data }, 
+        token, 
+        options
+      ),
     onSuccess: (response, { id }) => {
       if (response.success) {
-        queryClientFixed.invalidateQueries({ queryKey: queryKeys.teacher.all });
-        queryClientFixed.invalidateQueries({ queryKey: queryKeys.teacher.detail(id) });
+        queryClient.refetchQueries({ queryKey: queryKeys.teacher.all });
+        queryClient.refetchQueries({ queryKey: queryKeys.teacher.detail(id) });
       }
     }
   });
@@ -151,10 +168,16 @@ export const useDeleteTeacherMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, options }) => removeTeacher(token, id, options),
+    mutationFn: ({ id, options }) => 
+      apiClient.executeAction(
+        API_REGISTRY.DATA.DELETE, 
+        { target: 'Teacher', where: { teacher_id: id } }, 
+        token, 
+        options
+      ),
     onSuccess: (response) => {
       if (response.success) {
-        queryClient.invalidateQueries({ queryKey: queryKeys.teacher.all });
+        queryClient.refetchQueries({ queryKey: queryKeys.teacher.all });
       }
     }
   });

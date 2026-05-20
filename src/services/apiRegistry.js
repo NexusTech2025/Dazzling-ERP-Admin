@@ -21,6 +21,7 @@ export const API_REGISTRY = {
   },
   DATA: {
     QUERY: 'data_query',
+    CREATE: 'data_create',
     UPDATE: 'data_update',
     DELETE: 'data_delete'
   },

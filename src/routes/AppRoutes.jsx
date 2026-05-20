@@ -12,6 +12,7 @@ import BatchProfile from '../pages/admin/BatchProfile';
 import Schedule from '../features/batch/Schedule';
 import Teachers from '../pages/admin/Teachers';
 import TeacherProfile from '../pages/admin/TeacherProfile';
+import Branches from '../pages/admin/Branches';
 import Roles from '../pages/admin/Roles';
 import Reports from '../pages/admin/Reports';
 import Settings from '../pages/admin/Settings';
@@ -78,6 +79,9 @@ const AppRoutes = () => {
         <Route path="teachers/add" element={<AddTeacher />} />
         <Route path="teachers/edit/:id" element={<AddTeacher />} />
         <Route path="teachers/:id" element={<TeacherProfile />} />
+
+        {/* Branch Management */}
+        <Route path="branches" element={<Branches />} />
 
         {/* Course Management */}
         <Route path="courses" element={<Courses />} />
