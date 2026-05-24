@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContextCore';
 import { apiClient } from '../services/apiClient';
 import { API_REGISTRY } from '../services/apiRegistry';
 import { queryKeys, EMPTY_FILTER } from '../lib/react-query/queryKeys';
+import { normalizeBatchList } from '../features/batch/utils/batchMappers';
 
 /**
  * useErpHydration: Strategy 1 - App Initialization Guard
@@ -31,8 +32,8 @@ export const useErpHydration = () => {
       console.log('🚀 Starting ERP Hydration with targets:', HYDRATION_TARGETS);
 
       const response = await apiClient.executeAction(
-        API_REGISTRY.ADMIN.INIT_ERP, 
-        { targets: HYDRATION_TARGETS }, 
+        API_REGISTRY.ADMIN.INIT_ERP,
+        { targets: HYDRATION_TARGETS },
         token
       );
 
@@ -54,14 +55,18 @@ export const useErpHydration = () => {
         console.log(`🔍 Inspecting hydration for ${targetName} (Response Key: ${responseKey})...`);
 
         if (result && Array.isArray(result.data)) {
-          const records = result.data;
-          
+          let records = result.data;
+
+          if (targetName === 'Batch') {
+            records = normalizeBatchList(records);
+          }
+
           console.log(`💧 Hydrating ${targetName}: ${records.length} records found.`);
           console.log(`📦 Cache Key:`, JSON.stringify(config.query_key.list(EMPTY_FILTER)));
 
           queryClient.setQueryData(
-            config.query_key.list(EMPTY_FILTER), 
-            records, 
+            config.query_key.list(EMPTY_FILTER),
+            records,
             { updatedAt: now }
           );
         } else {

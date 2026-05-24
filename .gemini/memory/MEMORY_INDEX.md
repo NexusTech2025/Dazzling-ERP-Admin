@@ -17,6 +17,12 @@ This file serves as the central directory map for the project's architectural me
 
 ## Recent Session Updates
 
+### Session: `chat.detail_view_pages_analysis.md` (2026-05-22)
+- **Feature**: Diagnostic Analysis of 6 Detail View Pages (`StudentProfile`, `BatchProfile`, `TeacherProfile`, `CourseDetails`, `PackageDetails`, `StudentFeeOverview`).
+- **Architectural Shift**: Identified critical cache lookup issues where exact query key lookups (`getQueryData`) fail on dynamic filter parameters, suggesting migration to prefix-based custom select mappings.
+- **UI Pattern**: Mapped UI state components to proper API response schemas to prevent hydration mismatches and eliminate unnecessary client-side mappers.
+- **Schema Alignment**: Documented extensive list of schema/naming mismatches (e.g. `is_active` vs `status`, `teacher_name` vs `full_name`, lowercase enum value casing checks) to be synchronized in execution.
+
 ### Session: `chat.updateing_add_student.md` (2026-05-20)
 - **Feature**: `StudentRegistrationWizard.jsx` Consolidation & Optimization.
 - **Architectural Shift**: Merged "Program Selection" (Step 2) and "Batch Selection" (Step 3) into a single 2-column "Academic Enrollment" step (`AcademicEnrollmentStep.jsx`), reducing the wizard from 5 steps to 4.

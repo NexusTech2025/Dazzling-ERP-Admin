@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useBatchDetailQuery, useBatchStudentsQuery } from '../../features/batch/hooks/useBatchQueries';
 import { useCourseDetailQuery } from '../../features/course/hooks/useCourseQueries';
 import { useTeacherDetailQuery } from '../../features/teacher/hooks/useTeacherQueries';
+import { useBranchesQuery } from '../../features/core/hooks/useBranchQueries';
 
 // Sub-components
 import BatchProfileHeader from '../../features/batch/components/profile/BatchProfileHeader';
@@ -20,20 +21,30 @@ const BatchProfile = () => {
 
   const { data: rawBatch, isLoading: isBatchLoading, error: batchError } = useBatchDetailQuery(id);
   const { data: students = [], isLoading: isStudentsLoading } = useBatchStudentsQuery(id);
-  
+
   // Independent related data hooks (Cache-First)
   const { data: course } = useCourseDetailQuery(rawBatch?.course_id);
   const { data: teacher } = useTeacherDetailQuery(rawBatch?.teacher_id);
+  const { data: branches = [] } = useBranchesQuery();
+
+  const selectedBranch = useMemo(() => {
+    if (!rawBatch?.branch_id || !branches.length) return null;
+    return branches.find(b => b.branch_id === rawBatch.branch_id || b.id === rawBatch.branch_id);
+  }, [rawBatch?.branch_id, branches]);
 
   // Merge descriptive data for UI consumption
   const batch = useMemo(() => {
     if (!rawBatch) return null;
+
     return {
       ...rawBatch,
-      course_name: course?.name || rawBatch.course_name,
-      instructor_name: teacher?.teacher_name || teacher?.full_name || rawBatch.instructor_name
+      course_name: course?.name,
+      instructor_name: teacher?.teacher_name || teacher?.full_name,
+      branch_name: selectedBranch?.branch_name || rawBatch.branch_name
     };
-  }, [rawBatch, course, teacher]);
+  }, [rawBatch, course, teacher, selectedBranch]);
+
+  console.log(batch)
 
   if (isBatchLoading) {
     return (
@@ -66,7 +77,7 @@ const BatchProfile = () => {
             </div>
           </div>
         );
-      
+
       case 'Students':
         return (
           <div className="animate-in fade-in slide-in-from-right-4 duration-500">
@@ -102,10 +113,10 @@ const BatchProfile = () => {
         <span className="text-text-main dark:text-white">Batch Details</span>
       </nav>
 
-      <BatchProfileHeader 
-        batch={batch} 
-        activeTab={activeTab} 
-        onTabChange={setActiveTab} 
+      <BatchProfileHeader
+        batch={batch}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
       />
 
       <BatchKPICards batch={batch} studentsCount={students.length} />

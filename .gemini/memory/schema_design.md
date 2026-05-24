@@ -1,6 +1,8 @@
-# Schema Design Standard (V2.1)
+# Schema Design Standard (V3.0)
 
-To maintain consistency across the Dazzling ERP Admin system, all entity schemas must adhere to the following format. Schemas are stored as JSON files in `dazzling-erp-admin/src/Schema/` and consolidated in `full_schema.json`.
+> [!IMPORTANT]
+> The database schema is defined in [full_schemav3.json](file:///E:/NAST/Dazzling/GAS/DazzlingDB/full_schemav3.json).
+> All other schema `json` files from `src/Schema` are outdated and **MUST** be ignored. `DazzlingDB/full_schemav3.json` is the final and single source of truth for the database schema.
 
 ## 1. File Naming Convention
 

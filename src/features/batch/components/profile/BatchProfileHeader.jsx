@@ -28,7 +28,7 @@ const BatchProfileHeader = ({ batch, activeTab, onTabChange }) => {
             <span>Options</span>
           </button>
           <Link 
-            to={`/admin/batches/add?id=${batch.id}`}
+            to={`/admin/batches/edit/${batch.id}`}
             className="flex items-center justify-center gap-2 rounded-lg h-10 px-5 bg-primary text-white hover:bg-primary-dark transition-all text-sm font-bold shadow-sm active:scale-95"
           >
             <span className="material-symbols-outlined text-[20px]">edit</span>

@@ -8,20 +8,20 @@ import AcademicEnrollmentStep from './steps/AcademicEnrollmentStep';
 import FinanceStep from './steps/FinanceStep';
 import ActivationStep from './steps/ActivationStep';
 
-const StudentRegistrationWizard = () => {
+const StudentRegistrationWizard = ({ initialData }) => {
   const navigate = useNavigate();
   const registerMutation = useRegisterStudentMutation();
   const [currentStep, setCurrentStep] = useState(1);
 
   const [formData, setFormData] = useState({
     // Step 1: Profile
-    fullName: '',
+    fullName: initialData?.fullName || '',
     gender: '',
     date_of_birth: '',
     motherName: '',
     fatherName: '',
-    email: '',
-    mobile: '',
+    email: initialData?.email || '',
+    mobile: initialData?.mobile || '',
     address1: '',
     address2: '',
     city: '',
@@ -40,13 +40,13 @@ const StudentRegistrationWizard = () => {
     programType: 'academic',
     admissionType: 'direct',
     couponCode: '',
-    referralId: '',
+    referralId: initialData?.referral || '',
     entranceScore: '',
     applicableScholarship: 0,
-    batchId: '',
-    batchName: '',
-    courseId: '',
-    courseName: '',
+    batchId: initialData?.batchId || '',
+    batchName: initialData?.batchName || '',
+    courseId: initialData?.courseId || '',
+    courseName: initialData?.courseName || '',
 
     // Step 3: Finance
     // ... no changes needed to structure

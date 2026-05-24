@@ -85,3 +85,74 @@ api.submit(formData);
 ```
 
 > **Rationale:** Reduces boilerplate mapping code and prevents "hydration mismatch" where fetched data fails to populate the form because the field names don't match.
+
+---
+
+## 4. Exact Cache Key Lookups for Parameterized/Filtered Queries
+
+### The Problem
+Using `queryClient.getQueryData` with a base query key (e.g., `['course', 'list']`) when the cache actually stores the data under a parameterized key (e.g., `['course', 'list', { filter: {} }]`). Because React Query performs strict exact matches for `getQueryData`, this returns `undefined` and fails silently.
+
+**❌ BAD:**
+```jsx
+// Fails if the query was cached with filters/options
+const courses = queryClient.getQueryData(['course', 'list']); 
+```
+
+### The Fix
+Use prefix-matching lookup strategies like `queryClient.getQueriesData` (with an object filter) or ensure lookups use the exact prefix structure via query key helpers.
+
+**✅ GOOD:**
+```jsx
+const queriesData = queryClient.getQueriesData({ queryKey: queryKeys.course.lists() });
+const courses = queriesData?.[0]?.[1] || []; // Extract from matching prefix queries
+```
+
+---
+
+## 5. Unbounded Refetches on Mount (Missing staleTime)
+
+### The Problem
+Leaving `staleTime` undefined (which defaults to `0`) on sub-panel, tabbed-view, or profile-details queries. Each time a user clicks between tabs or sub-panels, the components mount/remount and trigger redundant backend network requests.
+
+**❌ BAD:**
+```jsx
+// Triggers a network request on every tab mount/remount
+const { data } = useQuery({
+  queryKey: ['teacher', teacherId, 'attendance'],
+  queryFn: () => fetchAttendance(teacherId)
+});
+```
+
+### The Fix
+Explicitly configure appropriate `staleTime` settings (e.g., 5 minutes) or set `refetchOnMount: false` for data that does not change frequently.
+
+**✅ GOOD:**
+```jsx
+const { data } = useQuery({
+  queryKey: ['teacher', teacherId, 'attendance'],
+  queryFn: () => fetchAttendance(teacherId),
+  staleTime: 1000 * 60 * 5, // 5 minutes cache validity
+  refetchOnMount: false     // Disable mount refetching if data is fresh
+});
+```
+
+---
+
+## 6. Case-Sensitivity Incompatibility with Database Enums
+
+### The Problem
+Performing status checks or rendering logic using hardcoded uppercase/capitalized string constants (e.g., `'Paid'`, `'Overdue'`) when the database schema defines, validates, and returns lowercase strings (e.g., `'paid'`, `'overdue'`).
+
+**❌ BAD:**
+```jsx
+const isPaid = inst.status === 'Paid'; // Will always be false if DB returns 'paid'
+```
+
+### The Fix
+Always align status casing precisely with the schema definitions (`full_schema.json`), which standardizes on lowercase for statuses and enums.
+
+**✅ GOOD:**
+```jsx
+const isPaid = inst.status === 'paid';
+```

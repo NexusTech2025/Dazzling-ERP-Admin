@@ -2,7 +2,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../../context/AuthContextCore';
 import { queryKeys, EMPTY_FILTER } from '../../../lib/react-query/queryKeys';
 // IMPORT FROM MOCK API FOR DEVELOPMENT
-import { fetchStudents, createStudent, modifyStudent, removeStudent, registerStudentTransaction } from '../api/student.mockApi';
+import { fetchStudents, modifyStudent, removeStudent, registerStudentTransaction } from '../api/student.mockApi';
+import { createStudent, createStudentLead } from '../api/student.api';
 
 /**
  * Hook for fetching all students with optional filtering
@@ -58,6 +59,22 @@ export const useCreateStudentMutation = () => {
       if (response.success) {
         queryClient.invalidateQueries({ queryKey: queryKeys.student.all });
       }
+    }
+  });
+};
+
+/**
+ * Hook for creating a new student lead/prospect (Quick Add)
+ */
+export const useCreateStudentLeadMutation = () => {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ leadData, options }) => 
+      createStudentLead(token, leadData, options),
+    onSuccess: (response) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.student.all });
     }
   });
 };

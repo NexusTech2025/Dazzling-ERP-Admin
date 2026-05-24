@@ -8,6 +8,7 @@ import Students from '../pages/admin/Students';
 import StudentProfile from '../pages/admin/StudentProfile';
 import Batches from '../features/batch/Batches';
 import AddBatch from '../features/batch/AddBatch';
+import EditBatch from '../features/batch/EditBatch';
 import BatchProfile from '../pages/admin/BatchProfile';
 import Schedule from '../features/batch/Schedule';
 import Teachers from '../pages/admin/Teachers';
@@ -72,6 +73,7 @@ const AppRoutes = () => {
         {/* Batch Management */}
         <Route path="batches" element={<Batches />} />
         <Route path="batches/add" element={<AddBatch />} />
+        <Route path="batches/edit/:id" element={<EditBatch />} />
         <Route path="batches/:id" element={<BatchProfile />} />
         <Route path="schedule" element={<Schedule />} />
 

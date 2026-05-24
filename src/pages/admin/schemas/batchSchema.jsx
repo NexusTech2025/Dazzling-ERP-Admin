@@ -20,12 +20,26 @@ export const createBatchColumns = ({ onView, onEdit, onDelete, isDeleting } = {}
       accessor: 'teacher_name'
     },
     {
-      header: 'Schedule',
-      render: (batch) => (
-        <span className="text-slate-600 dark:text-slate-400">
-          {batch.schedule_days}, {batch.schedule_time}
-        </span>
-      )
+      header: 'Days',
+      render: (batch) => {
+        const hasDays = batch.schedule?.days_of_week?.length > 0;
+        return (
+          <span className="text-slate-600 dark:text-slate-400">
+            {hasDays ? batch.schedule.days_of_week.join(', ') : 'TBD'}
+          </span>
+        );
+      }
+    },
+    {
+      header: 'Timing',
+      render: (batch) => {
+        const hasTime = batch.schedule?.start_time && batch.schedule?.end_time;
+        return (
+          <span className="text-slate-600 dark:text-slate-400">
+            {hasTime ? `${batch.schedule.start_time} - ${batch.schedule.end_time}` : 'TBD'}
+          </span>
+        );
+      }
     },
     {
       header: 'Capacity',

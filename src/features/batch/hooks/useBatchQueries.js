@@ -3,7 +3,7 @@ import { useAuth } from '../../../context/AuthContextCore';
 import { apiClient } from '../../../services/apiClient';
 import { API_REGISTRY } from '../../../services/apiRegistry';
 import { queryKeys, EMPTY_FILTER } from '../../../lib/react-query/queryKeys';
-import { transformBatchList, transformBatchRecord, resolveBatchRelations } from '../utils/batchMappers';
+import { transformBatchList, transformBatchRecord, resolveBatchRelations, normalizeBatch, normalizeBatchList } from '../utils/batchMappers';
 
 export const useBatchesQuery = (filter = EMPTY_FILTER) => {
   const { token } = useAuth();
@@ -13,18 +13,18 @@ export const useBatchesQuery = (filter = EMPTY_FILTER) => {
     queryKey: queryKeys.batch.list(filter),
     queryFn: async ({ signal }) => {
       const response = await apiClient.executeAction(
-        API_REGISTRY.DATA.QUERY, 
-        { 
-          target: 'Batch', 
-          where: filter 
-        }, 
+        API_REGISTRY.DATA.QUERY,
+        {
+          target: 'Batch',
+          where: filter
+        },
         token,
         { signal }
       );
       if (!response.success) {
         throw new Error(response.error?.message || response.message || 'Failed to fetch batches');
       }
-      return response.data?.data || [];
+      return normalizeBatchList(response.data?.data || []);
     },
     enabled: !!token,
     select: (data) => transformBatchList(data).map(b => resolveBatchRelations(b, queryClient)),
@@ -58,23 +58,23 @@ export const useBatchDetailQuery = (id) => {
     queryFn: async ({ signal }) => {
       // Using generic query with limit 1 for details
       const response = await apiClient.executeAction(
-        API_REGISTRY.DATA.QUERY, 
-        { 
-          target: 'Batch', 
+        API_REGISTRY.DATA.QUERY,
+        {
+          target: 'Batch',
           where: { batch_id: id },
           pagination: { limit: 1 }
-        }, 
+        },
         token,
         { signal }
       );
       if (!response.success) throw new Error(response.message);
-      return response.data?.data?.[0] || null;
+      return normalizeBatch(response.data?.data?.[0] || null);
     },
     enabled: !!token && !!id,
     select: (data) => resolveBatchRelations(transformBatchRecord(data), queryClient),
     initialData: () => {
       if (!id) return undefined;
-      
+
       // 1. First look into the specific detail cache
       const cachedDetail = queryClient.getQueryData(queryKeys.batch.detail(id));
       if (cachedDetail) return cachedDetail;
@@ -91,7 +91,7 @@ export const useBatchDetailQuery = (id) => {
       return undefined;
     },
     initialDataUpdatedAt: () => queryClient.getQueryState(queryKeys.batch.detail(id))?.dataUpdatedAt,
-    staleTime: 1000 * 60 * 5, 
+    staleTime: 1000 * 60 * 5,
   });
 };
 
@@ -102,12 +102,12 @@ export const useBatchStudentsQuery = (id) => {
     queryFn: async ({ signal }) => {
       // Query Enrollment table and include Student details
       const response = await apiClient.executeAction(
-        API_REGISTRY.DATA.QUERY, 
-        { 
-          target: 'Enrollment', 
+        API_REGISTRY.DATA.QUERY,
+        {
+          target: 'Enrollment',
           where: { batch_id: id },
           include: ['student']
-        }, 
+        },
         token,
         { signal }
       );
@@ -115,6 +115,12 @@ export const useBatchStudentsQuery = (id) => {
       return response.data?.data || [];
     },
     enabled: !!token && !!id,
+    select: (data) => (data || []).map(enrollment => ({
+      ...enrollment,
+      student_name: enrollment.student?.student_name || 'N/A',
+      email: enrollment.student?.email || '',
+      phone: enrollment.student?.phone || 'N/A'
+    }))
   });
 };
 
@@ -124,8 +130,8 @@ export const useWeeklyScheduleQuery = (batchId) => {
     queryKey: queryKeys.batch.schedule(batchId),
     queryFn: async ({ signal }) => {
       const response = await apiClient.executeAction(
-        API_REGISTRY.BATCH.GET_WEEKLY_SCHEDULE, 
-        { batchId }, 
+        API_REGISTRY.BATCH.GET_WEEKLY_SCHEDULE,
+        { batchId },
         token,
         { signal }
       );
@@ -142,8 +148,8 @@ export const useMasterTimetableQuery = (day) => {
     queryKey: queryKeys.batch.master(day),
     queryFn: async ({ signal }) => {
       const response = await apiClient.executeAction(
-        API_REGISTRY.BATCH.GET_MASTER_TIMETABLE, 
-        { day }, 
+        API_REGISTRY.BATCH.GET_MASTER_TIMETABLE,
+        { day },
         token,
         { signal }
       );
@@ -159,7 +165,7 @@ export const useCreateBatchMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ data, options }) => 
+    mutationFn: ({ data, options }) =>
       apiClient.executeAction(API_REGISTRY.BATCH.CREATE, data, token, options),
     onSuccess: (response) => {
       if (response.success) {
@@ -174,20 +180,20 @@ export const useUpdateBatchMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data, options }) => 
+    mutationFn: ({ id, data, options }) =>
       apiClient.executeAction(
-        API_REGISTRY.DATA.UPDATE, 
-        { 
-          target: 'Batch', 
-          where: { batch_id: id }, 
-          data 
-        }, 
-        token, 
+        API_REGISTRY.DATA.UPDATE,
+        {
+          table: 'Batch',
+          id,
+          data
+        },
+        token,
         options
       ),
     onSuccess: (response, { id }) => {
       if (response.success) {
-        queryClient.refetchQueries({ queryKey: queryKeys.batch.all });
+        queryClient.refetchQueries({ queryKey: queryKeys.batch.list({}) });
         queryClient.refetchQueries({ queryKey: queryKeys.batch.detail(id) });
       }
     }
@@ -199,11 +205,11 @@ export const useBulkUpdateBatchesMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ ids, data, options }) => 
+    mutationFn: ({ ids, data, options }) =>
       apiClient.executeAction(
-        API_REGISTRY.BATCH.UPDATE_BULK, 
-        { ids, ...data }, 
-        token, 
+        API_REGISTRY.BATCH.UPDATE_BULK,
+        { ids, ...data },
+        token,
         options
       ),
     onSuccess: (response) => {
@@ -219,14 +225,14 @@ export const useDeleteBatchMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, options }) => 
+    mutationFn: ({ id, options }) =>
       apiClient.executeAction(
-        API_REGISTRY.DATA.DELETE, 
-        { 
-          target: 'Batch', 
-          where: { batch_id: id } 
-        }, 
-        token, 
+        API_REGISTRY.DATA.DELETE,
+        {
+          table: 'Batch',
+          id
+        },
+        token,
         options
       ),
     onSuccess: (response) => {

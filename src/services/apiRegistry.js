@@ -10,7 +10,8 @@ export const API_REGISTRY = {
     LOGOUT: 'user_logout'
   },
   STUDENT: {
-    REGISTER: 'student_register'
+    REGISTER: 'student_register',
+    ADD_LEAD: 'student_add_lead'
   },
   ACADEMIC: {
     CREATE_COURSE_TYPE: 'academic_create_course_type',

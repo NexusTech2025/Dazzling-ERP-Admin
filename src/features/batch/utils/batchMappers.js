@@ -5,17 +5,75 @@
 
 import { queryKeys } from '../../../lib/react-query/queryKeys';
 
+const normalizeDate = (val) => {
+  if (!val) return null;
+  if (typeof val === 'object') {
+    if (val instanceof Date) {
+      return val.toISOString();
+    }
+    if (Object.keys(val).length === 0) return null;
+  }
+  if (typeof val === 'string') {
+    if (val.trim() === '{}') return null;
+    return val;
+  }
+  return val;
+};
+
+/**
+ * Parses schedule string to JSON object if stringified (Single Responsibility: JSON Parsing)
+ */
+export const parseBatchSchedule = (scheduleVal) => {
+  if (!scheduleVal) return null;
+  if (typeof scheduleVal === 'string') {
+    try {
+      return JSON.parse(scheduleVal);
+    } catch (e) {
+      console.error('Failed to parse schedule JSON string:', scheduleVal, e);
+      return null;
+    }
+  }
+  return scheduleVal;
+};
+
+/**
+ * Normalizes the schedule field of a batch record (Single Responsibility: Batch Level Normalization)
+ */
+export const normalizeBatch = (batch) => {
+  if (!batch) return batch;
+
+  console.log("normalizing the batch dates: ", batch)
+  return {
+    ...batch,
+    start_date: normalizeDate(batch.start_date),
+    end_date: normalizeDate(batch.end_date),
+    created_at: normalizeDate(batch.created_at),
+    updated_at: normalizeDate(batch.updated_at),
+    schedule: parseBatchSchedule(batch.schedule)
+  };
+};
+
+/**
+ * Normalizes the schedule fields of a list of batch records
+ */
+export const normalizeBatchList = (list) => {
+  if (!Array.isArray(list)) return [];
+  return list.map(normalizeBatch);
+};
+
 /**
  * Basic record transformation
  */
 export const transformBatchRecord = (raw) => {
   if (!raw) return null;
 
+  const parsedSchedule = parseBatchSchedule(raw.schedule);
+
   return {
     ...raw,
     // Ensure ID is consistently available
     id: raw.batch_id ?? raw.id ?? null,
-    
+
     // Standardize identifiers
     course_id: raw.course_id ?? raw.item_id ?? null,
     teacher_id: raw.teacher_id ?? null,
@@ -32,22 +90,22 @@ export const transformBatchRecord = (raw) => {
     status: raw.status || 'Unknown',
 
     // Dates remain raw (UI should format them)
-    start_date: raw.start_date || null,
-    end_date: raw.end_date || null,
-    created_at: raw.created_at || null,
-    updated_at: raw.updated_at || null,
+    start_date: normalizeDate(raw.start_date),
+    end_date: normalizeDate(raw.end_date),
+    created_at: normalizeDate(raw.created_at),
+    updated_at: normalizeDate(raw.updated_at),
 
     // Defensive null handling for schedule object
     schedule: {
-      days_of_week: Array.isArray(raw.schedule?.days_of_week) ? raw.schedule.days_of_week : [],
-      start_time: raw.schedule?.start_time || null,
-      end_time: raw.schedule?.end_time || null,
-      room: raw.schedule?.room || 'TBD',
+      days_of_week: Array.isArray(parsedSchedule?.days_of_week) ? parsedSchedule.days_of_week : [],
+      start_time: parsedSchedule?.start_time || null,
+      end_time: parsedSchedule?.end_time || null,
+      room: parsedSchedule?.room || 'TBD',
     },
 
     // Lightweight derived flags for UI consumption
     is_active: (raw.status || '').toLowerCase() === 'active',
-    has_schedule: !!(raw.schedule?.start_time && raw.schedule?.end_time && Array.isArray(raw.schedule?.days_of_week) && raw.schedule.days_of_week.length > 0)
+    has_schedule: !!(parsedSchedule?.start_time && parsedSchedule?.end_time && Array.isArray(parsedSchedule?.days_of_week) && parsedSchedule.days_of_week.length > 0)
   };
 };
 

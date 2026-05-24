@@ -2,6 +2,24 @@ import React from 'react';
 import Card from '../../../../components/ui/Card';
 
 const BatchDetailsCard = ({ batch }) => {
+  const formatDate = (dateStr) => {
+    console.log("formatting dateStr: ", dateStr)
+    if (!dateStr) return '';
+    try {
+      const dateOnly = dateStr.split('T')[0];
+      const [year, month, day] = dateOnly.split('-');
+      return new Date(year, month - 1, day).toLocaleDateString(undefined, {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      });
+    } catch (e) {
+      return dateStr;
+    }
+  };
+
+  console.log("batch data: ", batch)
+
   return (
     <Card className="p-6">
       <div className="flex items-center justify-between mb-6">
@@ -11,29 +29,48 @@ const BatchDetailsCard = ({ batch }) => {
         </button>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-8">
-        <DetailItem 
-          icon="person" 
-          label="Primary Instructor" 
-          value={batch.instructor_name} 
-          subValue="Faculty" 
+        <DetailItem
+          icon="person"
+          label="Primary Instructor"
+          value={batch.instructor_name}
+          subValue="Faculty"
         />
-        <DetailItem 
-          icon="schedule" 
-          label="Timings" 
-          value={batch.has_schedule ? `${batch.schedule.start_time} - ${batch.schedule.end_time}` : 'No schedule'} 
-          subValue={batch.has_schedule ? batch.schedule.days_of_week.join(', ') : ''} 
+        <DetailItem
+          icon="schedule"
+          label="Timings"
+          value={
+            batch.schedule?.start_time && batch.schedule?.end_time
+              ? `${batch.schedule.start_time} - ${batch.schedule.end_time}`
+              : 'TBD'
+          }
+          subValue={batch.schedule?.days_of_week?.join(', ') || 'No days configured'}
         />
-        <DetailItem 
-          icon="location_on" 
-          label="Branch" 
-          value={batch.branch_name} 
-          subValue="Classroom 101" 
+        <DetailItem
+          icon="calendar_month"
+          label="Timeline"
+          value={
+            batch.start_date && batch.end_date
+              ? `${formatDate(batch.start_date)} - ${formatDate(batch.end_date)}`
+              : 'No dates configured'
+          }
         />
-        <DetailItem 
-          icon="menu_book" 
-          label="Current Module" 
-          value={batch.course_name} 
-          subValue={batch.end_date ? `Est. completion: ${new Date(batch.end_date).toLocaleDateString()}` : 'No end date'} 
+        <DetailItem
+          icon="group"
+          label="Capacity"
+          value={`${batch.enrolled_students ?? 0} / ${batch.capacity} Enrolled`}
+          subValue={`${Math.max(0, batch.capacity - (batch.enrolled_students ?? 0))} seats remaining`}
+        />
+        <DetailItem
+          icon="location_on"
+          label="Branch"
+          value={batch.branch_name}
+          subValue="Classroom 101"
+        />
+        <DetailItem
+          icon="menu_book"
+          label="Current Course"
+          value={batch.course_name}
+          subValue={batch.end_date ? `Est. completion: ${formatDate(batch.end_date)}` : 'No end date'}
         />
       </div>
     </Card>

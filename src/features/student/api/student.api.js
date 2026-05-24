@@ -1,4 +1,5 @@
 import { query, addStudent, updateStudent, deleteStudent } from '../../../services/api';
+import { executeAction } from '../../../services/apiClient';
 
 /**
  * Student API Layer
@@ -10,6 +11,9 @@ export const fetchStudents = (token, filter = {}, options = {}) =>
 
 export const createStudent = (token, userData, profileData, options = {}) => 
   addStudent(token, userData, profileData, options);
+
+export const createStudentLead = (token, leadData, options = {}) => 
+  executeAction('STUDENT.ADD_LEAD', { leadData }, token, options);
 
 export const modifyStudent = (token, id, data, options = {}) => 
   updateStudent(token, id, data, options);

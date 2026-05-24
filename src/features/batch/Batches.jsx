@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { useBatchesQuery, useDeleteBatchMutation } from './hooks/useBatchQueries';
+import { useCoursesQuery } from '../course/hooks/useCourseQueries';
+import { useTeacherDetailQuery, useTeachersQuery } from '../teacher/hooks/useTeacherQueries';
 import { queryKeys } from '../../lib/react-query/queryKeys';
 import { useFilteredBatches } from '../../hooks/useFilteredBatches';
 import DataTable from '../../components/ui/DataTable';
@@ -17,6 +19,21 @@ const Batches = () => {
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, id: null, name: '' });
 
   const { data: batches = [], isLoading, isFetching, error } = useBatchesQuery();
+  const { data: courses = [] } = useCoursesQuery();
+  const { data: teachers = [] } = useTeachersQuery();
+
+  const resolvedBatches = useMemo(() => {
+    return batches.map(batch => {
+      const course = courses.find(c => c.course_id === batch.course_id || c.id === batch.course_id);
+      const teacher = teachers.find(t => t.teacher_id === batch.teacher_id || t.id === batch.teacher_id);
+      return {
+        ...batch,
+        course_name: course?.name || batch.course_name,
+        teacher_name: teacher?.teacher_name || teacher?.full_name || batch.instructor_name
+      };
+    });
+  }, [batches, courses, teachers]);
+
   const deleteMutation = useDeleteBatchMutation();
 
   const {
@@ -29,11 +46,11 @@ const Batches = () => {
     filteredBatches,
     availableCourses,
     availableStatuses
-  } = useFilteredBatches(batches);
+  } = useFilteredBatches(resolvedBatches);
 
   const handlers = {
     onView: (batch) => navigate(`/admin/batches/${batch.batch_id}`),
-    onEdit: (batch) => navigate(`/admin/batches/add?id=${batch.batch_id}`),
+    onEdit: (batch) => navigate(`/admin/batches/edit/${batch.batch_id}`),
     onDelete: (id, name) => setDeleteModal({ isOpen: true, id, name }),
     isDeleting: deleteMutation.isPending
   };
