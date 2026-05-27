@@ -15,6 +15,7 @@ export const queryKeys = {
     list: (filter = EMPTY_FILTER) => [...queryKeys.student.lists(), { filter }],
     details: () => [...queryKeys.student.all, 'detail'],
     detail: (id) => [...queryKeys.student.details(), id],
+    profile: (id) => [...queryKeys.student.all, 'profile', id],
   },
   teacher: {
     all: ['teacher'],

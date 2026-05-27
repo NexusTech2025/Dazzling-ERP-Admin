@@ -64,7 +64,7 @@ export const registerStudentTransaction = async (token, data, options = {}) => {
     email: data.email,
     phone: data.mobile,
     gender: data.gender,
-    date_of_birth: data.date_of_birth,
+    dob: data.dob,
     mother_name: data.motherName,
     father_name: data.fatherName,
     status: 'active',

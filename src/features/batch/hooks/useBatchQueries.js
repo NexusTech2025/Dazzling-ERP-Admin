@@ -44,7 +44,7 @@ export const useBatchesQuery = (filter = EMPTY_FILTER) => {
     },
     initialDataUpdatedAt: () => queryClient.getQueryState(queryKeys.batch.list(filter))?.dataUpdatedAt,
     staleTime: Infinity,
-    refetchOnMount: false,
+    refetchOnMount: true,
     refetchOnWindowFocus: false,
   });
 };
@@ -169,7 +169,7 @@ export const useCreateBatchMutation = () => {
       apiClient.executeAction(API_REGISTRY.BATCH.CREATE, data, token, options),
     onSuccess: (response) => {
       if (response.success) {
-        queryClient.refetchQueries({ queryKey: queryKeys.batch.all });
+        queryClient.invalidateQueries({ queryKey: queryKeys.batch.list({}) });
       }
     }
   });
@@ -193,8 +193,15 @@ export const useUpdateBatchMutation = () => {
       ),
     onSuccess: (response, { id }) => {
       if (response.success) {
-        queryClient.refetchQueries({ queryKey: queryKeys.batch.list({}) });
-        queryClient.refetchQueries({ queryKey: queryKeys.batch.detail(id) });
+        // Invalidate lists and detail but skip immediate refetching to avoid AbortError on unmount
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.batch.lists(),
+          refetchType: 'none'
+        });
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.batch.detail(id),
+          refetchType: 'none'
+        });
       }
     }
   });
@@ -214,7 +221,7 @@ export const useBulkUpdateBatchesMutation = () => {
       ),
     onSuccess: (response) => {
       if (response.success) {
-        queryClient.refetchQueries({ queryKey: queryKeys.batch.all });
+        queryClient.invalidateQueries({ queryKey: queryKeys.batch.list({}) });
       }
     }
   });
@@ -237,7 +244,7 @@ export const useDeleteBatchMutation = () => {
       ),
     onSuccess: (response) => {
       if (response.success) {
-        queryClient.refetchQueries({ queryKey: queryKeys.batch.all });
+        queryClient.invalidateQueries({ queryKey: queryKeys.batch.list({}) });
       }
     }
   });

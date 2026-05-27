@@ -28,6 +28,7 @@ export const API_REGISTRY = {
   },
   STAFF: {
     ONBOARD_TEACHER: 'staff_onboard_teacher',
+    UPDATE_TEACHER: 'staff_update_teacher',
     ASSIGN_SUBJECTS: 'staff_assign_subjects',
     MARK_ATTENDANCE: 'staff_mark_attendance',
     RECORD_PAYMENT: 'staff_record_payment',

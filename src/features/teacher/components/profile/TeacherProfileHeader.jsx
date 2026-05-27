@@ -23,8 +23,8 @@ const TeacherProfileHeader = ({ teacher, activeTab, onTabChange }) => {
           {/* User Identity Section */}
           <div className="flex flex-col md:flex-row items-center md:items-end gap-6">
             <Avatar 
-              src={teacher.avatar} 
-              initials={teacher.teacher_name} 
+              src={teacher.profile_photo_url} 
+              initials={teacher.full_name} 
               size="2xl" 
               variant="circle"
               className="border-4 border-surface-light dark:border-slate-900 shadow-lg"
@@ -32,7 +32,7 @@ const TeacherProfileHeader = ({ teacher, activeTab, onTabChange }) => {
             
             <div className="flex flex-col items-center md:items-start mb-2">
               <h2 className="text-2xl md:text-3xl font-bold text-text-main dark:text-white leading-tight">
-                {teacher.teacher_name}
+                {teacher.full_name}
               </h2>
               <div className="flex items-center gap-2 text-text-secondary mt-1">
                 <span className="text-sm font-mono bg-background-light dark:bg-background-dark px-2 py-0.5 rounded border border-border-light dark:border-border-dark">

@@ -15,6 +15,9 @@ export const createStudent = (token, userData, profileData, options = {}) =>
 export const createStudentLead = (token, leadData, options = {}) => 
   executeAction('STUDENT.ADD_LEAD', { leadData }, token, options);
 
+export const registerStudentTransaction = (token, registrationData, options = {}) => 
+  executeAction('STUDENT.REGISTER', registrationData, token, options);
+
 export const modifyStudent = (token, id, data, options = {}) => 
   updateStudent(token, id, data, options);
 

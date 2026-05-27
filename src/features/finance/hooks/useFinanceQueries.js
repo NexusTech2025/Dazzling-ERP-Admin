@@ -1,7 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../../context/AuthContextCore';
 import { queryKeys } from '../../../lib/react-query/queryKeys';
-// IMPORT FROM MOCK API FOR DEVELOPMENT
 import { 
   fetchInstallments, 
   fetchRevenueSummary, 
@@ -9,7 +8,7 @@ import {
   fetchStudentFeeOverview,
   recordPayment,
   generateFeePlan
-} from '../api/finance.mockApi';
+} from '../api/finance.api';
 
 /**
  * Hook for fetching revenue summary

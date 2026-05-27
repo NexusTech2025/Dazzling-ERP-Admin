@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useStudentById } from '../../features/student/hooks/useStudentById';
 import { useStudentFeeOverviewQuery } from '../../features/finance/hooks/useFinanceQueries';
+import { useUpdateStudentMutation } from '../../features/student/hooks/useStudentQueries';
+import StudentEditModal from '../../features/student/components/StudentEditModal';
 
 // Sub-components
 import ProfileHeader from '../../features/student/components/profile/ProfileHeader';
@@ -17,12 +19,26 @@ const StudentProfile = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('Overview');
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
+  const updateMutation = useUpdateStudentMutation();
 
   // Fetch all student data (Basic + Profile) using the composite hook
   const { student, profileData, isLoading, error } = useStudentById(id);
   
   // Fetch fee data
   const { data: installments = [], isLoading: isFeesLoading } = useStudentFeeOverviewQuery(id);
+
+  const handleSaveStudent = (updatedData) => {
+    updateMutation.mutate({ 
+      id: updatedData.student_id, 
+      data: updatedData 
+    }, {
+      onSuccess: () => {
+        setIsEditModalOpen(false);
+      }
+    });
+  };
 
   if (isLoading) {
     return (
@@ -54,13 +70,18 @@ const StudentProfile = () => {
                 student={student} 
                 address={profileData?.address} 
                 contact={profileData?.contact} 
+                onEdit={() => setIsEditModalOpen(true)}
               />
               <GuardianInfo student={student} contact={profileData?.contact} />
               <EnrollmentDetails enrollments={profileData?.enrollments} />
               <AcademicBackground education={profileData?.education} />
             </div>
             <div className="lg:col-span-1">
-              <ProfileSidebar />
+              <ProfileSidebar 
+                studentId={id} 
+                education={profileData?.education} 
+                enrollments={profileData?.enrollments} 
+              />
             </div>
           </div>
         );
@@ -105,11 +126,19 @@ const StudentProfile = () => {
         student={student} 
         activeTab={activeTab} 
         onTabChange={setActiveTab} 
+        onEdit={() => setIsEditModalOpen(true)}
       />
 
       <div className="min-h-[400px]">
         {renderTabContent()}
       </div>
+
+      <StudentEditModal 
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        student={student}
+        onSave={handleSaveStudent}
+      />
     </div>
   );
 };

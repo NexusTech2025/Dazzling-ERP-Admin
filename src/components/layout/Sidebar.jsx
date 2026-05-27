@@ -10,7 +10,14 @@ const Sidebar = () => {
     { name: 'Dashboard', path: '/admin/dashboard', icon: 'dashboard' },
     { name: 'Batches', path: '/admin/batches', icon: 'groups' },
     { name: 'Schedule', path: '/admin/schedule', icon: 'calendar_month' },
-    { name: 'Courses', path: '/admin/courses', icon: 'menu_book' },
+    { 
+      name: 'Courses', 
+      icon: 'menu_book',
+      subItems: [
+        { name: 'Course Catalog', path: '/admin/courses' },
+        { name: 'Course Categories', path: '/admin/courses/types' }
+      ]
+    },
     { 
       name: 'Finance', 
       icon: 'payments',

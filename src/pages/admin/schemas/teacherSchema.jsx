@@ -5,7 +5,7 @@ import { ProfileCell, BadgeCell, ActionCell } from '../../../components/ui/table
  * Creates the column schema for the Teacher table.
  * Aligned with Teacher Schema (full_name, mobile_number, status).
  */
-export const createTeacherColumns = ({ onView, onEdit, onDelete, isDeleting } = {}) => {
+export const createTeacherColumns = ({ onView, onEdit, onDelete, deletingId } = {}) => {
   return [
     {
       header: 'Faculty Name',
@@ -60,7 +60,7 @@ export const createTeacherColumns = ({ onView, onEdit, onDelete, isDeleting } = 
           onView={onView ? () => onView(teacher) : null}
           onEdit={onEdit ? () => onEdit(teacher) : null}
           onDelete={onDelete ? () => onDelete(teacher.teacher_id, teacher.full_name) : null}
-          isDeleting={isDeleting}
+          isDeleting={deletingId === teacher.teacher_id}
         />
       )
     }

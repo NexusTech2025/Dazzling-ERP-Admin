@@ -27,7 +27,7 @@ const FeeSchedule = ({ installments }) => (
               <td className="px-6 py-4 text-right font-black text-text-main dark:text-white">${Number(inst.amount).toLocaleString()}</td>
               <td className="px-6 py-4 text-right font-bold text-emerald-600">${Number(inst.paid_amount || 0).toLocaleString()}</td>
               <td className="px-6 py-4 text-center">
-                <Badge variant={inst.status === 'Paid' ? 'success' : inst.status === 'Overdue' ? 'danger' : 'warning'}>
+                <Badge variant={inst.status?.toLowerCase() === 'paid' ? 'success' : inst.status?.toLowerCase() === 'overdue' ? 'danger' : 'warning'}>
                   {inst.status}
                 </Badge>
               </td>

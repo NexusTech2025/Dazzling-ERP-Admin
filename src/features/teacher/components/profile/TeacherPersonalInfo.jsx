@@ -20,7 +20,7 @@ const TeacherPersonalInfo = ({ teacher }) => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-8">
           <KeyValuePair 
             label="Full Name" 
-            value={teacher.teacher_name} 
+            value={teacher.full_name} 
             icon="person"
           />
           <KeyValuePair 
@@ -31,7 +31,7 @@ const TeacherPersonalInfo = ({ teacher }) => {
           />
           <KeyValuePair 
             label="Date of Birth" 
-            value={teacher.date_of_birth} 
+            value={teacher.date_of_birth ? new Date(teacher.date_of_birth.split('T')[0]).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }) : ''} 
             icon="cake"
             fallback="Not provided"
           />
@@ -43,13 +43,13 @@ const TeacherPersonalInfo = ({ teacher }) => {
           />
           <KeyValuePair 
             label="Joining Date" 
-            value={teacher.joining_date || (teacher.created_at ? new Date(teacher.created_at).toLocaleDateString() : 'N/A')} 
+            value={teacher.joining_date ? new Date(teacher.joining_date.split('T')[0]).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }) : (teacher.created_at ? new Date(teacher.created_at).toLocaleDateString() : 'N/A')} 
             icon="calendar_today"
           />
           <KeyValuePair 
-            label="Department" 
-            value={teacher.department} 
-            icon="account_balance"
+            label="Specialization" 
+            value={teacher.specialization} 
+            icon="psychology"
           />
         </div>
       </Card.Body>

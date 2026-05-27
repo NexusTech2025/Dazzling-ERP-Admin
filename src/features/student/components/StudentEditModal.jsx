@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import Badge from '../../../components/ui/Badge';
+import FormField from '../../../components/ui/v2/FormField';
+import TextInput from '../../../components/ui/v2/TextInput';
+import SelectInput from '../../../components/ui/v2/SelectInput';
+import DateInput from '../../../components/ui/v2/DateInput';
 
 const StudentEditModal = ({ isOpen, onClose, student, onSave }) => {
   const [formData, setFormData] = useState({
@@ -9,7 +12,7 @@ const StudentEditModal = ({ isOpen, onClose, student, onSave }) => {
     email: '',
     phone: '',
     gender: '',
-    date_of_birth: '',
+    dob: '',
     admission_date: '',
     status: 'active'
   });
@@ -22,8 +25,8 @@ const StudentEditModal = ({ isOpen, onClose, student, onSave }) => {
         mother_name: student.mother_name || '',
         email: student.email || '',
         phone: student.phone || '',
-        gender: student.gender || 'male',
-        date_of_birth: student.date_of_birth || '',
+        gender: student.gender || 'Male',
+        dob: student.dob || '',
         admission_date: student.admission_date || '',
         status: student.status || 'active'
       });
@@ -32,8 +35,7 @@ const StudentEditModal = ({ isOpen, onClose, student, onSave }) => {
 
   if (!isOpen || !student) return null;
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
+  const handleFieldChange = (name, value) => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
@@ -58,106 +60,85 @@ const StudentEditModal = ({ isOpen, onClose, student, onSave }) => {
         <form onSubmit={handleSubmit}>
           <div className="p-6 max-h-[70vh] overflow-y-auto space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="md:col-span-2">
-                <label className="block text-xs font-black text-text-secondary uppercase tracking-widest mb-2">Full Name</label>
-                <input 
-                  required
-                  name="student_name"
+              <FormField label="Full Name" required className="md:col-span-2">
+                <TextInput 
                   value={formData.student_name}
-                  onChange={handleChange}
-                  className="w-full bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-xl py-2.5 px-4 text-sm font-bold text-text-main dark:text-white focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                  onChange={(e) => handleFieldChange('student_name', e.target.value)}
+                  placeholder="Enter full name"
                 />
-              </div>
+              </FormField>
               
-              <div>
-                <label className="block text-xs font-black text-text-secondary uppercase tracking-widest mb-2">Father's Name</label>
-                <input 
-                  name="father_name"
+              <FormField label="Father's Name">
+                <TextInput 
                   value={formData.father_name}
-                  onChange={handleChange}
-                  className="w-full bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-xl py-2.5 px-4 text-sm font-bold text-text-main dark:text-white focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                  onChange={(e) => handleFieldChange('father_name', e.target.value)}
+                  placeholder="Enter father's name"
                 />
-              </div>
+              </FormField>
 
-              <div>
-                <label className="block text-xs font-black text-text-secondary uppercase tracking-widest mb-2">Mother's Name</label>
-                <input 
-                  name="mother_name"
+              <FormField label="Mother's Name">
+                <TextInput 
                   value={formData.mother_name}
-                  onChange={handleChange}
-                  className="w-full bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-xl py-2.5 px-4 text-sm font-bold text-text-main dark:text-white focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                  onChange={(e) => handleFieldChange('mother_name', e.target.value)}
+                  placeholder="Enter mother's name"
                 />
-              </div>
+              </FormField>
 
-              <div>
-                <label className="block text-xs font-black text-text-secondary uppercase tracking-widest mb-2">Email Address</label>
-                <input 
+              <FormField label="Email Address">
+                <TextInput 
                   type="email"
-                  name="email"
                   value={formData.email}
-                  onChange={handleChange}
-                  className="w-full bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-xl py-2.5 px-4 text-sm font-bold text-text-main dark:text-white focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                  onChange={(e) => handleFieldChange('email', e.target.value)}
+                  placeholder="Enter email address"
                 />
-              </div>
+              </FormField>
 
-              <div>
-                <label className="block text-xs font-black text-text-secondary uppercase tracking-widest mb-2">Phone Number</label>
-                <input 
-                  name="phone"
+              <FormField label="Phone Number">
+                <TextInput 
                   value={formData.phone}
-                  onChange={handleChange}
-                  className="w-full bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-xl py-2.5 px-4 text-sm font-bold text-text-main dark:text-white focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                  onChange={(e) => handleFieldChange('phone', e.target.value)}
+                  placeholder="Enter phone number"
                 />
-              </div>
+              </FormField>
 
-              <div>
-                <label className="block text-xs font-black text-text-secondary uppercase tracking-widest mb-2">Gender</label>
-                <select 
-                  name="gender"
+              <FormField label="Gender">
+                <SelectInput 
+                  options={[
+                    { label: 'Male', value: 'Male' },
+                    { label: 'Female', value: 'Female' },
+                    { label: 'Other', value: 'Other' }
+                  ]}
                   value={formData.gender}
-                  onChange={handleChange}
-                  className="w-full bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-xl py-2.5 px-4 text-sm font-bold text-text-main dark:text-white focus:ring-2 focus:ring-primary/20 outline-none transition-all"
-                >
-                  <option value="male">Male</option>
-                  <option value="female">Female</option>
-                  <option value="other">Other</option>
-                </select>
-              </div>
+                  onChange={(val) => handleFieldChange('gender', val)}
+                  placeholder="Select gender"
+                />
+              </FormField>
 
-              <div>
-                <label className="block text-xs font-black text-text-secondary uppercase tracking-widest mb-2">Status</label>
-                <select 
-                  name="status"
+              <FormField label="Status">
+                <SelectInput 
+                  options={[
+                    { label: 'Active', value: 'active' },
+                    { label: 'Inactive', value: 'inactive' }
+                  ]}
                   value={formData.status}
-                  onChange={handleChange}
-                  className="w-full bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-xl py-2.5 px-4 text-sm font-bold text-text-main dark:text-white focus:ring-2 focus:ring-primary/20 outline-none transition-all"
-                >
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-black text-text-secondary uppercase tracking-widest mb-2">Date of Birth</label>
-                <input 
-                  type="date"
-                  name="date_of_birth"
-                  value={formData.date_of_birth}
-                  onChange={handleChange}
-                  className="w-full bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-xl py-2.5 px-4 text-sm font-bold text-text-main dark:text-white focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                  onChange={(val) => handleFieldChange('status', val)}
+                  placeholder="Select status"
                 />
-              </div>
+              </FormField>
 
-              <div>
-                <label className="block text-xs font-black text-text-secondary uppercase tracking-widest mb-2">Admission Date</label>
-                <input 
-                  type="date"
-                  name="admission_date"
+              <FormField label="Date of Birth">
+                <DateInput 
+                  value={formData.dob}
+                  onChange={(e) => handleFieldChange('dob', e.target.value)}
+                />
+              </FormField>
+
+              <FormField label="Admission Date">
+                <DateInput 
                   value={formData.admission_date}
-                  onChange={handleChange}
-                  className="w-full bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-xl py-2.5 px-4 text-sm font-bold text-text-main dark:text-white focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                  onChange={(e) => handleFieldChange('admission_date', e.target.value)}
                 />
-              </div>
+              </FormField>
             </div>
           </div>
 

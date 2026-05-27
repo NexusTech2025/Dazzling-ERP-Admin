@@ -1,7 +1,7 @@
 import React from 'react';
 import Badge from '../../../../components/ui/Badge';
 
-const ProfileHeader = ({ student, activeTab, onTabChange }) => {
+const ProfileHeader = ({ student, activeTab, onTabChange, onEdit }) => {
   const tabs = ['Overview', 'Attendance', 'Fees', 'Performance', 'Documents'];
 
   return (
@@ -10,8 +10,8 @@ const ProfileHeader = ({ student, activeTab, onTabChange }) => {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="flex items-center gap-6">
             <div className="size-24 md:size-32 rounded-full bg-primary/10 flex items-center justify-center text-primary font-black text-4xl border-4 border-white dark:border-slate-800 shadow-md overflow-hidden shrink-0">
-              {student.avatar ? (
-                <img src={student.avatar} alt={student.student_name} className="h-full w-full object-cover" />
+              {student.avatarUrl ? (
+                <img src={student.avatarUrl} alt={student.student_name} className="h-full w-full object-cover" />
               ) : (
                 student.student_name?.substring(0, 2).toUpperCase()
               )}
@@ -32,7 +32,10 @@ const ProfileHeader = ({ student, activeTab, onTabChange }) => {
           </div>
           
           <div className="flex gap-3 flex-wrap">
-            <button className="flex items-center justify-center gap-2 rounded-lg h-10 px-4 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-text-main dark:text-white text-sm font-bold transition-colors flex-1 md:flex-auto border border-border-light dark:border-border-dark">
+            <button 
+              onClick={onEdit}
+              className="flex items-center justify-center gap-2 rounded-lg h-10 px-4 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-text-main dark:text-white text-sm font-bold transition-colors flex-1 md:flex-auto border border-border-light dark:border-border-dark"
+            >
               <span className="material-symbols-outlined text-[20px]">edit</span>
               <span>Edit Profile</span>
             </button>

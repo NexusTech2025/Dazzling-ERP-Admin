@@ -9,6 +9,8 @@ import { SearchInput, SelectFilter } from '../../components/ui/filters';
 import { createTeacherColumns } from './schemas/teacherSchema';
 import ConfirmModal from '../../components/ui/ConfirmModal';
 import RefreshButton from '../../components/ui/btn/RefreshButton';
+import { queryKeys } from '../../lib/react-query/queryKeys';
+import PageErrorBoundary from '../../components/ui/PageErrorBoundary';
 
 const Teachers = () => {
   const { token } = useAuth();
@@ -51,7 +53,7 @@ const Teachers = () => {
         resultMessage: null
       });
     },
-    isDeleting: deleteMutation.isPending,
+    deletingId: deleteMutation.isPending ? deleteModal.id : null,
   };
 
   // 5. Generate columns dynamically
@@ -95,7 +97,7 @@ const Teachers = () => {
         data={filteredTeachers}
         isLoading={isLoading}
         error={error}
-        onRetry={() => queryClient.invalidateQueries({ queryKey: ['teachers'] })}
+        onRetry={() => queryClient.invalidateQueries({ queryKey: queryKeys.teacher.all })}
         emptyMessage="No faculty members found matching your filters."
         filters={filters}
         primaryAction={
@@ -108,7 +110,7 @@ const Teachers = () => {
           <>
             <RefreshButton 
               isFetching={isFetching} 
-              onRefresh={() => queryClient.invalidateQueries({ queryKey: ['teachers'] })} 
+              onRefresh={() => queryClient.invalidateQueries({ queryKey: queryKeys.teacher.all })} 
             />
             <button className="flex items-center gap-2 rounded-lg border border-border-light dark:border-border-dark bg-surface-light dark:bg-surface-dark px-4 py-2 text-sm font-medium text-text-main dark:text-white hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
               <span className="material-symbols-outlined text-lg">download</span>
@@ -123,7 +125,33 @@ const Teachers = () => {
         onClose={handleCloseModal}
         onConfirm={() => {
           setDeleteModal(prev => ({ ...prev, status: 'processing' }));
-          deleteMutation.mutate({ id: deleteModal.id });
+          deleteMutation.mutate(
+            { id: deleteModal.id },
+            {
+              onSuccess: (response) => {
+                if (response.success) {
+                  setDeleteModal(prev => ({ 
+                    ...prev, 
+                    status: 'success', 
+                    resultMessage: `${deleteModal.name} has been deleted successfully.`
+                  }));
+                } else {
+                  setDeleteModal(prev => ({ 
+                    ...prev, 
+                    status: 'error', 
+                    resultMessage: response.message || `Failed to delete ${deleteModal.name}.`
+                  }));
+                }
+              },
+              onError: (err) => {
+                setDeleteModal(prev => ({ 
+                  ...prev, 
+                  status: 'error', 
+                  resultMessage: err.message || `An error occurred while deleting ${deleteModal.name}.`
+                }));
+              }
+            }
+          );
         }}
         status={deleteModal.status}
         resultMessage={deleteModal.resultMessage}
@@ -134,4 +162,10 @@ const Teachers = () => {
   );
 };
 
-export default Teachers;
+const TeachersPage = () => (
+  <PageErrorBoundary>
+    <Teachers />
+  </PageErrorBoundary>
+);
+
+export default TeachersPage;

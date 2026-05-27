@@ -91,7 +91,7 @@ const CourseDetails = () => {
                   </div>
                   <span className="text-sm font-semibold text-text-secondary">Base Fee</span>
                 </div>
-                <p className="text-2xl font-black text-text-main dark:text-white">${Number(course.base_fee).toLocaleString()}</p>
+                <p className="text-2xl font-black text-text-main dark:text-white">₹{Number(course.base_fee).toLocaleString()}</p>
               </div>
               <div className="bg-surface-light dark:bg-surface-dark p-5 rounded-2xl border border-border-light dark:border-border-dark shadow-sm">
                 <div className="flex items-center gap-3 mb-2">

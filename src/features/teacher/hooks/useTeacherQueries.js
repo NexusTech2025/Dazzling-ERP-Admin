@@ -14,9 +14,9 @@ export const useTeachersQuery = (filter = EMPTY_FILTER) => {
     queryKey: queryKeys.teacher.list(filter),
     queryFn: async ({ signal }) => {
       const response = await apiClient.executeAction(
-        API_REGISTRY.DATA.QUERY, 
-        { target: 'Teacher', where: filter }, 
-        token, 
+        API_REGISTRY.DATA.QUERY,
+        { target: 'Teacher', where: filter },
+        token,
         { signal }
       );
       return response.data?.data || [];
@@ -39,13 +39,13 @@ export const useTeacherDetailQuery = (id) => {
     queryKey: queryKeys.teacher.detail(id),
     queryFn: async ({ signal }) => {
       const response = await apiClient.executeAction(
-        API_REGISTRY.DATA.QUERY, 
-        { 
-          target: 'Teacher', 
-          where: { teacher_id: id }, 
-          pagination: { limit: 1 } 
-        }, 
-        token, 
+        API_REGISTRY.DATA.QUERY,
+        {
+          target: 'Teacher',
+          where: { teacher_id: id },
+          pagination: { limit: 1 }
+        },
+        token,
         { signal }
       );
       return response.data?.data?.[0] || null;
@@ -88,6 +88,8 @@ export const useTeacherAttendanceQuery = (teacherId) => {
       return response.data?.data || [];
     },
     enabled: !!token && !!teacherId,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    refetchOnWindowFocus: false,
   });
 };
 
@@ -99,11 +101,11 @@ export const useUpdateTeacherAttendanceMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ teacherId, date, data, options }) => 
+    mutationFn: ({ teacherId, date, data, options }) =>
       apiClient.executeAction(
-        API_REGISTRY.STAFF.MARK_ATTENDANCE, 
-        { teacherId, date, ...data }, 
-        token, 
+        API_REGISTRY.STAFF.MARK_ATTENDANCE,
+        { teacherId, date, ...data },
+        token,
         options
       ),
     onSuccess: (response, { teacherId }) => {
@@ -122,10 +124,10 @@ export const useCreateTeacherMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (payload) => 
+    mutationFn: (payload) =>
       apiClient.executeAction(
-        API_REGISTRY.STAFF.ONBOARD_TEACHER, 
-        payload, 
+        API_REGISTRY.STAFF.ONBOARD_TEACHER,
+        payload,
         token
       ),
     onSuccess: (response) => {
@@ -144,17 +146,19 @@ export const useUpdateTeacherMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data, options }) => 
+    mutationFn: ({ id, data, options }) =>
       apiClient.executeAction(
-        API_REGISTRY.DATA.UPDATE, 
-        { target: 'Teacher', where: { teacher_id: id }, data }, 
-        token, 
+        API_REGISTRY.STAFF.UPDATE_TEACHER,
+        { teacher_id: id, data },
+        token,
         options
       ),
     onSuccess: (response, { id }) => {
       if (response.success) {
-        queryClient.refetchQueries({ queryKey: queryKeys.teacher.all });
-        queryClient.refetchQueries({ queryKey: queryKeys.teacher.detail(id) });
+        queryClient.invalidateQueries({ queryKey: queryKeys.teacher.all });
+        queryClient.invalidateQueries({ queryKey: queryKeys.teacher.detail(id) });
+        queryClient.invalidateQueries({ queryKey: [...queryKeys.teacher.detail(id), 'subjects'] });
+        queryClient.invalidateQueries({ queryKey: [...queryKeys.teacher.detail(id), 'salaryConfig'] });
       }
     }
   });
@@ -168,16 +172,133 @@ export const useDeleteTeacherMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, options }) => 
+    mutationFn: ({ id, options }) =>
       apiClient.executeAction(
-        API_REGISTRY.DATA.DELETE, 
-        { target: 'Teacher', where: { teacher_id: id } }, 
-        token, 
+        API_REGISTRY.DATA.DELETE,
+        { table: "Teacher", id },
+        token,
         options
       ),
     onSuccess: (response) => {
       if (response.success) {
         queryClient.refetchQueries({ queryKey: queryKeys.teacher.all });
+      }
+    }
+  });
+};
+
+/**
+ * Hook for querying assigned teacher subjects
+ */
+export const useTeacherSubjectsQuery = (teacherId) => {
+  const { token } = useAuth();
+
+  return useQuery({
+    queryKey: [...queryKeys.teacher.detail(teacherId), 'subjects'],
+    queryFn: async ({ signal }) => {
+      const response = await apiClient.executeAction(
+        API_REGISTRY.DATA.QUERY,
+        { target: 'TeacherSubject', where: { teacher_id: teacherId } },
+        token,
+        { signal }
+      );
+      return response.data?.data || [];
+    },
+    enabled: !!token && !!teacherId,
+    staleTime: 1000 * 60 * 5,
+  });
+};
+
+/**
+ * Hook for querying teacher salary configuration
+ */
+export const useTeacherSalaryConfigQuery = (teacherId) => {
+  const { token } = useAuth();
+
+  return useQuery({
+    queryKey: [...queryKeys.teacher.detail(teacherId), 'salaryConfig'],
+    queryFn: async ({ signal }) => {
+      const response = await apiClient.executeAction(
+        API_REGISTRY.DATA.QUERY,
+        { target: 'TeacherSalaryConfig', where: { teacher_id: teacherId } },
+        token,
+        { signal }
+      );
+      return response.data?.data?.[0] || null;
+    },
+    enabled: !!token && !!teacherId,
+    staleTime: 1000 * 60 * 5,
+  });
+};
+
+/**
+ * Hook for querying teacher document attachments
+ */
+export const useTeacherDocumentsQuery = (teacherId) => {
+  const { token } = useAuth();
+
+  return useQuery({
+    queryKey: [...queryKeys.teacher.detail(teacherId), 'documents'],
+    queryFn: async ({ signal }) => {
+      const response = await apiClient.executeAction(
+        API_REGISTRY.DATA.QUERY,
+        { target: 'TeacherDocument', where: { teacher_id: teacherId } },
+        token,
+        { signal }
+      );
+      return response.data?.data || [];
+    },
+    enabled: !!token && !!teacherId,
+    staleTime: 1000 * 60 * 5,
+  });
+};
+
+/**
+ * Hook for assigning subjects/courses to a teacher
+ */
+export const useAssignTeacherSubjectsMutation = () => {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ teacherId, subjectIds, options }) =>
+      apiClient.executeAction(
+        API_REGISTRY.STAFF.ASSIGN_SUBJECTS,
+        { teacher_id: teacherId, subject_ids: subjectIds },
+        token,
+        options
+      ),
+    onSuccess: (response, { teacherId }) => {
+      if (response.success) {
+        queryClient.invalidateQueries({ queryKey: [...queryKeys.teacher.detail(teacherId), 'subjects'] });
+      }
+    }
+  });
+};
+
+/**
+ * Hook for setting teacher salary configuration
+ */
+export const useSetTeacherSalaryConfigMutation = () => {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ teacherId, salaryType, baseAmount, effectiveFrom, options }) =>
+      apiClient.executeAction(
+        API_REGISTRY.STAFF.SET_SALARY_CONFIG,
+        { 
+          teacher_id: teacherId, 
+          salary_type: salaryType, 
+          base_amount: baseAmount, 
+          effective_from: effectiveFrom 
+        },
+        token,
+        options
+      ),
+    onSuccess: (response, { teacherId }) => {
+      if (response.success) {
+        queryClient.invalidateQueries({ queryKey: [...queryKeys.teacher.detail(teacherId), 'salaryConfig'] });
       }
     }
   });

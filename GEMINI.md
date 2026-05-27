@@ -16,6 +16,8 @@ Welcome! This file documents our established architectural patterns, UI standard
 8. **No Reversions**: Do not roll back, undo, or overwrite completed files or features unless explicitly requested to.
 9. **Explain Critical Commands**: Before running shell or CLI commands that modify files, explain their purpose and scope.
 10. **Prioritize Security**: Never log, expose, or commit secrets, credentials, tokens, or API keys.
+11. **Primary Database Schema**: The local `src/Schema` directory is outdated and **MUST NOT** be followed. Refer exclusively to `E:\NAST\Dazzling\GAS\DazzlingDB\full_schemav3.json` (schema version 2.0.1) as the primary source of truth for all database tables and fields.
+12. **REST API Documentation**: Refer to `E:\NAST\Dazzling\GAS\DazzlingDB\REST-api-doc.md` for the official REST API request/response format rules during code editing, debugging, or diagnostics. If the rules for a specific REST API action are undefined or ambiguous, notify the user immediately before proceeding.
 
 ---
 
@@ -83,12 +85,20 @@ We connect to a live Google Apps Script (GAS) web app backend for production CRU
 To ensure that both future AI agents and human developers have immediate local access to architectural designs and verification records, we maintain local backup directories under `.gemini/`:
 
 *   **Implementation Plans**:
-    - **Target Directory**: `dazzling-erp-admin/.gemini/plan/`
+    - **Target Directories**:
+      - Drafted/Proposed: `dazzling-erp-admin/.gemini/plan/drafted/`
+      - Approved: `dazzling-erp-admin/.gemini/plan/approved/`
+      - Completed/Implemented: `dazzling-erp-admin/.gemini/plan/completed/`
     - **Naming Convention**: Use a descriptive, proper title in lowercase kebab-case (e.g. `student-quick-add-mode.md`).
-    - **Frequency**: Save a backup of the approved `implementation_plan.md` here before proceeding to full execution.
-    - **Metadata Headers**: Always include a header at the top recording:
-      - **Date**: ISO timestamp of creation or approval (e.g. `2026-05-20T15:05:00+05:30`)
-      - **Status**: The state of the plan (e.g. `Approved`, `In-Execution`)
+    - **Frequency**: Save a backup of the approved `implementation_plan.md` under the designated plan subdirectories.
+    - **Metadata Headers**: Every plan MUST include standard YAML frontmatter:
+      ```yaml
+      ---
+      Date: YYYY-MM-DDTHH:MM:SS+05:30
+      Status: [Proposed | Approved | Approved-Completed]
+      ---
+      ```
+    - **Status Updates & File Movement Rule**: The agent is responsible for updating the `Status:` field in the plan's YAML frontmatter. However, the agent **MUST NOT** physically move or rename files between these subdirectories automatically. File organization/movement in the file system is managed exclusively by the user.
 
 *   **Walkthroughs**:
     - **Target Directory**: `dazzling-erp-admin/.gemini/walkthrough/`
@@ -97,3 +107,20 @@ To ensure that both future AI agents and human developers have immediate local a
     - **Metadata Headers**: Always include a header at the top recording:
       - **Date**: ISO timestamp of completion and verification (e.g. `2026-05-20T15:10:00+05:30`)
       - **Status**: The state of the work (e.g. `Completed`, `Verified`)
+
+*   **Core Plan Lifecycle Instructions**:
+    - For full details, operational constraints, and metadata guidelines regarding the plan lifecycle, see the master core instructions file: [instructions.md](file:///E:/NAST/Dazzling/ERP%20System/dazzling-erp-admin/.gemini/memory/core/instructions.md).
+
+---
+
+## 6. Database Schema Source of Truth
+
+*   **Outdated Schema Directory**: The directory `src/Schema/` is completely deprecated and **MUST NOT** be used or referenced for schema definitions.
+*   **Primary Source of Truth**: The database schema contract is defined in `E:\NAST\Dazzling\GAS\DazzlingDB\full_schemav3.json` (schema version 2.0.1). Always refer to this master file for table columns, constraints, relations, and primary keys.
+
+---
+
+## 7. REST API Documentation Source of Truth
+
+*   **Primary Source of Truth**: The REST API specifications are defined in `E:\NAST\Dazzling\GAS\DazzlingDB\REST-api-doc.md`. Always follow the documented action keys, request payload structures, and response envelopes.
+*   **Undefined Actions Protocol**: If a needed REST API action is not defined, or its payload constraints are not documented in the API specification, stop and notify the user to clarify the schema requirements.

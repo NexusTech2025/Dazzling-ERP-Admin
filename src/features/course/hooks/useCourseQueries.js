@@ -10,7 +10,9 @@ import {
   updateCourse, 
   deleteCourse, 
   fetchCourseTypes, 
-  createCourseType 
+  createCourseType,
+  updateCourseType,
+  deleteCourseType
 } from '../api/course.api';
 
 // IMPORT FROM MOCK API FOR REMAINING FEATURES (PACKAGES)
@@ -55,6 +57,60 @@ export const useCreateCourseTypeMutation = () => {
   });
 };
 
+export const useUpdateCourseTypeMutation = () => {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, data, options }) => updateCourseType(token, id, data, options),
+    onSuccess: (response) => {
+      if (response.success) {
+        queryClient.invalidateQueries({ queryKey: queryKeys.course.type.all });
+      }
+    }
+  });
+};
+
+export const useDeleteCourseTypeMutation = () => {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, options }) => deleteCourseType(token, id, options),
+    onSuccess: (response) => {
+      if (response.success) {
+        queryClient.invalidateQueries({ queryKey: queryKeys.course.type.all });
+      }
+    }
+  });
+};
+
+// --- METADATA PARSING UTILITIES ---
+
+const safeParseMetadata = (metadata) => {
+  if (!metadata) return {};
+  if (typeof metadata === 'object') return metadata;
+  try {
+    return JSON.parse(metadata);
+  } catch (e) {
+    console.error('Failed to parse course metadata JSON:', metadata, e);
+    return {};
+  }
+};
+
+const normalizeCourse = (course) => {
+  if (!course) return null;
+  return {
+    ...course,
+    metadata: safeParseMetadata(course.metadata)
+  };
+};
+
+const normalizeCourseList = (list) => {
+  if (!Array.isArray(list)) return [];
+  return list.map(normalizeCourse);
+};
+
 // --- COURSES ---
 
 /**
@@ -72,6 +128,7 @@ export const useCoursesQuery = (filter = EMPTY_FILTER) => {
       }
       return response.data?.data || [];
     },
+    select: normalizeCourseList,
     enabled: !!token,
     staleTime: Infinity,
     refetchOnMount: false,
@@ -93,7 +150,7 @@ export const useCourseDetailQuery = (id) => {
       if (!response.success) {
         throw new Error(response.error?.message || response.message || 'Failed to fetch course details');
       }
-      return response.data?.data?.[0] || null;
+      return normalizeCourse(response.data?.data?.[0] || null);
     },
     enabled: !!token && !!id,
     initialData: () => {

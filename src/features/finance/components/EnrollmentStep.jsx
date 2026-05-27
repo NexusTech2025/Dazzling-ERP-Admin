@@ -46,7 +46,7 @@ const EnrollmentStep = ({
       studentName: s.student_name,
       email: s.email,
       phone: s.phone,
-      avatar: s.avatar
+      avatarUrl: s.avatarUrl
     });
     setShowTable(false);
   };

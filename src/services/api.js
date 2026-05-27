@@ -19,12 +19,12 @@ export const postToGoogleScript = async (data, options = {}) => {
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       signal: options.signal
     });
-    
+
     // Log logic errors from the server (GAS returns 200 even on failures)
     if (response.data && response.data.success === false) {
       console.error('API Logic Error:', response.data);
     }
-    
+
     return response.data;
   } catch (error) {
     if (axios.isCancel(error)) {
@@ -46,30 +46,30 @@ const createAdminPayload = (action, token, extraData = {}) => ({
 });
 
 // Generic Retrieval Actions (ORM Query Engine)
-export const query = (token, entity, filter = {}, options = {}) => 
+export const query = (token, entity, filter = {}, options = {}) =>
   postToGoogleScript(createAdminPayload('query', token, { entity, filter }), options);
 
-export const retrieve = (token, entity, id, options = {}) => 
+export const retrieve = (token, entity, id, options = {}) =>
   postToGoogleScript(createAdminPayload('retrieve', token, { entity, id }), options);
 
 // Student CRUD
-export const addStudent = (token, userData, profileData, options = {}) => 
+export const addStudent = (token, userData, profileData, options = {}) =>
   postToGoogleScript(createAdminPayload('addstudent', token, { userData, profileData }), options);
 
-export const updateStudent = (token, id, data, options = {}) => 
+export const updateStudent = (token, id, data, options = {}) =>
   postToGoogleScript(createAdminPayload('updatestudent', token, { id, data }), options);
 
-export const deleteStudent = (token, id, options = {}) => 
+export const deleteStudent = (token, id, options = {}) =>
   postToGoogleScript(createAdminPayload('deletestudent', token, { id }), options);
 
 // Teacher CRUD
-export const addTeacher = (token, userData, profileData, options = {}) => 
+export const addTeacher = (token, userData, profileData, options = {}) =>
   postToGoogleScript(createAdminPayload('addteacher', token, { userData, profileData }), options);
 
-export const updateTeacher = (token, id, data, options = {}) => 
+export const updateTeacher = (token, id, data, options = {}) =>
   postToGoogleScript(createAdminPayload('updateteacher', token, { id, data }), options);
 
-export const deleteTeacher = (token, id, options = {}) => 
+export const deleteTeacher = (token, id, options = {}) =>
   postToGoogleScript(createAdminPayload('deleteteacher', token, { id }), options);
 
 export default api;

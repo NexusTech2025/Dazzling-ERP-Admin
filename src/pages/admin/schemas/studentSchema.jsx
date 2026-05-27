@@ -19,7 +19,7 @@ export const createStudentColumns = ({ onView, onEdit, onDelete, isDeleting } = 
         <ProfileCell 
           name={student.student_name} 
           subtitle={student.email} 
-          avatarUrl={student.avatar} 
+          avatarUrl={student.avatarUrl} 
         />
       )
     },

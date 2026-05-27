@@ -51,3 +51,16 @@ export const deleteCourse = (token, id, options = {}) =>
     table: 'Course', 
     id: id 
   }, token);
+
+export const updateCourseType = (token, id, data, options = {}) => 
+  executeAction('DATA.UPDATE', { 
+    table: 'CourseType', 
+    id: id, 
+    data 
+  }, token);
+
+export const deleteCourseType = (token, id, options = {}) => 
+  executeAction('DATA.DELETE', { 
+    table: 'CourseType', 
+    id: id 
+  }, token);

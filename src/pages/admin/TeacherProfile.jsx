@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useQueryClient, useIsFetching } from '@tanstack/react-query';
 import { useTeacherDetailQuery } from '../../features/teacher/hooks/useTeacherQueries';
+import { queryKeys } from '../../lib/react-query/queryKeys';
+import RefreshButton from '../../components/ui/btn/RefreshButton';
 
 // Sub-components
 import TeacherProfileHeader from '../../features/teacher/components/profile/TeacherProfileHeader';
@@ -11,13 +14,21 @@ import TeacherSalarySnapshot from '../../features/teacher/components/profile/Tea
 import TeacherProfessionalCard from '../../features/teacher/components/profile/TeacherProfessionalCard';
 import TeacherDocumentsCard from '../../features/teacher/components/profile/TeacherDocumentsCard';
 import TeachersAttendance from '../../features/teacher/components/profile/TeachersAttendance';
+import TeacherAssignedClasses from '../../features/teacher/components/profile/TeacherAssignedClasses';
 
 const TeacherProfile = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('Overview');
 
+  const queryClient = useQueryClient();
+  const isFetching = useIsFetching({ queryKey: queryKeys.teacher.detail(id) }) > 0;
+
   const { data: teacher, isLoading } = useTeacherDetailQuery(id);
+
+  const handleRefresh = () => {
+    queryClient.invalidateQueries({ queryKey: queryKeys.teacher.detail(id) });
+  };
 
   if (isLoading) {
     return (
@@ -55,6 +66,8 @@ const TeacherProfile = () => {
         );
       case 'Attendance':
         return <TeachersAttendance teacherId={teacher.teacher_id} />;
+      case 'Assigned Classes':
+        return <TeacherAssignedClasses teacherId={teacher.teacher_id} />;
       default:
         return (
           <div className="py-20 text-center animate-in fade-in zoom-in-95 bg-surface-light dark:bg-surface-dark rounded-xl border border-border-light dark:border-border-dark shadow-sm">
@@ -68,13 +81,16 @@ const TeacherProfile = () => {
 
   return (
     <div className="space-y-6 pb-10">
-      <nav className="flex items-center gap-2 text-sm font-medium text-text-secondary px-4">
-        <Link to="/admin/dashboard" className="hover:text-primary transition-colors">Home</Link>
-        <span className="material-symbols-outlined text-[16px]">chevron_right</span>
-        <Link to="/admin/teachers" className="hover:text-primary transition-colors">Teachers</Link>
-        <span className="material-symbols-outlined text-[16px]">chevron_right</span>
-        <span className="text-text-main dark:text-white">Teacher Profile</span>
-      </nav>
+      <div className="flex items-center justify-between px-4">
+        <nav className="flex items-center gap-2 text-sm font-medium text-text-secondary">
+          <Link to="/admin/dashboard" className="hover:text-primary transition-colors">Home</Link>
+          <span className="material-symbols-outlined text-[16px]">chevron_right</span>
+          <Link to="/admin/teachers" className="hover:text-primary transition-colors">Teachers</Link>
+          <span className="material-symbols-outlined text-[16px]">chevron_right</span>
+          <span className="text-text-main dark:text-white">Teacher Profile</span>
+        </nav>
+        <RefreshButton isFetching={isFetching} onRefresh={handleRefresh} />
+      </div>
 
       <TeacherProfileHeader 
         teacher={teacher} 

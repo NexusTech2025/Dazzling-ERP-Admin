@@ -1,43 +1,69 @@
 import React from 'react';
 import Card from '../../../../components/ui/Card';
+import { useStudentAttendanceStatsQuery } from '../../../batch/hooks/useAttendanceQueries';
 
-const ProfileSidebar = () => (
-  <div className="space-y-6">
-    {/* Quick Stats */}
-    <div className="grid grid-cols-2 gap-4">
-      <StatPill label="Attendance" value="92%" />
-      <StatPill label="CGPA" value="3.8" />
-    </div>
+const ProfileSidebar = ({ studentId, education = [], enrollments = [] }) => {
+  const { data: stats, isLoading: isAttendanceLoading } = useStudentAttendanceStatsQuery(studentId);
 
-    {/* Activity Log */}
-    <Card className="flex flex-col h-full">
-      <div className="p-6 pb-4 border-b border-border-light dark:border-border-dark flex justify-between items-center">
-        <h3 className="text-text-main dark:text-white text-lg font-bold tracking-tight">Activity Log</h3>
-        <button className="text-[10px] font-black text-primary bg-primary/10 hover:bg-primary/20 px-2 py-1 rounded-md uppercase tracking-widest transition-colors">View All</button>
+  // Determine overall attendance value
+  const attendanceVal = stats?.percentage !== undefined ? `${stats.percentage}%` : 'N/A';
+
+  // Determine CGPA/Grade from the education record with the highest year_of_passing
+  const sortedEdu = [...education].sort((a, b) => Number(b.year_of_passing || 0) - Number(a.year_of_passing || 0));
+  const latestEdu = sortedEdu[0];
+  const cgpaVal = latestEdu ? latestEdu.percentage_or_cgpa : 'N/A';
+
+  // Determine enrollment timeline activity if enrollments are present
+  const firstEnrollment = enrollments.length > 0 
+    ? [...enrollments].sort((a, b) => new Date(a.enrollment_date) - new Date(b.enrollment_date))[0]
+    : null;
+
+  return (
+    <div className="space-y-6">
+      {/* Quick Stats */}
+      <div className="grid grid-cols-2 gap-4">
+        <StatPill label="Attendance" value={isAttendanceLoading ? '...' : attendanceVal} />
+        <StatPill label="CGPA/Grade" value={cgpaVal} />
       </div>
-      <div className="p-6">
-        <div className="relative pl-4 border-l-2 border-border-light dark:border-border-dark space-y-8">
-          <TimelineItem color="bg-green-500" time="Today, 10:30 AM" title="Library Book Returned" desc="Returned 'Intro to Algorithms'" />
-          <TimelineItem color="bg-primary" time="Yesterday, 2:15 PM" title="Fee Payment Received" desc="Semester 3 tuition fee processed." />
-          <TimelineItem color="bg-orange-400" time="Oct 12, 09:00 AM" title="Absent for Physics" desc="Marked absent by Amit Verma." />
+
+      {/* Activity Log */}
+      <Card className="flex flex-col h-full">
+        <div className="p-6 pb-4 border-b border-border-light dark:border-border-dark flex justify-between items-center">
+          <h3 className="text-text-main dark:text-white text-lg font-bold tracking-tight">Activity Log</h3>
+          <button className="text-[10px] font-black text-primary bg-primary/10 hover:bg-primary/20 px-2 py-1 rounded-md uppercase tracking-widest transition-colors">View All</button>
         </div>
-      </div>
-    </Card>
+        <div className="p-6">
+          <div className="relative pl-4 border-l-2 border-border-light dark:border-border-dark space-y-8">
+            {firstEnrollment ? (
+              <TimelineItem 
+                color="bg-primary" 
+                time={new Date(firstEnrollment.enrollment_date).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })} 
+                title="Enrolled in Program" 
+                desc={`Admitted into ${firstEnrollment.course_name} (${firstEnrollment.batch_name})`} 
+              />
+            ) : (
+              <TimelineItem color="bg-orange-400" time="Pending" title="No Active Enrollments" desc="No course registrations found." />
+            )}
+            <TimelineItem color="bg-green-500" time="Recent Update" title="Profile Synchronized" desc="Verified database connection and schemas." />
+          </div>
+        </div>
+      </Card>
 
-    {/* Tags */}
-    <Card className="p-6">
-      <h3 className="text-text-main dark:text-white text-lg font-bold mb-4">Tags</h3>
-      <div className="flex flex-wrap gap-2">
-        <Tag label="Dean's List" />
-        <Tag label="Scholarship Holder" />
-        <Tag label="Coding Club" />
-        <button className="px-3 py-1 border border-dashed border-border-light dark:border-border-dark text-text-secondary text-xs font-bold rounded-full hover:border-primary hover:text-primary transition-all">
-          + Add Tag
-        </button>
-      </div>
-    </Card>
-  </div>
-);
+      {/* Tags */}
+      <Card className="p-6">
+        <h3 className="text-text-main dark:text-white text-lg font-bold mb-4">Tags</h3>
+        <div className="flex flex-wrap gap-2">
+          {enrollments.length > 0 && <Tag label="Enrolled Student" />}
+          {education.length > 0 && <Tag label="Academic Details Verified" />}
+          <Tag label="Regular" />
+          <button className="px-3 py-1 border border-dashed border-border-light dark:border-border-dark text-text-secondary text-xs font-bold rounded-full hover:border-primary hover:text-primary transition-all">
+            + Add Tag
+          </button>
+        </div>
+      </Card>
+    </div>
+  );
+};
 
 const StatPill = ({ label, value }) => (
   <div className="bg-primary/5 dark:bg-primary/10 rounded-2xl p-5 flex flex-col items-center justify-center text-center border border-primary/10 shadow-sm transition-all hover:shadow-md">

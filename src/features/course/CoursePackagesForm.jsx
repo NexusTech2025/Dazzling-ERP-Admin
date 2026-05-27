@@ -280,7 +280,7 @@ const CoursePackagesForm = () => {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{c.name}</p>
-                        <p className="text-[10px] font-black text-slate-500 uppercase mt-0.5">{c.course_id} • ${c.base_fee}</p>
+                        <p className="text-[10px] font-black text-slate-500 uppercase mt-0.5">{c.course_id} • ₹{c.base_fee}</p>
                       </div>
                       <button 
                         onClick={() => setSelectedCourses(prev => prev.filter(x => x.course_id !== c.course_id))}
@@ -304,7 +304,7 @@ const CoursePackagesForm = () => {
               {selectedCourses.length > 0 && (
                 <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 border border-dashed border-slate-300 dark:border-slate-700 text-center">
                   <p className="text-sm text-slate-500 font-medium">
-                    <span className="font-black text-slate-900 dark:text-white">{selectedCourses.length}</span> items selected. Total value: <span className="font-black text-primary">${aggregateValue.toLocaleString()}</span>
+                    <span className="font-black text-slate-900 dark:text-white">{selectedCourses.length}</span> items selected. Total value: <span className="font-black text-primary">₹{aggregateValue.toLocaleString()}</span>
                   </p>
                 </div>
               )}
@@ -401,14 +401,14 @@ const CoursePackagesForm = () => {
               <div className="flex flex-col gap-2">
                 <div className="flex items-baseline gap-2 mb-1">
                   <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Individual Sum:</span>
-                  <span className="text-sm text-slate-400 line-through font-medium">${aggregateValue.toLocaleString()}</span>
+                  <span className="text-sm text-slate-400 line-through font-medium">₹{aggregateValue.toLocaleString()}</span>
                   {savingsPercent > 0 && (
                     <span className="text-[10px] font-black text-green-600 bg-green-100 dark:bg-green-900/30 px-2 py-0.5 rounded-full">SAVE {savingsPercent}%</span>
                   )}
                 </div>
                 
                 <FormInput 
-                  label="Total Package Fee ($)" 
+                  label="Total Package Fee (₹)" 
                   name="packageFee" 
                   type="number" 
                   value={formData.packageFee} 

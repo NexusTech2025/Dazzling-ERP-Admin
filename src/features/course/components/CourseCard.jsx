@@ -21,7 +21,7 @@ const CourseCard = ({ course, onDelete }) => {
             {course.segment_id === 'SEG-CMP' ? 'computer' : course.segment_id === 'SEG-FND' ? 'star' : 'school'}
           </span>
         </div>
-        
+
         <div className="flex flex-col items-end gap-2">
           <span className="rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-black text-white backdrop-blur-sm uppercase tracking-wider">
             {course.short_code || course.course_id}
@@ -32,9 +32,9 @@ const CourseCard = ({ course, onDelete }) => {
             </span>
           )}
         </div>
-        
+
         {/* Absolute delete button for admin */}
-        <button 
+        <button
           onClick={() => onDelete(course.course_id, course.name)}
           className="absolute top-2 left-2 p-1.5 bg-black/10 hover:bg-red-500 text-white rounded-lg transition-all opacity-0 group-hover:opacity-100 backdrop-blur-sm"
         >
@@ -44,9 +44,16 @@ const CourseCard = ({ course, onDelete }) => {
 
       <div className="flex flex-1 flex-col p-6">
         <div className="mb-4">
-          <h4 className="text-lg font-bold text-text-main dark:text-white line-clamp-1">
-            {course.name}
-          </h4>
+          <div className="flex items-start justify-between gap-2">
+            <h4 className="text-lg font-bold text-text-main dark:text-white line-clamp-1 flex-1">
+              {course.name}
+            </h4>
+            {course.metadata?.class && (
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black bg-blue-500/10 text-blue-500 border border-blue-500/25 shrink-0">
+                Class {course.metadata.class}
+              </span>
+            )}
+          </div>
           <p className="text-xs font-bold text-text-secondary uppercase tracking-tighter mt-1">
             {course.segment_name || 'Academic'} • {course.duration_value} {course.duration_unit}
           </p>
@@ -55,7 +62,7 @@ const CourseCard = ({ course, onDelete }) => {
         <div className="grid grid-cols-2 gap-4 mb-6">
           <div>
             <p className="text-[10px] font-black text-text-secondary uppercase tracking-widest">Base Fee</p>
-            <p className="text-sm font-black text-text-main dark:text-white">${course.base_fee?.toLocaleString()}</p>
+            <p className="text-sm font-black text-text-main dark:text-white">₹{course.base_fee?.toLocaleString()}</p>
           </div>
           <div>
             <p className="text-[10px] font-black text-text-secondary uppercase tracking-widest">Installments</p>
@@ -65,14 +72,14 @@ const CourseCard = ({ course, onDelete }) => {
 
         {/* Action Buttons */}
         <div className="mt-auto grid grid-cols-2 gap-3">
-          <Link 
+          <Link
             to={`/admin/courses/${course.course_id}`}
             className="flex items-center justify-center gap-2 rounded-lg border border-border-light dark:border-border-dark bg-white dark:bg-slate-800 px-3 py-2 text-sm font-bold text-text-secondary dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
           >
             <span className="material-symbols-outlined text-[18px]">analytics</span>
             Details
           </Link>
-          <Link 
+          <Link
             to={`/admin/courses/edit/${course.course_id}`}
             className="flex items-center justify-center gap-2 rounded-lg bg-primary/10 px-3 py-2 text-sm font-bold text-primary hover:bg-primary/20 transition-colors"
           >

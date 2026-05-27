@@ -12,7 +12,7 @@ const StudentDetailModal = ({ isOpen, onClose, student }) => {
     { label: 'Email', value: student.email, icon: 'mail' },
     { label: 'Phone', value: student.phone, icon: 'phone' },
     { label: 'Gender', value: student.gender, icon: 'wc' },
-    { label: 'Date of Birth', value: student.date_of_birth, icon: 'calendar_today' },
+    { label: 'Date of Birth', value: student.dob, icon: 'calendar_today' },
     { label: 'Admission Date', value: student.admission_date, icon: 'event_available' },
     { label: 'Branch ID', value: student.branch_id, icon: 'location_on' },
   ];
@@ -33,8 +33,12 @@ const StudentDetailModal = ({ isOpen, onClose, student }) => {
         <div className="p-6">
           <div className="flex flex-col md:flex-row gap-8">
             <div className="flex flex-col items-center gap-4 shrink-0">
-              <div className="size-32 rounded-full bg-primary/10 flex items-center justify-center text-primary font-black text-4xl border-4 border-white dark:border-slate-800 shadow-md">
-                {student.student_name ? student.student_name.substring(0, 2).toUpperCase() : '??'}
+              <div className="size-32 rounded-full bg-primary/10 flex items-center justify-center text-primary font-black text-4xl border-4 border-white dark:border-slate-800 shadow-md overflow-hidden">
+                {student.avatarUrl ? (
+                  <img src={student.avatarUrl} alt={student.student_name} className="h-full w-full object-cover" />
+                ) : (
+                  student.student_name ? student.student_name.substring(0, 2).toUpperCase() : '??'
+                )}
               </div>
               <Badge variant={student.status === 'active' ? 'success' : 'default'} className="px-4 py-1 text-xs">
                 {student.status?.toUpperCase()}

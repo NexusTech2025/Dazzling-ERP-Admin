@@ -1,14 +1,14 @@
 import React from 'react';
 import Card from '../../../../components/ui/Card';
 
-const PersonalDetails = ({ student, address, contact }) => (
+const PersonalDetails = ({ student, address, contact, onEdit }) => (
   <Card className="p-6">
     <div className="flex items-center justify-between mb-6">
       <h3 className="text-text-main dark:text-white text-xl font-bold">Personal Information</h3>
-      <button className="text-primary text-sm font-bold hover:underline">Update</button>
+      <button onClick={onEdit} className="text-primary text-sm font-bold hover:underline">Update</button>
     </div>
     <div className="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-8">
-      <DetailField label="Date of Birth" value={student.date_of_birth} />
+      <DetailField label="Date of Birth" value={student.dob} />
       <DetailField label="Gender" value={student.gender} />
       <DetailField label="Email Address" value={contact?.email} />
       <DetailField label="Phone Number" value={contact?.mobile_number} />

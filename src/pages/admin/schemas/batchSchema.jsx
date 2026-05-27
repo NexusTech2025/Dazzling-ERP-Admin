@@ -44,20 +44,11 @@ export const createBatchColumns = ({ onView, onEdit, onDelete, isDeleting } = {}
     {
       header: 'Capacity',
       render: (batch) => {
-        // Mock a current enrollment count for visual purposes, or use 0
-        const currentCount = Math.floor(Math.random() * batch.capacity);
-        const percentage = Math.round((currentCount / batch.capacity) * 100);
-        let colorClass = 'bg-primary';
-        if (percentage > 90) colorClass = 'bg-red-500';
-        else if (percentage > 70) colorClass = 'bg-amber-500';
-
+        const capacity = batch.capacity || 0;
         return (
-          <div className="flex items-center gap-2">
-            <div className="w-16 h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
-              <div className={`h-full ${colorClass}`} style={{ width: `${percentage}%` }}></div>
-            </div>
-            <span className="text-xs">{currentCount}/{batch.capacity}</span>
-          </div>
+          <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+            {capacity} Seats
+          </span>
         );
       }
     },

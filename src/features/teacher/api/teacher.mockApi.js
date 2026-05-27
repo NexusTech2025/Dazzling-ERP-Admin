@@ -19,7 +19,7 @@ export const fetchTeachers = async (token, filter = {}, options = {}) => {
   if (filter.search) {
     const s = filter.search.toLowerCase();
     filtered = filtered.filter(t => 
-      t.teacher_name.toLowerCase().includes(s) || 
+      (t.full_name || t.teacher_name || '').toLowerCase().includes(s) || 
       t.teacher_id.toLowerCase().includes(s) ||
       t.email?.toLowerCase().includes(s)
     );
@@ -77,9 +77,13 @@ export const createTeacher = async (token, userData, profileData, options = {}) 
   const newTeacher = {
     teacher_id: `TCH-${Date.now().toString().slice(-4)}`,
     username: userData.username,
-    teacher_name: profileData.name,
+    full_name: profileData.full_name || profileData.name || '',
+    mobile_number: profileData.mobile_number || profileData.mobile || '',
+    profile_photo_url: profileData.profile_photo_url || profileData.avatar || '',
+    qualification: profileData.qualification || profileData.designation || '',
     email: userData.email,
     status: 'active',
+    notes: profileData.notes || profileData.metadata?.internal_notes || '',
     ...profileData,
     created_at: new Date().toISOString()
   };
@@ -95,11 +99,11 @@ export const updateTeacher = async (token, id, data, options = {}) => {
   // Create a clean update object based on schema
   const updatedTeacher = {
     ...localTeachers[index],
-    teacher_name: data.name || localTeachers[index].teacher_name,
-    mobile: data.mobile || localTeachers[index].mobile,
+    full_name: data.full_name || data.name || localTeachers[index].full_name,
+    mobile_number: data.mobile_number || data.mobile || localTeachers[index].mobile_number,
     gender: data.gender || localTeachers[index].gender,
     date_of_birth: data.date_of_birth || localTeachers[index].date_of_birth,
-    designation: data.designation || localTeachers[index].designation,
+    qualification: data.qualification || data.designation || localTeachers[index].qualification,
     subject_code: data.subject_code || localTeachers[index].subject_code,
     experience_years: data.experience_years || localTeachers[index].experience_years,
     specialization: data.specialization || localTeachers[index].specialization,
@@ -107,6 +111,7 @@ export const updateTeacher = async (token, id, data, options = {}) => {
     joining_date: data.joining_date || localTeachers[index].joining_date,
     previous_institute: data.previous_institute || localTeachers[index].previous_institute,
     status: data.status?.toLowerCase() || localTeachers[index].status,
+    notes: data.notes || data.metadata?.internal_notes || localTeachers[index].notes,
     updated_at: new Date().toISOString()
   };
 

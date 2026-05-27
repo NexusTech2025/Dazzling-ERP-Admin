@@ -70,7 +70,7 @@ const PackageDetails = () => {
         {[
           { label: 'Total Enrolled', value: '145', icon: 'person_add', color: 'blue', sub: '+12 this month' },
           { label: 'Completion Rate', value: '92%', icon: 'monitoring', color: 'rose', sub: 'Target: 95%' },
-          { label: 'Total Revenue', value: '$57,855', icon: 'payments', color: 'emerald', sub: '($4.2k pending)' }
+          { label: 'Total Revenue', value: '₹57,855', icon: 'payments', color: 'emerald', sub: '(₹4.2k pending)' }
         ].map((stat, i) => (
           <div key={i} className="bg-surface-light dark:bg-surface-dark p-8 rounded-3xl border border-border-light dark:border-border-dark shadow-sm flex items-center gap-6 group hover:shadow-xl transition-all duration-500">
             <div className={`size-14 bg-${stat.color}-100 dark:bg-${stat.color}-900/30 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110`}>
@@ -173,12 +173,12 @@ const PackageDetails = () => {
                   <div className="space-y-6 relative z-10">
                     <div className="flex justify-between items-center opacity-60">
                       <span className="text-xs font-bold uppercase">Individual Value</span>
-                      <span className="text-lg line-through font-mono">${aggregateValue.toLocaleString()}</span>
+                      <span className="text-lg line-through font-mono">₹{aggregateValue.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between items-end border-b border-white/10 pb-6">
                       <span className="text-sm font-bold">Package Fee</span>
                       <div className="text-right">
-                        <span className="text-4xl font-black text-white tracking-tighter">${packageFee.toLocaleString()}</span>
+                        <span className="text-4xl font-black text-white tracking-tighter">₹{packageFee.toLocaleString()}</span>
                       </div>
                     </div>
                     <div className="flex justify-between items-center py-2">

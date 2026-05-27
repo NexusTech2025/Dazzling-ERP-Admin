@@ -7,7 +7,7 @@ const PackageCard = ({ pkg }) => {
       {/* Visual Header */}
       <div className="h-28 w-full bg-gradient-to-br from-primary/20 via-primary/5 to-transparent p-6 flex items-start justify-between relative overflow-hidden">
         <div className="absolute -right-4 -top-4 size-32 bg-primary/10 rounded-full blur-3xl group-hover:bg-primary/20 transition-all duration-700"></div>
-        
+
         <div className="rounded-xl bg-primary/10 p-2.5 text-primary border border-primary/20 backdrop-blur-sm z-10">
           <span className="material-symbols-outlined font-black">inventory_2</span>
         </div>
@@ -30,7 +30,7 @@ const PackageCard = ({ pkg }) => {
           <p className="text-sm text-text-secondary font-medium line-clamp-2 italic mb-4">
             {pkg.description}
           </p>
-          
+
           <div className="flex flex-wrap gap-2">
             {pkg.included_courses.map((course, idx) => (
               <span key={idx} className="inline-flex items-center px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-[10px] font-bold text-text-secondary border border-border-light dark:border-border-dark">
@@ -51,20 +51,20 @@ const PackageCard = ({ pkg }) => {
             <span className="text-[10px] font-black text-text-secondary uppercase tracking-widest flex items-center justify-end gap-1">
               <span className="material-symbols-outlined text-xs">payments</span> Total Fee
             </span>
-            <p className="text-sm font-black text-primary">${pkg.base_fee?.toLocaleString()}</p>
+            <p className="text-sm font-black text-primary">₹{pkg.package_fee?.toLocaleString()}</p>
           </div>
         </div>
 
         {/* Action Buttons */}
         <div className="mt-auto grid grid-cols-2 gap-3">
-          <Link 
+          <Link
             to={`/admin/packages/${pkg.package_id}`}
             className="flex items-center justify-center gap-2 rounded-xl border border-border-light dark:border-border-dark bg-white dark:bg-slate-800 px-3 py-2.5 text-xs font-black text-text-secondary dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all active:scale-95"
           >
             <span className="material-symbols-outlined text-lg">visibility</span>
             View
           </Link>
-          <Link 
+          <Link
             to={`/admin/packages/edit/${pkg.package_id}`}
             className="flex items-center justify-center gap-2 rounded-xl bg-primary/10 px-3 py-2.5 text-xs font-black text-primary hover:bg-primary hover:text-white transition-all active:scale-95 shadow-lg shadow-primary/5 hover:shadow-primary/20"
           >

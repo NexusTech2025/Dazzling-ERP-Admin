@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../../../context/AuthContextCore';
-// IMPORT FROM MOCK API FOR DEVELOPMENT
-import { fetchProfileDetails } from '../api/profile.mockApi';
+import { queryKeys } from '../../../lib/react-query/queryKeys';
+import { fetchProfileDetails } from '../api/profile.api';
 
 /**
  * Hook for fetching profile details
@@ -10,7 +10,7 @@ export const useProfileDetailsQuery = (studentId) => {
   const { token } = useAuth();
 
   return useQuery({
-    queryKey: ['profile', studentId],
+    queryKey: queryKeys.student.profile(studentId),
     queryFn: async ({ signal }) => {
       const response = await fetchProfileDetails(token, studentId, { signal });
       if (!response.success) {

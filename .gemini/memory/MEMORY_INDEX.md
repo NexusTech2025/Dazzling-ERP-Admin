@@ -13,9 +13,16 @@ This file serves as the central directory map for the project's architectural me
 | `query_dsl.md` | TanStack Query implementation and DSL rules. | 2026-05-14 |
 | `api_design.md` | API Client, Registry, and Envelope standards. | 2026-05-14 |
 | `course_api_specs.md` | Specific API specifications for courses. | 2026-05-14 |
+| `plan_lifecycle.md` | Frontmatter status definitions and folder trees for plans. | 2026-05-25 |
+| `core/instructions.md` | Core instructions for plan lifecycle and frontmatter updates. | 2026-05-25 |
 | `ui_component/` | Directory for atomic UI primitives and specialized inputs. | 2026-05-14 |
 
 ## Recent Session Updates
+
+### Session: `chat.plan_lifecycle_and_organization.md` (2026-05-25)
+- **Feature**: Plan & Walkthrough directory tree organization.
+- **Architectural Shift**: Defined a strict 3-stage plan lifecycle: `Proposed` (under `plan/drafted/`), `Approved` (under `plan/approved/`), and `Approved-Completed` (under `plan/completed/`).
+- **Convention**: Established frontmatter status update rules allowing agents to update the plan metadata status, but prohibiting automatic physical file movement without user instruction.
 
 ### Session: `chat.detail_view_pages_analysis.md` (2026-05-22)
 - **Feature**: Diagnostic Analysis of 6 Detail View Pages (`StudentProfile`, `BatchProfile`, `TeacherProfile`, `CourseDetails`, `PackageDetails`, `StudentFeeOverview`).

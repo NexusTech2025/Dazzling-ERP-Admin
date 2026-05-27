@@ -10,6 +10,8 @@ This directory contains long-term memory and documentation for the Dazzling ERP 
 - [query_dsl.md](./query_dsl.md): High-level technical specification for Advanced Query DSL and CRUD protocols.
 - [api_design.md](./api_design.md): Overview of the Centralized API Registry pattern and connection strategy.
 - [course_api_specs.md](./course_api_specs.md): Detailed specifications for Academic Course and Course Type APIs.
+- [plan_lifecycle.md](./plan_lifecycle.md): Operational standards for plan statuses, directories, and lifecycle management.
+- [core/instructions.md](./core/instructions.md): Core operational standards for plan lifecycle, statuses, and archival rules.
 
 ## 🎨 Styling & Design System
 

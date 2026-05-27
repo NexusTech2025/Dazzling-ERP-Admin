@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { useCoursesQuery, useDeleteCourseMutation, usePackagesQuery } from './hooks/useCourseQueries';
+import { useCoursesQuery, useDeleteCourseMutation, usePackagesQuery, useCourseTypesQuery } from './hooks/useCourseQueries';
 import { queryKeys } from '../../lib/react-query/queryKeys';
 
 // UI Components
@@ -14,8 +14,9 @@ import SelectGroupFilter from '../../components/ui/filters/SelectGroupFilter';
 // Feature Components
 import CourseHeader from './components/CourseHeader';
 import CourseFilters from './components/CourseFilters';
-import CourseCard from './components/CourseCard';
 import PackageCard from './components/PackageCard';
+import CourseListView from './components/CourseListView';
+import CourseGridView from './components/CourseGridView';
 
 const Courses = () => {
   const queryClient = useQueryClient();
@@ -30,46 +31,58 @@ const Courses = () => {
 
   const { data: courses = [], isLoading: isLoadingCourses, error: coursesError } = useCoursesQuery();
   const { data: packages = [], isLoading: isLoadingPackages, error: packagesError } = usePackagesQuery();
+  const { data: courseTypes = [], isLoading: isLoadingTypes, error: typesError } = useCourseTypesQuery();
   const deleteMutation = useDeleteCourseMutation();
 
   // Filter Logic - Courses
   const filteredCourses = useMemo(() => {
     return courses.filter(c => {
       const matchesSearch = c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          c.course_id.toLowerCase().includes(searchQuery.toLowerCase());
+        c.course_id.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesSegment = !segmentFilter || c.segment_id === segmentFilter;
       const matchesBoard = !boardFilter || c.metadata?.board === boardFilter;
       const matchesClass = !classFilter || String(c.metadata?.class) === classFilter;
       const matchesLanguage = !languageFilter || c.language_medium === languageFilter;
-      
+
       return matchesSearch && matchesSegment && matchesBoard && matchesClass && matchesLanguage;
     });
   }, [courses, searchQuery, segmentFilter, boardFilter, classFilter, languageFilter]);
+
+  const selectedType = useMemo(() => {
+    return courseTypes.find(t => t.segment_id === segmentFilter);
+  }, [courseTypes, segmentFilter]);
+
+  const isAcademicFilterActive = useMemo(() => {
+    if (!segmentFilter) return false;
+    return selectedType 
+      ? (selectedType.entity_label === 'Subject' || selectedType.segment_name?.toLowerCase().includes('academic'))
+      : false;
+  }, [selectedType, segmentFilter]);
 
   // Filter Logic - Packages
   const filteredPackages = useMemo(() => {
     return packages.filter(p => {
       const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          p.package_id.toLowerCase().includes(searchQuery.toLowerCase());
-      
+        p.package_id.toLowerCase().includes(searchQuery.toLowerCase());
+
       // Note: Packages currently don't have segment_id in schema, but they have target_class and board.
       // We assume Academic segment if board or target_class is present.
       const isAcademic = !!(p.board || p.target_class);
-      const matchesSegment = !segmentFilter || 
-                            (segmentFilter === 'SEG-ACA' && isAcademic) || 
-                            (segmentFilter !== 'SEG-ACA' && !isAcademic);
+      const matchesSegment = !segmentFilter ||
+        (isAcademicFilterActive && isAcademic) ||
+        (!isAcademicFilterActive && !isAcademic);
 
       const matchesBoard = !boardFilter || p.board === boardFilter;
       const matchesClass = !classFilter || String(p.target_class) === classFilter;
-      
+
       // Language filtering for packages (matches description or name metadata for now)
-      const matchesLanguage = !languageFilter || 
-                             (languageFilter === 'Hindi' && p.name.includes('Hindi')) ||
-                             (languageFilter === 'English' && (p.name.includes('English') || p.name.includes('CBSE')));
+      const matchesLanguage = !languageFilter ||
+        (languageFilter === 'Hindi' && p.name.includes('Hindi')) ||
+        (languageFilter === 'English' && (p.name.includes('English') || p.name.includes('CBSE')));
 
       return matchesSearch && matchesSegment && matchesBoard && matchesClass && matchesLanguage;
     });
-  }, [packages, searchQuery, segmentFilter, boardFilter, classFilter, languageFilter]);
+  }, [packages, searchQuery, segmentFilter, isAcademicFilterActive, boardFilter, classFilter, languageFilter]);
 
   const availableSegments = useMemo(() => {
     const segments = courses.map(c => c.segment_id);
@@ -81,18 +94,30 @@ const Courses = () => {
   };
 
   // --- Filter Options ---
-  
+
   const tabOptions = [
     { label: 'Courses', value: 'courses', icon: 'school' },
     { label: 'Packages', value: 'packages', icon: 'inventory_2' }
   ];
 
-  const segmentOptions = [
-    { label: 'All', value: '', icon: 'apps' },
-    { label: 'Academic', value: 'SEG-ACA', icon: 'menu_book' },
-    { label: 'Computer', value: 'SEG-CMP', icon: 'computer' },
-    { label: 'Foundation', value: 'SEG-FND', icon: 'foundation' }
-  ];
+  const segmentOptions = useMemo(() => {
+    return [
+      { label: 'All', value: '', icon: 'apps' },
+      ...courseTypes.map(type => {
+        let icon = 'school';
+        const nameLower = type.segment_name?.toLowerCase() || '';
+        if (nameLower.includes('computer')) icon = 'computer';
+        else if (nameLower.includes('foundation')) icon = 'star';
+        else if (nameLower.includes('academic') || type.entity_label === 'Subject') icon = 'menu_book';
+        
+        return {
+          label: type.segment_name,
+          value: type.segment_id,
+          icon: icon
+        };
+      })
+    ];
+  }, [courseTypes]);
 
   const languageOptions = [
     { label: 'ALL', value: '' },
@@ -112,56 +137,6 @@ const Courses = () => {
     label: `Class ${i + 1}`,
     value: String(i + 1)
   }));
-
-  const courseColumns = [
-    {
-      header: 'Course Name',
-      accessor: 'name',
-      cell: (row) => (
-        <div className="flex items-center gap-3">
-          <div className="size-8 rounded bg-primary/10 text-primary flex items-center justify-center font-black text-[10px]">
-            {row.name ? row.name.substring(0, 2).toUpperCase() : '??'}
-          </div>
-          <div>
-            <p className="font-bold text-text-main dark:text-white leading-none">{row.name}</p>
-            <p className="text-[10px] text-text-secondary mt-1 font-mono">{row.language_medium} • {row.metadata?.board || 'N/A'}</p>
-          </div>
-        </div>
-      )
-    },
-    {
-      header: 'ID',
-      accessor: 'course_id',
-      className: 'font-mono text-xs'
-    },
-    {
-      header: 'Fee',
-      accessor: 'base_fee',
-      className: 'text-right font-black',
-      cell: (row) => `$${row.base_fee?.toLocaleString()}`
-    },
-    {
-      header: 'Status',
-      accessor: 'status',
-      cell: (row) => (
-        <Badge variant={row.status === 'active' ? 'success' : 'default'}>
-          {row.status}
-        </Badge>
-      )
-    },
-    {
-      header: 'Actions',
-      className: 'text-right',
-      cell: (row) => (
-        <button 
-          onClick={() => handleDeleteClick(row.course_id, row.name)}
-          className="p-1.5 text-text-secondary hover:text-red-500 transition-colors"
-        >
-          <span className="material-symbols-outlined text-[20px]">delete</span>
-        </button>
-      )
-    }
-  ];
 
   const packageColumns = [
     {
@@ -191,9 +166,9 @@ const Courses = () => {
     },
     {
       header: 'Price',
-      accessor: 'base_fee',
+      accessor: 'package_fee',
       className: 'text-right font-black text-primary',
-      cell: (row) => `$${row.base_fee?.toLocaleString()}`
+      cell: (row) => `₹${row.package_fee?.toLocaleString()}`
     },
     {
       header: 'Status',
@@ -220,8 +195,8 @@ const Courses = () => {
     }
   ];
 
-  if (isLoadingCourses || isLoadingPackages) return <LoadingState message="Scanning curriculum library..." />;
-  if (coursesError || packagesError) return <ErrorState message={(coursesError || packagesError).message} onRetry={() => queryClient.invalidateQueries({ queryKey: queryKeys.course.all })} />;
+  if (isLoadingCourses || isLoadingPackages || isLoadingTypes) return <LoadingState message="Scanning curriculum library..." />;
+  if (coursesError || packagesError || typesError) return <ErrorState message={(coursesError || packagesError || typesError)?.message} onRetry={() => queryClient.invalidateQueries({ queryKey: queryKeys.course.all })} />;
 
   return (
     <div className="max-w-7xl mx-auto space-y-6 pb-10">
@@ -230,56 +205,61 @@ const Courses = () => {
       <div className="flex flex-col gap-4">
         <div className="flex flex-wrap items-center gap-6">
           {/* Main Tabs Selection */}
-          <ButtonGroupFilter 
-            options={tabOptions} 
-            value={activeTab} 
+          <ButtonGroupFilter
+            options={tabOptions}
+            value={activeTab}
             onChange={(val) => {
               setActiveTab(val);
               setSegmentFilter('');
               setBoardFilter('');
               setClassFilter('');
               setLanguageFilter('');
-            }} 
+            }}
           />
 
           {/* Segment Filter (Shared for both tabs) */}
           <div className="animate-in fade-in slide-in-from-left-4 duration-300">
-            <ButtonGroupFilter 
-              options={segmentOptions} 
-              value={segmentFilter} 
+            <ButtonGroupFilter
+              options={segmentOptions}
+              value={segmentFilter}
               variant="secondary"
               onChange={(val) => {
                 setSegmentFilter(val);
-                if (val !== 'SEG-ACA') {
+                const selected = courseTypes.find(t => t.segment_id === val);
+                const isAcademic = selected 
+                  ? (selected.entity_label === 'Subject' || selected.segment_name?.toLowerCase().includes('academic'))
+                  : false;
+                
+                if (!isAcademic) {
                   setBoardFilter('');
                   setClassFilter('');
                   setLanguageFilter('');
                 }
-              }} 
+              }}
             />
           </div>
 
           {/* Academic Specialized Filters (Shared for both tabs when segment is Academic) */}
-          {segmentFilter === 'SEG-ACA' && (
+          {isAcademicFilterActive && (
             <div className="flex flex-wrap items-center gap-4 animate-in zoom-in duration-300">
-              <ButtonGroupFilter 
+              <ButtonGroupFilter
                 label="Medium"
-                options={languageOptions} 
-                value={languageFilter} 
+                options={languageOptions}
+                value={languageFilter}
                 size="sm"
                 variant="secondary"
-                onChange={setLanguageFilter} 
+                onChange={setLanguageFilter}
               />
 
-              <ButtonGroupFilter 
+              <ButtonGroupFilter
                 label="Board"
-                options={boardOptions} 
-                value={boardFilter} 
+                options={boardOptions}
+                value={boardFilter}
                 size="sm"
-                onChange={setBoardFilter} 
+                onChange={setBoardFilter}
               />
 
-              <SelectGroupFilter 
+              <SelectGroupFilter
                 label="Class"
                 options={classOptions}
                 value={classFilter}
@@ -291,7 +271,7 @@ const Courses = () => {
         </div>
       </div>
 
-      <CourseFilters 
+      <CourseFilters
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         segmentFilter={segmentFilter}
@@ -299,39 +279,43 @@ const Courses = () => {
         viewMode={viewMode}
         onViewModeChange={setViewMode}
         availableSegments={activeTab === 'courses' ? availableSegments : []}
-        showSegmentFilter={false} 
+        showSegmentFilter={false}
       />
 
       {viewMode === 'grid' ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-          {activeTab === 'courses' ? (
-            filteredCourses.length > 0 ? filteredCourses.map(course => (
-              <CourseCard 
-                key={course.course_id} 
-                course={course} 
-                onDelete={handleDeleteClick}
+        activeTab === 'courses' ? (
+          <CourseGridView
+            courses={filteredCourses}
+            onDelete={handleDeleteClick}
+          />
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            {filteredPackages.length > 0 ? filteredPackages.map(pkg => (
+              <PackageCard
+                key={pkg.package_id}
+                pkg={pkg}
               />
-            )) : <NoDataFound />
-          ) : (
-            filteredPackages.length > 0 ? filteredPackages.map(pkg => (
-              <PackageCard 
-                key={pkg.package_id} 
-                pkg={pkg} 
-              />
-            )) : <NoDataFound />
-          )}
-        </div>
+            )) : <NoDataFound />}
+          </div>
+        )
       ) : (
         <div className="animate-in fade-in slide-in-from-right-4 duration-500">
-          <DataTable 
-            data={activeTab === 'courses' ? filteredCourses : filteredPackages}
-            columns={activeTab === 'courses' ? courseColumns : packageColumns}
-            isLoading={false}
-          />
+          {activeTab === 'courses' ? (
+            <CourseListView
+              courses={filteredCourses}
+              onDelete={handleDeleteClick}
+            />
+          ) : (
+            <DataTable
+              data={filteredPackages}
+              columns={packageColumns}
+              isLoading={false}
+            />
+          )}
         </div>
       )}
 
-      <ConfirmModal 
+      <ConfirmModal
         isOpen={deleteModal.isOpen}
         onClose={() => setDeleteModal({ isOpen: false, id: null, name: '' })}
         onConfirm={() => deleteMutation.mutate({ id: deleteModal.id }, {

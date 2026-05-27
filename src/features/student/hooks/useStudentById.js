@@ -1,5 +1,4 @@
-import { useMemo } from 'react';
-import { useStudentsQuery } from './useStudentQueries';
+import { useStudentDetailQuery } from './useStudentQueries';
 import { useProfileDetailsQuery } from '../../profile/hooks/useProfileDetailsQuery';
 
 /**
@@ -7,13 +6,13 @@ import { useProfileDetailsQuery } from '../../profile/hooks/useProfileDetailsQue
  * Combines basic student data with extended profile (address, contact, education).
  */
 export const useStudentById = (studentId) => {
-  // 1. Fetch main student record (using list query with filter)
+  // 1. Fetch main student record directly from the detail cache
   const { 
-    data: students = [], 
+    data: student = null, 
     isLoading: isBasicLoading, 
     error: studentError,
     isFetching: isBasicFetching
-  } = useStudentsQuery({ student_id: studentId });
+  } = useStudentDetailQuery(studentId);
 
   // 2. Fetch extended profile (address, contact, education)
   const { 
@@ -22,11 +21,6 @@ export const useStudentById = (studentId) => {
     error: profileError,
     isFetching: isProfileFetching
   } = useProfileDetailsQuery(studentId);
-
-  // Find the specific student from the list
-  const student = useMemo(() => {
-    return students.find(s => s.student_id === studentId);
-  }, [students, studentId]);
 
   return {
     student,

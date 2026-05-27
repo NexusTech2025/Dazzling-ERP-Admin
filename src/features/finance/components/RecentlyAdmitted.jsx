@@ -18,8 +18,8 @@ const RecentlyAdmitted = ({ students, onSelect }) => {
             onClick={() => onSelect(student)}
             className="flex items-center gap-3 rounded-xl border border-border-light dark:border-border-dark bg-surface-light dark:bg-surface-dark p-2.5 cursor-pointer hover:border-primary/50 hover:bg-primary/5 transition-all group"
           >
-            {student.avatar ? (
-              <img src={student.avatar} alt={student.student_name} className="h-9 w-9 rounded-full object-cover border border-border-light dark:border-border-dark" />
+            {student.avatarUrl ? (
+              <img src={student.avatarUrl} alt={student.student_name} className="h-9 w-9 rounded-full object-cover border border-border-light dark:border-border-dark" />
             ) : (
               <div className="h-9 w-9 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold text-xs border border-indigo-200 dark:border-indigo-800">
                 {student.student_name ? student.student_name.substring(0, 2).toUpperCase() : '??'}

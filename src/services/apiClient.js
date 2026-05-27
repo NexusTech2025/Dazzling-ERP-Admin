@@ -25,7 +25,7 @@ export const executeAction = async (actionPath, payload = {}, token = null, opti
 
   const requestBody = {
     action: backendActionString,
-    payload: payload 
+    payload: payload
   };
 
   if (token) requestBody.token = token;
@@ -64,7 +64,7 @@ export const executeAction = async (actionPath, payload = {}, token = null, opti
     if (data.success === false || data.status === 'error') {
       const rawError = data.error || data.message;
       const friendlyMessage = getFriendlyErrorMessage(rawError, actionPath);
-      
+
       throw new ApiError(friendlyMessage, response.status, rawError);
     }
 
@@ -72,8 +72,14 @@ export const executeAction = async (actionPath, payload = {}, token = null, opti
 
   } catch (error) {
     // If it's already our custom error, just pass it up
+    console.log("error: ", error.name, Object.keys(error))
     if (error instanceof ApiError) throw error;
-    
+
+    // Check if the error is an abort/cancelation signal
+    if (error.name === 'AbortError' || error.name === 'CanceledError' || error.message === 'canceled') {
+      throw error;
+    }
+
     // Otherwise, wrap standard JS/Network errors
     console.error(`Unexpected API Call Failure [${actionPath}]:`, error);
     throw new ApiError("Unable to reach the server. Please check your internet connection.", null, error.message);

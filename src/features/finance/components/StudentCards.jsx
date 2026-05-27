@@ -11,8 +11,8 @@ export const StudentSearchCard = ({ student, onSelect, active }) => (
         : 'hover:bg-slate-100 dark:hover:bg-slate-800 border-transparent'
     }`}
   >
-    {student.avatar ? (
-      <img src={student.avatar} alt={student.student_name} className="h-10 w-10 rounded-full object-cover border border-border-light dark:border-border-dark" />
+    {student.avatarUrl ? (
+      <img src={student.avatarUrl} alt={student.student_name} className="h-10 w-10 rounded-full object-cover border border-border-light dark:border-border-dark" />
     ) : (
       <div className="h-10 w-10 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-text-secondary font-bold text-sm">
         {student.student_name ? student.student_name.substring(0, 2).toUpperCase() : '??'}
@@ -39,8 +39,8 @@ export const SelectedStudentCard = ({ student, onClear }) => (
     {/* Decorative background icon */}
     <span className="material-symbols-outlined absolute -right-4 -bottom-4 text-6xl text-text-secondary/5 rotate-12 pointer-events-none">person</span>
     
-    {student.avatar ? (
-      <img src={student.avatar} alt={student.student_name} className="h-12 w-12 rounded-full object-cover border border-border-light dark:border-border-dark" />
+    {student.avatarUrl ? (
+      <img src={student.avatarUrl} alt={student.student_name} className="h-12 w-12 rounded-full object-cover border border-border-light dark:border-border-dark" />
     ) : (
       <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-lg">
         {student.student_name ? student.student_name.substring(0, 2).toUpperCase() : '??'}

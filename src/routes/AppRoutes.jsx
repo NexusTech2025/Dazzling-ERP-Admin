@@ -25,6 +25,7 @@ import TestProfileComponents from '../pages/admin/TestProfileComponents';
 
 // Feature Pages
 import Courses from '../features/course/Courses';
+import CourseTypes from '../features/course/CourseTypes';
 import CourseDetails from '../features/course/CourseDetails';
 import PackageDetails from '../features/course/PackageDetails';
 import CoursePackagesForm from '../features/course/CoursePackagesForm';
@@ -87,6 +88,7 @@ const AppRoutes = () => {
 
         {/* Course Management */}
         <Route path="courses" element={<Courses />} />
+        <Route path="courses/types" element={<CourseTypes />} />
         <Route path="courses/add" element={<AddCourse />} />
         <Route path="courses/edit/:id" element={<AddCourse />} />
         <Route path="courses/packages" element={<CoursePackagesForm />} />

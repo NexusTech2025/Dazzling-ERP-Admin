@@ -31,7 +31,8 @@ const TeachersAttendance = ({ teacherId }) => {
     const totalWorkingDays = 24; // Mock standard
     const lateArrivals = monthData.filter(r => {
       if (r.status !== 'present' || !r.check_in_time) return false;
-      const [hours, minutes] = r.check_in_time.split(':').map(Number);
+      const timePart = r.check_in_time.includes('T') ? r.check_in_time.split('T')[1] : r.check_in_time;
+      const [hours, minutes] = timePart.split(':').map(Number);
       return hours > 9 || (hours === 9 && minutes > 0);
     }).length;
     const absentCount = monthData.filter(r => r.status === 'absent' || r.status === 'leave').length;
@@ -273,14 +274,16 @@ const CalendarDay = ({ day, record, isOpen, onToggleMenu, onUpdate, onClose, isT
   // Determine if late based on check_in_time
   let isLate = false;
   if (isPresent && record.check_in_time) {
-     const [hours, minutes] = record.check_in_time.split(':').map(Number);
+     const timePart = record.check_in_time.includes('T') ? record.check_in_time.split('T')[1] : record.check_in_time;
+     const [hours, minutes] = timePart.split(':').map(Number);
      isLate = hours > 9 || (hours === 9 && minutes > 0);
   }
 
   // Format HH:mm:ss to HH:mm for display
   const formatTime = (timeStr) => {
     if (!timeStr) return null;
-    return timeStr.slice(0, 5); 
+    const timePart = timeStr.includes('T') ? timeStr.split('T')[1] : timeStr;
+    return timePart.slice(0, 5); 
   };
 
   const baseClasses = "h-24 p-2 rounded-lg flex flex-col relative transition-all";
@@ -358,7 +361,7 @@ const CalendarDay = ({ day, record, isOpen, onToggleMenu, onUpdate, onClose, isT
                 <input
                   type="time"
                   value={currentIn}
-                  onChange={(e) => onUpdate({ check_in_time: `${e.target.value}:00` })}
+                  onChange={(e) => onUpdate({ check_in_time: `${dateStr}T${e.target.value}:00` })}
                   className="w-full text-xs border border-border-light dark:border-border-dark rounded-md px-1 py-1.5 bg-surface-light dark:bg-surface-dark outline-none focus:border-primary"
                 />
               </div>
@@ -367,7 +370,7 @@ const CalendarDay = ({ day, record, isOpen, onToggleMenu, onUpdate, onClose, isT
                 <input
                   type="time"
                   value={currentOut}
-                  onChange={(e) => onUpdate({ check_out_time: `${e.target.value}:00` })}
+                  onChange={(e) => onUpdate({ check_out_time: `${dateStr}T${e.target.value}:00` })}
                   className="w-full text-xs border border-border-light dark:border-border-dark rounded-md px-1 py-1.5 bg-surface-light dark:bg-surface-dark outline-none focus:border-primary"
                 />
               </div>

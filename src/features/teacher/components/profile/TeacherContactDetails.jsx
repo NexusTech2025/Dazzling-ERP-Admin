@@ -26,16 +26,16 @@ const TeacherContactDetails = ({ teacher }) => {
         
         <DetailField 
           label="Phone Number" 
-          value={teacher.mobile} 
+          value={teacher.mobile_number} 
           icon="call"
           fallback="No phone number"
         />
         
         <DetailField 
           label="Residential Address" 
-          value={teacher.metadata?.address} 
+          value={teacher.address} 
           icon="location_on"
-          fallback="42 Abbey Road, Liverpool, L8 0SS, United Kingdom (Mock)"
+          fallback="Not provided"
           className="md:col-span-2"
         />
       </div>

@@ -17,7 +17,7 @@ const StudentRegistrationWizard = ({ initialData }) => {
     // Step 1: Profile
     fullName: initialData?.fullName || '',
     gender: '',
-    date_of_birth: '',
+    dob: '',
     motherName: '',
     fatherName: '',
     email: initialData?.email || '',
