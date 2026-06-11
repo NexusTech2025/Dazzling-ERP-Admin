@@ -1,14 +1,15 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import DataTable from '../../../components/ui/DataTable';
 import Badge from '../../../components/ui/Badge';
+import useSelectableTable from '../../../hooks/useSelectableTable';
 
 /**
  * CourseListView Component
  * Renders the DataTable list representation of courses.
  */
-const CourseListView = ({ courses = [], onDelete }) => {
-  const courseColumns = [
+const CourseListView = ({ courses = [], onDelete, selection }) => {
+  const courseColumns = useMemo(() => [
     {
       header: 'Course Name',
       accessor: 'name',
@@ -73,12 +74,26 @@ const CourseListView = ({ courses = [], onDelete }) => {
         </div>
       )
     }
-  ];
+  ], [onDelete]);
+
+  const columns = useSelectableTable({
+    columns: courseColumns,
+    data: courses,
+    idKey: 'course_id',
+    selectedIds: selection?.selectedIds || [],
+    toggleSelect: selection?.toggleSelect,
+    toggleSelectAll: selection?.toggleSelectAll,
+    isAllSelected: selection?.isAllSelected,
+    isSomeSelected: selection?.isSomeSelected
+  });
+
+  // Only use decorated columns if selection is supplied (e.g. not null/undefined)
+  const finalColumns = selection ? columns : courseColumns;
 
   return (
     <DataTable
       data={courses}
-      columns={courseColumns}
+      columns={finalColumns}
       isLoading={false}
     />
   );

@@ -56,6 +56,9 @@ const SelectInput = ({
     lg: "py-3 text-base"
   };
 
+  const hasHeightClass = className.split(' ').some(c => c.startsWith('h-') || c.startsWith('min-h-'));
+  const heightStyles = hasHeightClass ? "" : "h-[38px]";
+
   return (
     <div 
       className={`flex flex-col gap-1.5 relative ${containerClassName}`}
@@ -76,6 +79,7 @@ const SelectInput = ({
           ${error ? 'border-red-500' : ''}
           ${variants[variant]}
           ${sizes[inputSize]}
+          ${heightStyles}
           ${className}
         `}
       >

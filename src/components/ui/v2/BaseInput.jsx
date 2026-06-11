@@ -36,6 +36,9 @@ const BaseInput = forwardRef(({
     lg: "py-3 text-base"
   };
 
+  const hasHeightClass = className.split(' ').some(c => c.startsWith('h-') || c.startsWith('min-h-'));
+  const heightStyles = hasHeightClass ? "" : "h-[38px]";
+
   const errorStyles = error ? "border-red-500 focus-within:ring-red-500/10" : "";
 
   return (
@@ -47,7 +50,7 @@ const BaseInput = forwardRef(({
         </label>
       )}
 
-      <div className={`relative flex items-center group ${baseStyles} ${variants[variant]} ${sizes[inputSize]} ${errorStyles} ${className}`}>
+      <div className={`relative flex items-center group ${baseStyles} ${variants[variant]} ${sizes[inputSize]} ${errorStyles} ${heightStyles} ${className}`}>
         {/* Left Icon */}
         {leftIcon && (
           <span className="material-symbols-outlined text-text-secondary group-focus-within:text-primary transition-colors text-lg">

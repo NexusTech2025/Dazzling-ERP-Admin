@@ -32,6 +32,7 @@ import CourseTypes from '../features/course/CourseTypes';
 import CourseDetails from '../features/course/CourseDetails';
 import PackageDetails from '../features/course/PackageDetails';
 import CoursePackagesForm from '../features/course/CoursePackagesForm';
+import InlineCoursePackagesForm from '../features/course/InlineCoursePackagesForm';
 import AddCourse from '../features/course/AddCourse';
 import FinanceDashboard from '../features/finance/FinanceDashboard';
 import Installments from '../features/finance/Installments';
@@ -102,6 +103,7 @@ const AppRoutes = () => {
         {/* Package specialized routes */}
         <Route path="packages" element={<Courses defaultTab="packages" />} />
         <Route path="packages/add" element={<CoursePackagesForm />} />
+        <Route path="packages/quick-add" element={<InlineCoursePackagesForm />} />
         <Route path="packages/:id" element={<PackageDetails />} />
         <Route path="packages/edit/:id" element={<CoursePackagesForm />} />
 

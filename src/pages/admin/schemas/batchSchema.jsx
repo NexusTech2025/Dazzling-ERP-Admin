@@ -61,7 +61,7 @@ export const createBatchColumns = ({ onView, onEdit, onDelete, isDeleting } = {}
       header: 'Actions',
       align: 'right',
       render: (batch) => (
-        <ActionCell 
+        <ActionCell
           onView={onView ? () => onView(batch) : null}
           onEdit={onEdit ? () => onEdit(batch) : null}
           onDelete={onDelete ? () => onDelete(batch.batch_id, batch.batch_name) : null}

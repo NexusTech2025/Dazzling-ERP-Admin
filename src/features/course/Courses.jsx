@@ -6,6 +6,9 @@ import { queryKeys } from '../../lib/react-query/queryKeys';
 import useSelection from '../../hooks/useSelection';
 import useDeleteManyMutation from '../../hooks/useDeleteManyMutation';
 import SelectionActionBar from '../../components/ui/v2/SelectionActionBar';
+import useSelectableTable from '../../hooks/useSelectableTable';
+import { API_REGISTRY } from '../../services/apiRegistry';
+import { TabGroup, TabButton } from '../../components/ui/v2/Tabs';
 
 // UI Components
 import DataTable from '../../components/ui/DataTable';
@@ -33,26 +36,37 @@ const Courses = ({ defaultTab = 'courses' }) => {
   const [classFilter, setClassFilter] = useState('');
   const [languageFilter, setLanguageFilter] = useState('');
 
-  const { data: courses = [], isLoading: isLoadingCourses, error: coursesError } = useCoursesQuery();
+  const { data: courses = [], isLoading: isLoadingCourses, isFetching: isFetchingCourses, error: coursesError } = useCoursesQuery();
   const { data: packages = [], isLoading: isLoadingPackages, error: packagesError } = usePackagesQuery();
   const { data: courseTypes = [], isLoading: isLoadingTypes, error: typesError } = useCourseTypesQuery();
   const deleteMutation = useDeleteCourseMutation();
   const deletePackageMutation = useDeletePackageMutation();
 
+  const selection = useSelection();
   const {
     selectedIds,
+    setSelectedIds,
     toggleSelect,
     toggleSelectAll,
     clearSelection,
     isAllSelected,
     isSomeSelected
-  } = useSelection();
+  } = selection;
 
-  const deleteManyPackagesMutation = useDeleteManyMutation('Package', [
-    queryKeys.course.package.all,
-    queryKeys.course.packageItem.all,
-    queryKeys.course.packagePerk.all
-  ]);
+  const deleteManyPackagesMutation = useDeleteManyMutation(
+    'Package',
+    [
+      queryKeys.course.package.all,
+      queryKeys.course.packageItem.all,
+      queryKeys.course.packagePerk.all
+    ],
+    API_REGISTRY.ACADEMIC.DELETE_MANY_PACKAGES
+  );
+
+  const deleteManyCoursesMutation = useDeleteManyMutation(
+    'Course',
+    [queryKeys.course.all]
+  );
 
   // Filter Logic - Courses
   const filteredCourses = useMemo(() => {
@@ -115,11 +129,6 @@ const Courses = ({ defaultTab = 'courses' }) => {
 
   // --- Filter Options ---
 
-  const tabOptions = [
-    { label: 'Courses', value: 'courses', icon: 'school' },
-    { label: 'Packages', value: 'packages', icon: 'inventory_2' }
-  ];
-
   const segmentOptions = useMemo(() => {
     return [
       { label: 'All', value: '', icon: 'apps' },
@@ -158,102 +167,83 @@ const Courses = ({ defaultTab = 'courses' }) => {
     value: String(i + 1)
   }));
 
-  const allPackageIds = useMemo(() => filteredPackages.map(p => p.package_id), [filteredPackages]);
+  const basePackageColumns = useMemo(() => [
+    {
+      header: 'Package Name',
+      accessor: 'name',
+      cell: (row) => (
+        <div className="flex items-center gap-3">
+          <div className="size-8 rounded bg-primary/10 text-primary flex items-center justify-center font-black text-[10px]">
+            <span className="material-symbols-outlined text-sm">inventory_2</span>
+          </div>
+          <span className="font-bold text-text-main dark:text-white">{row.name}</span>
+        </div>
+      )
+    },
+    {
+      header: 'Included Courses',
+      accessor: 'included_courses',
+      cell: (row) => (
+        <div className="flex flex-wrap gap-1 max-w-xs">
+          {row.included_courses.map((c, i) => (
+            <span key={i} className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 rounded text-[9px] font-bold text-text-secondary border border-border-light dark:border-border-dark whitespace-nowrap">
+              {c}
+            </span>
+          ))}
+        </div>
+      )
+    },
+    {
+      header: 'Price',
+      accessor: 'package_fee',
+      className: 'text-right font-black text-primary',
+      cell: (row) => `₹${row.package_fee?.toLocaleString()}`
+    },
+    {
+      header: 'Status',
+      accessor: 'status',
+      cell: (row) => (
+        <Badge variant={row.status === 'active' ? 'success' : 'default'}>
+          {row.status}
+        </Badge>
+      )
+    },
+    {
+      header: 'Actions',
+      className: 'text-right',
+      cell: (row) => (
+        <div className="flex items-center justify-end gap-1">
+          <Link to={`/admin/packages/edit/${row.package_id}`} className="p-1.5 text-text-secondary hover:text-primary transition-colors">
+            <span className="material-symbols-outlined text-[20px]">edit</span>
+          </Link>
+          <button 
+            onClick={() => handleDeleteClick(row.package_id, row.name, 'package')}
+            className="p-1.5 text-text-secondary hover:text-red-500 transition-colors"
+          >
+            <span className="material-symbols-outlined text-[20px]">delete</span>
+          </button>
+        </div>
+      )
+    }
+  ], []);
 
-  const packageColumns = useMemo(() => {
-    const cols = [
-      {
-        header: 'Package Name',
-        accessor: 'name',
-        cell: (row) => (
-          <div className="flex items-center gap-3">
-            <div className="size-8 rounded bg-primary/10 text-primary flex items-center justify-center font-black text-[10px]">
-              <span className="material-symbols-outlined text-sm">inventory_2</span>
-            </div>
-            <span className="font-bold text-text-main dark:text-white">{row.name}</span>
-          </div>
-        )
-      },
-      {
-        header: 'Included Courses',
-        accessor: 'included_courses',
-        cell: (row) => (
-          <div className="flex flex-wrap gap-1 max-w-xs">
-            {row.included_courses.map((c, i) => (
-              <span key={i} className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 rounded text-[9px] font-bold text-text-secondary border border-border-light dark:border-border-dark whitespace-nowrap">
-                {c}
-              </span>
-            ))}
-          </div>
-        )
-      },
-      {
-        header: 'Price',
-        accessor: 'package_fee',
-        className: 'text-right font-black text-primary',
-        cell: (row) => `₹${row.package_fee?.toLocaleString()}`
-      },
-      {
-        header: 'Status',
-        accessor: 'status',
-        cell: (row) => (
-          <Badge variant={row.status === 'active' ? 'success' : 'default'}>
-            {row.status}
-          </Badge>
-        )
-      },
-      {
-        header: 'Actions',
-        className: 'text-right',
-        cell: (row) => (
-          <div className="flex items-center justify-end gap-1">
-            <Link to={`/admin/packages/edit/${row.package_id}`} className="p-1.5 text-text-secondary hover:text-primary transition-colors">
-              <span className="material-symbols-outlined text-[20px]">edit</span>
-            </Link>
-            <button 
-              onClick={() => handleDeleteClick(row.package_id, row.name, 'package')}
-              className="p-1.5 text-text-secondary hover:text-red-500 transition-colors"
-            >
-              <span className="material-symbols-outlined text-[20px]">delete</span>
-            </button>
-          </div>
-        )
-      }
-    ];
-
-    return [
-      {
-        header: (
-          <input
-            type="checkbox"
-            className="size-4 rounded border-slate-350 dark:border-slate-700 bg-white dark:bg-slate-800 text-primary focus:ring-primary/20 cursor-pointer transition-all"
-            checked={isAllSelected(allPackageIds)}
-            ref={input => {
-              if (input) {
-                input.indeterminate = isSomeSelected(allPackageIds);
-              }
-            }}
-            onChange={() => toggleSelectAll(allPackageIds)}
-          />
-        ),
-        accessor: 'checkbox',
-        className: 'w-10',
-        cell: (row) => (
-          <input
-            type="checkbox"
-            className="size-4 rounded border-slate-350 dark:border-slate-700 bg-white dark:bg-slate-800 text-primary focus:ring-primary/20 cursor-pointer transition-all"
-            checked={selectedIds.includes(row.package_id)}
-            onChange={() => toggleSelect(row.package_id)}
-          />
-        )
-      },
-      ...cols
-    ];
-  }, [filteredPackages, allPackageIds, selectedIds, toggleSelect, toggleSelectAll, isAllSelected, isSomeSelected]);
+  const packageColumns = useSelectableTable({
+    columns: basePackageColumns,
+    data: filteredPackages,
+    idKey: 'package_id',
+    selectedIds,
+    toggleSelect,
+    toggleSelectAll,
+    isAllSelected,
+    isSomeSelected
+  });
 
   const deleteMessage = useMemo(() => {
     if (deleteModal.type === 'bulk_package') {
       return `Are you sure you want to delete ${deleteModal.name}? This will cascadingly delete associated perks and course links. This action is permanently blocked if active student enrollments exist.`;
+    }
+    if (deleteModal.type === 'bulk_course') {
+      return `Are you sure you want to archive ${deleteModal.name}? They will no longer be available for new enrollments.`;
     }
     return deleteModal.type === 'package'
       ? `Are you sure you want to delete "${deleteModal.name}"? This will cascadingly delete perks and course links. This action is blocked if students are enrolled.`
@@ -264,6 +254,9 @@ const Courses = ({ defaultTab = 'courses' }) => {
     if (deleteModal.type === 'bulk_package') {
       return 'Delete Multiple Packages';
     }
+    if (deleteModal.type === 'bulk_course') {
+      return 'Archive Multiple Courses';
+    }
     return deleteModal.type === 'package' ? 'Delete Package' : 'Archive Course';
   }, [deleteModal.type]);
 
@@ -271,31 +264,56 @@ const Courses = ({ defaultTab = 'courses' }) => {
     if (deleteModal.type === 'bulk_package') {
       return deleteManyPackagesMutation.isPending;
     }
+    if (deleteModal.type === 'bulk_course') {
+      return deleteManyCoursesMutation.isPending;
+    }
     return deleteModal.type === 'package' ? deletePackageMutation.isPending : deleteMutation.isPending;
-  }, [deleteModal.type, deleteManyPackagesMutation.isPending, deletePackageMutation.isPending, deleteMutation.isPending]);
+  }, [deleteModal.type, deleteManyPackagesMutation.isPending, deleteManyCoursesMutation.isPending, deletePackageMutation.isPending, deleteMutation.isPending]);
 
   if (isLoadingCourses || isLoadingPackages || isLoadingTypes) return <LoadingState message="Scanning curriculum library..." />;
   if (coursesError || packagesError || typesError) return <ErrorState message={(coursesError || packagesError || typesError)?.message} onRetry={() => queryClient.invalidateQueries({ queryKey: queryKeys.course.all })} />;
 
   return (
     <div className="max-w-7xl mx-auto space-y-6 pb-10">
-      <CourseHeader activeTab={activeTab} />
+      <CourseHeader
+        activeTab={activeTab}
+        isFetching={isFetchingCourses}
+        onRefresh={() => queryClient.invalidateQueries({ queryKey: queryKeys.course.all })}
+      />
 
       <div className="flex flex-col gap-4">
         <div className="flex flex-wrap items-center gap-6">
           {/* Main Tabs Selection */}
-          <ButtonGroupFilter
-            options={tabOptions}
-            value={activeTab}
-            onChange={(val) => {
-              setActiveTab(val);
-              clearSelection();
-              setSegmentFilter('');
-              setBoardFilter('');
-              setClassFilter('');
-              setLanguageFilter('');
-            }}
-          />
+          <TabGroup>
+            <TabButton
+              active={activeTab === 'courses'}
+              onClick={() => {
+                setActiveTab('courses');
+                clearSelection();
+                setSegmentFilter('');
+                setBoardFilter('');
+                setClassFilter('');
+                setLanguageFilter('');
+              }}
+              icon="school"
+            >
+              Courses
+            </TabButton>
+            <TabButton
+              active={activeTab === 'packages'}
+              onClick={() => {
+                setActiveTab('packages');
+                clearSelection();
+                setSegmentFilter('');
+                setBoardFilter('');
+                setClassFilter('');
+                setLanguageFilter('');
+              }}
+              icon="inventory_2"
+            >
+              Packages
+            </TabButton>
+          </TabGroup>
 
           {/* Segment Filter (Shared for both tabs) */}
           <div className="animate-in fade-in slide-in-from-left-4 duration-300">
@@ -387,6 +405,7 @@ const Courses = ({ defaultTab = 'courses' }) => {
             <CourseListView
               courses={filteredCourses}
               onDelete={handleDeleteClick}
+              selection={selection}
             />
           ) : (
             <DataTable
@@ -398,8 +417,8 @@ const Courses = ({ defaultTab = 'courses' }) => {
         </div>
       )}
 
-      {/* Floating Selection Action Bar */}
-      {activeTab === 'packages' && (
+      {/* Floating Selection Action Bar for Packages */}
+      {activeTab === 'packages' && selectedIds.length > 0 && (
         <SelectionActionBar
           selectedCount={selectedIds.length}
           itemName="package"
@@ -421,6 +440,36 @@ const Courses = ({ defaultTab = 'courses' }) => {
               id: allIds,
               name: `all ${allIds.length} packages matching current filters`,
               type: 'bulk_package',
+              status: 'idle',
+              resultMessage: null
+            });
+          }}
+        />
+      )}
+
+      {/* Floating Selection Action Bar for Courses */}
+      {activeTab === 'courses' && viewMode === 'list' && selectedIds.length > 0 && (
+        <SelectionActionBar
+          selectedCount={selectedIds.length}
+          itemName="course"
+          onClear={clearSelection}
+          onDeleteSelected={() => {
+            setDeleteModal({
+              isOpen: true,
+              id: selectedIds,
+              name: `${selectedIds.length} selected courses`,
+              type: 'bulk_course',
+              status: 'idle',
+              resultMessage: null
+            });
+          }}
+          onDeleteAll={() => {
+            const allIds = filteredCourses.map(c => c.course_id);
+            setDeleteModal({
+              isOpen: true,
+              id: allIds,
+              name: `all ${allIds.length} courses matching current filters`,
+              type: 'bulk_course',
               status: 'idle',
               resultMessage: null
             });
@@ -456,13 +505,52 @@ const Courses = ({ defaultTab = 'courses' }) => {
                   }));
                   
                   if (deleted.length > 0) {
-                    clearSelection();
+                    setSelectedIds(prev => prev.filter(id => !deleted.includes(id)));
                   }
                 } else {
                   setDeleteModal(prev => ({
                     ...prev,
                     status: 'error',
                     resultMessage: res.message || 'Failed to delete packages.'
+                  }));
+                }
+              },
+              onError: (err) => {
+                setDeleteModal(prev => ({
+                  ...prev,
+                  status: 'error',
+                  resultMessage: err.message || 'An unexpected error occurred.'
+                }));
+              }
+            });
+          } else if (deleteModal.type === 'bulk_course') {
+            deleteManyCoursesMutation.mutate({ ids: deleteModal.id }, {
+              onSuccess: (res) => {
+                if (res.success) {
+                  const manifest = res.data?.manifest || {};
+                  const deleted = manifest.deleted || [];
+                  const failed = manifest.failed || {};
+                  const failedCount = Object.keys(failed).length;
+                  
+                  let msg = `Successfully archived ${deleted.length} courses.`;
+                  if (failedCount > 0) {
+                    msg += ` Failed to archive ${failedCount} courses due to referential constraints.`;
+                  }
+                  
+                  setDeleteModal(prev => ({
+                    ...prev,
+                    status: failedCount > 0 && deleted.length === 0 ? 'error' : 'success',
+                    resultMessage: msg
+                  }));
+                  
+                  if (deleted.length > 0) {
+                    setSelectedIds(prev => prev.filter(id => !deleted.includes(id)));
+                  }
+                } else {
+                  setDeleteModal(prev => ({
+                    ...prev,
+                    status: 'error',
+                    resultMessage: res.message || 'Failed to archive courses.'
                   }));
                 }
               },

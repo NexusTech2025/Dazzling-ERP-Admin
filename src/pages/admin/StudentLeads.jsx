@@ -10,6 +10,10 @@ import ConfirmModal from '../../components/ui/ConfirmModal';
 import RefreshButton from '../../components/ui/btn/RefreshButton';
 import StudentLeadDetailModal from '../../features/student/components/StudentLeadDetailModal';
 import StudentLeadEditModal from '../../features/student/components/StudentLeadEditModal';
+import useSelection from '../../hooks/useSelection';
+import useDeleteManyMutation from '../../hooks/useDeleteManyMutation';
+import useSelectableTable from '../../hooks/useSelectableTable';
+import SelectionActionBar from '../../components/ui/v2/SelectionActionBar';
 
 const StudentLeads = () => {
   const queryClient = useQueryClient();
@@ -24,6 +28,7 @@ const StudentLeads = () => {
     isOpen: false,
     id: null,
     name: '',
+    type: 'lead',
     status: 'idle',
     resultMessage: null
   });
@@ -35,8 +40,23 @@ const StudentLeads = () => {
   const { data: leads = [], isLoading, isFetching, error } = useStudentLeadsQuery();
   const deleteMutation = useDeleteStudentLeadMutation();
 
+  const {
+    selectedIds,
+    setSelectedIds,
+    toggleSelect,
+    toggleSelectAll,
+    clearSelection,
+    isAllSelected,
+    isSomeSelected
+  } = useSelection();
+
+  const deleteManyLeadsMutation = useDeleteManyMutation(
+    'StudentLead',
+    [queryKeys.lead.all]
+  );
+
   // Handlers for lead rows
-  const handlers = {
+  const handlers = useMemo(() => ({
     onView: (lead) => setSelectedLeadForView(lead),
     onEdit: (lead) => setSelectedLeadForEdit(lead),
     onDelete: (id, name) => {
@@ -44,15 +64,35 @@ const StudentLeads = () => {
         isOpen: true,
         id,
         name,
+        type: 'lead',
         status: 'idle',
         resultMessage: null
       });
     },
     isDeleting: deleteMutation.isPending,
-  };
+  }), [deleteMutation.isPending]);
 
   // Generate columns
-  const columns = useMemo(() => createStudentLeadColumns(handlers), [handlers]);
+  const baseColumns = useMemo(() => createStudentLeadColumns(handlers), [handlers]);
+  const columns = useSelectableTable({
+    columns: baseColumns,
+    data: leads.filter(lead => {
+      const q = searchQuery.toLowerCase().trim();
+      const matchesSearch = !q || 
+        (lead.student_name && lead.student_name.toLowerCase().includes(q)) ||
+        (lead.phone && lead.phone.includes(q)) ||
+        (lead.email && lead.email.toLowerCase().includes(q));
+      const matchesPriority = !priorityFilter || lead.priority === priorityFilter;
+      const matchesStatus = !statusFilter || lead.status === statusFilter;
+      return matchesSearch && matchesPriority && matchesStatus;
+    }),
+    idKey: 'lead_id',
+    selectedIds,
+    toggleSelect,
+    toggleSelectAll,
+    isAllSelected,
+    isSomeSelected
+  });
 
   // Clientside filtering
   const filteredLeads = useMemo(() => {
@@ -74,16 +114,13 @@ const StudentLeads = () => {
     });
   }, [leads, searchQuery, priorityFilter, statusFilter]);
 
-  const handleConfirmDelete = () => {
-    if (!deleteModal.id) return;
-    setDeleteModal(prev => ({ ...prev, status: 'processing' }));
-
-    deleteMutation.mutate({ id: deleteModal.id }, {
+  const handleSingleDelete = (id) => {
+    deleteMutation.mutate({ id }, {
       onSuccess: (response) => {
-        if (selectedLeadForView?.lead_id === deleteModal.id) {
+        if (selectedLeadForView?.lead_id === id) {
           setSelectedLeadForView(null);
         }
-        if (selectedLeadForEdit?.lead_id === deleteModal.id) {
+        if (selectedLeadForEdit?.lead_id === id) {
           setSelectedLeadForEdit(null);
         }
         setDeleteModal(prev => ({
@@ -103,8 +140,67 @@ const StudentLeads = () => {
     });
   };
 
+  const handleBatchDelete = (ids) => {
+    deleteManyLeadsMutation.mutate({ ids }, {
+      onSuccess: (res) => {
+        if (res.success) {
+          const manifest = res.data?.manifest || {};
+          const deleted = manifest.deleted || [];
+          const failed = manifest.failed || {};
+          const failedCount = Object.keys(failed).length;
+
+          let msg = `Successfully deleted ${deleted.length} student leads.`;
+          if (failedCount > 0) {
+            msg += ` Failed to delete ${failedCount} leads due to referential constraints.`;
+          }
+
+          if (selectedLeadForView && deleted.includes(selectedLeadForView.lead_id)) {
+            setSelectedLeadForView(null);
+          }
+          if (selectedLeadForEdit && deleted.includes(selectedLeadForEdit.lead_id)) {
+            setSelectedLeadForEdit(null);
+          }
+
+          setDeleteModal(prev => ({
+            ...prev,
+            status: failedCount > 0 && deleted.length === 0 ? 'error' : 'success',
+            resultMessage: msg
+          }));
+
+          if (deleted.length > 0) {
+            setSelectedIds(prev => prev.filter(id => !deleted.includes(id)));
+          }
+        } else {
+          setDeleteModal(prev => ({
+            ...prev,
+            status: 'error',
+            resultMessage: res.message || 'Failed to delete student leads.'
+          }));
+        }
+      },
+      onError: (err) => {
+        setDeleteModal(prev => ({
+          ...prev,
+          status: 'error',
+          resultMessage: err.message || 'Failed to delete student leads due to a server error.'
+        }));
+      }
+    });
+  };
+
+  const handleConfirmDelete = () => {
+    if (!deleteModal.id) return;
+    setDeleteModal(prev => ({ ...prev, status: 'processing' }));
+
+    if (deleteModal.type === 'bulk_lead') {
+      handleBatchDelete(deleteModal.id);
+    } else {
+      handleSingleDelete(deleteModal.id);
+    }
+  };
+
   const handleCloseDeleteModal = () => {
-    setDeleteModal({ isOpen: false, id: null, name: '', status: 'idle', resultMessage: null });
+    setDeleteModal({ isOpen: false, id: null, name: '', type: 'lead', status: 'idle', resultMessage: null });
   };
 
   // Filter components
@@ -170,14 +266,47 @@ const StudentLeads = () => {
         }
       />
 
+      {/* Floating Selection Action Bar */}
+      <SelectionActionBar
+        selectedCount={selectedIds.length}
+        itemName="student lead"
+        onClear={clearSelection}
+        onDeleteSelected={() => {
+          setDeleteModal({
+            isOpen: true,
+            id: selectedIds,
+            name: `${selectedIds.length} selected leads`,
+            type: 'bulk_lead',
+            status: 'idle',
+            resultMessage: null
+          });
+        }}
+        onDeleteAll={() => {
+          const allIds = filteredLeads.map(l => l.lead_id);
+          setDeleteModal({
+            isOpen: true,
+            id: allIds,
+            name: `all ${allIds.length} leads matching current filters`,
+            type: 'bulk_lead',
+            status: 'idle',
+            resultMessage: null
+          });
+        }}
+      />
+
       <ConfirmModal
         isOpen={deleteModal.isOpen}
         onClose={handleCloseDeleteModal}
         onConfirm={handleConfirmDelete}
         status={deleteModal.status}
         resultMessage={deleteModal.resultMessage}
-        title="Delete Student Lead"
-        message={`Are you sure you want to permanently delete lead ${deleteModal.name}? This action cannot be undone.`}
+        title={deleteModal.type === 'bulk_lead' ? 'Delete Multiple Student Leads' : 'Delete Student Lead'}
+        message={
+          deleteModal.type === 'bulk_lead'
+            ? `Are you sure you want to permanently delete ${deleteModal.name}? This action cannot be undone.`
+            : `Are you sure you want to permanently delete lead ${deleteModal.name}? This action cannot be undone.`
+        }
+        isProcessing={deleteModal.type === 'bulk_lead' ? deleteManyLeadsMutation.isPending : deleteMutation.isPending}
       />
 
       <StudentLeadDetailModal

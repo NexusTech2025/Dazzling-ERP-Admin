@@ -36,6 +36,7 @@ export const API_REGISTRY = {
     CREATE_PACKAGE: 'academic_create_package',
     UPDATE_PACKAGE: 'academic_update_package',
     DELETE_PACKAGE: 'academic_delete_package',
+    DELETE_MANY_PACKAGES: 'academic_delete_many_packages',
     ENROLL_STUDENT: 'academic_enroll_student'
   },
   DATA: {
@@ -54,7 +55,8 @@ export const API_REGISTRY = {
     QUERY_ATTENDANCE: 'staff_query_attendance',
     RECORD_PAYMENT: 'staff_record_payment',
     SET_SALARY_CONFIG: 'staff_set_salary_config',
-    ADD_DOCUMENT: 'staff_add_document'
+    ADD_DOCUMENT: 'staff_add_document',
+    DELETE_MANY: 'staff_delete_many_teachers'
   },
   ADMIN: {
     QUERY: 'query',

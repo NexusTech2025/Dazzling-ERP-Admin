@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { useBatchesQuery, useDeleteBatchMutation } from './hooks/useBatchQueries';
 import { useCoursesQuery } from '../course/hooks/useCourseQueries';
-import { useTeacherDetailQuery, useTeachersQuery } from '../teacher/hooks/useTeacherQueries';
+import { useTeachersQuery } from '../teacher/hooks/useTeacherQueries';
 import { queryKeys } from '../../lib/react-query/queryKeys';
 import { useFilteredBatches } from '../../hooks/useFilteredBatches';
 import DataTable from '../../components/ui/DataTable';
@@ -12,11 +12,23 @@ import RefreshButton from '../../components/ui/btn/RefreshButton';
 import ConfirmModal from '../../components/ui/ConfirmModal';
 import { SearchInput, SelectFilter } from '../../components/ui/filters';
 import { createBatchColumns } from '../../pages/admin/schemas/batchSchema';
+import useSelection from '../../hooks/useSelection';
+import useDeleteManyMutation from '../../hooks/useDeleteManyMutation';
+import useSelectableTable from '../../hooks/useSelectableTable';
+import SelectionActionBar from '../../components/ui/v2/SelectionActionBar';
 
 const Batches = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const [deleteModal, setDeleteModal] = useState({ isOpen: false, id: null, name: '' });
+  
+  const [deleteModal, setDeleteModal] = useState({ 
+    isOpen: false, 
+    id: null, 
+    name: '', 
+    type: 'batch', 
+    status: 'idle', 
+    resultMessage: null 
+  });
 
   const { data: batches = [], isLoading, isFetching, error } = useBatchesQuery();
   const { data: courses = [] } = useCoursesQuery();
@@ -37,6 +49,21 @@ const Batches = () => {
   const deleteMutation = useDeleteBatchMutation();
 
   const {
+    selectedIds,
+    setSelectedIds,
+    toggleSelect,
+    toggleSelectAll,
+    clearSelection,
+    isAllSelected,
+    isSomeSelected
+  } = useSelection();
+
+  const deleteManyBatchesMutation = useDeleteManyMutation(
+    'Batch',
+    [queryKeys.batch.all]
+  );
+
+  const {
     searchQuery,
     setSearchQuery,
     courseFilter,
@@ -48,14 +75,114 @@ const Batches = () => {
     availableStatuses
   } = useFilteredBatches(resolvedBatches);
 
-  const handlers = {
+  const handlers = useMemo(() => ({
     onView: (batch) => navigate(`/admin/batches/${batch.batch_id}`),
     onEdit: (batch) => navigate(`/admin/batches/edit/${batch.batch_id}`),
-    onDelete: (id, name) => setDeleteModal({ isOpen: true, id, name }),
+    onDelete: (id, name) => setDeleteModal({ 
+      isOpen: true, 
+      id, 
+      name, 
+      type: 'batch', 
+      status: 'idle', 
+      resultMessage: null 
+    }),
     isDeleting: deleteMutation.isPending
+  }), [navigate, deleteMutation.isPending]);
+
+  const baseColumns = useMemo(() => createBatchColumns(handlers), [handlers]);
+  const columns = useSelectableTable({
+    columns: baseColumns,
+    data: filteredBatches,
+    idKey: 'batch_id',
+    selectedIds,
+    toggleSelect,
+    toggleSelectAll,
+    isAllSelected,
+    isSomeSelected
+  });
+
+  const handleSingleDelete = (id) => {
+    deleteMutation.mutate({ id }, {
+      onSuccess: (response) => {
+        if (response.success) {
+          setDeleteModal(prev => ({
+            ...prev,
+            status: 'success',
+            resultMessage: `Batch "${deleteModal.name}" was successfully deleted.`
+          }));
+        } else {
+          setDeleteModal(prev => ({
+            ...prev,
+            status: 'error',
+            resultMessage: response.message || `Failed to delete batch "${deleteModal.name}".`
+          }));
+        }
+      },
+      onError: (err) => {
+        setDeleteModal(prev => ({
+          ...prev,
+          status: 'error',
+          resultMessage: err.message || 'An error occurred while deleting the batch.'
+        }));
+      }
+    });
   };
 
-  const columns = createBatchColumns(handlers);
+  const handleBatchDelete = (ids) => {
+    deleteManyBatchesMutation.mutate({ ids }, {
+      onSuccess: (res) => {
+        if (res.success) {
+          const manifest = res.data?.manifest || {};
+          const deleted = manifest.deleted || [];
+          const failed = manifest.failed || {};
+          const failedCount = Object.keys(failed).length;
+
+          let msg = `Successfully deleted ${deleted.length} batches.`;
+          if (failedCount > 0) {
+            msg += ` Failed to delete ${failedCount} batches due to active student enrollments.`;
+          }
+
+          setDeleteModal(prev => ({
+            ...prev,
+            status: failedCount > 0 && deleted.length === 0 ? 'error' : 'success',
+            resultMessage: msg
+          }));
+
+          if (deleted.length > 0) {
+            setSelectedIds(prev => prev.filter(id => !deleted.includes(id)));
+          }
+        } else {
+          setDeleteModal(prev => ({
+            ...prev,
+            status: 'error',
+            resultMessage: res.message || 'Failed to delete batches.'
+          }));
+        }
+      },
+      onError: (err) => {
+        setDeleteModal(prev => ({
+          ...prev,
+          status: 'error',
+          resultMessage: err.message || 'Failed to delete batches due to a server error.'
+        }));
+      }
+    });
+  };
+
+  const handleConfirmDelete = () => {
+    if (!deleteModal.id) return;
+    setDeleteModal(prev => ({ ...prev, status: 'processing' }));
+
+    if (deleteModal.type === 'bulk_batch') {
+      handleBatchDelete(deleteModal.id);
+    } else {
+      handleSingleDelete(deleteModal.id);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setDeleteModal({ isOpen: false, id: null, name: '', type: 'batch', status: 'idle', resultMessage: null });
+  };
 
   const filters = (
     <>
@@ -108,15 +235,47 @@ const Batches = () => {
         }
       />
 
+      {/* Floating Selection Action Bar */}
+      <SelectionActionBar
+        selectedCount={selectedIds.length}
+        itemName="batch"
+        onClear={clearSelection}
+        onDeleteSelected={() => {
+          setDeleteModal({
+            isOpen: true,
+            id: selectedIds,
+            name: `${selectedIds.length} selected batches`,
+            type: 'bulk_batch',
+            status: 'idle',
+            resultMessage: null
+          });
+        }}
+        onDeleteAll={() => {
+          const allIds = filteredBatches.map(b => b.batch_id);
+          setDeleteModal({
+            isOpen: true,
+            id: allIds,
+            name: `all ${allIds.length} batches matching current filters`,
+            type: 'bulk_batch',
+            status: 'idle',
+            resultMessage: null
+          });
+        }}
+      />
+
       <ConfirmModal 
         isOpen={deleteModal.isOpen}
-        onClose={() => setDeleteModal({ isOpen: false, id: null, name: '' })}
-        onConfirm={() => deleteMutation.mutate({ id: deleteModal.id }, {
-          onSuccess: () => setDeleteModal({ isOpen: false, id: null, name: '' })
-        })}
-        title="Delete Batch"
-        message={`Are you sure you want to permanently delete "${deleteModal.name}"? This will affect currently enrolled students.`}
-        isProcessing={deleteMutation.isPending}
+        onClose={handleCloseModal}
+        onConfirm={handleConfirmDelete}
+        status={deleteModal.status}
+        resultMessage={deleteModal.resultMessage}
+        title={deleteModal.type === 'bulk_batch' ? 'Delete Multiple Batches' : 'Delete Batch'}
+        message={
+          deleteModal.type === 'bulk_batch'
+            ? `Are you sure you want to permanently delete ${deleteModal.name}? This will affect currently enrolled students. This action cannot be undone.`
+            : `Are you sure you want to permanently delete "${deleteModal.name}"? This will affect currently enrolled students.`
+        }
+        isProcessing={deleteModal.type === 'bulk_batch' ? deleteManyBatchesMutation.isPending : deleteMutation.isPending}
       />
     </div>
   );

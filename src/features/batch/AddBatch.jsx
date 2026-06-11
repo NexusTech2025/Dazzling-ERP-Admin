@@ -2,22 +2,59 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useCreateBatchMutation } from './hooks/useBatchQueries';
 import BatchForm from './components/BatchForm';
+import APIErrorModal from '../../components/ui/APIErrorModal';
+import ConfirmModal from '../../components/ui/ConfirmModal';
 
 const AddBatch = () => {
   const navigate = useNavigate();
   const createMutation = useCreateBatchMutation();
-  const [error, setError] = useState(null);
+  const [modalState, setModalState] = useState({
+    isOpen: false,
+    status: 'idle', // 'success' | 'error'
+    error: null,
+    resultMessage: ''
+  });
 
   const handleSubmit = (formData) => {
-    setError(null);
-    createMutation.mutate({ data: formData }, {
-      onSuccess: () => navigate('/admin/batches'),
-      onError: (err) => setError(err.message || 'Failed to create batch.')
-    });
+    createMutation.mutate(
+      { data: formData },
+      {
+        onSuccess: (res) => {
+          if (res.success) {
+            setModalState({
+              isOpen: true,
+              status: 'success',
+              resultMessage: `Batch "${formData.batch_name}" successfully created with ID: ${res.data?.batch_id || 'N/A'}`
+            });
+          } else {
+            setModalState({
+              isOpen: true,
+              status: 'error',
+              error: res.error || { message: res.message || 'Failed to create batch.' }
+            });
+          }
+        },
+        onError: (err) => {
+          setModalState({
+            isOpen: true,
+            status: 'error',
+            error: err
+          });
+        }
+      }
+    );
+  };
+
+  const handleDismissModals = () => {
+    const isSuccess = modalState.status === 'success';
+    setModalState({ isOpen: false, status: 'idle', error: null, resultMessage: '' });
+    if (isSuccess) {
+      navigate('/admin/batches');
+    }
   };
 
   return (
-    <div className="max-w-4xl mx-auto pb-10">
+    <div className="max-w-7xl mx-auto pb-10">
       <div className="mb-6">
         <nav className="flex items-center gap-2 text-sm text-text-secondary font-medium mb-2">
           <Link to="/admin/batches" className="hover:text-primary transition-colors">Batches</Link>
@@ -32,7 +69,22 @@ const AddBatch = () => {
         onSubmit={handleSubmit}
         onCancel={() => navigate('/admin/batches')}
         isSubmitting={createMutation.isPending}
-        error={error}
+      />
+
+      <ConfirmModal 
+        isOpen={modalState.isOpen && modalState.status === 'success'}
+        onClose={handleDismissModals}
+        onConfirm={handleDismissModals}
+        status="success"
+        title="Batch Created Successfully"
+        resultMessage={modalState.resultMessage}
+      />
+
+      <APIErrorModal 
+        isOpen={modalState.isOpen && modalState.status === 'error'}
+        onClose={handleDismissModals}
+        title="Batch Creation Error"
+        error={modalState.error}
       />
     </div>
   );

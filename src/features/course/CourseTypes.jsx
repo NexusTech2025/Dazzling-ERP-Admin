@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { 
   useCourseTypesQuery, 
@@ -6,6 +6,9 @@ import {
   useUpdateCourseTypeMutation,
   useDeleteCourseTypeMutation 
 } from './hooks/useCourseQueries';
+import useSelection from '../../hooks/useSelection';
+import useDeleteManyMutation from '../../hooks/useDeleteManyMutation';
+import SelectionActionBar from '../../components/ui/v2/SelectionActionBar';
 import { queryKeys } from '../../lib/react-query/queryKeys';
 import { LoadingState, ErrorState } from '../../components/ui/QueryStatus';
 import Breadcrumbs from '../../components/ui/Breadcrumbs';
@@ -30,9 +33,23 @@ const CourseTypes = () => {
   const updateTypeMutation = useUpdateCourseTypeMutation();
   const deleteTypeMutation = useDeleteCourseTypeMutation();
 
+  const {
+    selectedIds,
+    toggleSelect,
+    toggleSelectAll,
+    clearSelection,
+    isAllSelected,
+    isSomeSelected
+  } = useSelection();
+
+  const deleteManyMutation = useDeleteManyMutation(
+    'CourseType',
+    [queryKeys.course.type.all]
+  );
+
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingType, setEditingType] = useState(null);
-  const [deleteModal, setDeleteModal] = useState({ isOpen: false, id: null, name: '' });
+  const [deleteModal, setDeleteModal] = useState({ isOpen: false, id: null, name: '', type: 'single', status: 'idle', resultMessage: null });
 
   const [validationError, setValidationError] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
@@ -126,10 +143,82 @@ const CourseTypes = () => {
   };
 
   const handleDeleteClick = (id, name) => {
-    setDeleteModal({ isOpen: true, id, name });
+    setDeleteModal({ isOpen: true, id, name, type: 'single', status: 'idle', resultMessage: null });
   };
 
-  const columns = [
+  const handleBulkDelete = (ids) => {
+    deleteManyMutation.mutate({ ids }, {
+      onSuccess: (res) => {
+        if (res.success) {
+          const manifest = res.data?.manifest || {};
+          const deleted = manifest.deleted || [];
+          const failed = manifest.failed || {};
+          const failedCount = Object.keys(failed).length;
+          let msg = `Successfully deleted ${deleted.length} categories.`;
+          if (failedCount > 0) {
+            msg += ` ${failedCount} could not be deleted due to existing courses.`;
+          }
+          if (editingType && deleted.includes(editingType.segment_id)) {
+            resetForm();
+          }
+          setDeleteModal(prev => ({ ...prev, status: failedCount > 0 && deleted.length === 0 ? 'error' : 'success', resultMessage: msg }));
+          if (deleted.length > 0) clearSelection();
+        } else {
+          setDeleteModal(prev => ({ ...prev, status: 'error', resultMessage: res.message || 'Failed to delete categories.' }));
+        }
+      },
+      onError: (err) => {
+        setDeleteModal(prev => ({ ...prev, status: 'error', resultMessage: err.message || 'A server error occurred.' }));
+      }
+    });
+  };
+
+  const handleConfirmDelete = () => {
+    if (!deleteModal.id) return;
+    setDeleteModal(prev => ({ ...prev, status: 'processing' }));
+    if (deleteModal.type === 'bulk') {
+      handleBulkDelete(deleteModal.id);
+    } else {
+      deleteTypeMutation.mutate({ id: deleteModal.id }, {
+        onSuccess: (res) => {
+          if (res.success) {
+            if (editingType?.segment_id === deleteModal.id) resetForm();
+            setDeleteModal({ isOpen: false, id: null, name: '', type: 'single', status: 'idle', resultMessage: null });
+          } else {
+            setDeleteModal(prev => ({ ...prev, status: 'error', resultMessage: res.error?.message || res.message || 'Failed to delete category.' }));
+          }
+        },
+        onError: (err) => {
+          setDeleteModal(prev => ({ ...prev, status: 'error', resultMessage: err.message || 'A server error occurred.' }));
+        }
+      });
+    }
+  };
+
+  const allTypeIds = useMemo(() => courseTypes.map(t => t.segment_id), [courseTypes]);
+
+  const columns = useMemo(() => [
+    {
+      header: (
+        <input
+          type="checkbox"
+          className="size-4 rounded border-slate-350 dark:border-slate-700 bg-white dark:bg-slate-800 text-primary focus:ring-primary/20 cursor-pointer transition-all"
+          checked={isAllSelected(allTypeIds)}
+          ref={input => { if (input) input.indeterminate = isSomeSelected(allTypeIds); }}
+          onChange={() => toggleSelectAll(allTypeIds)}
+        />
+      ),
+      accessor: 'checkbox',
+      className: 'w-10',
+      cell: (row) => (
+        <input
+          type="checkbox"
+          className="size-4 rounded border-slate-350 dark:border-slate-700 bg-white dark:bg-slate-800 text-primary focus:ring-primary/20 cursor-pointer transition-all"
+          checked={selectedIds.includes(row.segment_id)}
+          onChange={() => toggleSelect(row.segment_id)}
+        />
+      )
+    },
     {
       header: 'Category Name',
       accessor: 'segment_name',
@@ -196,7 +285,7 @@ const CourseTypes = () => {
         </div>
       )
     }
-  ];
+  ], [allTypeIds, selectedIds, toggleSelect, toggleSelectAll, isAllSelected, isSomeSelected]);
 
   const entityLabelOptions = [
     { label: 'Course', value: 'Course' },
@@ -343,25 +432,31 @@ const CourseTypes = () => {
 
       <ConfirmModal
         isOpen={deleteModal.isOpen}
-        onClose={() => setDeleteModal({ isOpen: false, id: null, name: '' })}
-        onConfirm={() => deleteTypeMutation.mutate({ id: deleteModal.id }, {
-          onSuccess: (res) => {
-            if (res.success) {
-              if (editingType?.segment_id === deleteModal.id) {
-                resetForm();
-              }
-              setDeleteModal({ isOpen: false, id: null, name: '' });
-            } else {
-              setDeleteModal({ isOpen: false, id: null, name: '' });
-            }
-          },
-          onError: () => {
-            setDeleteModal({ isOpen: false, id: null, name: '' });
-          }
+        onClose={() => setDeleteModal({ isOpen: false, id: null, name: '', type: 'single', status: 'idle', resultMessage: null })}
+        onConfirm={handleConfirmDelete}
+        title={deleteModal.type === 'bulk' ? `Delete ${deleteModal.id?.length || 0} Categories` : 'Delete Category'}
+        message={
+          deleteModal.type === 'bulk'
+            ? `Are you sure you want to delete ${deleteModal.id?.length || 0} selected categories? Categories with existing courses cannot be removed.`
+            : `Are you sure you want to delete the category "${deleteModal.name}"? This action cannot be undone.`
+        }
+        status={deleteModal.status}
+        resultMessage={deleteModal.resultMessage}
+        isProcessing={deleteModal.status === 'processing'}
+      />
+
+      <SelectionActionBar
+        selectedCount={selectedIds.length}
+        itemName="category"
+        onClear={clearSelection}
+        onDeleteSelected={() => setDeleteModal({
+          isOpen: true,
+          id: selectedIds,
+          name: `${selectedIds.length} selected categories`,
+          type: 'bulk',
+          status: 'idle',
+          resultMessage: null
         })}
-        title="Delete Category"
-        message={`Are you sure you want to delete the category "${deleteModal.name}"? This action cannot be undone.`}
-        isProcessing={deleteTypeMutation.isPending}
       />
     </div>
   );

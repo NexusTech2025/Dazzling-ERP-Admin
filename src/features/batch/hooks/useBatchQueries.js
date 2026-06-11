@@ -211,32 +211,103 @@ export const useBatchDetailQuery = (id) => {
  * @param {string} id - Target batch identifier.
  * @returns {object} React Query result containing array of students with mapped names, emails, and phone contacts.
  */
-export const useBatchStudentsQuery = (id) => {
+export const useBatchStudentsQuery = (id, searchQuery = '', options = {}) => {
   const { token } = useAuth();
   return useQuery({
     queryKey: queryKeys.batch.student(id),
     queryFn: async ({ signal }) => {
-      // Query Enrollment table and include Student details
-      const response = await apiClient.executeAction(
-        API_REGISTRY.DATA.QUERY,
-        {
-          target: 'Enrollment',
-          where: { batch_id: id },
-          include: ['student']
-        },
-        token,
-        { signal }
-      );
-      if (!response.success) throw new Error(response.message);
-      return response.data?.data || [];
+      try {
+        console.log('[useBatchStudentsQuery] Submitting Parallel Requests for Batch ID:', id);
+        const [allocationsResponse, studentsResponse] = await Promise.all([
+          apiClient.executeAction(
+            API_REGISTRY.DATA.QUERY,
+            {
+              target: 'BatchAllocation',
+              where: { batch_id: id }
+            },
+            token,
+            { signal }
+          ),
+          apiClient.executeAction(
+            API_REGISTRY.DATA.QUERY,
+            {
+              target: 'Student',
+              where: {}
+            },
+            token,
+            { signal }
+          )
+        ]);
+
+        if (!allocationsResponse.success) {
+          console.error('[useBatchStudentsQuery] Allocations API Failure Response:', allocationsResponse);
+          const error = new Error(allocationsResponse.message || 'Failed to fetch batch allocations');
+          if (options.onFailure) {
+            options.onFailure(error);
+          } else if (options.onError) {
+            options.onError(error);
+          }
+          throw error;
+        }
+
+        if (!studentsResponse.success) {
+          console.error('[useBatchStudentsQuery] Students API Failure Response:', studentsResponse);
+          const error = new Error(studentsResponse.message || 'Failed to fetch students');
+          if (options.onFailure) {
+            options.onFailure(error);
+          } else if (options.onError) {
+            options.onError(error);
+          }
+          throw error;
+        }
+
+        const allocations = allocationsResponse.data?.data || [];
+        const students = studentsResponse.data?.data || [];
+
+        console.log(`[useBatchStudentsQuery] Success. Allocations found: ${allocations.length}, Total Students: ${students.length}`);
+
+        // Stitch student details into allocation records
+        const combined = allocations.map(allocation => {
+          const student = students.find(s => s.student_id === allocation.student_id);
+          return {
+            ...allocation,
+            student: student || null
+          };
+        });
+
+        console.log('[useBatchStudentsQuery] Combined Payload:', combined);
+
+        if (options.onSuccess) {
+          options.onSuccess(combined);
+        }
+        return combined;
+      } catch (err) {
+        console.error('[useBatchStudentsQuery] API Query Error:', err);
+        if (options.onFailure) {
+          options.onFailure(err);
+        } else if (options.onError) {
+          options.onError(err);
+        }
+        throw err;
+      }
     },
-    enabled: !!token && !!id,
-    select: (data) => (data || []).map(enrollment => ({
-      ...enrollment,
-      student_name: enrollment.student?.student_name || 'N/A',
-      email: enrollment.student?.email || '',
-      phone: enrollment.student?.phone || 'N/A'
-    }))
+    enabled: !!token && !!id && (options.enabled ?? true),
+    select: (data) => {
+      const mapped = (data || []).map(allocation => ({
+        ...allocation,
+        ...allocation.student,
+        enrollment_id: allocation.enrollment_id
+      }));
+
+      if (!searchQuery) return mapped;
+
+      const query = searchQuery.toLowerCase();
+      return mapped.filter(s => 
+        (s.student_name || '').toLowerCase().includes(query) || 
+        (s.student_id || '').toLowerCase().includes(query)
+      );
+    },
+    ...options
   });
 };
 

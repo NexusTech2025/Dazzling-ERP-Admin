@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useCoursesQuery } from '../../course/hooks/useCourseQueries';
 import { useTeachersQuery } from '../../teacher/hooks/useTeacherQueries';
+import { useBranchesQuery } from '../../core/hooks/useBranchQueries';
 import CourseSelectionModal from '../../course/components/CourseSelectionModal';
 import TeacherSelectionModal from '../../teacher/components/TeacherSelectionModal';
 import ButtonGroupFilter from '../../../components/ui/filters/ButtonGroupFilter';
@@ -14,7 +15,7 @@ import Avatar from '../../../components/ui/v2/Avatar';
 
 const DEFAULT_FORM_DATA = {
   batch_name: '',
-  branch_id: 'BR-001', // Default
+  branch_id: '', // Default empty to force user selection
   course_id: '',
   teacher_id: '',
   batch_type: 'Academy',
@@ -44,6 +45,18 @@ const BatchForm = ({
   // Fetch unfiltered lists to leverage the instant hydration cache
   const { data: allCourses = [] } = useCoursesQuery();
   const { data: allTeachers = [] } = useTeachersQuery();
+  const { data: branches = [] } = useBranchesQuery();
+
+  const activeBranches = React.useMemo(() => {
+    return branches.filter(b => b.status === 'active');
+  }, [branches]);
+
+  const branchOptions = React.useMemo(() => {
+    return activeBranches.map(b => ({
+      label: b.branch_name,
+      value: b.branch_id
+    }));
+  }, [activeBranches]);
 
   const [isCourseModalOpen, setIsCourseModalOpen] = useState(false);
   const [isTeacherModalOpen, setIsTeacherModalOpen] = useState(false);
@@ -56,7 +69,7 @@ const BatchForm = ({
     if (initialData) {
       setFormData({
         batch_name: initialData.batch_name || '',
-        branch_id: initialData.branch_id || 'BR-001',
+        branch_id: initialData.branch_id || '',
         course_id: initialData.course_id || '',
         teacher_id: initialData.teacher_id || '',
         batch_type: initialData.batch_type || 'Academy',
@@ -94,6 +107,7 @@ const BatchForm = ({
 
   const validateForm = () => {
     if (!formData.course_id) return "Course selection is required.";
+    if (!formData.branch_id) return "Branch selection is required.";
     if (!formData.batch_name.trim()) return "Batch name is required.";
     if (formData.batch_name.length > 255) {
       return "Batch name cannot exceed 255 characters.";
@@ -126,7 +140,7 @@ const BatchForm = ({
   const displayError = error || localError;
 
   return (
-    <div className="max-w-4xl mx-auto pb-10">
+    <div className="max-w-7xl mx-auto pb-10">
       {displayError && (
         <div className="mb-6 bg-red-50 dark:bg-red-900/20 text-red-600 p-4 rounded-lg border border-red-100 dark:border-red-800 flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
           <span className="material-symbols-outlined">error</span>
@@ -134,11 +148,11 @@ const BatchForm = ({
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="bg-surface-light dark:bg-surface-dark rounded-xl shadow-sm border border-border-light dark:border-border-dark overflow-hidden">
-        <div className="p-8 space-y-8">
+      <form onSubmit={handleSubmit} className="bg-surface-light dark:bg-surface-dark rounded-xl shadow-sm border border-border-light dark:border-border-dark">
+        <div className="p-6 md:p-8 grid grid-cols-12 gap-6 lg:gap-8 items-start">
           
           {/* Basic Details */}
-          <FormSection title="Basic Details" icon="info">
+          <FormSection title="Basic Details" icon="info" className="col-span-12 lg:col-span-7">
             <FormField label="Course Selection" required className="md:col-span-2">
               <button 
                 type="button"
@@ -169,7 +183,14 @@ const BatchForm = ({
               placeholder="e.g. JEE Alpha 2024"
               value={formData.batch_name}
               onChange={e => setFormData({...formData, batch_name: e.target.value})}
-              className="md:col-span-2"
+            />
+
+            <SelectInput
+              label={<>Assigned Branch <span className="text-red-500 ml-0.5">*</span></>}
+              placeholder="Select branch..."
+              value={formData.branch_id}
+              onChange={val => setFormData({...formData, branch_id: val})}
+              options={branchOptions}
             />
 
             <FormField label="Batch Type" className="md:col-span-2">
@@ -213,6 +234,18 @@ const BatchForm = ({
                 <span className="material-symbols-outlined text-slate-300 group-hover:text-primary transition-colors">person_search</span>
               </button>
             </FormField>
+          </FormSection>
+
+          {/* Schedule Section */}
+          <FormSection title="Schedule & Capacity" icon="calendar_month" className="col-span-12 lg:col-span-5">
+            <BaseInput
+              label="Student Capacity"
+              leftIcon="group"
+              type="number"
+              min="1" max="500"
+              value={formData.capacity}
+              onChange={e => setFormData({...formData, capacity: Number(e.target.value)})}
+            />
 
             <SelectInput
               label="Operational Status"
@@ -223,19 +256,6 @@ const BatchForm = ({
                 { label: 'Completed', value: 'completed' },
                 { label: 'Cancelled', value: 'cancelled' }
               ]}
-              className="md:col-span-2"
-            />
-          </FormSection>
-
-          {/* Schedule Section */}
-          <FormSection title="Schedule & Capacity" icon="calendar_month">
-            <BaseInput
-              label="Student Capacity"
-              leftIcon="group"
-              type="number"
-              min="1" max="500"
-              value={formData.capacity}
-              onChange={e => setFormData({...formData, capacity: Number(e.target.value)})}
             />
 
             <DateInput
