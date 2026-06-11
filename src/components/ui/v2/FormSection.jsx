@@ -4,15 +4,15 @@ import React from 'react';
  * FormSection: A card-based layout component for grouping related form fields.
  * Includes a header with title and icon.
  */
-const FormSection = ({ 
-  title, 
-  icon, 
-  children, 
+const FormSection = ({
+  title,
+  icon,
+  children,
   className = "",
-  headerAction 
+  headerAction
 }) => {
   return (
-    <div className={`bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-2xl overflow-hidden ${className}`}>
+    <div className={`bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-2xl  ${className}`}>
       {/* Header */}
       <div className="px-6 py-4 border-b border-border-light dark:border-border-dark flex items-center justify-between bg-background-light/30 dark:bg-background-dark/30">
         <div className="flex items-center gap-3">

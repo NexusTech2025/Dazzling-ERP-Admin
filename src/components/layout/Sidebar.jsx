@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import Logout from '../ui/btn/Logout';
 
-const Sidebar = () => {
+const Sidebar = ({ isOpen, onClose }) => {
   const location = useLocation();
   const [expandedMenus, setExpandedMenus] = useState({});
 
@@ -15,6 +15,7 @@ const Sidebar = () => {
       icon: 'menu_book',
       subItems: [
         { name: 'Course Catalog', path: '/admin/courses' },
+        { name: 'Packages', path: '/admin/packages' },
         { name: 'Course Categories', path: '/admin/courses/types' }
       ]
     },
@@ -24,6 +25,7 @@ const Sidebar = () => {
       subItems: [
         { name: 'Finance Dashboard', path: '/admin/finance' },
         { name: 'Fee Installment', path: '/admin/finance/installments' },
+        { name: 'Transactions', path: '/admin/finance/transactions' },
         { name: 'OverDue', path: '/admin/finance/overdue' }
       ]
     },
@@ -32,6 +34,7 @@ const Sidebar = () => {
       icon: 'school',
       subItems: [
         { name: 'Student Directory', path: '/admin/students' },
+        { name: 'Student Leads', path: '/admin/students/leads' },
         { name: 'New Registration', path: '/admin/students/add' }
       ]
     },
@@ -43,6 +46,7 @@ const Sidebar = () => {
     { name: 'Roles & Permissions', path: '/admin/roles', icon: 'admin_panel_settings' },
     { name: 'Reports', path: '/admin/reports', icon: 'bar_chart' },
     { name: 'Settings', path: '/admin/settings', icon: 'settings' },
+    { name: 'Test Page', path: '/admin/test-pages/prototype', icon: 'science' },
   ];
 
   // Auto-expand menu if sub-item is active
@@ -70,17 +74,17 @@ const Sidebar = () => {
         <div key={item.name} className="flex flex-col">
           <button 
             onClick={() => toggleMenu(item.name)}
-            className={`flex items-center justify-between w-full px-4 py-3 rounded-lg transition-colors ${
+            className={`flex items-center justify-between w-full px-4 py-3 rounded-lg transition-colors cursor-pointer ${
               hasActiveSub 
                 ? 'text-primary' 
                 : 'text-text-secondary hover:bg-background-light dark:hover:bg-background-dark hover:text-text-main dark:hover:text-white'
             }`}
           >
             <div className="flex items-center gap-3">
-              <span className="material-symbols-outlined">{item.icon}</span>
+              <span className="material-symbols-outlined text-xl">{item.icon}</span>
               <span className="text-sm font-semibold">{item.name}</span>
             </div>
-            <span className={`material-symbols-outlined transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} style={{ fontSize: '20px' }}>
+            <span className={`material-symbols-outlined transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''} text-lg`}>
               expand_more
             </span>
           </button>
@@ -91,6 +95,7 @@ const Sidebar = () => {
                 <NavLink
                   key={subItem.path}
                   to={subItem.path}
+                  onClick={onClose}
                   className={({ isActive }) =>
                     `text-sm py-2 px-3 rounded-md transition-colors ${
                       isActive
@@ -112,6 +117,7 @@ const Sidebar = () => {
       <NavLink
         key={item.path}
         to={item.path}
+        onClick={onClose}
         className={({ isActive }) =>
           `flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
             isActive
@@ -120,26 +126,50 @@ const Sidebar = () => {
           }`
         }
       >
-        <span className="material-symbols-outlined">{item.icon}</span>
+        <span className="material-symbols-outlined text-xl">{item.icon}</span>
         <span className="text-sm font-semibold">{item.name}</span>
       </NavLink>
     );
   };
 
   return (
-    <aside className="hidden lg:flex flex-col w-72 bg-surface-light dark:bg-surface-dark border-r border-border-light dark:border-border-dark py-6 px-4 h-full overflow-y-auto">
-      <div className="flex flex-col gap-1">
-        <p className="px-4 text-xs font-bold text-text-secondary uppercase tracking-wider mb-2">Main Menu</p>
-        {menuItems.map(renderItem)}
+    <>
+      {/* Mobile Backdrop */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden transition-opacity duration-300"
+          onClick={onClose}
+        />
+      )}
+      <aside 
+        className={`fixed inset-y-0 left-0 z-50 lg:static flex flex-col w-72 bg-surface-light dark:bg-surface-dark border-r border-border-light dark:border-border-dark py-6 px-4 h-full overflow-y-auto transition-transform duration-300 ${
+          isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+        }`}
+      >
+        {/* Mobile Close Button */}
+        <div className="flex justify-end lg:hidden mb-4 px-2">
+          <button 
+            onClick={onClose}
+            className="flex items-center justify-center p-1.5 rounded-lg text-text-secondary hover:bg-background-light dark:hover:bg-border-dark transition-colors cursor-pointer"
+            aria-label="Close Sidebar"
+          >
+            <span className="material-symbols-outlined text-2xl">close</span>
+          </button>
+        </div>
 
-        <p className="px-4 text-xs font-bold text-text-secondary uppercase tracking-wider mt-6 mb-2">Administration</p>
-        {adminItems.map(renderItem)}
-      </div>
+        <div className="flex flex-col gap-1">
+          <p className="px-4 text-xs font-bold text-text-secondary uppercase tracking-wider mb-2">Main Menu</p>
+          {menuItems.map(renderItem)}
 
-      <div className="mt-auto pt-6 border-t border-border-light dark:border-border-dark">
-        <Logout />
-      </div>
-    </aside>
+          <p className="px-4 text-xs font-bold text-text-secondary uppercase tracking-wider mt-6 mb-2">Administration</p>
+          {adminItems.map(renderItem)}
+        </div>
+
+        <div className="mt-auto pt-6 border-t border-border-light dark:border-border-dark">
+          <Logout />
+        </div>
+      </aside>
+    </>
   );
 };
 

@@ -25,6 +25,8 @@ const CourseForm = ({
   const [validationError, setValidationError] = useState(null);
   const displayError = validationError || externalError;
 
+  console.log("initial data", initialData);
+
   const [formData, setFormData] = useState({
     course_id: '',
     name: '',
@@ -46,7 +48,7 @@ const CourseForm = ({
 
   const [isCreatingType, setIsCreatingType] = useState(false);
   const generateSegmentId = () => "SEG-" + Date.now().toString().slice(-6);
-  
+
   const [newTypeData, setNewTypeData] = useState({
     segment_id: generateSegmentId(),
     segment_name: '',
@@ -56,6 +58,21 @@ const CourseForm = ({
 
   useEffect(() => {
     if (initialData) {
+      // Self-healing parsing fallback in case of cache-bypass
+      const rawMeta = initialData.metadata;
+      let parsedMeta = {};
+      if (rawMeta) {
+        if (typeof rawMeta === 'object') {
+          parsedMeta = rawMeta;
+        } else if (typeof rawMeta === 'string') {
+          try {
+            parsedMeta = JSON.parse(rawMeta);
+          } catch (e) {
+            console.error('Failed to parse metadata in CourseForm component:', e);
+          }
+        }
+      }
+
       setFormData({
         course_id: initialData.course_id || '',
         name: initialData.name || '',
@@ -66,10 +83,10 @@ const CourseForm = ({
         segment_id: initialData.segment_id || '',
         duration_value: initialData.duration_value || 12,
         duration_unit: initialData.duration_unit || 'months',
-        class_level: initialData.metadata?.class || '',
-        min_class: initialData.metadata?.min_class || '',
-        max_class: initialData.metadata?.max_class || '',
-        board: initialData.metadata?.board || '',
+        class_level: parsedMeta.class || '',
+        min_class: parsedMeta.min_class || '',
+        max_class: parsedMeta.max_class || '',
+        board: parsedMeta.board || '',
         base_fee: initialData.base_fee || '',
         default_installment_count: initialData.default_installment_count || 1,
         is_active: initialData.is_active ?? (initialData.status === 'active')
@@ -87,7 +104,7 @@ const CourseForm = ({
 
   const handleCreateType = async () => {
     if (!newTypeData.segment_name) return;
-    
+
     createTypeMutation.mutate({ data: newTypeData }, {
       onSuccess: (res) => {
         if (res.success) {
@@ -120,7 +137,7 @@ const CourseForm = ({
     }
 
     // 1. Construct dynamic metadata based on entity type
-    const metadata = formData.entity_type === 'subject' 
+    const metadata = formData.entity_type === 'subject'
       ? { class: formData.class_level, board: formData.board }
       : { min_class: formData.min_class, max_class: formData.max_class };
 
@@ -184,7 +201,7 @@ const CourseForm = ({
 
       {/* Basic Information Section */}
       <FormSection title="Basic Information" icon="info">
-        
+
         {/* Entity Type selection */}
         <div className="md:col-span-2 flex flex-wrap items-center justify-between gap-4 p-4 bg-background-light/30 dark:bg-background-dark/30 rounded-lg border border-border-light dark:border-border-dark">
           <SegmentedControl
@@ -193,7 +210,7 @@ const CourseForm = ({
             onChange={(val) => setFormData(prev => ({ ...prev, entity_type: val }))}
             options={entityTypeOptions}
           />
-          
+
           <div className="flex items-center gap-3">
             <div className="flex flex-col items-end">
               <span className="text-[10px] font-black text-text-secondary uppercase tracking-wider">Active Status</span>
@@ -337,7 +354,7 @@ const CourseForm = ({
                 placeholder="Select Board"
               />
             </FormField>
-            
+
             <FormField label="Target Class" name="class_level">
               <SelectInput
                 value={formData.class_level}
@@ -357,7 +374,7 @@ const CourseForm = ({
                 placeholder="No Minimum"
               />
             </FormField>
-            
+
             <FormField label="Max Class Eligibility" name="max_class">
               <SelectInput
                 value={formData.max_class}
@@ -372,7 +389,7 @@ const CourseForm = ({
 
       {/* Duration and Pricing Section */}
       <FormSection title="Duration & Pricing" icon="payments">
-        
+
         {/* Custom duration value & unit */}
         <FormField label="Duration" name="duration_value">
           <div className="flex items-center bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-primary/10 focus-within:border-primary transition-all duration-200">

@@ -10,8 +10,8 @@ export const useBatchAttendanceQuery = (batchId, date) => {
     queryKey: queryKeys.attendance.batch(batchId, date),
     queryFn: async ({ signal }) => {
       const response = await apiClient.executeAction(
-        API_REGISTRY.ATTENDANCE.GET_BATCH_REGISTRY, 
-        { batchId, date }, 
+        API_REGISTRY.ATTENDANCE.GET_BATCH_REGISTRY,
+        { batchId, date },
         token,
         { signal }
       );
@@ -28,8 +28,8 @@ export const useBatchAttendanceMatrixQuery = (batchId, days = 15) => {
     queryKey: queryKeys.attendance.matrix(batchId, days),
     queryFn: async ({ signal }) => {
       const response = await apiClient.executeAction(
-        API_REGISTRY.ATTENDANCE.GET_MATRIX, 
-        { batchId, days }, 
+        API_REGISTRY.ATTENDANCE.GET_MATRIX,
+        { batchId, days },
         token,
         { signal }
       );
@@ -45,7 +45,7 @@ export const useMarkAttendanceMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (payload) => 
+    mutationFn: (payload) =>
       apiClient.executeAction(API_REGISTRY.ATTENDANCE.MARK, payload, token),
     onSuccess: (response, variables) => {
       if (response.success) {
@@ -66,8 +66,8 @@ export const useStudentAttendanceStatsQuery = (studentId) => {
     queryKey: queryKeys.attendance.student(studentId),
     queryFn: async ({ signal }) => {
       const response = await apiClient.executeAction(
-        API_REGISTRY.ATTENDANCE.GET_STUDENT_STATS, 
-        { studentId }, 
+        API_REGISTRY.ATTENDANCE.GET_STUDENT_STATS,
+        { studentId },
         token,
         { signal }
       );

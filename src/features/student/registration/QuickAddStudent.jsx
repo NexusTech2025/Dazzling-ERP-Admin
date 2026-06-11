@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useBatchesQuery } from '../../batch/hooks/useBatchQueries';
 import { useCreateStudentLeadMutation } from '../hooks/useStudentQueries';
+import { useUpdateStudentLeadMutation } from '../hooks/useStudentLeadQueries';
 
 // V2 UI Components
 import FormField from '../../../components/ui/v2/FormField';
@@ -15,21 +16,23 @@ import RadioGroup from '../../../components/ui/v2/RadioGroup';
  * Optimized for peak-hour walk-ins. Connects directly to production GAS endpoints.
  * Features a dual-column layout with collapsible nested groups in the advanced CRM settings sidebar.
  */
-const QuickAddStudent = ({ onUpgrade }) => {
+const QuickAddStudent = ({ onUpgrade, initialData, isEdit = false, onSubmitSuccess, onCancel }) => {
   const navigate = useNavigate();
   const createMutation = useCreateStudentLeadMutation();
+  const updateMutation = useUpdateStudentLeadMutation();
   const { data: batches = [], isLoading: isBatchesLoading } = useBatchesQuery();
 
   // Form State
   const [formData, setFormData] = useState({
-    fullName: '',
-    mobile: '',
-    email: '',
-    batchId: '',
-    referral: '',
-    note: '',
-    leadSource: 'walk-in',
-    priority: 'ready_to_enroll',
+    fullName: initialData?.student_name || '',
+    mobile: initialData?.phone || '',
+    email: initialData?.email || '',
+    batchId: initialData?.batch_id || '',
+    referral: initialData?.referral_id || '',
+    note: initialData?.internal_notes || '',
+    leadSource: initialData?.lead_source || 'walk-in',
+    priority: initialData?.priority || 'ready_to_enroll',
+    status: initialData?.status || 'prospect',
     workflowAction: 'add_another' // 'add_another' | 'upgrade' | 'profile'
   });
 
@@ -78,65 +81,95 @@ const QuickAddStudent = ({ onUpgrade }) => {
 
     const selectedBatch = batches.find(b => b.batch_id === formData.batchId);
 
-    const leadData = {
-      student_name: formData.fullName.trim(),
-      phone: formData.mobile.replace(/\D/g, ''),
-      email: formData.email.trim() || null,
-      batch_id: formData.batchId,
-      referral_id: formData.referral.trim() || null,
-      internal_notes: formData.note.trim() || null,
-      lead_source: formData.leadSource,
-      priority: formData.priority,
-      status: 'prospect',
-      is_registered: false,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    };
+    if (isEdit) {
+      const leadData = {
+        student_name: formData.fullName.trim(),
+        phone: formData.mobile.replace(/\D/g, ''),
+        email: formData.email.trim() || null,
+        batch_id: formData.batchId,
+        referral_id: formData.referral.trim() || null,
+        internal_notes: formData.note.trim() || null,
+        lead_source: formData.leadSource,
+        priority: formData.priority,
+        status: formData.status,
+        updated_at: new Date().toISOString()
+      };
 
-    console.log('[QuickAddStudent] Submitting Student Lead Request:', { leadData });
+      console.log('[QuickAddStudent] Submitting Student Lead Edit Request:', { id: initialData.lead_id, leadData });
 
-    createMutation.mutate({ leadData }, {
-      onSuccess: (response) => {
-        console.log('[QuickAddStudent] Student Lead API Response:', response);
-        if (formData.workflowAction === 'upgrade') {
-          // Callback to parent to trigger Full Wizard with data prepopulated
-          if (onUpgrade) {
-            onUpgrade({
-              fullName: formData.fullName,
-              mobile: formData.mobile,
-              email: formData.email,
-              batchId: formData.batchId,
-              batchName: selectedBatch?.batch_name || '',
-              courseId: selectedBatch?.item_id || '',
-              courseName: selectedBatch?.course_name || '',
-              referral: formData.referral
-            });
+      updateMutation.mutate({ id: initialData.lead_id, data: leadData }, {
+        onSuccess: (response) => {
+          console.log('[QuickAddStudent] Student Lead Update API Response:', response);
+          if (onSubmitSuccess) {
+            onSubmitSuccess();
           }
-        } else if (formData.workflowAction === 'profile') {
-          // Redirect directly to the student list
-          navigate('/admin/students');
-        } else {
-          // Stay & Add Another: Reset Form except workflow & metadata preferences
-          setFormData({
-            fullName: '',
-            mobile: '',
-            email: '',
-            batchId: '',
-            referral: '',
-            note: '',
-            leadSource: 'walk-in',
-            priority: 'ready_to_enroll',
-            workflowAction: 'add_another'
-          });
-          setSuccessMessage('Prospect successfully added! Form cleared for next capture.');
-          setTimeout(() => setSuccessMessage(''), 5000);
+        },
+        onError: (err) => {
+          console.error('[QuickAddStudent] Student Lead Update API Error:', err);
+          setErrors({ submit: err.message || 'A network error occurred. Please verify GAS endpoint.' });
         }
-      },
-      onError: (err) => {
-        console.error('[QuickAddStudent] Student Lead API Error:', err);
-        setErrors({ submit: err.message || 'A network error occurred. Please verify GAS endpoint.' });
-      }
-    });
+      });
+    } else {
+      const leadData = {
+        student_name: formData.fullName.trim(),
+        phone: formData.mobile.replace(/\D/g, ''),
+        email: formData.email.trim() || null,
+        batch_id: formData.batchId,
+        referral_id: formData.referral.trim() || null,
+        internal_notes: formData.note.trim() || null,
+        lead_source: formData.leadSource,
+        priority: formData.priority,
+        status: 'prospect',
+        is_registered: false,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+
+      console.log('[QuickAddStudent] Submitting Student Lead Request:', { leadData });
+
+      createMutation.mutate({ leadData }, {
+        onSuccess: (response) => {
+          console.log('[QuickAddStudent] Student Lead API Response:', response);
+          if (formData.workflowAction === 'upgrade') {
+            // Callback to parent to trigger Full Wizard with data prepopulated
+            if (onUpgrade) {
+              onUpgrade({
+                fullName: formData.fullName,
+                mobile: formData.mobile,
+                email: formData.email,
+                batchId: formData.batchId,
+                batchName: selectedBatch?.batch_name || '',
+                courseId: selectedBatch?.item_id || '',
+                courseName: selectedBatch?.course_name || '',
+                referral: formData.referral
+              });
+            }
+          } else if (formData.workflowAction === 'profile') {
+            // Redirect directly to the student list
+            navigate('/admin/students');
+          } else {
+            // Stay & Add Another: Reset Form except workflow & metadata preferences
+            setFormData({
+              fullName: '',
+              mobile: '',
+              email: '',
+              batchId: '',
+              referral: '',
+              note: '',
+              leadSource: 'walk-in',
+              priority: 'ready_to_enroll',
+              workflowAction: 'add_another'
+            });
+            setSuccessMessage('Prospect successfully added! Form cleared for next capture.');
+            setTimeout(() => setSuccessMessage(''), 5000);
+          }
+        },
+        onError: (err) => {
+          console.error('[QuickAddStudent] Student Lead API Error:', err);
+          setErrors({ submit: err.message || 'A network error occurred. Please verify GAS endpoint.' });
+        }
+      });
+    }
   };
 
   // Human-readable translations
@@ -171,16 +204,28 @@ const QuickAddStudent = ({ onUpgrade }) => {
     return actions[act] || act;
   };
 
+  const getStatusLabel = (st) => {
+    const statuses = {
+      'prospect': 'Prospect',
+      'contacted': 'Contacted',
+      'converted': 'Converted',
+      'lost': 'Lost'
+    };
+    return statuses[st] || st;
+  };
+
   return (
-    <div className="max-w-5xl mx-auto bg-white dark:bg-slate-900/50 rounded-2xl border border-primary/5 shadow-lg p-6 md:p-8 animate-in fade-in zoom-in-95 duration-300">
-      <div className="mb-6 pb-4 border-b border-slate-100 dark:border-slate-800">
-        <div className="flex items-center gap-2 text-primary font-black uppercase tracking-wider text-xs mb-1">
-          <span className="material-symbols-outlined text-[16px] animate-pulse">bolt</span>
-          High-Speed Prospect Capture
+    <div className={isEdit ? "w-full animate-in fade-in zoom-in-95 duration-300" : "max-w-5xl mx-auto bg-white dark:bg-slate-900/50 rounded-2xl border border-primary/5 shadow-lg p-6 md:p-8 animate-in fade-in zoom-in-95 duration-300"}>
+      {!isEdit && (
+        <div className="mb-6 pb-4 border-b border-slate-100 dark:border-slate-800">
+          <div className="flex items-center gap-2 text-primary font-black uppercase tracking-wider text-xs mb-1">
+            <span className="material-symbols-outlined text-[16px] animate-pulse">bolt</span>
+            High-Speed Prospect Capture
+          </div>
+          <h2 className="text-xl font-bold text-slate-950 dark:text-white">Quick Student Lead Form</h2>
+          <p className="text-xs text-text-secondary mt-1">Capture basic walk-in or inquiry details in under 30 seconds. This creates a student profile lead only.</p>
         </div>
-        <h2 className="text-xl font-bold text-slate-950 dark:text-white">Quick Student Lead Form</h2>
-        <p className="text-xs text-text-secondary mt-1">Capture basic walk-in or inquiry details in under 30 seconds. This creates a student profile lead only.</p>
-      </div>
+      )}
 
       {successMessage && (
         <div className="mb-6 p-4 rounded-xl bg-green-500/10 border border-green-500/20 text-green-600 dark:text-green-400 text-xs font-semibold flex items-center gap-2 animate-in slide-in-from-top-2">
@@ -284,7 +329,7 @@ const QuickAddStudent = ({ onUpgrade }) => {
                     {!showCrmOptions && (
                       <p className="text-[10px] text-text-secondary mt-0.5 font-medium tracking-wide flex items-center gap-1.5 truncate">
                         <span className="inline-block w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
-                        {getSourceLabel(formData.leadSource)} • {getPriorityLabel(formData.priority)} • {getWorkflowLabel(formData.workflowAction)}
+                        {getSourceLabel(formData.leadSource)} • {getPriorityLabel(formData.priority)} {isEdit ? `• ${getStatusLabel(formData.status)}` : `• ${getWorkflowLabel(formData.workflowAction)}`}
                       </p>
                     )}
                   </div>
@@ -312,6 +357,22 @@ const QuickAddStudent = ({ onUpgrade }) => {
                     leftIcon="campaign"
                   />
                 </FormField>
+
+                {isEdit && (
+                  <FormField label="Lead Status" name="status">
+                    <SelectInput
+                      options={[
+                        { label: 'Prospect (New)', value: 'prospect' },
+                        { label: 'Contacted', value: 'contacted' },
+                        { label: 'Converted', value: 'converted' },
+                        { label: 'Lost', value: 'lost' }
+                      ]}
+                      value={formData.status}
+                      onChange={(val) => handleChange('status', val)}
+                      leftIcon="track_changes"
+                    />
+                  </FormField>
+                )}
 
                 {/* Sub-Collapsible Priority Group */}
                 <div className="border border-slate-100 dark:border-slate-800/60 rounded-xl bg-slate-100/20 dark:bg-slate-900/30 overflow-hidden shadow-2xs">
@@ -350,41 +411,43 @@ const QuickAddStudent = ({ onUpgrade }) => {
                   </div>
                 </div>
 
-                {/* Sub-Collapsible Workflow Group */}
-                <div className="border border-slate-100 dark:border-slate-800/60 rounded-xl bg-slate-100/20 dark:bg-slate-900/30 overflow-hidden shadow-2xs">
-                  <button
-                    type="button"
-                    onClick={() => setShowWorkflowOptions(!showWorkflowOptions)}
-                    className="w-full flex items-center justify-between px-3 py-2 bg-slate-100/50 dark:bg-slate-800/30 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-left cursor-pointer outline-none"
-                  >
-                    <div className="flex items-center gap-1.5">
-                      <span className="material-symbols-outlined text-primary text-base">settings_input_component</span>
-                      <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Submit Action</span>
-                      {!showWorkflowOptions && (
-                        <span className="text-[9px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-black uppercase tracking-wider ml-1.5 scale-90">
-                          {getWorkflowLabel(formData.workflowAction)}
-                        </span>
-                      )}
+                {/* Sub-Collapsible Workflow Group (Only shown in creation mode) */}
+                {!isEdit && (
+                  <div className="border border-slate-100 dark:border-slate-800/60 rounded-xl bg-slate-100/20 dark:bg-slate-900/30 overflow-hidden shadow-2xs">
+                    <button
+                      type="button"
+                      onClick={() => setShowWorkflowOptions(!showWorkflowOptions)}
+                      className="w-full flex items-center justify-between px-3 py-2 bg-slate-100/50 dark:bg-slate-800/30 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-left cursor-pointer outline-none"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <span className="material-symbols-outlined text-primary text-base">settings_input_component</span>
+                        <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Submit Action</span>
+                        {!showWorkflowOptions && (
+                          <span className="text-[9px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-black uppercase tracking-wider ml-1.5 scale-90">
+                            {getWorkflowLabel(formData.workflowAction)}
+                          </span>
+                        )}
+                      </div>
+                      <span className={`material-symbols-outlined text-slate-400 text-sm transition-transform duration-300 ${showWorkflowOptions ? 'rotate-180' : ''}`}>
+                        expand_more
+                      </span>
+                    </button>
+                    
+                    <div className={`transition-all duration-300 ease-in-out overflow-hidden ${showWorkflowOptions ? 'max-h-[500px] opacity-100 p-3 border-t border-slate-100 dark:border-slate-800/40' : 'max-h-0 opacity-0 p-0'}`}>
+                      <RadioGroup
+                        name="workflowAction"
+                        layout="list"
+                        value={formData.workflowAction}
+                        onChange={(val) => handleChange('workflowAction', val)}
+                        options={[
+                          { label: 'Stay & Clear Form', value: 'add_another', description: 'Clear form for the next prospect', icon: 'refresh' },
+                          { label: 'Upgrade to Full Wizard', value: 'upgrade', description: 'Prepopulate into full registration wizard', icon: 'arrow_forward' },
+                          { label: 'Go to Student Directory', value: 'profile', description: 'Redirect back to records list', icon: 'dns' }
+                        ]}
+                      />
                     </div>
-                    <span className={`material-symbols-outlined text-slate-400 text-sm transition-transform duration-300 ${showWorkflowOptions ? 'rotate-180' : ''}`}>
-                      expand_more
-                    </span>
-                  </button>
-                  
-                  <div className={`transition-all duration-300 ease-in-out overflow-hidden ${showWorkflowOptions ? 'max-h-[500px] opacity-100 p-3 border-t border-slate-100 dark:border-slate-800/40' : 'max-h-0 opacity-0 p-0'}`}>
-                    <RadioGroup
-                      name="workflowAction"
-                      layout="list"
-                      value={formData.workflowAction}
-                      onChange={(val) => handleChange('workflowAction', val)}
-                      options={[
-                        { label: 'Stay & Clear Form', value: 'add_another', description: 'Clear form for the next prospect', icon: 'refresh' },
-                        { label: 'Upgrade to Full Wizard', value: 'upgrade', description: 'Prepopulate into full registration wizard', icon: 'arrow_forward' },
-                        { label: 'Go to Student Directory', value: 'profile', description: 'Redirect back to records list', icon: 'dns' }
-                      ]}
-                    />
                   </div>
-                </div>
+                )}
 
               </div>
 
@@ -397,7 +460,7 @@ const QuickAddStudent = ({ onUpgrade }) => {
         <div className="pt-6 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
           <button
             type="button"
-            onClick={() => navigate('/admin/students')}
+            onClick={isEdit ? onCancel : () => navigate('/admin/students')}
             className="px-6 py-2.5 rounded-xl border border-border-light dark:border-border-dark font-bold text-text-secondary text-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
           >
             Cancel
@@ -405,19 +468,33 @@ const QuickAddStudent = ({ onUpgrade }) => {
           
           <button
             type="submit"
-            disabled={createMutation.isPending}
+            disabled={isEdit ? updateMutation.isPending : createMutation.isPending}
             className="flex items-center gap-2 rounded-xl bg-primary px-8 py-2.5 font-bold text-white shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
           >
-            {createMutation.isPending ? (
-              <>
-                <span className="animate-spin material-symbols-outlined text-lg">progress_activity</span>
-                Creating Lead...
-              </>
+            {isEdit ? (
+              updateMutation.isPending ? (
+                <>
+                  <span className="animate-spin material-symbols-outlined text-lg">progress_activity</span>
+                  Saving Changes...
+                </>
+              ) : (
+                <>
+                  <span className="material-symbols-outlined text-lg">save</span>
+                  Save Changes
+                </>
+              )
             ) : (
-              <>
-                <span className="material-symbols-outlined text-lg">save</span>
-                Save Student Lead
-              </>
+              createMutation.isPending ? (
+                <>
+                  <span className="animate-spin material-symbols-outlined text-lg">progress_activity</span>
+                  Creating Lead...
+                </>
+              ) : (
+                <>
+                  <span className="material-symbols-outlined text-lg">save</span>
+                  Save Student Lead
+                </>
+              )
             )}
           </button>
         </div>

@@ -1,9 +1,30 @@
+/**
+ * @file profile.api.js
+ * @module ProfileAPI
+ * @description Aggregator layer for student profile directories. Pre-fetches and joins
+ * parallel databases (address, contact, academic history, batch allocations) in a single request transaction.
+ */
+
 import { apiClient } from '../../../services/apiClient';
 import { API_REGISTRY } from '../../../services/apiRegistry';
 
 /**
- * Profile API Layer
- * Fetches and aggregates student contact, address, education, and enrollments.
+ * Orchestrates parallel query requests using the centralized query DSL (DATA.QUERY)
+ * to construct a fully hydrated Student Profile dossier.
+ * Resolves address info, secondary contact info, education records, and active course enrollments
+ * joined against batch and course catalog details.
+ * 
+ * @async
+ * @function fetchProfileDetails
+ * @param {string} token - The active user authorization session token.
+ * @param {string} studentId - The unique primary student identifier (prefix: STU-).
+ * @param {object} [options={}] - HTTP fetch configuration options (e.g. AbortController signal).
+ * @returns {Promise<object>} Returns a compiled profile details payload containing:
+ * - success {boolean} Indicator indicating transaction outcomes.
+ * - data.data.address {object|null} Home residency details.
+ * - data.data.contact {object|null} Email, emergency phone, and kinship mappings.
+ * - data.data.education {Array<object>} Past qualifications.
+ * - data.data.enrollments {Array<object>} Current active courses, joined with durations and batch names.
  */
 export const fetchProfileDetails = async (token, studentId, options = {}) => {
   try {

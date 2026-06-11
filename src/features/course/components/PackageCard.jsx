@@ -1,15 +1,33 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 
-const PackageCard = ({ pkg }) => {
+const PackageCard = ({ pkg, isSelected = false, onToggleSelect = null, isSelectionModeActive = false }) => {
   return (
-    <div className="group relative flex flex-col overflow-hidden rounded-2xl border border-border-light dark:border-border-dark bg-surface-light dark:bg-surface-dark shadow-sm hover:shadow-xl transition-all duration-500">
+    <div className={`group relative flex flex-col overflow-hidden rounded-2xl border transition-all duration-500 ${
+      isSelected 
+        ? 'border-primary ring-1 ring-primary/20 bg-primary/[0.02] dark:bg-primary/[0.01] shadow-lg' 
+        : 'border-border-light dark:border-border-dark bg-surface-light dark:bg-surface-dark shadow-sm hover:shadow-xl'
+    }`}>
       {/* Visual Header */}
       <div className="h-28 w-full bg-gradient-to-br from-primary/20 via-primary/5 to-transparent p-6 flex items-start justify-between relative overflow-hidden">
         <div className="absolute -right-4 -top-4 size-32 bg-primary/10 rounded-full blur-3xl group-hover:bg-primary/20 transition-all duration-700"></div>
 
-        <div className="rounded-xl bg-primary/10 p-2.5 text-primary border border-primary/20 backdrop-blur-sm z-10">
-          <span className="material-symbols-outlined font-black">inventory_2</span>
+        {/* Dynamic Selection Overlay Icon / Checkbox */}
+        <div className="relative z-10 flex items-center">
+          {onToggleSelect && (
+            <div className={`transition-all duration-200 ${isSelectionModeActive ? 'opacity-100 scale-100' : 'opacity-0 scale-90 group-hover:opacity-100 group-hover:scale-100 absolute left-0 top-0'}`}>
+              <input
+                type="checkbox"
+                className="size-6 rounded-lg border-slate-350 dark:border-slate-700 bg-white dark:bg-slate-800 text-primary focus:ring-primary/20 cursor-pointer shadow-sm"
+                checked={isSelected}
+                onChange={onToggleSelect}
+                onClick={(e) => e.stopPropagation()}
+              />
+            </div>
+          )}
+          <div className={`rounded-xl bg-primary/10 p-2.5 text-primary border border-primary/20 backdrop-blur-sm transition-all duration-200 ${isSelectionModeActive ? 'opacity-0 scale-90 pointer-events-none' : 'opacity-100 scale-100 group-hover:opacity-0 group-hover:scale-90'}`}>
+            <span className="material-symbols-outlined font-black">inventory_2</span>
+          </div>
         </div>
 
         <div className="flex flex-col items-end gap-2 z-10">

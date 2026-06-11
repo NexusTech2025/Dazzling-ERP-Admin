@@ -11,20 +11,39 @@ export const API_REGISTRY = {
   },
   STUDENT: {
     REGISTER: 'student_register',
-    ADD_LEAD: 'student_add_lead'
+    ADD_LEAD: 'student_add_lead',
+    ADD: 'addstudent',
+    UPDATE: 'updatestudent',
+    DELETE: 'student_delete',
+    DELETE_MANY: 'student_delete_many_students'
+  },
+  LEAD: {
+    QUERY: 'data_query',
+    CREATE: 'student_add_lead',
+    UPDATE: 'data_update',
+    DELETE: 'data_delete'
+  },
+  FINANCE: {
+    GET_STUDENT_FEES: 'getstudentfees',
+    RECORD_PAYMENT: 'recordpayment',
+    GENERATE_FEE_PLAN: 'generatefeeplan',
+    PREVIEW_FEE: 'finance_preview_fee'
   },
   ACADEMIC: {
     CREATE_COURSE_TYPE: 'academic_create_course_type',
     CREATE_COURSE: 'academic_create_course',
     CREATE_BATCH: 'academic_create_batch',
     CREATE_PACKAGE: 'academic_create_package',
+    UPDATE_PACKAGE: 'academic_update_package',
+    DELETE_PACKAGE: 'academic_delete_package',
     ENROLL_STUDENT: 'academic_enroll_student'
   },
   DATA: {
     QUERY: 'data_query',
     CREATE: 'data_create',
     UPDATE: 'data_update',
-    DELETE: 'data_delete'
+    DELETE: 'data_delete',
+    DELETE_MANY: 'data_delete_many'
   },
   STAFF: {
     ONBOARD_TEACHER: 'staff_onboard_teacher',

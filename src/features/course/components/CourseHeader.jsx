@@ -38,7 +38,7 @@ const CourseHeader = ({ activeTab }) => {
           </>
         ) : (
           <Link 
-            to="/admin/courses/packages" 
+            to="/admin/packages/add" 
             className="flex-1 md:flex-none flex items-center justify-center gap-2 rounded-xl bg-primary px-6 py-2.5 text-sm font-black text-white shadow-lg shadow-primary/20 hover:bg-primary-dark transition-all active:scale-95"
           >
             <span className="material-symbols-outlined text-lg">inventory_2</span>

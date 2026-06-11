@@ -2,13 +2,21 @@ import React from 'react';
 import { useAuth } from '../../context/AuthContextCore';
 import { useTheme } from '../../context/ThemeContext';
 
-const Header = () => {
+const Header = ({ onMenuClick }) => {
   const { user } = useAuth();
   const { theme, toggleTheme } = useTheme();
 
   return (
-    <header className="flex items-center justify-between whitespace-nowrap border-b border-border-light bg-surface-light dark:bg-surface-dark dark:border-border-dark px-10 py-3 sticky top-0 z-50">
-      <div className="flex items-center gap-8">
+    <header className="flex items-center justify-between whitespace-nowrap border-b border-border-light bg-surface-light dark:bg-surface-dark dark:border-border-dark px-4 lg:px-10 py-3 sticky top-0 z-50">
+      <div className="flex items-center gap-4 lg:gap-8">
+        <button 
+          onClick={onMenuClick}
+          className="flex items-center justify-center lg:hidden p-1.5 rounded-lg text-text-secondary hover:bg-background-light dark:hover:bg-border-dark transition-colors cursor-pointer"
+          title="Toggle Navigation Menu"
+        >
+          <span className="material-symbols-outlined text-2xl">menu</span>
+        </button>
+
         <div className="flex items-center gap-4">
           <div className="size-8 text-primary flex items-center justify-center">
             <span className="material-symbols-outlined text-4xl">school</span>

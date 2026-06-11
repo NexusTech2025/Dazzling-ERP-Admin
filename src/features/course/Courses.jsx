@@ -1,7 +1,11 @@
 import React, { useState, useMemo } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
-import { useCoursesQuery, useDeleteCourseMutation, usePackagesQuery, useCourseTypesQuery } from './hooks/useCourseQueries';
+import { Link } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useCoursesQuery, useDeleteCourseMutation, usePackagesQuery, useCourseTypesQuery, useDeletePackageMutation } from './hooks/useCourseQueries';
 import { queryKeys } from '../../lib/react-query/queryKeys';
+import useSelection from '../../hooks/useSelection';
+import useDeleteManyMutation from '../../hooks/useDeleteManyMutation';
+import SelectionActionBar from '../../components/ui/v2/SelectionActionBar';
 
 // UI Components
 import DataTable from '../../components/ui/DataTable';
@@ -18,10 +22,10 @@ import PackageCard from './components/PackageCard';
 import CourseListView from './components/CourseListView';
 import CourseGridView from './components/CourseGridView';
 
-const Courses = () => {
+const Courses = ({ defaultTab = 'courses' }) => {
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState('courses');
-  const [deleteModal, setDeleteModal] = useState({ isOpen: false, id: null, name: '' });
+  const [activeTab, setActiveTab] = useState(defaultTab);
+  const [deleteModal, setDeleteModal] = useState({ isOpen: false, id: null, name: '', type: 'course', status: 'idle', resultMessage: null });
   const [viewMode, setViewMode] = useState('grid');
   const [searchQuery, setSearchQuery] = useState('');
   const [segmentFilter, setSegmentFilter] = useState('');
@@ -33,6 +37,22 @@ const Courses = () => {
   const { data: packages = [], isLoading: isLoadingPackages, error: packagesError } = usePackagesQuery();
   const { data: courseTypes = [], isLoading: isLoadingTypes, error: typesError } = useCourseTypesQuery();
   const deleteMutation = useDeleteCourseMutation();
+  const deletePackageMutation = useDeletePackageMutation();
+
+  const {
+    selectedIds,
+    toggleSelect,
+    toggleSelectAll,
+    clearSelection,
+    isAllSelected,
+    isSomeSelected
+  } = useSelection();
+
+  const deleteManyPackagesMutation = useDeleteManyMutation('Package', [
+    queryKeys.course.package.all,
+    queryKeys.course.packageItem.all,
+    queryKeys.course.packagePerk.all
+  ]);
 
   // Filter Logic - Courses
   const filteredCourses = useMemo(() => {
@@ -89,8 +109,8 @@ const Courses = () => {
     return [...new Set(segments)];
   }, [courses]);
 
-  const handleDeleteClick = (id, name) => {
-    setDeleteModal({ isOpen: true, id, name });
+  const handleDeleteClick = (id, name, type = 'course') => {
+    setDeleteModal({ isOpen: true, id, name, type, status: 'idle', resultMessage: null });
   };
 
   // --- Filter Options ---
@@ -138,62 +158,121 @@ const Courses = () => {
     value: String(i + 1)
   }));
 
-  const packageColumns = [
-    {
-      header: 'Package Name',
-      accessor: 'name',
-      cell: (row) => (
-        <div className="flex items-center gap-3">
-          <div className="size-8 rounded bg-primary/10 text-primary flex items-center justify-center font-black text-[10px]">
-            <span className="material-symbols-outlined text-sm">inventory_2</span>
+  const allPackageIds = useMemo(() => filteredPackages.map(p => p.package_id), [filteredPackages]);
+
+  const packageColumns = useMemo(() => {
+    const cols = [
+      {
+        header: 'Package Name',
+        accessor: 'name',
+        cell: (row) => (
+          <div className="flex items-center gap-3">
+            <div className="size-8 rounded bg-primary/10 text-primary flex items-center justify-center font-black text-[10px]">
+              <span className="material-symbols-outlined text-sm">inventory_2</span>
+            </div>
+            <span className="font-bold text-text-main dark:text-white">{row.name}</span>
           </div>
-          <span className="font-bold text-text-main dark:text-white">{row.name}</span>
-        </div>
-      )
-    },
-    {
-      header: 'Included Courses',
-      accessor: 'included_courses',
-      cell: (row) => (
-        <div className="flex flex-wrap gap-1 max-w-xs">
-          {row.included_courses.map((c, i) => (
-            <span key={i} className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 rounded text-[9px] font-bold text-text-secondary border border-border-light dark:border-border-dark whitespace-nowrap">
-              {c}
-            </span>
-          ))}
-        </div>
-      )
-    },
-    {
-      header: 'Price',
-      accessor: 'package_fee',
-      className: 'text-right font-black text-primary',
-      cell: (row) => `₹${row.package_fee?.toLocaleString()}`
-    },
-    {
-      header: 'Status',
-      accessor: 'status',
-      cell: (row) => (
-        <Badge variant={row.status === 'active' ? 'success' : 'default'}>
-          {row.status}
-        </Badge>
-      )
-    },
-    {
-      header: 'Actions',
-      className: 'text-right',
-      cell: (row) => (
-        <div className="flex items-center justify-end gap-1">
-          <button className="p-1.5 text-text-secondary hover:text-primary transition-colors">
-            <span className="material-symbols-outlined text-[20px]">edit</span>
-          </button>
-          <button className="p-1.5 text-text-secondary hover:text-red-500 transition-colors">
-            <span className="material-symbols-outlined text-[20px]">delete</span>
-          </button>
-        </div>
-      )
+        )
+      },
+      {
+        header: 'Included Courses',
+        accessor: 'included_courses',
+        cell: (row) => (
+          <div className="flex flex-wrap gap-1 max-w-xs">
+            {row.included_courses.map((c, i) => (
+              <span key={i} className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 rounded text-[9px] font-bold text-text-secondary border border-border-light dark:border-border-dark whitespace-nowrap">
+                {c}
+              </span>
+            ))}
+          </div>
+        )
+      },
+      {
+        header: 'Price',
+        accessor: 'package_fee',
+        className: 'text-right font-black text-primary',
+        cell: (row) => `₹${row.package_fee?.toLocaleString()}`
+      },
+      {
+        header: 'Status',
+        accessor: 'status',
+        cell: (row) => (
+          <Badge variant={row.status === 'active' ? 'success' : 'default'}>
+            {row.status}
+          </Badge>
+        )
+      },
+      {
+        header: 'Actions',
+        className: 'text-right',
+        cell: (row) => (
+          <div className="flex items-center justify-end gap-1">
+            <Link to={`/admin/packages/edit/${row.package_id}`} className="p-1.5 text-text-secondary hover:text-primary transition-colors">
+              <span className="material-symbols-outlined text-[20px]">edit</span>
+            </Link>
+            <button 
+              onClick={() => handleDeleteClick(row.package_id, row.name, 'package')}
+              className="p-1.5 text-text-secondary hover:text-red-500 transition-colors"
+            >
+              <span className="material-symbols-outlined text-[20px]">delete</span>
+            </button>
+          </div>
+        )
+      }
+    ];
+
+    return [
+      {
+        header: (
+          <input
+            type="checkbox"
+            className="size-4 rounded border-slate-350 dark:border-slate-700 bg-white dark:bg-slate-800 text-primary focus:ring-primary/20 cursor-pointer transition-all"
+            checked={isAllSelected(allPackageIds)}
+            ref={input => {
+              if (input) {
+                input.indeterminate = isSomeSelected(allPackageIds);
+              }
+            }}
+            onChange={() => toggleSelectAll(allPackageIds)}
+          />
+        ),
+        accessor: 'checkbox',
+        className: 'w-10',
+        cell: (row) => (
+          <input
+            type="checkbox"
+            className="size-4 rounded border-slate-350 dark:border-slate-700 bg-white dark:bg-slate-800 text-primary focus:ring-primary/20 cursor-pointer transition-all"
+            checked={selectedIds.includes(row.package_id)}
+            onChange={() => toggleSelect(row.package_id)}
+          />
+        )
+      },
+      ...cols
+    ];
+  }, [filteredPackages, allPackageIds, selectedIds, toggleSelect, toggleSelectAll, isAllSelected, isSomeSelected]);
+
+  const deleteMessage = useMemo(() => {
+    if (deleteModal.type === 'bulk_package') {
+      return `Are you sure you want to delete ${deleteModal.name}? This will cascadingly delete associated perks and course links. This action is permanently blocked if active student enrollments exist.`;
     }
-  ];
+    return deleteModal.type === 'package'
+      ? `Are you sure you want to delete "${deleteModal.name}"? This will cascadingly delete perks and course links. This action is blocked if students are enrolled.`
+      : `Are you sure you want to archive "${deleteModal.name}"? It will no longer be available for new enrollments.`;
+  }, [deleteModal.type, deleteModal.name]);
+
+  const deleteTitle = useMemo(() => {
+    if (deleteModal.type === 'bulk_package') {
+      return 'Delete Multiple Packages';
+    }
+    return deleteModal.type === 'package' ? 'Delete Package' : 'Archive Course';
+  }, [deleteModal.type]);
+
+  const isDeleteProcessing = useMemo(() => {
+    if (deleteModal.type === 'bulk_package') {
+      return deleteManyPackagesMutation.isPending;
+    }
+    return deleteModal.type === 'package' ? deletePackageMutation.isPending : deleteMutation.isPending;
+  }, [deleteModal.type, deleteManyPackagesMutation.isPending, deletePackageMutation.isPending, deleteMutation.isPending]);
 
   if (isLoadingCourses || isLoadingPackages || isLoadingTypes) return <LoadingState message="Scanning curriculum library..." />;
   if (coursesError || packagesError || typesError) return <ErrorState message={(coursesError || packagesError || typesError)?.message} onRetry={() => queryClient.invalidateQueries({ queryKey: queryKeys.course.all })} />;
@@ -210,6 +289,7 @@ const Courses = () => {
             value={activeTab}
             onChange={(val) => {
               setActiveTab(val);
+              clearSelection();
               setSegmentFilter('');
               setBoardFilter('');
               setClassFilter('');
@@ -294,6 +374,9 @@ const Courses = () => {
               <PackageCard
                 key={pkg.package_id}
                 pkg={pkg}
+                isSelected={selectedIds.includes(pkg.package_id)}
+                onToggleSelect={() => toggleSelect(pkg.package_id)}
+                isSelectionModeActive={selectedIds.length > 0}
               />
             )) : <NoDataFound />}
           </div>
@@ -315,15 +398,137 @@ const Courses = () => {
         </div>
       )}
 
+      {/* Floating Selection Action Bar */}
+      {activeTab === 'packages' && (
+        <SelectionActionBar
+          selectedCount={selectedIds.length}
+          itemName="package"
+          onClear={clearSelection}
+          onDeleteSelected={() => {
+            setDeleteModal({
+              isOpen: true,
+              id: selectedIds,
+              name: `${selectedIds.length} selected packages`,
+              type: 'bulk_package',
+              status: 'idle',
+              resultMessage: null
+            });
+          }}
+          onDeleteAll={() => {
+            const allIds = filteredPackages.map(p => p.package_id);
+            setDeleteModal({
+              isOpen: true,
+              id: allIds,
+              name: `all ${allIds.length} packages matching current filters`,
+              type: 'bulk_package',
+              status: 'idle',
+              resultMessage: null
+            });
+          }}
+        />
+      )}
+
       <ConfirmModal
         isOpen={deleteModal.isOpen}
-        onClose={() => setDeleteModal({ isOpen: false, id: null, name: '' })}
-        onConfirm={() => deleteMutation.mutate({ id: deleteModal.id }, {
-          onSuccess: () => setDeleteModal({ isOpen: false, id: null, name: '' })
-        })}
-        title="Archive Course"
-        message={`Are you sure you want to archive "${deleteModal.name}"? It will no longer be available for new enrollments.`}
-        isProcessing={deleteMutation.isPending}
+        status={deleteModal.status}
+        resultMessage={deleteModal.resultMessage}
+        onClose={() => setDeleteModal({ isOpen: false, id: null, name: '', type: 'course', status: 'idle', resultMessage: null })}
+        onConfirm={() => {
+          setDeleteModal(prev => ({ ...prev, status: 'processing' }));
+          if (deleteModal.type === 'bulk_package') {
+            deleteManyPackagesMutation.mutate({ ids: deleteModal.id }, {
+              onSuccess: (res) => {
+                if (res.success) {
+                  const manifest = res.data?.manifest || {};
+                  const deleted = manifest.deleted || [];
+                  const failed = manifest.failed || {};
+                  const failedCount = Object.keys(failed).length;
+                  
+                  let msg = `Successfully deleted ${deleted.length} packages.`;
+                  if (failedCount > 0) {
+                    msg += ` Failed to delete ${failedCount} packages due to referential constraints.`;
+                  }
+                  
+                  setDeleteModal(prev => ({
+                    ...prev,
+                    status: failedCount > 0 && deleted.length === 0 ? 'error' : 'success',
+                    resultMessage: msg
+                  }));
+                  
+                  if (deleted.length > 0) {
+                    clearSelection();
+                  }
+                } else {
+                  setDeleteModal(prev => ({
+                    ...prev,
+                    status: 'error',
+                    resultMessage: res.message || 'Failed to delete packages.'
+                  }));
+                }
+              },
+              onError: (err) => {
+                setDeleteModal(prev => ({
+                  ...prev,
+                  status: 'error',
+                  resultMessage: err.message || 'An unexpected error occurred.'
+                }));
+              }
+            });
+          } else if (deleteModal.type === 'package') {
+            deletePackageMutation.mutate({ id: deleteModal.id }, {
+              onSuccess: (res) => {
+                if (res.success) {
+                  setDeleteModal(prev => ({
+                    ...prev,
+                    status: 'success',
+                    resultMessage: `Package "${deleteModal.name}" was successfully deleted.`
+                  }));
+                } else {
+                  setDeleteModal(prev => ({
+                    ...prev,
+                    status: 'error',
+                    resultMessage: res.error?.message || `Failed to delete package: ${res.message || 'Unknown error'}`
+                  }));
+                }
+              },
+              onError: (err) => {
+                setDeleteModal(prev => ({
+                  ...prev,
+                  status: 'error',
+                  resultMessage: err.message || 'An unexpected server error occurred.'
+                }));
+              }
+            });
+          } else {
+            deleteMutation.mutate({ id: deleteModal.id }, {
+              onSuccess: (res) => {
+                if (res.success) {
+                  setDeleteModal(prev => ({
+                    ...prev,
+                    status: 'success',
+                    resultMessage: `Course "${deleteModal.name}" was successfully archived.`
+                  }));
+                } else {
+                  setDeleteModal(prev => ({
+                    ...prev,
+                    status: 'error',
+                    resultMessage: res.error?.message || `Failed to archive course: ${res.message || 'Unknown error'}`
+                  }));
+                }
+              },
+              onError: (err) => {
+                setDeleteModal(prev => ({
+                  ...prev,
+                  status: 'error',
+                  resultMessage: err.message || 'An unexpected server error occurred.'
+                }));
+              }
+            });
+          }
+        }}
+        title={deleteTitle}
+        message={deleteMessage}
+        isProcessing={isDeleteProcessing}
       />
     </div>
   );

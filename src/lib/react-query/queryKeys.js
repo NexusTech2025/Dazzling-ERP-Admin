@@ -17,6 +17,13 @@ export const queryKeys = {
     detail: (id) => [...queryKeys.student.details(), id],
     profile: (id) => [...queryKeys.student.all, 'profile', id],
   },
+  lead: {
+    all: ['lead'],
+    lists: () => [...queryKeys.lead.all, 'list'],
+    list: (filter = EMPTY_FILTER) => [...queryKeys.lead.lists(), { filter }],
+    details: () => [...queryKeys.lead.all, 'detail'],
+    detail: (id) => [...queryKeys.lead.details(), id],
+  },
   teacher: {
     all: ['teacher'],
     lists: () => [...queryKeys.teacher.all, 'list'],
@@ -39,6 +46,14 @@ export const queryKeys = {
       all: ['package'],
       list: (filter = EMPTY_FILTER) => [...queryKeys.course.package.all, 'list', { filter }],
       detail: (id) => [...queryKeys.course.package.all, 'detail', id],
+    },
+    packageItem: {
+      all: ['package-item'],
+      list: () => [...queryKeys.course.packageItem.all, 'list'],
+    },
+    packagePerk: {
+      all: ['package-perk'],
+      list: () => [...queryKeys.course.packagePerk.all, 'list'],
     }
   },
   batch: {
@@ -62,6 +77,11 @@ export const queryKeys = {
     list: (filter = EMPTY_FILTER) => [...queryKeys.branch.all, 'list', { filter }],
     detail: (id) => [...queryKeys.branch.all, 'detail', id],
   },
+  staff: {
+    all: ['staff'],
+    lists: () => [...queryKeys.staff.all, 'list'],
+    list: (filter = EMPTY_FILTER) => [...queryKeys.staff.lists(), { filter }],
+  },
   finance: {
     all: ['finance'],
     installment: {
@@ -72,6 +92,14 @@ export const queryKeys = {
     revenue: {
       all: ['finance', 'revenue'],
       summary: ['finance', 'revenue', 'summary'],
+    },
+    transaction: {
+      all: ['finance', 'transaction'],
+      list: (filter = EMPTY_FILTER) => [...queryKeys.finance.transaction.all, 'list', { filter }],
+    },
+    category: {
+      all: ['finance', 'category'],
+      list: (filter = EMPTY_FILTER) => [...queryKeys.finance.category.all, 'list', { filter }],
     },
     overdue: (filter = EMPTY_FILTER) => ['finance', 'overdue', { filter }],
     payments: (filter = EMPTY_FILTER) => ['finance', 'payments', { filter }],

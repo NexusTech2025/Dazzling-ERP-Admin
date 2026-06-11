@@ -19,9 +19,11 @@ import Reports from '../pages/admin/Reports';
 import Settings from '../pages/admin/Settings';
 import AddStudent from '../pages/admin/AddStudent';
 import AddTeacher from '../pages/admin/AddTeacher';
+import StudentLeads from '../pages/admin/StudentLeads';
 import TestFilters from '../pages/admin/TestFilters';
 import TestButtons from '../pages/admin/TestButtons';
 import TestProfileComponents from '../pages/admin/TestProfileComponents';
+import TestPrototype from '../pages/admin/TestPrototype';
 
 // Feature Pages
 import Courses from '../features/course/Courses';
@@ -35,6 +37,7 @@ import Installments from '../features/finance/Installments';
 import OverdueAccounts from '../features/finance/OverdueAccounts';
 import FeePlanWizard from '../features/finance/FeePlanWizard';
 import StudentFeeOverview from '../features/finance/StudentFeeOverview';
+import MoneyTransactions from '../features/finance/transactions/MoneyTransactions';
 
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated } = useAuth();
@@ -69,6 +72,7 @@ const AppRoutes = () => {
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="students" element={<Students />} />
         <Route path="students/add" element={<AddStudent />} />
+        <Route path="students/leads" element={<StudentLeads />} />
         <Route path="students/:id" element={<StudentProfile />} />
         
         {/* Batch Management */}
@@ -91,10 +95,11 @@ const AppRoutes = () => {
         <Route path="courses/types" element={<CourseTypes />} />
         <Route path="courses/add" element={<AddCourse />} />
         <Route path="courses/edit/:id" element={<AddCourse />} />
-        <Route path="courses/packages" element={<CoursePackagesForm />} />
         <Route path="courses/:id" element={<CourseDetails />} />
         
         {/* Package specialized routes */}
+        <Route path="packages" element={<Courses defaultTab="packages" />} />
+        <Route path="packages/add" element={<CoursePackagesForm />} />
         <Route path="packages/:id" element={<PackageDetails />} />
         <Route path="packages/edit/:id" element={<CoursePackagesForm />} />
 
@@ -104,6 +109,7 @@ const AppRoutes = () => {
         <Route path="finance/overdue" element={<OverdueAccounts />} />
         <Route path="finance/fee-plan" element={<FeePlanWizard />} />
         <Route path="finance/student/:id" element={<StudentFeeOverview />} />
+        <Route path="finance/transactions" element={<MoneyTransactions />} />
 
         <Route path="roles" element={<Roles />} />
         <Route path="reports" element={<Reports />} />
@@ -114,6 +120,7 @@ const AppRoutes = () => {
           <Route path="filters" element={<TestFilters />} />
           <Route path="buttons" element={<TestButtons />} />
           <Route path="profile-core" element={<TestProfileComponents />} />
+          <Route path="prototype" element={<TestPrototype />} />
         </Route>
       </Route>
       

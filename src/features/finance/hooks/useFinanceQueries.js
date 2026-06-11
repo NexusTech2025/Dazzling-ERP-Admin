@@ -1,13 +1,23 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../../context/AuthContextCore';
 import { queryKeys } from '../../../lib/react-query/queryKeys';
+import { useDeleteManyMutation } from '../../../hooks/useDeleteManyMutation';
 import { 
   fetchInstallments, 
   fetchRevenueSummary, 
   fetchOverdueAccounts, 
   fetchStudentFeeOverview,
   recordPayment,
-  generateFeePlan
+  generateFeePlan,
+  fetchMoneyTransactions,
+  createMoneyTransaction,
+  updateMoneyTransaction,
+  deleteMoneyTransaction,
+  fetchExpenseCategories,
+  createExpenseCategory,
+  updateExpenseCategory,
+  deleteExpenseCategory,
+  fetchStaffMembers
 } from '../api/finance.api';
 
 /**
@@ -117,5 +127,172 @@ export const useGenerateFeePlanMutation = () => {
         queryClient.invalidateQueries({ queryKey: queryKeys.finance.all });
       }
     }
+  });
+};
+
+/**
+ * Hook for fetching money transactions
+ */
+export const useMoneyTransactionsQuery = (filter = {}) => {
+  const { token } = useAuth();
+
+  return useQuery({
+    queryKey: queryKeys.finance.transaction.list(filter),
+    queryFn: async ({ signal }) => {
+      const response = await fetchMoneyTransactions(token, filter, { signal });
+      if (!response.success) {
+        throw new Error(response.error?.message || response.message || 'Failed to fetch money transactions');
+      }
+      return response.data?.data || [];
+    },
+    enabled: !!token,
+  });
+};
+
+/**
+ * Hook for creating a money transaction
+ */
+export const useCreateMoneyTransactionMutation = () => {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data) => createMoneyTransaction(token, data),
+    onSuccess: (response) => {
+      if (response.success) {
+        // Invalidate both transactions list and finance summary
+        queryClient.invalidateQueries({ queryKey: queryKeys.finance.all });
+      }
+    }
+  });
+};
+
+/**
+ * Hook for updating a money transaction
+ */
+export const useUpdateMoneyTransactionMutation = () => {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, data }) => updateMoneyTransaction(token, id, data),
+    onSuccess: (response) => {
+      if (response.success) {
+        queryClient.invalidateQueries({ queryKey: queryKeys.finance.all });
+      }
+    }
+  });
+};
+
+/**
+ * Hook for deleting a money transaction
+ */
+export const useDeleteMoneyTransactionMutation = () => {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id) => deleteMoneyTransaction(token, id),
+    onSuccess: (response) => {
+      if (response.success) {
+        queryClient.invalidateQueries({ queryKey: queryKeys.finance.all });
+      }
+    }
+  });
+};
+
+/**
+ * Hook for bulk deleting money transactions
+ */
+export const useDeleteManyMoneyTransactionsMutation = () => {
+  return useDeleteManyMutation('MoneyTransaction', [queryKeys.finance.all]);
+};
+
+/**
+ * Hook for fetching expense categories
+ */
+export const useExpenseCategoriesQuery = (filter = {}) => {
+  const { token } = useAuth();
+
+  return useQuery({
+    queryKey: queryKeys.finance.category.list(filter),
+    queryFn: async ({ signal }) => {
+      const response = await fetchExpenseCategories(token, filter, { signal });
+      if (!response.success) {
+        throw new Error(response.error?.message || response.message || 'Failed to fetch expense categories');
+      }
+      return response.data?.data || [];
+    },
+    enabled: !!token,
+  });
+};
+
+/**
+ * Hook for creating an expense category
+ */
+export const useCreateExpenseCategoryMutation = () => {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data) => createExpenseCategory(token, data),
+    onSuccess: (response) => {
+      if (response.success) {
+        queryClient.invalidateQueries({ queryKey: queryKeys.finance.category.all });
+      }
+    }
+  });
+};
+
+/**
+ * Hook for updating an expense category
+ */
+export const useUpdateExpenseCategoryMutation = () => {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, data }) => updateExpenseCategory(token, id, data),
+    onSuccess: (response) => {
+      if (response.success) {
+        queryClient.invalidateQueries({ queryKey: queryKeys.finance.category.all });
+      }
+    }
+  });
+};
+
+/**
+ * Hook for deleting an expense category
+ */
+export const useDeleteExpenseCategoryMutation = () => {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id) => deleteExpenseCategory(token, id),
+    onSuccess: (response) => {
+      if (response.success) {
+        queryClient.invalidateQueries({ queryKey: queryKeys.finance.category.all });
+      }
+    }
+  });
+};
+
+/**
+ * Hook for fetching support staff members
+ */
+export const useStaffMembersQuery = (filter = {}) => {
+  const { token } = useAuth();
+
+  return useQuery({
+    queryKey: queryKeys.staff.list(filter),
+    queryFn: async ({ signal }) => {
+      const response = await fetchStaffMembers(token, filter, { signal });
+      if (!response.success) {
+        throw new Error(response.error?.message || response.message || 'Failed to fetch staff members');
+      }
+      return response.data?.data || [];
+    },
+    enabled: !!token,
   });
 };

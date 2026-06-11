@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../context/AuthContextCore';
-import { deleteTeacher } from '../../services/api';
+import { removeTeacher as deleteTeacher } from '../../features/teacher/api/teacher.api';
 import { useTeachers } from '../../hooks/useTeachers';
 import { useFilteredTeachers } from '../../hooks/useFilteredTeachers';
 import DataTable from '../../components/ui/DataTable';

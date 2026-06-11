@@ -4,6 +4,7 @@ import { apiClient } from '../services/apiClient';
 import { API_REGISTRY } from '../services/apiRegistry';
 import { queryKeys, EMPTY_FILTER } from '../lib/react-query/queryKeys';
 import { normalizeBatchList } from '../features/batch/utils/batchMappers';
+import { normalizeCourseList } from '../features/course/utils/courseMappers';
 
 /**
  * useErpHydration: Strategy 1 - App Initialization Guard
@@ -21,7 +22,7 @@ export const useErpHydration = () => {
     'Teacher': { query_key: queryKeys.teacher, response_key: 'teachers' },
     'Student': { query_key: queryKeys.student, response_key: 'students' },
     'Batch': { query_key: queryKeys.batch, response_key: 'batches' },
-    'Branch': { query_key: queryKeys.branch, response_key: 'branches' },
+    'Branch': { query_key: queryKeys.branch, response_key: 'branchs' },
   };
 
   const HYDRATION_TARGETS = Object.keys(HYDRATION_CONFIG);
@@ -59,6 +60,8 @@ export const useErpHydration = () => {
 
           if (targetName === 'Batch') {
             records = normalizeBatchList(records);
+          } else if (targetName === 'Course') {
+            records = normalizeCourseList(records);
           }
 
           console.log(`💧 Hydrating ${targetName}: ${records.length} records found.`);

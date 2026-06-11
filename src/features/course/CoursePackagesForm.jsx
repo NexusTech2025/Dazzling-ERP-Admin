@@ -35,15 +35,15 @@ const CoursePackagesForm = () => {
   const [error, setError] = useState(null);
   
   const [formData, setFormData] = useState({
-    packageId: `PKG-${Date.now().toString().slice(-6)}`,
+    package_id: `PKG-${Date.now().toString().slice(-6)}`,
     name: '',
     description: '',
-    segmentId: 'SEG-ACA',
-    targetClass: '9',
+    segment_id: 'SEG-ACA',
+    target_class: '9',
     board: 'CBSE',
     month: 12,
-    packageFee: '0.00',
-    recurringBilling: false,
+    package_fee: '0.00',
+    recurring_billing: false,
     status: 'active'
   });
 
@@ -59,7 +59,7 @@ const CoursePackagesForm = () => {
 
   const breadcrumbItems = [
     { label: 'Home', path: '/admin/dashboard', icon: 'home' },
-    { label: 'Courses', path: '/admin/courses' },
+    { label: 'Packages', path: '/admin/packages' },
     { label: isEditMode ? 'Edit Package' : 'Create Package' }
   ];
 
@@ -67,15 +67,15 @@ const CoursePackagesForm = () => {
   useEffect(() => {
     if (isEditMode && existingPkg) {
       setFormData({
-        packageId: existingPkg.package_id,
+        package_id: existingPkg.package_id,
         name: existingPkg.name,
         description: existingPkg.description || '',
-        segmentId: existingPkg.segment_id || 'SEG-ACA',
-        targetClass: existingPkg.target_class || '9',
+        segment_id: existingPkg.segment_id || 'SEG-ACA',
+        target_class: existingPkg.target_class || '9',
         board: existingPkg.board || 'CBSE',
         month: existingPkg.month || 12,
-        packageFee: String(existingPkg.package_fee || existingPkg.base_fee),
-        recurringBilling: !!existingPkg.recurring_billing,
+        package_fee: String(existingPkg.package_fee || existingPkg.base_fee),
+        recurring_billing: !!existingPkg.recurring_billing,
         status: existingPkg.status || 'active'
       });
       setSelectedCourses(existingPkg.courses || []);
@@ -85,15 +85,15 @@ const CoursePackagesForm = () => {
       setSelectedCourses([]);
       setPerks([]);
       setFormData({
-        packageId: `PKG-${Date.now().toString().slice(-6)}`,
+        package_id: `PKG-${Date.now().toString().slice(-6)}`,
         name: '',
         description: '',
-        segmentId: 'SEG-ACA',
-        targetClass: '9',
+        segment_id: 'SEG-ACA',
+        target_class: '9',
         board: 'CBSE',
         month: 12,
-        packageFee: '0.00',
-        recurringBilling: false,
+        package_fee: '0.00',
+        recurring_billing: false,
         status: 'active'
       });
     }
@@ -104,10 +104,10 @@ const CoursePackagesForm = () => {
   }, [selectedCourses]);
 
   const savingsPercent = useMemo(() => {
-    const fee = parseFloat(formData.packageFee) || 0;
+    const fee = parseFloat(formData.package_fee) || 0;
     if (aggregateValue === 0 || fee === 0) return 0;
     return Math.round(((aggregateValue - fee) / aggregateValue) * 100);
-  }, [aggregateValue, formData.packageFee]);
+  }, [aggregateValue, formData.package_fee]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -125,20 +125,32 @@ const CoursePackagesForm = () => {
     }
     
     const payload = {
-      ...formData,
-      package_id: formData.packageId,
-      package_fee: Number(formData.packageFee),
-      base_fee: Number(formData.packageFee),
+      name: formData.name,
+      description: formData.description,
+      target_class: formData.target_class,
+      board: formData.board,
+      month: Number(formData.month) || 12,
+      package_fee: Number(formData.package_fee),
       discount_percent: savingsPercent,
-      included_courses: selectedCourses.map(c => c.name),
-      perks: perks,
-      courses: selectedCourses
+      status: formData.status,
+      segment_id: formData.segment_id, // keep segment_id for frontend indexing if needed
+      recurring_billing: !!formData.recurring_billing,
+      courses: selectedCourses.map(c => ({
+        entity_type: 'course',
+        entity_id: c.course_id
+      })),
+      perks: perks.map(p => ({
+        perk_title: p.perk_title,
+        perk_description: p.perk_description,
+        icon: p.icon || 'check-square',
+        display_order: Number(p.display_order) || 1
+      }))
     };
 
     const mutationOptions = {
       onSuccess: (res) => {
         if (res.success) {
-          navigate(isEditMode ? `/admin/packages/${id}` : '/admin/courses');
+          navigate(isEditMode ? `/admin/packages/${id}` : '/admin/packages');
         } else {
           setError(res.error?.message || 'Operation failed.');
         }
@@ -220,15 +232,15 @@ const CoursePackagesForm = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FormInput 
                 label="Package ID" 
-                value={formData.packageId} 
+                value={formData.package_id} 
                 readOnly 
                 icon="fingerprint" 
                 className="opacity-60" 
               />
               <FormSelect 
                 label="Category Segment" 
-                name="segmentId" 
-                value={formData.segmentId} 
+                name="segment_id" 
+                value={formData.segment_id} 
                 onChange={handleChange} 
                 options={segmentOptions} 
                 icon="category" 
@@ -366,8 +378,8 @@ const CoursePackagesForm = () => {
             <div className="space-y-6">
               <FormSelect 
                 label="Target Class" 
-                name="targetClass" 
-                value={formData.targetClass} 
+                name="target_class" 
+                value={formData.target_class} 
                 onChange={handleChange} 
                 options={classOptions} 
                 icon="school" 
@@ -409,9 +421,9 @@ const CoursePackagesForm = () => {
                 
                 <FormInput 
                   label="Total Package Fee (₹)" 
-                  name="packageFee" 
+                  name="package_fee" 
                   type="number" 
-                  value={formData.packageFee} 
+                  value={formData.package_fee} 
                   onChange={handleChange} 
                   icon="payments" 
                   className="font-bold"
@@ -428,8 +440,8 @@ const CoursePackagesForm = () => {
                 <label className="relative inline-flex items-center cursor-pointer">
                   <input 
                     type="checkbox" 
-                    name="recurringBilling"
-                    checked={formData.recurringBilling}
+                    name="recurring_billing"
+                    checked={formData.recurring_billing}
                     onChange={handleChange}
                     className="sr-only peer" 
                   />
