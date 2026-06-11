@@ -105,6 +105,31 @@ Below is the subtask checklist for each sidebar navigation section to ensure CRU
 
 ## 3. Changelogs
 
+### [2026-05-27T23:41:00+05:30] Created Section Architecture Reference Guide
+- **Feature**: Developer Knowledge Base (`.gemini/memory/knowledge/`)
+- **Changes**:
+  - Authored the production-grade [how_to_add_new_section.md](file:///e:/NAST/Dazzling/ERP%20System/dazzling-erp-admin/.gemini/memory/knowledge/how_to_add_new_section.md) manual.
+  - Specified API-client routing, JSDoc types, cache details fallback patterns, and Atomic V2 form implementation rules.
+
+### [2026-05-27T21:52:00+05:30] Aligned BatchCard Schema details from Cache
+- **Feature**: Student Registration Wizard (`/admin/students/add`)
+- **Changes**:
+  - Updated [BatchCard.jsx](file:///e:/NAST/Dazzling/ERP%20System/dazzling-erp-admin/src/features/batch/components/BatchCard.jsx) to query and hydratate Course, Teacher, and Branch labels dynamically from the React Query cache using relational ID keys.
+  - Displayed localized branch name, timetable/schedules, and class capacity parameters cleanly on each card.
+
+### [2026-05-27T21:48:00+05:30] Decoupled Batch Selection Card Component
+- **Feature**: Student Registration Wizard (`/admin/students/add`)
+- **Changes**:
+  - Created a reusable [BatchCard.jsx](file:///e:/NAST/Dazzling/ERP%20System/dazzling-erp-admin/src/features/batch/components/BatchCard.jsx) component under `src/features/batch/components/`.
+  - Integrated [BatchCard](file:///e:/NAST/Dazzling/ERP%20System/dazzling-erp-admin/src/features/batch/components/BatchCard.jsx) in [AcademicEnrollmentStep.jsx](file:///e:/NAST/Dazzling/ERP%20System/dazzling-erp-admin/src/features/student/registration/steps/AcademicEnrollmentStep.jsx) to handle active batch selection cards cleanly.
+
+### [2026-05-27T21:05:00+05:30] Configured API Base URL Dynamically
+- **Feature**: Student Directory (`/admin/students`)
+- **Changes**:
+  - Hardened `useDeleteStudentMutation` in [useStudentQueries.js](file:///e:/NAST/Dazzling/ERP%20System/dazzling-erp-admin/src/features/student/hooks/useStudentQueries.js) by validating the student ID parameter and verifying responses.
+  - Implemented try-catch blocks to catch and parse network exceptions (including Axios server errors) and database-level failures.
+  - Propagated descriptive and meaningful error messages to standard React Query error objects, ensuring correct UI feedback.
+
 ### [2026-05-27T20:57:00+05:30] Enhanced Student Deletion Mutation Robustness
 - **Feature**: Student Directory (`/admin/students`)
 - **Changes**:

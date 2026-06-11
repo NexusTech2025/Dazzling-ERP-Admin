@@ -9,7 +9,7 @@ The project follows a "Feature Slice" inspired pattern located in `src/features/
 ### Feature Directory Structure
 ```
 src/features/[domain]/
-├── api/             # Data fetching logic (mock & real)
+├── api/             # Data fetching logic & mock data (never use mock APIs)
 ├── components/      # Feature-specific UI
 │   ├── profile/     # Deep-dive dashboard components
 │   └── forms/       # Creation/Edit forms
@@ -62,7 +62,7 @@ Modern forms in the ERP (e.g., `AddTeacher.jsx`) have moved from static hardcode
 
 ## 7. Schema-UI Synchronization (The Source of Truth)
 
-All UI field names and data payloads **MUST** align perfectly with the backend `full_schema.json`.
+All UI field names and data payloads **MUST** align perfectly with the backend decoupled JSON schemas located in the new schema directory under `E:\NAST\Dazzling\GAS\DazzlingDB\Config\Schema`.
 
 ### Standards:
 - **Field Naming**: Replace legacy UI-centric names with database-accurate names (e.g., `course_name` -> `name` in Course model).
@@ -71,5 +71,5 @@ All UI field names and data payloads **MUST** align perfectly with the backend `
 
 ## 8. Development Workflow: Schema-Driven
 
-- **Source of Truth**: `src/Schema/full_schema.json` defines all data structures.
-- **Mocking Engine**: Every feature has a `.mockApi.js` that simulates database interactions based on the `full_schema`, allowing for rapid prototyping and offline development.
+- **Source of Truth**: The decoupled domain-grouped files inside `E:\NAST\Dazzling\GAS\DazzlingDB\Config\Schema` define all data structures.
+- **Mock Data Engine**: Every feature is driven by mock data. To ensure reliability and client-server consistency, the system **never uses any mock APIs**; instead, it consumes structured local mock data based directly on these domain-grouped JSON schema structures.

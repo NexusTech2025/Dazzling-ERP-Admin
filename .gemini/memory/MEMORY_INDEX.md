@@ -6,10 +6,11 @@ This file serves as the central directory map for the project's architectural me
 
 | File | Description | Last Updated |
 |---|---|---|
-| `architecture.md` | System-wide design patterns (V2, Hydration, Mappers). | 2026-05-18 |
-| `schema_design.md` | Database entity standards and field alignment rules. | 2026-05-18 |
+| `architecture.md` | System-wide design patterns (V2, Hydration, Mappers). | 2026-06-02 |
+| `schema_design.md` | Database entity standards and field alignment rules. | 2026-06-02 |
 | `components.md` | Catalog of structural and compound UI components. | 2026-05-18 |
-| `anti_patterns.md` | Ledger of failed approaches and critical bug fixes. | 2026-05-18 |
+| `models.md` | Catalog of popup modals (e.g. ConfirmModal) and error popups. | 2026-06-03 |
+| `anti_patterns.md` | Ledger of failed approaches and critical bug fixes. | 2026-06-02 |
 | `query_dsl.md` | TanStack Query implementation and DSL rules. | 2026-05-14 |
 | `api_design.md` | API Client, Registry, and Envelope standards. | 2026-05-14 |
 | `course_api_specs.md` | Specific API specifications for courses. | 2026-05-14 |
@@ -18,6 +19,11 @@ This file serves as the central directory map for the project's architectural me
 | `ui_component/` | Directory for atomic UI primitives and specialized inputs. | 2026-05-14 |
 
 ## Recent Session Updates
+
+### Session: `chat.update_schema_location_references.md` (2026-06-02)
+- **Feature**: Database Schema Migration to Decoupled domain folders.
+- **Architectural Shift**: Migrated memory references, developer checklists, and system guidelines from the obsolete `full_schemav3.json` to the decoupled domain-grouped JSON schemas located under `E:\NAST\Dazzling\GAS\DazzlingDB\Config\Schema`.
+- **Workflow Update**: Clarified that features are driven by structured mock data directly and never utilize mock APIs.
 
 ### Session: `chat.plan_lifecycle_and_organization.md` (2026-05-25)
 - **Feature**: Plan & Walkthrough directory tree organization.

@@ -150,7 +150,7 @@ const isPaid = inst.status === 'Paid'; // Will always be false if DB returns 'pa
 ```
 
 ### The Fix
-Always align status casing precisely with the schema definitions (`full_schema.json`), which standardizes on lowercase for statuses and enums.
+Always align status casing precisely with the schema definitions inside the decoupled schema folder (`Config/Schema/`), which standardizes on lowercase for statuses and enums.
 
 **✅ GOOD:**
 ```jsx
