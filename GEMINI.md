@@ -16,8 +16,10 @@ Welcome! This file documents our established architectural patterns, UI standard
 8. **No Reversions**: Do not roll back, undo, or overwrite completed files or features unless explicitly requested to.
 9. **Explain Critical Commands**: Before running shell or CLI commands that modify files, explain their purpose and scope.
 10. **Prioritize Security**: Never log, expose, or commit secrets, credentials, tokens, or API keys.
-11. **Primary Database Schema**: The local `src/Schema` directory is outdated and **MUST NOT** be followed. Refer exclusively to `E:\NAST\Dazzling\GAS\DazzlingDB\full_schemav3.json` (schema version 2.0.1) as the primary source of truth for all database tables and fields.
+11. **Primary Database Schema**: The local `src/Schema` directory is outdated and **MUST NOT** be followed. Refer exclusively to the decoupled, domain-grouped JSON schema files inside `E:\NAST\Dazzling\GAS\DazzlingDB\Config\Schema\` as the primary source of truth for all database tables and fields.
 12. **REST API Documentation**: Refer to `E:\NAST\Dazzling\GAS\DazzlingDB\REST-api-doc.md` for the official REST API request/response format rules during code editing, debugging, or diagnostics. If the rules for a specific REST API action are undefined or ambiguous, notify the user immediately before proceeding.
+13. **Centralized Query Keys**: Always define and reference React Query cache keys exclusively via the centralized Query Key Factory in [queryKeys.js](file:///e:/NAST/Dazzling/ERP%20System/dazzling-erp-admin/src/lib/react-query/queryKeys.js). Do not write raw query key arrays inline in hooks or mutations; use the factory methods to prevent cache collisions and guarantee invalidation consistency.
+14. **Shell Execution Rule**: Do NOT run any terminal or shell commands with the `cmd /c` prefix. Invoke commands directly (e.g. `git status` instead of `cmd /c git status`).
 
 ---
 
@@ -116,7 +118,7 @@ To ensure that both future AI agents and human developers have immediate local a
 ## 6. Database Schema Source of Truth
 
 *   **Outdated Schema Directory**: The directory `src/Schema/` is completely deprecated and **MUST NOT** be used or referenced for schema definitions.
-*   **Primary Source of Truth**: The database schema contract is defined in `E:\NAST\Dazzling\GAS\DazzlingDB\full_schemav3.json` (schema version 2.0.1). Always refer to this master file for table columns, constraints, relations, and primary keys.
+*   **Primary Source of Truth**: The database schema contract is defined in the decoupled JSON files grouped by domain under `E:\NAST\Dazzling\GAS\DazzlingDB\Config\Schema\`. Always refer to these specific files (e.g., `Students/Student.json`, `Staff/Teacher.json`) for table columns, constraints, relations, and primary keys.
 
 ---
 

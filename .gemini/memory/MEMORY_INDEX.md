@@ -11,6 +11,7 @@ This file serves as the central directory map for the project's architectural me
 | `components.md` | Catalog of structural and compound UI components. | 2026-05-18 |
 | `models.md` | Catalog of popup modals (e.g. ConfirmModal) and error popups. | 2026-06-03 |
 | `anti_patterns.md` | Ledger of failed approaches and critical bug fixes. | 2026-06-02 |
+| `anti_patterns/` | Directory of detailed anti-pattern breakdowns and blogs. | 2026-06-11 |
 | `query_dsl.md` | TanStack Query implementation and DSL rules. | 2026-05-14 |
 | `api_design.md` | API Client, Registry, and Envelope standards. | 2026-05-14 |
 | `course_api_specs.md` | Specific API specifications for courses. | 2026-05-14 |

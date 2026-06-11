@@ -50,6 +50,8 @@ export const API_REGISTRY = {
     UPDATE_TEACHER: 'staff_update_teacher',
     ASSIGN_SUBJECTS: 'staff_assign_subjects',
     MARK_ATTENDANCE: 'staff_mark_attendance',
+    MARK_ATTENDANCE_BULK: 'staff_mark_attendance_bulk',
+    QUERY_ATTENDANCE: 'staff_query_attendance',
     RECORD_PAYMENT: 'staff_record_payment',
     SET_SALARY_CONFIG: 'staff_set_salary_config',
     ADD_DOCUMENT: 'staff_add_document'
@@ -75,9 +77,10 @@ export const API_REGISTRY = {
     GET_MASTER_TIMETABLE: 'batch_get_master_timetable'
   },
   ATTENDANCE: {
-    GET_BATCH_REGISTRY: 'attendance_get_batch_registry',
-    GET_MATRIX: 'attendance_get_matrix',
-    MARK: 'staff_mark_attendance',
+    GET_BATCH_REGISTRY: 'student_query_attendance',
+    GET_MATRIX: 'student_query_attendance',
+    MARK: 'student_mark_attendance',
+    MARK_BULK: 'student_mark_attendance_bulk',
     GET_STUDENT_STATS: 'attendance_get_student_stats'
   }
 };

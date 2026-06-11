@@ -38,7 +38,15 @@ const Sidebar = ({ isOpen, onClose }) => {
         { name: 'New Registration', path: '/admin/students/add' }
       ]
     },
-    { name: 'Teachers', path: '/admin/teachers', icon: 'person_apron' },
+    { 
+      name: 'Teachers', 
+      icon: 'person_apron',
+      subItems: [
+        { name: 'Teacher Directory', path: '/admin/teachers' },
+        { name: 'Teacher Attendance', path: '/admin/teachers/attendance' },
+        { name: 'New Teacher', path: '/admin/teachers/add' }
+      ]
+    },
   ];
 
   const adminItems = [
@@ -96,6 +104,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                   key={subItem.path}
                   to={subItem.path}
                   onClick={onClose}
+                  end
                   className={({ isActive }) =>
                     `text-sm py-2 px-3 rounded-md transition-colors ${
                       isActive

@@ -77,15 +77,15 @@ export const useTeacherAttendanceQuery = (teacherId) => {
   const { token } = useAuth();
 
   return useQuery({
-    queryKey: [...queryKeys.teacher.detail(teacherId), 'attendance'],
+    queryKey: queryKeys.teacher.attendanceProfile(teacherId, 'all'),
     queryFn: async ({ signal }) => {
       const response = await apiClient.executeAction(
-        API_REGISTRY.DATA.QUERY,
-        { target: 'TeacherAttendance', where: { teacher_id: teacherId } },
+        API_REGISTRY.STAFF.QUERY_ATTENDANCE,
+        { where: { teacher_id: teacherId } },
         token,
         { signal }
       );
-      return response.data?.data || [];
+      return Array.isArray(response.data) ? response.data : (response.data?.data || []);
     },
     enabled: !!token && !!teacherId,
     staleTime: 1000 * 60 * 5, // 5 minutes
@@ -94,7 +94,30 @@ export const useTeacherAttendanceQuery = (teacherId) => {
 };
 
 /**
- * Hook for updating teacher attendance
+ * Hook for fetching daily teacher attendance registry
+ */
+export const useTeacherAttendanceListQuery = (date) => {
+  const { token } = useAuth();
+
+  return useQuery({
+    queryKey: queryKeys.teacher.attendanceDaily(date),
+    queryFn: async ({ signal }) => {
+      const response = await apiClient.executeAction(
+        API_REGISTRY.STAFF.QUERY_ATTENDANCE,
+        { where: { attendance_date: date } },
+        token,
+        { signal }
+      );
+      return Array.isArray(response.data) ? response.data : (response.data?.data || []);
+    },
+    enabled: !!token && !!date,
+    staleTime: 1000 * 60 * 2, // 2 minutes
+    refetchOnWindowFocus: false,
+  });
+};
+
+/**
+ * Hook for updating teacher attendance (single)
  */
 export const useUpdateTeacherAttendanceMutation = () => {
   const { token } = useAuth();
@@ -104,13 +127,43 @@ export const useUpdateTeacherAttendanceMutation = () => {
     mutationFn: ({ teacherId, date, data, options }) =>
       apiClient.executeAction(
         API_REGISTRY.STAFF.MARK_ATTENDANCE,
-        { teacherId, date, ...data },
+        { teacher_id: teacherId, attendance_date: date, ...data },
         token,
         options
       ),
-    onSuccess: (response, { teacherId }) => {
+    onSuccess: (response, { teacherId, date }) => {
       if (response.success) {
-        queryClient.refetchQueries({ queryKey: [...queryKeys.teacher.detail(teacherId), 'attendance'] });
+        queryClient.invalidateQueries({ queryKey: queryKeys.teacher.attendanceProfile(teacherId, 'all') });
+        if (date) {
+          queryClient.invalidateQueries({ queryKey: queryKeys.teacher.attendanceDaily(date) });
+        }
+      }
+    }
+  });
+};
+
+/**
+ * Hook for batch updating teacher attendance (bulk)
+ */
+export const useMarkTeacherAttendanceBulkMutation = () => {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload) =>
+      apiClient.executeAction(
+        API_REGISTRY.STAFF.MARK_ATTENDANCE_BULK,
+        payload,
+        token
+      ),
+    onSuccess: (response, variables) => {
+      if (response.success) {
+        queryClient.invalidateQueries({ queryKey: queryKeys.teacher.attendanceDaily(variables.attendance_date) });
+        if (variables.records) {
+          variables.records.forEach(rec => {
+            queryClient.invalidateQueries({ queryKey: queryKeys.teacher.attendanceProfile(rec.teacher_id, 'all') });
+          });
+        }
       }
     }
   });

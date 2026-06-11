@@ -13,6 +13,7 @@ import BatchProfile from '../pages/admin/BatchProfile';
 import Schedule from '../features/batch/Schedule';
 import Teachers from '../pages/admin/Teachers';
 import TeacherProfile from '../pages/admin/TeacherProfile';
+import TeacherAttendanceManager from '../features/teacher/components/TeacherAttendanceManager';
 import Branches from '../pages/admin/Branches';
 import Roles from '../pages/admin/Roles';
 import Reports from '../pages/admin/Reports';
@@ -83,6 +84,7 @@ const AppRoutes = () => {
         <Route path="schedule" element={<Schedule />} />
 
         <Route path="teachers" element={<Teachers />} />
+        <Route path="teachers/attendance" element={<TeacherAttendanceManager />} />
         <Route path="teachers/add" element={<AddTeacher />} />
         <Route path="teachers/edit/:id" element={<AddTeacher />} />
         <Route path="teachers/:id" element={<TeacherProfile />} />

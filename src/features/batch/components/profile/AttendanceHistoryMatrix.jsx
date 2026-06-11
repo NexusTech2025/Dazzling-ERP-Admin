@@ -19,8 +19,11 @@ const AttendanceHistoryMatrix = ({ batchId }) => {
 
   const getStatusChip = (status) => {
     switch (status) {
+      case 'P':
       case 'Present': return 'bg-emerald-500 text-white';
+      case 'A':
       case 'Absent': return 'bg-red-500 text-white';
+      case 'L':
       case 'Late': return 'bg-amber-500 text-white';
       default: return 'bg-slate-100 dark:bg-slate-800 text-slate-400';
     }
@@ -28,8 +31,11 @@ const AttendanceHistoryMatrix = ({ batchId }) => {
 
   const getStatusLetter = (status) => {
     switch (status) {
+      case 'P':
       case 'Present': return 'P';
+      case 'A':
       case 'Absent': return 'A';
+      case 'L':
       case 'Late': return 'L';
       default: return '-';
     }
