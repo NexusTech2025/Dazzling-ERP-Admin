@@ -163,10 +163,6 @@ const BatchForm = ({
   return (
     <MainLayout
       onBodyScroll={handleBodyScroll}
-      slotClasses={{
-        container: "relative lg:max-w-7xl lg:mx-auto",
-        body: "py-0 px-0"
-      }}
       header={
         <div
           className={`absolute top-0 left-0 right-0 z-50 transition-all duration-300 w-full ${
@@ -194,7 +190,7 @@ const BatchForm = ({
         </div>
       }
       body={
-        <div className="px-4 lg:px-0 pt-6 lg:pt-10 pb-6">
+        <div className="pt-6 lg:pt-10 pb-6">
           {/* Dynamic Breadcrumbs */}
           <Breadcrumbs items={crumbs} className="mb-4" />
 

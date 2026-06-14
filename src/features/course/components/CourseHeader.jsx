@@ -10,12 +10,12 @@ const CourseHeader = ({ activeTab, isFetching = false, onRefresh }) => {
     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
       <div className="flex flex-col gap-1">
         <h3 className="text-2xl font-black text-text-main dark:text-white tracking-tight leading-tight">
-          {activeTab === 'courses' ? 'Curriculum Library' : 'Course Packages'}
+          {activeTab === 'courses' ? 'Curriculum Library' : 'Packages Management'}
         </h3>
         <p className="text-sm text-text-secondary font-medium italic">
           {activeTab === 'courses'
             ? 'Manage individual subjects and academic offerings'
-            : 'Explore bundled courses and special enrollment offers'}
+            : 'Oversee and curate curriculum bundles for the current academic session.'}
         </p>
       </div>
 

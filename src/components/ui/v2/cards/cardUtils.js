@@ -23,7 +23,8 @@ export const mergeSlotClasses = (defaultClass = '', customClass = '') => {
     ['m-', 'mx-', 'my-', 'mt-', 'mb-', 'ml-', 'mr-', 'ms-', 'me-'],
     ['gap-', 'gap-x-', 'gap-y-'],
     ['min-h-', 'h-', 'max-h-'],
-    ['min-w-', 'w-', 'max-w-']
+    ['min-w-', 'w-', 'max-w-'],
+    ['flex-1', 'flex-auto', 'flex-initial', 'flex-none']
   ];
 
   // Find all groups that are active in the custom class list

@@ -289,10 +289,6 @@ const Courses = ({ defaultTab = 'courses' }) => {
   return (
     <MainLayout
       onBodyScroll={handleBodyScroll}
-      slotClasses={{
-        container: "relative lg:max-w-7xl lg:mx-auto",
-        body: "py-0 px-0"
-      }}
       header={
         <div
           className={`absolute top-0 left-0 right-0 z-50 transition-all duration-300 w-full ${
@@ -312,7 +308,7 @@ const Courses = ({ defaultTab = 'courses' }) => {
         </div>
       }
       body={
-        <div className="px-4 lg:px-0 pt-6 lg:pt-10 pb-6 space-y-6">
+        <div className="pt-6 lg:pt-10 pb-6 space-y-6">
           <CourseHeader
             activeTab={activeTab}
             isFetching={isFetchingCourses}
@@ -426,7 +422,7 @@ const Courses = ({ defaultTab = 'courses' }) => {
               />
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                {filteredPackages.length > 0 ? filteredPackages.map(pkg => (
+                {filteredPackages.map(pkg => (
                   <PackageCard
                     key={pkg.package_id}
                     pkg={pkg}
@@ -434,7 +430,29 @@ const Courses = ({ defaultTab = 'courses' }) => {
                     onToggleSelect={() => toggleSelect(pkg.package_id)}
                     isSelectionModeActive={selectedIds.length > 0}
                   />
-                )) : <NoDataFound />}
+                ))}
+
+                {/* Add New Course Package Placeholder Card */}
+                {selectedIds.length === 0 && (
+                  <Link
+                    to="/admin/packages/add"
+                    className="border-2 border-dashed border-border-light dark:border-slate-800/80 rounded-2xl flex flex-col items-center justify-center p-6 text-center hover:border-primary/50 hover:bg-primary/[0.01] transition-all cursor-pointer min-h-[180px] gap-4 group"
+                  >
+                    <div className="size-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-text-secondary dark:text-slate-400 group-hover:bg-primary/10 group-hover:text-primary transition-all border border-border-light dark:border-slate-800">
+                      <span className="material-symbols-outlined text-2xl font-bold leading-none">add</span>
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <p className="text-base font-black text-text-main dark:text-white group-hover:text-primary transition-colors">
+                        Add New Course Package
+                      </p>
+                      <p className="text-xs text-text-secondary font-medium px-4">
+                        Bundle courses and define pricing for specific student cohorts.
+                      </p>
+                    </div>
+                  </Link>
+                )}
+
+                {filteredPackages.length === 0 && selectedIds.length > 0 && <NoDataFound />}
               </div>
             )
           ) : (
