@@ -8,4 +8,15 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  server: {
+    watch: {
+      ignored: [
+        '**/.gemini/**',
+        '**/.agents/**',
+        '**/.antigravitycli/**',
+
+      ]
+    }
+  }
 })
+

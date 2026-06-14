@@ -126,3 +126,16 @@ To ensure that both future AI agents and human developers have immediate local a
 
 *   **Primary Source of Truth**: The REST API specifications are defined in `E:\NAST\Dazzling\GAS\DazzlingDB\REST-api-doc.md`. Always follow the documented action keys, request payload structures, and response envelopes.
 *   **Undefined Actions Protocol**: If a needed REST API action is not defined, or its payload constraints are not documented in the API specification, stop and notify the user to clarify the schema requirements.
+
+---
+
+## 8. Frontend Component & Modal Memory Reference
+
+We maintain local catalogs documenting reusable frontend components and interactive modals under `.gemini/memory/` for rapid context retrieval. Any developer or AI assistant working on new pages or features **MUST** consult these references to avoid duplicating code and to ensure styling consistency:
+
+*   **Generic & Reusable Components**: Detailed in `E:/NAST/Dazzling/ERP System/dazzling-erp-admin/.gemini/memory/components.md`.
+    - *Purpose*: Documents standard V2 inputs (`TextInput`, `SelectInput`, `RadioGroup`, `PhoneInput`, `FormField`), layouts, steppers, and generic presentation blocks.
+    - *How to Use*: Refer to this file whenever you need to build forms, lists, tabs, timelines, or selection actions. Use the documented props API and implementation examples directly to maintain theme compliance.
+*   **Interactive Popup Modals**: Detailed in `E:/NAST/Dazzling/ERP System/dazzling-erp-admin/.gemini/memory/models.md`.
+    - *Purpose*: Documents all dialogs and modals (e.g. `ConfirmModal`, `APIErrorModal`, `BatchSelectionModal`, `CourseSelectionModal`).
+    - *How to Use*: Refer to this file when you need to trigger confirmations, show errors, or implement split-pane selection wizards. Ensure you bind the state hooks and prop signatures exactly as specified in the documented examples.

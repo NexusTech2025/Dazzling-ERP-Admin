@@ -18,6 +18,10 @@ This file serves as the central directory map for the project's architectural me
 | `plan_lifecycle.md` | Frontmatter status definitions and folder trees for plans. | 2026-05-25 |
 | `core/instructions.md` | Core instructions for plan lifecycle and frontmatter updates. | 2026-05-25 |
 | `ui_component/` | Directory for atomic UI primitives and specialized inputs. | 2026-05-14 |
+| `knowledge/entity_forms_catalog.md` | Comprehensive catalog of entity creation/edit forms and wizards. | 2026-06-13 |
+| `knowledge/slot_classes_guide.md` | Comprehensive guide on the extensible slotClass design system pattern. | 2026-06-14 |
+| `knowledge/main_layout_integration_guide.md` | Form integration and scroll containment conventions using MainLayout. | 2026-06-14 |
+| `knowledge/page_layout_protocol.md` | Spacing, alignment, and max-width layout standards inside AdminLayout. | 2026-06-14 |
 
 ## Recent Session Updates
 

@@ -22,3 +22,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+.env
+dazzling_db.diff
+backup_mocks.ps1
+default_settings.json
+mock_apis_backup.zip
+plan-auditor.skill
