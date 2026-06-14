@@ -64,7 +64,7 @@ const ActivationStep = ({ formData, setFormData, onFinish, onBack, isPending }) 
   ];
 
   return (
-    <div className="layout-content-container flex flex-col max-w-[1100px] flex-1 gap-6 mx-auto animate-in fade-in slide-in-from-right-4 duration-500">
+    <div className="layout-content-container flex flex-col max-w-7xl px-4 lg:px-0 flex-1 gap-6 mx-auto animate-in fade-in slide-in-from-right-4 duration-500">
       
       {/* Header Title */}
       <div className="flex flex-col gap-2 px-4 mb-2">
@@ -72,10 +72,10 @@ const ActivationStep = ({ formData, setFormData, onFinish, onBack, isPending }) 
         <p className="text-slate-600 dark:text-slate-400 text-sm">Verify gathered records and configure registration activation.</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 p-4 items-start">
+      <div className="grid grid-cols-12 gap-6 md:gap-8 p-4 items-start">
         
         {/* Left Column: Comprehensive Reviews (Spans 7 cols on large screens) */}
-        <div className="lg:col-span-7 space-y-6">
+        <div className="col-span-12 lg:col-span-7 space-y-6">
           
           {/* Card 1: Student Profile Verification */}
           <div className="bg-white dark:bg-slate-900/40 p-6 rounded-2xl border border-slate-200/60 dark:border-slate-800/80 shadow-sm backdrop-blur-md">
@@ -231,7 +231,7 @@ const ActivationStep = ({ formData, setFormData, onFinish, onBack, isPending }) 
         </div>
 
         {/* Right Column: Payments, Activation & Review CTA (Spans 5 cols on large screens) */}
-        <div className="lg:col-span-5 space-y-6">
+        <div className="col-span-12 lg:col-span-5 space-y-6">
           
           {/* Card 4: Financial Summary */}
           <div className="bg-white dark:bg-slate-900/40 p-6 rounded-2xl border border-slate-200/60 dark:border-slate-800/80 shadow-sm backdrop-blur-md space-y-4">

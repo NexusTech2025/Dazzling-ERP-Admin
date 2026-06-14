@@ -20,6 +20,7 @@ import Button from '../../components/ui/v2/Button';
 import DataTable from '../../components/ui/DataTable';
 import Badge from '../../components/ui/Badge';
 import ConfirmModal from '../../components/ui/ConfirmModal';
+import MainLayout from '../../components/layout/MainLayout';
 
 /**
  * CourseTypes Categories Management Page
@@ -27,6 +28,15 @@ import ConfirmModal from '../../components/ui/ConfirmModal';
  */
 const CourseTypes = () => {
   const queryClient = useQueryClient();
+  const [isSticky, setIsSticky] = useState(false);
+
+  const handleBodyScroll = (e) => {
+    const shouldBeSticky = e.currentTarget.scrollTop > 80;
+    setIsSticky(prev => {
+      if (prev !== shouldBeSticky) return shouldBeSticky;
+      return prev;
+    });
+  };
   const { data: courseTypes = [], isLoading: isLoadingTypes, error: typesError } = useCourseTypesQuery();
   
   const createTypeMutation = useCreateCourseTypeMutation();
@@ -300,165 +310,190 @@ const CourseTypes = () => {
   ];
 
   if (isLoadingTypes) return <LoadingState message="Loading categories list..." />;
-  if (typesError) return <ErrorState message={typesError.message} onRetry={() => queryClient.invalidateQueries({ queryKey: queryKeys.course.type.all })} />;
-
-  return (
-    <div className="max-w-7xl mx-auto space-y-6 pb-10">
-      {/* Breadcrumbs */}
-      <Breadcrumbs items={crumbs} />
-
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-        <div className="flex flex-col gap-1">
-          <h1 className="text-3xl font-black text-text-main dark:text-white tracking-tight leading-tight">
-            Course Categories
-          </h1>
-          <p className="text-text-secondary text-base">
-            Define and manage segments, labels, and metadata structures for curriculum cataloging.
-          </p>
-        </div>
-        
-        <button
-          onClick={() => {
-            if (showCreateForm) {
-              resetForm();
-            }
-            setShowCreateForm(prev => !prev);
-          }}
-          className="flex items-center justify-center gap-2 rounded-xl bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark px-6 py-2.5 text-sm font-black text-text-main dark:text-white shadow-sm hover:bg-background-light dark:hover:bg-background-dark transition-all active:scale-95 whitespace-nowrap self-start md:self-auto"
+  if (typesError) return <ErrorState message={typesError.message} onRetry={() => queryClient.invalidateQueries({ queryKey: queryKeys.course.type.all })} />;  return (
+    <MainLayout
+      onBodyScroll={handleBodyScroll}
+      slotClasses={{
+        container: "relative lg:max-w-7xl lg:mx-auto",
+        body: "py-0 px-0"
+      }}
+      header={
+        <div
+          className={`absolute top-0 left-0 right-0 z-50 transition-all duration-300 w-full ${
+            isSticky
+              ? 'opacity-100 translate-y-0 shadow-md pointer-events-auto'
+              : 'opacity-0 -translate-y-4 pointer-events-none'
+          }`}
         >
-          <span className="material-symbols-outlined text-lg">
-            {showCreateForm ? 'visibility_off' : 'add_box'}
-          </span>
-          {showCreateForm ? 'Hide Form' : 'Add Category'}
-        </button>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Left Side: Existing Categories Table */}
-        <div className={`${showCreateForm ? 'lg:col-span-7' : 'lg:col-span-12'} bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-2xl p-6 shadow-sm transition-all duration-300`}>
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
-              <span className="material-symbols-outlined">category</span>
+          <div className="bg-surface-light/95 dark:bg-surface-dark/95 backdrop-blur-md border-b border-border-light dark:border-border-dark px-4 lg:px-6 py-3 flex items-center justify-between rounded-b-xl">
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-primary text-lg">category</span>
+              <span className="text-sm font-bold text-text-main dark:text-white">
+                Course Categories
+              </span>
             </div>
-            <h3 className="font-bold text-lg text-text-main dark:text-white">Active Categories</h3>
           </div>
-          <DataTable
-            data={courseTypes}
-            columns={columns}
-            isLoading={false}
+        </div>
+      }
+      body={
+        <div className="px-4 lg:px-0 pt-6 lg:pt-10 pb-6 space-y-6">
+          {/* Breadcrumbs */}
+          <Breadcrumbs items={crumbs} />
+
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+            <div className="flex flex-col gap-1">
+              <h1 className="text-3xl font-black text-text-main dark:text-white tracking-tight leading-tight">
+                Course Categories
+              </h1>
+              <p className="text-text-secondary text-base">
+                Define and manage segments, labels, and metadata structures for curriculum cataloging.
+              </p>
+            </div>
+            
+            <button
+              onClick={() => {
+                if (showCreateForm) {
+                  resetForm();
+                }
+                setShowCreateForm(prev => !prev);
+              }}
+              className="flex items-center justify-center gap-2 rounded-xl bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark px-6 py-2.5 text-sm font-black text-text-main dark:text-white shadow-sm hover:bg-background-light dark:hover:bg-background-dark transition-all active:scale-95 whitespace-nowrap self-start md:self-auto"
+            >
+              <span className="material-symbols-outlined text-lg">
+                {showCreateForm ? 'visibility_off' : 'add_box'}
+              </span>
+              {showCreateForm ? 'Hide Form' : 'Add Category'}
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            {/* Left Side: Existing Categories Table */}
+            <div className={`${showCreateForm ? 'lg:col-span-7' : 'lg:col-span-12'} bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-2xl p-6 shadow-sm transition-all duration-300`}>
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                  <span className="material-symbols-outlined">category</span>
+                </div>
+                <h3 className="font-bold text-lg text-text-main dark:text-white">Active Categories</h3>
+              </div>
+              <DataTable
+                data={courseTypes}
+                columns={columns}
+                isLoading={false}
+              />
+            </div>
+
+            {/* Right Side: Create/Edit Category Card */}
+            {showCreateForm && (
+              <div className="lg:col-span-5 animate-in fade-in slide-in-from-right-4 duration-300">
+                <form onSubmit={handleSubmit}>
+                  <FormSection 
+                    title={editingType ? "Edit Category" : "Create Category"} 
+                    icon={editingType ? "edit_square" : "add_box"} 
+                    className="p-0"
+                  >
+                    <div className="col-span-1 md:col-span-2 space-y-4">
+                      {validationError && (
+                        <div className="bg-rose-50 dark:bg-rose-900/20 text-rose-600 p-4 rounded-lg border border-rose-100 dark:border-rose-800 flex items-center gap-3 animate-in slide-in-from-top-2">
+                          <span className="material-symbols-outlined">error</span>
+                          <span className="text-sm font-bold">{validationError}</span>
+                        </div>
+                      )}
+
+                      {successMessage && (
+                        <div className="bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 p-4 rounded-lg border border-emerald-100 dark:border-emerald-800 flex items-center gap-3 animate-in slide-in-from-top-2">
+                          <span className="material-symbols-outlined">check_circle</span>
+                          <span className="text-sm font-bold">{successMessage}</span>
+                        </div>
+                      )}
+
+                      <FormField label="Category Name" name="segment_name" required>
+                        <TextInput
+                          required
+                          name="segment_name"
+                          value={formData.segment_name}
+                          onChange={handleChange}
+                          placeholder="e.g. Computer Science, Academic Subjects"
+                        />
+                      </FormField>
+
+                      <FormField label="Default Display Label" name="entity_label" required>
+                        <SelectInput
+                          value={formData.entity_label}
+                          onChange={(val) => setFormData(prev => ({ ...prev, entity_label: val }))}
+                          options={entityLabelOptions}
+                        />
+                      </FormField>
+
+                      <FormField label="Description" name="description">
+                        <textarea
+                          rows={4}
+                          name="description"
+                          value={formData.description}
+                          onChange={handleChange}
+                          placeholder="Brief details about the target courses in this category..."
+                          className="w-full bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-lg py-2 px-4 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all duration-200 resize-none text-text-main dark:text-white placeholder:text-text-secondary/50"
+                        />
+                      </FormField>
+
+                      <div className="pt-2 flex items-center gap-3">
+                        {editingType && (
+                          <Button
+                            type="button"
+                            variant="outlined"
+                            onClick={resetForm}
+                            className="flex-1"
+                          >
+                            Cancel
+                          </Button>
+                        )}
+                        <Button
+                          type="submit"
+                          variant="contained"
+                          loading={editingType ? updateTypeMutation.isPending : createTypeMutation.isPending}
+                          className={editingType ? "flex-1" : "w-full"}
+                          startIcon={editingType ? "save" : "add"}
+                        >
+                          {editingType ? 'Save Changes' : 'Create Category'}
+                        </Button>
+                      </div>
+                    </div>
+                  </FormSection>
+                </form>
+              </div>
+            )}
+          </div>
+
+          <ConfirmModal
+            isOpen={deleteModal.isOpen}
+            onClose={() => setDeleteModal({ isOpen: false, id: null, name: '', type: 'single', status: 'idle', resultMessage: null })}
+            onConfirm={handleConfirmDelete}
+            title={deleteModal.type === 'bulk' ? `Delete ${deleteModal.id?.length || 0} Categories` : 'Delete Category'}
+            message={
+              deleteModal.type === 'bulk'
+                ? `Are you sure you want to delete ${deleteModal.id?.length || 0} selected categories? Categories with existing courses cannot be removed.`
+                : `Are you sure you want to delete the category "${deleteModal.name}"? This action cannot be undone.`
+            }
+            status={deleteModal.status}
+            resultMessage={deleteModal.resultMessage}
+            isProcessing={deleteModal.status === 'processing'}
+          />
+
+          <SelectionActionBar
+            selectedCount={selectedIds.length}
+            itemName="category"
+            onClear={clearSelection}
+            onDeleteSelected={() => setDeleteModal({
+              isOpen: true,
+              id: selectedIds,
+              name: `${selectedIds.length} selected categories`,
+              type: 'bulk',
+              status: 'idle',
+              resultMessage: null
+            })}
           />
         </div>
-
-        {/* Right Side: Create/Edit Category Card */}
-        {showCreateForm && (
-          <div className="lg:col-span-5 animate-in fade-in slide-in-from-right-4 duration-300">
-            <form onSubmit={handleSubmit}>
-              <FormSection 
-                title={editingType ? "Edit Category" : "Create Category"} 
-                icon={editingType ? "edit_square" : "add_box"} 
-                className="p-0"
-              >
-                <div className="col-span-1 md:col-span-2 space-y-4">
-                  {validationError && (
-                    <div className="bg-rose-50 dark:bg-rose-900/20 text-rose-600 p-4 rounded-lg border border-rose-100 dark:border-rose-800 flex items-center gap-3 animate-in slide-in-from-top-2">
-                      <span className="material-symbols-outlined">error</span>
-                      <span className="text-sm font-bold">{validationError}</span>
-                    </div>
-                  )}
-
-                  {successMessage && (
-                    <div className="bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 p-4 rounded-lg border border-emerald-100 dark:border-emerald-800 flex items-center gap-3 animate-in slide-in-from-top-2">
-                      <span className="material-symbols-outlined">check_circle</span>
-                      <span className="text-sm font-bold">{successMessage}</span>
-                    </div>
-                  )}
-
-                  <FormField label="Category Name" name="segment_name" required>
-                    <TextInput
-                      required
-                      name="segment_name"
-                      value={formData.segment_name}
-                      onChange={handleChange}
-                      placeholder="e.g. Computer Science, Academic Subjects"
-                    />
-                  </FormField>
-
-                  <FormField label="Default Display Label" name="entity_label" required>
-                    <SelectInput
-                      value={formData.entity_label}
-                      onChange={(val) => setFormData(prev => ({ ...prev, entity_label: val }))}
-                      options={entityLabelOptions}
-                    />
-                  </FormField>
-
-                  <FormField label="Description" name="description">
-                    <textarea
-                      rows={4}
-                      name="description"
-                      value={formData.description}
-                      onChange={handleChange}
-                      placeholder="Brief details about the target courses in this category..."
-                      className="w-full bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-lg py-2 px-4 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all duration-200 resize-none text-text-main dark:text-white placeholder:text-text-secondary/50"
-                    />
-                  </FormField>
-
-                  <div className="pt-2 flex items-center gap-3">
-                    {editingType && (
-                      <Button
-                        type="button"
-                        variant="outlined"
-                        onClick={resetForm}
-                        className="flex-1"
-                      >
-                        Cancel
-                      </Button>
-                    )}
-                    <Button
-                      type="submit"
-                      variant="contained"
-                      loading={editingType ? updateTypeMutation.isPending : createTypeMutation.isPending}
-                      className={editingType ? "flex-1" : "w-full"}
-                      startIcon={editingType ? "save" : "add"}
-                    >
-                      {editingType ? 'Save Changes' : 'Create Category'}
-                    </Button>
-                  </div>
-                </div>
-              </FormSection>
-            </form>
-          </div>
-        )}
-      </div>
-
-      <ConfirmModal
-        isOpen={deleteModal.isOpen}
-        onClose={() => setDeleteModal({ isOpen: false, id: null, name: '', type: 'single', status: 'idle', resultMessage: null })}
-        onConfirm={handleConfirmDelete}
-        title={deleteModal.type === 'bulk' ? `Delete ${deleteModal.id?.length || 0} Categories` : 'Delete Category'}
-        message={
-          deleteModal.type === 'bulk'
-            ? `Are you sure you want to delete ${deleteModal.id?.length || 0} selected categories? Categories with existing courses cannot be removed.`
-            : `Are you sure you want to delete the category "${deleteModal.name}"? This action cannot be undone.`
-        }
-        status={deleteModal.status}
-        resultMessage={deleteModal.resultMessage}
-        isProcessing={deleteModal.status === 'processing'}
-      />
-
-      <SelectionActionBar
-        selectedCount={selectedIds.length}
-        itemName="category"
-        onClear={clearSelection}
-        onDeleteSelected={() => setDeleteModal({
-          isOpen: true,
-          id: selectedIds,
-          name: `${selectedIds.length} selected categories`,
-          type: 'bulk',
-          status: 'idle',
-          resultMessage: null
-        })}
-      />
-    </div>
+      }
+    />
   );
 };
 

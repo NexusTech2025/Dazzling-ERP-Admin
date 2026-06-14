@@ -25,6 +25,7 @@ import TestFilters from '../pages/admin/TestFilters';
 import TestButtons from '../pages/admin/TestButtons';
 import TestProfileComponents from '../pages/admin/TestProfileComponents';
 import TestPrototype from '../pages/admin/TestPrototype';
+import TestCardsCatalog from '../pages/admin/TestCardsCatalog';
 
 // Feature Pages
 import Courses from '../features/course/Courses';
@@ -125,6 +126,7 @@ const AppRoutes = () => {
           <Route path="buttons" element={<TestButtons />} />
           <Route path="profile-core" element={<TestProfileComponents />} />
           <Route path="prototype" element={<TestPrototype />} />
+          <Route path="cards" element={<TestCardsCatalog />} />
         </Route>
       </Route>
       

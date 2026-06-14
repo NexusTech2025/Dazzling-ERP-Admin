@@ -24,10 +24,23 @@ import CourseFilters from './components/CourseFilters';
 import PackageCard from './components/PackageCard';
 import CourseListView from './components/CourseListView';
 import CourseGridView from './components/CourseGridView';
+import MainLayout from '../../components/layout/MainLayout';
 
 const Courses = ({ defaultTab = 'courses' }) => {
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState(defaultTab);
+  const [isSticky, setIsSticky] = useState(false);
+  const handleBodyScroll = (e) => {
+    const shouldBeSticky = e.currentTarget.scrollTop > 80;
+    setIsSticky(prev => {
+      if (prev !== shouldBeSticky) return shouldBeSticky;
+      return prev;
+    });
+  };
+
+  const [activeTab, setTab] = useState(defaultTab);
+  const setActiveTab = (val) => {
+    setTab(val);
+  };
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, id: null, name: '', type: 'course', status: 'idle', resultMessage: null });
   const [viewMode, setViewMode] = useState('grid');
   const [searchQuery, setSearchQuery] = useState('');
@@ -274,351 +287,378 @@ const Courses = ({ defaultTab = 'courses' }) => {
   if (coursesError || packagesError || typesError) return <ErrorState message={(coursesError || packagesError || typesError)?.message} onRetry={() => queryClient.invalidateQueries({ queryKey: queryKeys.course.all })} />;
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6 pb-10">
-      <CourseHeader
-        activeTab={activeTab}
-        isFetching={isFetchingCourses}
-        onRefresh={() => queryClient.invalidateQueries({ queryKey: queryKeys.course.all })}
-      />
+    <MainLayout
+      onBodyScroll={handleBodyScroll}
+      slotClasses={{
+        container: "relative lg:max-w-7xl lg:mx-auto",
+        body: "py-0 px-0"
+      }}
+      header={
+        <div
+          className={`absolute top-0 left-0 right-0 z-50 transition-all duration-300 w-full ${
+            isSticky
+              ? 'opacity-100 translate-y-0 shadow-md pointer-events-auto'
+              : 'opacity-0 -translate-y-4 pointer-events-none'
+          }`}
+        >
+          <div className="bg-surface-light/95 dark:bg-surface-dark/95 backdrop-blur-md border-b border-border-light dark:border-border-dark px-4 lg:px-6 py-3 flex items-center justify-between rounded-b-xl">
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-primary text-lg">school</span>
+              <span className="text-sm font-bold text-text-main dark:text-white">
+                {activeTab === 'courses' ? 'Curriculum Library' : 'Course Packages'}
+              </span>
+            </div>
+          </div>
+        </div>
+      }
+      body={
+        <div className="px-4 lg:px-0 pt-6 lg:pt-10 pb-6 space-y-6">
+          <CourseHeader
+            activeTab={activeTab}
+            isFetching={isFetchingCourses}
+            onRefresh={() => queryClient.invalidateQueries({ queryKey: queryKeys.course.all })}
+          />
 
-      <div className="flex flex-col gap-4">
-        <div className="flex flex-wrap items-center gap-6">
-          {/* Main Tabs Selection */}
-          <TabGroup>
-            <TabButton
-              active={activeTab === 'courses'}
-              onClick={() => {
-                setActiveTab('courses');
-                clearSelection();
-                setSegmentFilter('');
-                setBoardFilter('');
-                setClassFilter('');
-                setLanguageFilter('');
-              }}
-              icon="school"
-            >
-              Courses
-            </TabButton>
-            <TabButton
-              active={activeTab === 'packages'}
-              onClick={() => {
-                setActiveTab('packages');
-                clearSelection();
-                setSegmentFilter('');
-                setBoardFilter('');
-                setClassFilter('');
-                setLanguageFilter('');
-              }}
-              icon="inventory_2"
-            >
-              Packages
-            </TabButton>
-          </TabGroup>
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-wrap items-center gap-6">
+              {/* Main Tabs Selection */}
+              <TabGroup>
+                <TabButton
+                  active={activeTab === 'courses'}
+                  onClick={() => {
+                    setActiveTab('courses');
+                    clearSelection();
+                    setSegmentFilter('');
+                    setBoardFilter('');
+                    setClassFilter('');
+                    setLanguageFilter('');
+                  }}
+                  icon="school"
+                >
+                  Courses
+                </TabButton>
+                <TabButton
+                  active={activeTab === 'packages'}
+                  onClick={() => {
+                    setActiveTab('packages');
+                    clearSelection();
+                    setSegmentFilter('');
+                    setBoardFilter('');
+                    setClassFilter('');
+                    setLanguageFilter('');
+                  }}
+                  icon="inventory_2"
+                >
+                  Packages
+                </TabButton>
+              </TabGroup>
 
-          {/* Segment Filter (Shared for both tabs) */}
-          <div className="animate-in fade-in slide-in-from-left-4 duration-300">
-            <ButtonGroupFilter
-              options={segmentOptions}
-              value={segmentFilter}
-              variant="secondary"
-              onChange={(val) => {
-                setSegmentFilter(val);
-                const selected = courseTypes.find(t => t.segment_id === val);
-                const isAcademic = selected 
-                  ? (selected.entity_label === 'Subject' || selected.segment_name?.toLowerCase().includes('academic'))
-                  : false;
-                
-                if (!isAcademic) {
-                  setBoardFilter('');
-                  setClassFilter('');
-                  setLanguageFilter('');
-                }
-              }}
-            />
+              {/* Segment Filter (Shared for both tabs) */}
+              <div className="animate-in fade-in slide-in-from-left-4 duration-300">
+                <ButtonGroupFilter
+                  options={segmentOptions}
+                  value={segmentFilter}
+                  variant="secondary"
+                  onChange={(val) => {
+                    setSegmentFilter(val);
+                    const selected = courseTypes.find(t => t.segment_id === val);
+                    const isAcademic = selected 
+                      ? (selected.entity_label === 'Subject' || selected.segment_name?.toLowerCase().includes('academic'))
+                      : false;
+                    
+                    if (!isAcademic) {
+                      setBoardFilter('');
+                      setClassFilter('');
+                      setLanguageFilter('');
+                    }
+                  }}
+                />
+              </div>
+
+              {/* Academic Specialized Filters (Shared for both tabs when segment is Academic) */}
+              {isAcademicFilterActive && (
+                <div className="flex flex-wrap items-center gap-4 animate-in zoom-in duration-300">
+                  <ButtonGroupFilter
+                    label="Medium"
+                    options={languageOptions}
+                    value={languageFilter}
+                    size="sm"
+                    variant="secondary"
+                    onChange={setLanguageFilter}
+                  />
+
+                  <ButtonGroupFilter
+                    label="Board"
+                    options={boardOptions}
+                    value={boardFilter}
+                    size="sm"
+                    onChange={setBoardFilter}
+                  />
+
+                  <SelectGroupFilter
+                    label="Class"
+                    options={classOptions}
+                    value={classFilter}
+                    onChange={setClassFilter}
+                    defaultLabel="All Classes"
+                  />
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* Academic Specialized Filters (Shared for both tabs when segment is Academic) */}
-          {isAcademicFilterActive && (
-            <div className="flex flex-wrap items-center gap-4 animate-in zoom-in duration-300">
-              <ButtonGroupFilter
-                label="Medium"
-                options={languageOptions}
-                value={languageFilter}
-                size="sm"
-                variant="secondary"
-                onChange={setLanguageFilter}
-              />
+          <CourseFilters
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            segmentFilter={segmentFilter}
+            onSegmentChange={setSegmentFilter}
+            viewMode={viewMode}
+            onViewModeChange={setViewMode}
+            availableSegments={activeTab === 'courses' ? availableSegments : []}
+            showSegmentFilter={false}
+          />
 
-              <ButtonGroupFilter
-                label="Board"
-                options={boardOptions}
-                value={boardFilter}
-                size="sm"
-                onChange={setBoardFilter}
+          {viewMode === 'grid' ? (
+            activeTab === 'courses' ? (
+              <CourseGridView
+                courses={filteredCourses}
+                onDelete={handleDeleteClick}
               />
-
-              <SelectGroupFilter
-                label="Class"
-                options={classOptions}
-                value={classFilter}
-                onChange={setClassFilter}
-                defaultLabel="All Classes"
-              />
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                {filteredPackages.length > 0 ? filteredPackages.map(pkg => (
+                  <PackageCard
+                    key={pkg.package_id}
+                    pkg={pkg}
+                    isSelected={selectedIds.includes(pkg.package_id)}
+                    onToggleSelect={() => toggleSelect(pkg.package_id)}
+                    isSelectionModeActive={selectedIds.length > 0}
+                  />
+                )) : <NoDataFound />}
+              </div>
+            )
+          ) : (
+            <div className="animate-in fade-in slide-in-from-right-4 duration-500">
+              {activeTab === 'courses' ? (
+                <CourseListView
+                  courses={filteredCourses}
+                  onDelete={handleDeleteClick}
+                  selection={selection}
+                />
+              ) : (
+                <DataTable
+                  data={filteredPackages}
+                  columns={packageColumns}
+                  isLoading={false}
+                />
+              )}
             </div>
           )}
-        </div>
-      </div>
 
-      <CourseFilters
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        segmentFilter={segmentFilter}
-        onSegmentChange={setSegmentFilter}
-        viewMode={viewMode}
-        onViewModeChange={setViewMode}
-        availableSegments={activeTab === 'courses' ? availableSegments : []}
-        showSegmentFilter={false}
-      />
-
-      {viewMode === 'grid' ? (
-        activeTab === 'courses' ? (
-          <CourseGridView
-            courses={filteredCourses}
-            onDelete={handleDeleteClick}
-          />
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            {filteredPackages.length > 0 ? filteredPackages.map(pkg => (
-              <PackageCard
-                key={pkg.package_id}
-                pkg={pkg}
-                isSelected={selectedIds.includes(pkg.package_id)}
-                onToggleSelect={() => toggleSelect(pkg.package_id)}
-                isSelectionModeActive={selectedIds.length > 0}
-              />
-            )) : <NoDataFound />}
-          </div>
-        )
-      ) : (
-        <div className="animate-in fade-in slide-in-from-right-4 duration-500">
-          {activeTab === 'courses' ? (
-            <CourseListView
-              courses={filteredCourses}
-              onDelete={handleDeleteClick}
-              selection={selection}
-            />
-          ) : (
-            <DataTable
-              data={filteredPackages}
-              columns={packageColumns}
-              isLoading={false}
+          {/* Floating Selection Action Bar for Packages */}
+          {activeTab === 'packages' && selectedIds.length > 0 && (
+            <SelectionActionBar
+              selectedCount={selectedIds.length}
+              itemName="package"
+              onClear={clearSelection}
+              onDeleteSelected={() => {
+                setDeleteModal({
+                  isOpen: true,
+                  id: selectedIds,
+                  name: `${selectedIds.length} selected packages`,
+                  type: 'bulk_package',
+                  status: 'idle',
+                  resultMessage: null
+                });
+              }}
+              onDeleteAll={() => {
+                const allIds = filteredPackages.map(p => p.package_id);
+                setDeleteModal({
+                  isOpen: true,
+                  id: allIds,
+                  name: `all ${allIds.length} packages matching current filters`,
+                  type: 'bulk_package',
+                  status: 'idle',
+                  resultMessage: null
+                });
+              }}
             />
           )}
+
+          {/* Floating Selection Action Bar for Courses */}
+          {activeTab === 'courses' && viewMode === 'list' && selectedIds.length > 0 && (
+            <SelectionActionBar
+              selectedCount={selectedIds.length}
+              itemName="course"
+              onClear={clearSelection}
+              onDeleteSelected={() => {
+                setDeleteModal({
+                  isOpen: true,
+                  id: selectedIds,
+                  name: `${selectedIds.length} selected courses`,
+                  type: 'bulk_course',
+                  status: 'idle',
+                  resultMessage: null
+                });
+              }}
+              onDeleteAll={() => {
+                const allIds = filteredCourses.map(c => c.course_id);
+                setDeleteModal({
+                  isOpen: true,
+                  id: allIds,
+                  name: `all ${allIds.length} courses matching current filters`,
+                  type: 'bulk_course',
+                  status: 'idle',
+                  resultMessage: null
+                });
+              }}
+            />
+          )}
+
+          <ConfirmModal
+            isOpen={deleteModal.isOpen}
+            status={deleteModal.status}
+            resultMessage={deleteModal.resultMessage}
+            onClose={() => setDeleteModal({ isOpen: false, id: null, name: '', type: 'course', status: 'idle', resultMessage: null })}
+            onConfirm={() => {
+              setDeleteModal(prev => ({ ...prev, status: 'processing' }));
+              if (deleteModal.type === 'bulk_package') {
+                deleteManyPackagesMutation.mutate({ ids: deleteModal.id }, {
+                  onSuccess: (res) => {
+                    if (res.success) {
+                      const manifest = res.data?.manifest || {};
+                      const deleted = manifest.deleted || [];
+                      const failed = manifest.failed || {};
+                      const failedCount = Object.keys(failed).length;
+                      
+                      let msg = `Successfully deleted ${deleted.length} packages.`;
+                      if (failedCount > 0) {
+                        msg += ` Failed to delete ${failedCount} packages due to referential constraints.`;
+                      }
+                      
+                      setDeleteModal(prev => ({
+                        ...prev,
+                        status: failedCount > 0 && deleted.length === 0 ? 'error' : 'success',
+                        resultMessage: msg
+                      }));
+                      
+                      if (deleted.length > 0) {
+                        setSelectedIds(prev => prev.filter(id => !deleted.includes(id)));
+                      }
+                    } else {
+                      setDeleteModal(prev => ({
+                        ...prev,
+                        status: 'error',
+                        resultMessage: res.message || 'Failed to delete packages.'
+                      }));
+                    }
+                  },
+                  onError: (err) => {
+                    setDeleteModal(prev => ({
+                      ...prev,
+                      status: 'error',
+                      resultMessage: err.message || 'An unexpected error occurred.'
+                    }));
+                  }
+                });
+              } else if (deleteModal.type === 'bulk_course') {
+                deleteManyCoursesMutation.mutate({ ids: deleteModal.id }, {
+                  onSuccess: (res) => {
+                    if (res.success) {
+                      const manifest = res.data?.manifest || {};
+                      const deleted = manifest.deleted || [];
+                      const failed = manifest.failed || {};
+                      const failedCount = Object.keys(failed).length;
+                      
+                      let msg = `Successfully archived ${deleted.length} courses.`;
+                      if (failedCount > 0) {
+                        msg += ` Failed to archive ${failedCount} courses due to referential constraints.`;
+                      }
+                      
+                      setDeleteModal(prev => ({
+                        ...prev,
+                        status: failedCount > 0 && deleted.length === 0 ? 'error' : 'success',
+                        resultMessage: msg
+                      }));
+                      
+                      if (deleted.length > 0) {
+                        setSelectedIds(prev => prev.filter(id => !deleted.includes(id)));
+                      }
+                    } else {
+                      setDeleteModal(prev => ({
+                        ...prev,
+                        status: 'error',
+                        resultMessage: res.message || 'Failed to archive courses.'
+                      }));
+                    }
+                  },
+                  onError: (err) => {
+                    setDeleteModal(prev => ({
+                      ...prev,
+                      status: 'error',
+                      resultMessage: err.message || 'An unexpected error occurred.'
+                    }));
+                  }
+                });
+              } else if (deleteModal.type === 'package') {
+                deletePackageMutation.mutate({ id: deleteModal.id }, {
+                  onSuccess: (res) => {
+                    if (res.success) {
+                      setDeleteModal(prev => ({
+                        ...prev,
+                        status: 'success',
+                        resultMessage: `Package "${deleteModal.name}" was successfully deleted.`
+                      }));
+                    } else {
+                      setDeleteModal(prev => ({
+                        ...prev,
+                        status: 'error',
+                        resultMessage: res.error?.message || `Failed to delete package: ${res.message || 'Unknown error'}`
+                      }));
+                    }
+                  },
+                  onError: (err) => {
+                    setDeleteModal(prev => ({
+                      ...prev,
+                      status: 'error',
+                      resultMessage: err.message || 'An unexpected server error occurred.'
+                    }));
+                  }
+                });
+              } else {
+                deleteMutation.mutate({ id: deleteModal.id }, {
+                  onSuccess: (res) => {
+                    if (res.success) {
+                      setDeleteModal(prev => ({
+                        ...prev,
+                        status: 'success',
+                        resultMessage: `Course "${deleteModal.name}" was successfully archived.`
+                      }));
+                    } else {
+                      setDeleteModal(prev => ({
+                        ...prev,
+                        status: 'error',
+                        resultMessage: res.error?.message || `Failed to archive course: ${res.message || 'Unknown error'}`
+                      }));
+                    }
+                  },
+                  onError: (err) => {
+                    setDeleteModal(prev => ({
+                      ...prev,
+                      status: 'error',
+                      resultMessage: err.message || 'An unexpected server error occurred.'
+                    }));
+                  }
+                });
+              }
+            }}
+            title={deleteTitle}
+            message={deleteMessage}
+            isProcessing={isDeleteProcessing}
+          />
         </div>
-      )}
-
-      {/* Floating Selection Action Bar for Packages */}
-      {activeTab === 'packages' && selectedIds.length > 0 && (
-        <SelectionActionBar
-          selectedCount={selectedIds.length}
-          itemName="package"
-          onClear={clearSelection}
-          onDeleteSelected={() => {
-            setDeleteModal({
-              isOpen: true,
-              id: selectedIds,
-              name: `${selectedIds.length} selected packages`,
-              type: 'bulk_package',
-              status: 'idle',
-              resultMessage: null
-            });
-          }}
-          onDeleteAll={() => {
-            const allIds = filteredPackages.map(p => p.package_id);
-            setDeleteModal({
-              isOpen: true,
-              id: allIds,
-              name: `all ${allIds.length} packages matching current filters`,
-              type: 'bulk_package',
-              status: 'idle',
-              resultMessage: null
-            });
-          }}
-        />
-      )}
-
-      {/* Floating Selection Action Bar for Courses */}
-      {activeTab === 'courses' && viewMode === 'list' && selectedIds.length > 0 && (
-        <SelectionActionBar
-          selectedCount={selectedIds.length}
-          itemName="course"
-          onClear={clearSelection}
-          onDeleteSelected={() => {
-            setDeleteModal({
-              isOpen: true,
-              id: selectedIds,
-              name: `${selectedIds.length} selected courses`,
-              type: 'bulk_course',
-              status: 'idle',
-              resultMessage: null
-            });
-          }}
-          onDeleteAll={() => {
-            const allIds = filteredCourses.map(c => c.course_id);
-            setDeleteModal({
-              isOpen: true,
-              id: allIds,
-              name: `all ${allIds.length} courses matching current filters`,
-              type: 'bulk_course',
-              status: 'idle',
-              resultMessage: null
-            });
-          }}
-        />
-      )}
-
-      <ConfirmModal
-        isOpen={deleteModal.isOpen}
-        status={deleteModal.status}
-        resultMessage={deleteModal.resultMessage}
-        onClose={() => setDeleteModal({ isOpen: false, id: null, name: '', type: 'course', status: 'idle', resultMessage: null })}
-        onConfirm={() => {
-          setDeleteModal(prev => ({ ...prev, status: 'processing' }));
-          if (deleteModal.type === 'bulk_package') {
-            deleteManyPackagesMutation.mutate({ ids: deleteModal.id }, {
-              onSuccess: (res) => {
-                if (res.success) {
-                  const manifest = res.data?.manifest || {};
-                  const deleted = manifest.deleted || [];
-                  const failed = manifest.failed || {};
-                  const failedCount = Object.keys(failed).length;
-                  
-                  let msg = `Successfully deleted ${deleted.length} packages.`;
-                  if (failedCount > 0) {
-                    msg += ` Failed to delete ${failedCount} packages due to referential constraints.`;
-                  }
-                  
-                  setDeleteModal(prev => ({
-                    ...prev,
-                    status: failedCount > 0 && deleted.length === 0 ? 'error' : 'success',
-                    resultMessage: msg
-                  }));
-                  
-                  if (deleted.length > 0) {
-                    setSelectedIds(prev => prev.filter(id => !deleted.includes(id)));
-                  }
-                } else {
-                  setDeleteModal(prev => ({
-                    ...prev,
-                    status: 'error',
-                    resultMessage: res.message || 'Failed to delete packages.'
-                  }));
-                }
-              },
-              onError: (err) => {
-                setDeleteModal(prev => ({
-                  ...prev,
-                  status: 'error',
-                  resultMessage: err.message || 'An unexpected error occurred.'
-                }));
-              }
-            });
-          } else if (deleteModal.type === 'bulk_course') {
-            deleteManyCoursesMutation.mutate({ ids: deleteModal.id }, {
-              onSuccess: (res) => {
-                if (res.success) {
-                  const manifest = res.data?.manifest || {};
-                  const deleted = manifest.deleted || [];
-                  const failed = manifest.failed || {};
-                  const failedCount = Object.keys(failed).length;
-                  
-                  let msg = `Successfully archived ${deleted.length} courses.`;
-                  if (failedCount > 0) {
-                    msg += ` Failed to archive ${failedCount} courses due to referential constraints.`;
-                  }
-                  
-                  setDeleteModal(prev => ({
-                    ...prev,
-                    status: failedCount > 0 && deleted.length === 0 ? 'error' : 'success',
-                    resultMessage: msg
-                  }));
-                  
-                  if (deleted.length > 0) {
-                    setSelectedIds(prev => prev.filter(id => !deleted.includes(id)));
-                  }
-                } else {
-                  setDeleteModal(prev => ({
-                    ...prev,
-                    status: 'error',
-                    resultMessage: res.message || 'Failed to archive courses.'
-                  }));
-                }
-              },
-              onError: (err) => {
-                setDeleteModal(prev => ({
-                  ...prev,
-                  status: 'error',
-                  resultMessage: err.message || 'An unexpected error occurred.'
-                }));
-              }
-            });
-          } else if (deleteModal.type === 'package') {
-            deletePackageMutation.mutate({ id: deleteModal.id }, {
-              onSuccess: (res) => {
-                if (res.success) {
-                  setDeleteModal(prev => ({
-                    ...prev,
-                    status: 'success',
-                    resultMessage: `Package "${deleteModal.name}" was successfully deleted.`
-                  }));
-                } else {
-                  setDeleteModal(prev => ({
-                    ...prev,
-                    status: 'error',
-                    resultMessage: res.error?.message || `Failed to delete package: ${res.message || 'Unknown error'}`
-                  }));
-                }
-              },
-              onError: (err) => {
-                setDeleteModal(prev => ({
-                  ...prev,
-                  status: 'error',
-                  resultMessage: err.message || 'An unexpected server error occurred.'
-                }));
-              }
-            });
-          } else {
-            deleteMutation.mutate({ id: deleteModal.id }, {
-              onSuccess: (res) => {
-                if (res.success) {
-                  setDeleteModal(prev => ({
-                    ...prev,
-                    status: 'success',
-                    resultMessage: `Course "${deleteModal.name}" was successfully archived.`
-                  }));
-                } else {
-                  setDeleteModal(prev => ({
-                    ...prev,
-                    status: 'error',
-                    resultMessage: res.error?.message || `Failed to archive course: ${res.message || 'Unknown error'}`
-                  }));
-                }
-              },
-              onError: (err) => {
-                setDeleteModal(prev => ({
-                  ...prev,
-                  status: 'error',
-                  resultMessage: err.message || 'An unexpected server error occurred.'
-                }));
-              }
-            });
-          }
-        }}
-        title={deleteTitle}
-        message={deleteMessage}
-        isProcessing={isDeleteProcessing}
-      />
-    </div>
+      }
+    />
   );
 };
 

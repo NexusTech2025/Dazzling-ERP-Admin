@@ -24,16 +24,40 @@
   --radius-xl: 0.75rem;
 
   @keyframes bounce-slow {
-    0%, 100% { transform: translateY(-5%); animation-timing-function: cubic-bezier(0.8, 0, 1, 1); }
-    50% { transform: translateY(0); animation-timing-function: cubic-bezier(0, 0, 0.2, 1); }
+
+    0%,
+    100% {
+      transform: translateY(-5%);
+      animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
+    }
+
+    50% {
+      transform: translateY(0);
+      animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+    }
   }
+
   @keyframes ping-slow {
-    75%, 100% { transform: scale(1.5); opacity: 0; }
+
+    75%,
+    100% {
+      transform: scale(1.5);
+      opacity: 0;
+    }
   }
+
   @keyframes progress-indeterminate {
-    0% { transform: translateX(-100%) scaleX(0.2); }
-    50% { transform: translateX(0%) scaleX(0.5); }
-    100% { transform: translateX(100%) scaleX(0.2); }
+    0% {
+      transform: translateX(-100%) scaleX(0.2);
+    }
+
+    50% {
+      transform: translateX(0%) scaleX(0.5);
+    }
+
+    100% {
+      transform: translateX(100%) scaleX(0.2);
+    }
   }
 
   --animate-bounce-slow: bounce-slow 2s infinite;
@@ -45,6 +69,7 @@
   html {
     font-size: 12px;
   }
+
   body {
     font-family: var(--font-display);
     @apply bg-background-light dark:bg-background-dark text-text-main dark:text-white antialiased;
@@ -65,4 +90,37 @@
   word-wrap: normal;
   white-space: nowrap;
   direction: ltr;
+}
+
+/* Global Custom Scrollbars: Thin, transparent, only visible on hover */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+*:hover {
+  scrollbar-color: rgba(100, 116, 139, 0.1) transparent;
+}
+
+/* Webkit browser scrollbars */
+::-webkit-scrollbar {
+  width: 2px;
+  height: 2px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  background-clip: padding-box;
+  transition: background 0.2s ease-in-out;
+}
+
+*:hover::-webkit-scrollbar-thumb,
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.3);
 }

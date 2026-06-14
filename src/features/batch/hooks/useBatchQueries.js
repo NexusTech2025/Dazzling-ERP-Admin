@@ -23,6 +23,7 @@ import { useAuth } from '../../../context/AuthContextCore';
 import { apiClient } from '../../../services/apiClient';
 import { API_REGISTRY } from '../../../services/apiRegistry';
 import { queryKeys, EMPTY_FILTER } from '../../../lib/react-query/queryKeys';
+import { getCachedRecord, resolveRecord } from '../../../lib/react-query/cacheHelper';
 import { transformBatchList, transformBatchRecord, resolveBatchRelations, normalizeBatch, normalizeBatchList } from '../utils/batchMappers';
 
 /**
@@ -164,40 +165,30 @@ export const useBatchDetailQuery = (id) => {
     queryKey: queryKeys.batch.detail(id),
     queryFn: async ({ signal }) => {
       await ensureBatchRelations(queryClient, token);
-      // Using generic query with limit 1 for details
-      const response = await apiClient.executeAction(
-        API_REGISTRY.DATA.QUERY,
-        {
-          target: 'Batch',
-          where: { batch_id: id },
-          pagination: { limit: 1 }
-        },
-        token,
-        { signal }
+      return resolveRecord(
+        queryClient,
+        'batch',
+        id,
+        async () => {
+          // Using generic query with limit 1 for details
+          const response = await apiClient.executeAction(
+            API_REGISTRY.DATA.QUERY,
+            {
+              target: 'Batch',
+              where: { batch_id: id },
+              pagination: { limit: 1 }
+            },
+            token,
+            { signal }
+          );
+          if (!response.success) throw new Error(response.message);
+          return normalizeBatch(response.data?.data?.[0] || null);
+        }
       );
-      if (!response.success) throw new Error(response.message);
-      return normalizeBatch(response.data?.data?.[0] || null);
     },
     enabled: !!token && !!id,
     select: (data) => hydrateBatchRelations(transformBatchRecord(data), queryClient),
-    initialData: () => {
-      if (!id) return undefined;
-
-      // 1. First look into the specific detail cache
-      const cachedDetail = queryClient.getQueryData(queryKeys.batch.detail(id));
-      if (cachedDetail) return cachedDetail;
-
-      // 2. Fallback: Look into all cached list data
-      // Search across any list query (regardless of filter)
-      const listQueries = queryClient.getQueriesData({ queryKey: queryKeys.batch.lists() });
-      for (const [key, listData] of listQueries) {
-        if (Array.isArray(listData)) {
-          const item = listData.find(b => b.batch_id === id || b.id === id);
-          if (item) return item;
-        }
-      }
-      return undefined;
-    },
+    initialData: () => getCachedRecord(queryClient, 'batch', id),
     initialDataUpdatedAt: () => queryClient.getQueryState(queryKeys.batch.detail(id))?.dataUpdatedAt,
     staleTime: 1000 * 60 * 5,
   });

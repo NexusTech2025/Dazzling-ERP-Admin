@@ -11,12 +11,12 @@ const AdminLayout = () => {
   const closeSidebar = () => setIsSidebarOpen(false);
 
   return (
-    <div className="flex flex-col min-h-screen w-full">
+    <div className="flex flex-col h-screen w-full overflow-hidden">
       <Header onMenuClick={toggleSidebar} />
       <div className="flex flex-1 overflow-hidden">
         <Sidebar isOpen={isSidebarOpen} onClose={closeSidebar} />
-        <main className="flex-1 bg-background-light dark:bg-background-dark overflow-y-auto p-6 lg:p-10">
-          <div className="w-full">
+        <main className="flex-1 bg-background-light dark:bg-background-dark overflow-y-auto overflow-x-hidden px-6 lg:px-10 flex flex-col">
+          <div className="w-full flex-grow flex flex-col min-h-0">
             <PageErrorBoundary>
               <Outlet />
             </PageErrorBoundary>

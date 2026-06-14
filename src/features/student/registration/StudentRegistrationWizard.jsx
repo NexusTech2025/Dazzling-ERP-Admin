@@ -14,6 +14,7 @@ const StudentRegistrationWizard = ({ initialData }) => {
   const registerMutation = useRegisterStudentMutation();
   const [currentStep, setCurrentStep] = useState(1);
   const [errorModal, setErrorModal] = useState({ isOpen: false, title: '', error: null });
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   const [formData, setFormData] = useState({
     // Step 1: Profile
@@ -213,8 +214,7 @@ const StudentRegistrationWizard = ({ initialData }) => {
       onSuccess: (response) => {
         console.log('[Wizard] API Response:', response);
         if (response.success) {
-          alert('Student Registered Successfully!');
-          navigate('/admin/students');
+          setShowSuccessModal(true);
         } else {
           setErrorModal({
             isOpen: true,
@@ -272,6 +272,29 @@ const StudentRegistrationWizard = ({ initialData }) => {
         title={errorModal.title}
         error={errorModal.error}
       />
+
+      {showSuccessModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-slate-900/90 border border-slate-800 rounded-2xl shadow-xl w-full max-w-md overflow-hidden p-6 text-center space-y-4 backdrop-blur-md">
+            <div className="mx-auto size-14 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500">
+              <span className="material-symbols-outlined text-3xl">check_circle</span>
+            </div>
+            <div className="space-y-2">
+              <h3 className="text-xl font-black text-white">Student Registered Successfully</h3>
+              <p className="text-sm text-slate-400">The student profile, batch enrollment, and billing ledger have been successfully initialized.</p>
+            </div>
+            <button
+              onClick={() => {
+                setShowSuccessModal(false);
+                navigate('/admin/students');
+              }}
+              className="w-full py-3 bg-primary hover:bg-primary-dark text-white rounded-xl font-bold shadow-lg shadow-primary/20 transition-all active:scale-[0.98]"
+            >
+              Go to Student List
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

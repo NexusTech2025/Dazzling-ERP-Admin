@@ -49,7 +49,7 @@ const MultiSelect = ({
       <div
         onClick={() => setIsOpen(!isOpen)}
         className={`
-          flex flex-wrap items-center gap-2 px-4 py-2 min-h-[42px] border rounded-lg cursor-pointer transition-all duration-200
+          flex flex-wrap items-center gap-2 px-4 py-2 min-h-[38px] border rounded-lg cursor-pointer transition-all duration-200
           ${isOpen ? 'ring-2 ring-primary/10 border-primary' : ''}
           ${error ? 'border-red-500' : 'border-border-light dark:border-border-dark'}
           ${variant === 'filled' ? 'bg-background-light dark:bg-background-dark' : 'bg-surface-light dark:bg-surface-dark'}

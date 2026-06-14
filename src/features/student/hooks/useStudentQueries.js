@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../../context/AuthContextCore';
 import { queryKeys, EMPTY_FILTER } from '../../../lib/react-query/queryKeys';
+import { getCachedRecord, resolveRecord } from '../../../lib/react-query/cacheHelper';
 import {
   fetchStudents,
   modifyStudent,
@@ -42,31 +43,22 @@ export const useStudentDetailQuery = (studentId) => {
   return useQuery({
     queryKey: queryKeys.student.detail(studentId),
     queryFn: async ({ signal }) => {
-      const response = await fetchStudents(token, { student_id: studentId }, { signal });
-      if (!response.success) {
-        throw new Error(response.error?.message || response.message || 'Failed to fetch student details');
-      }
-      const list = response.data?.data || [];
-      return list[0] || null;
+      return resolveRecord(
+        queryClient,
+        'student',
+        studentId,
+        async () => {
+          const response = await fetchStudents(token, { student_id: studentId }, { signal });
+          if (!response.success) {
+            throw new Error(response.error?.message || response.message || 'Failed to fetch student details');
+          }
+          const list = response.data?.data || [];
+          return list[0] || null;
+        }
+      );
     },
     enabled: !!token && !!studentId,
-    initialData: () => {
-      if (!studentId) return undefined;
-
-      // 1. Direct Detail Cache
-      const cachedDetail = queryClient.getQueryData(queryKeys.student.detail(studentId));
-      if (cachedDetail) return cachedDetail;
-
-      // 2. Local Relation Resolver (List Cache Fallback)
-      const listQueries = queryClient.getQueriesData({ queryKey: queryKeys.student.lists() });
-      for (const [key, listData] of listQueries) {
-        if (Array.isArray(listData)) {
-          const item = listData.find(e => e.student_id === studentId);
-          if (item) return item;
-        }
-      }
-      return undefined;
-    },
+    initialData: () => getCachedRecord(queryClient, 'student', studentId),
     initialDataUpdatedAt: () => queryClient.getQueryState(queryKeys.student.detail(studentId))?.dataUpdatedAt,
     staleTime: Infinity,
     refetchOnMount: false,

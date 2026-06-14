@@ -4,6 +4,7 @@ import { useBatchesQuery } from '../../../batch/hooks/useBatchQueries';
 import Card from '../../../../components/ui/Card';
 import Avatar from '../../../../components/ui/v2/Avatar';
 import TextInput from '../../../../components/ui/v2/TextInput';
+import SelectInput from '../../../../components/ui/v2/SelectInput';
 import Button from '../../../../components/ui/v2/Button';
 import ProgramSelectionModal from '../components/ProgramSelectionModal';
 
@@ -305,10 +306,10 @@ const AcademicEnrollmentStep = ({ formData, setFormData, onNext, onBack }) => {
   }
 
   return (
-    <div className="flex flex-col lg:flex-row gap-8 animate-in fade-in slide-in-from-right-4 duration-500 max-w-[1440px] mx-auto w-full text-slate-700 dark:text-slate-200">
+    <div className="grid grid-cols-12 gap-6 md:gap-8 animate-in fade-in slide-in-from-right-4 duration-500 max-w-7xl mx-auto px-4 lg:px-0 w-full text-slate-700 dark:text-slate-200">
       
       {/* Left Column: Cart Selection & Configuration (Col span 7/12 Equivalent) */}
-      <div className="w-full lg:w-[60%] space-y-6">
+      <div className="col-span-12 lg:col-span-7 space-y-6">
         <div className="space-y-1">
           <h2 className="text-2xl font-black text-slate-900 dark:text-white">Enrollment & Course Selection</h2>
           <p className="text-sm text-slate-500 dark:text-slate-400">Add target packages or individual subjects and assign physical scheduled batches.</p>
@@ -390,20 +391,14 @@ const AcademicEnrollmentStep = ({ formData, setFormData, onNext, onBack }) => {
                                 <p className="text-[10px] text-slate-500">{course.description}</p>
                               </div>
                               <div className="flex items-center gap-3 w-full sm:w-auto">
-                                <div className="relative bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-2.5 py-1.5 flex items-center min-w-[170px] cursor-pointer hover:border-slate-300 dark:hover:border-slate-700 transition-all">
-                                  <select
-                                    value={currentBatchId || ''}
-                                    onChange={(e) => handleBatchChange(course.id, e.target.value)}
-                                    className="w-full bg-transparent border-none text-[11px] text-slate-700 dark:text-slate-300 font-bold focus:ring-0 cursor-pointer pr-5 appearance-none"
-                                  >
-                                    {(course.batches || []).map(batch => (
-                                      <option key={batch.id} value={batch.id} className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200">
-                                        {batch.name}
-                                      </option>
-                                    ))}
-                                  </select>
-                                  <span className="material-symbols-outlined text-slate-400 pointer-events-none absolute right-2 text-sm">expand_more</span>
-                                </div>
+                                <SelectInput
+                                  value={currentBatchId || ''}
+                                  onChange={(val) => handleBatchChange(course.id, val)}
+                                  options={(course.batches || []).map(b => ({ value: b.id, label: b.name }))}
+                                  inputSize="sm"
+                                  containerClassName="min-w-[170px]"
+                                  placeholder="Select Batch"
+                                />
                                 <div className="flex items-center gap-1">
                                   <span className={`size-1.5 rounded-full bg-current ${currentBatch?.seatsColor || 'text-emerald-500'}`}></span>
                                   <span className={`text-[9px] font-black uppercase ${currentBatch?.seatsColor || 'text-emerald-500'}`}>
@@ -423,20 +418,14 @@ const AcademicEnrollmentStep = ({ formData, setFormData, onNext, onBack }) => {
                       </div>
                       
                       <div className="flex items-center gap-4 w-full sm:w-auto">
-                        <div className="relative bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 flex items-center min-w-[200px] cursor-pointer hover:border-slate-300 dark:hover:border-slate-700 transition-all">
-                          <select
-                            value={(formData.selectedBatches || {})[item.id] || ''}
-                            onChange={(e) => handleBatchChange(item.id, e.target.value)}
-                            className="w-full bg-transparent border-none text-xs text-slate-700 dark:text-slate-300 font-bold focus:ring-0 cursor-pointer pr-6 appearance-none"
-                          >
-                            {(item.batches || []).map(batch => (
-                              <option key={batch.id} value={batch.id} className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200">
-                                {batch.name}
-                              </option>
-                            ))}
-                          </select>
-                          <span className="material-symbols-outlined text-slate-400 pointer-events-none absolute right-2 text-base">expand_more</span>
-                        </div>
+                        <SelectInput
+                          value={(formData.selectedBatches || {})[item.id] || ''}
+                          onChange={(val) => handleBatchChange(item.id, val)}
+                          options={(item.batches || []).map(b => ({ value: b.id, label: b.name }))}
+                          inputSize="sm"
+                          containerClassName="min-w-[200px]"
+                          placeholder="Select Batch"
+                        />
                         
                         <div className="flex items-center gap-1 px-1">
                           <span className={`size-2 rounded-full bg-current ${item.batches?.[0]?.seatsColor || 'text-emerald-500'}`}></span>
@@ -461,7 +450,7 @@ const AcademicEnrollmentStep = ({ formData, setFormData, onNext, onBack }) => {
       </div>
 
       {/* Right Column: Pricing & Installments (Col span 5/12 Equivalent) */}
-      <div className="w-full lg:w-[40%] space-y-6">
+      <div className="col-span-12 lg:col-span-5 space-y-6">
         
         {/* Pricing Card */}
         <Card className="bg-white dark:bg-slate-900/50 p-6 border-slate-200 dark:border-slate-800/80 shadow-sm backdrop-blur-md flex flex-col gap-5">
@@ -511,14 +500,12 @@ const AcademicEnrollmentStep = ({ formData, setFormData, onNext, onBack }) => {
                 value={formData.discountVal || ''}
                 onChange={(e) => setOverrideAmount(Number(e.target.value))}
                 placeholder="Override Amount"
-                className="bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 focus:border-primary h-11 text-sm text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-600"
               />
               <TextInput
                 type="text"
                 value={formData.discountReason || ''}
                 onChange={(e) => setOverrideReason(e.target.value)}
                 placeholder="Reason (e.g., Entrance Scholarship)"
-                className="bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 focus:border-primary h-11 text-sm text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-600"
               />
             </div>
           </div>
@@ -617,20 +604,20 @@ const AcademicEnrollmentStep = ({ formData, setFormData, onNext, onBack }) => {
                     <div className="grid grid-cols-2 gap-2 mt-1">
                       <div className="space-y-0.5">
                         <span className="text-[8px] font-black uppercase text-slate-400 dark:text-slate-500">Amount (₹)</span>
-                        <input 
+                        <TextInput 
                           type="number"
                           value={inst.amount || ''}
                           onChange={(e) => updateInstallmentField(index, 'amount', Number(e.target.value))}
-                          className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded px-2 py-1 text-xs text-slate-800 dark:text-white focus:ring-0 focus:border-primary"
+                          inputSize="sm"
                         />
                       </div>
                       <div className="space-y-0.5">
                         <span className="text-[8px] font-black uppercase text-slate-400 dark:text-slate-500">Due Date</span>
-                        <input 
+                        <TextInput 
                           type="date"
                           value={inst.dueDate || ''}
                           onChange={(e) => updateInstallmentField(index, 'dueDate', e.target.value)}
-                          className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded px-2 py-1 text-xs text-slate-800 dark:text-white focus:ring-0 focus:border-primary"
+                          inputSize="sm"
                         />
                       </div>
                     </div>

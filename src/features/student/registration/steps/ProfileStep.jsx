@@ -1,4 +1,8 @@
 import React from 'react';
+import TextInput from '../../../../components/ui/v2/TextInput';
+import SelectInput from '../../../../components/ui/v2/SelectInput';
+import PhoneInput from '../../../../components/ui/v2/PhoneInput';
+import DateInput from '../../../../components/ui/v2/DateInput';
 
 const ProfileStep = ({ formData, setFormData, onNext, onCancel }) => {
   const handleChange = (e) => {
@@ -12,28 +16,30 @@ const ProfileStep = ({ formData, setFormData, onNext, onCancel }) => {
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="mb-8">
+    <div className="grid grid-cols-12 gap-6 md:gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-7xl mx-auto w-full text-slate-700 dark:text-slate-200">
+      <div className="col-span-12 mb-2">
         <h1 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white">Student Registration</h1>
-        <p className="mt-2 text-slate-600 dark:text-slate-400">Please fill in the student profile information accurately to proceed.</p>
+        <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">Please fill in the student profile information accurately to proceed.</p>
       </div>
 
-      <div className="space-y-8">
+      {/* Left Column: Personal and Contact Info (7/12) */}
+      <div className="col-span-12 lg:col-span-7 space-y-6">
         {/* Section 1: Personal Information */}
-        <section className="rounded-2xl bg-white dark:bg-slate-900/50 p-6 shadow-sm border border-primary/5">
-          <div className="mb-6 flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-4">
+        <section className="rounded-2xl bg-white dark:bg-slate-900/50 p-6 border border-slate-200 dark:border-slate-800/80 shadow-sm backdrop-blur-md space-y-6">
+          <div className="flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
             <span className="material-symbols-outlined text-primary">person</span>
-            <h3 className="text-lg font-bold">1. Personal Information</h3>
+            <h3 className="text-base font-bold text-slate-900 dark:text-white">1. Personal Information</h3>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="md:col-span-1">
-              <label className="block text-sm font-semibold mb-2">Profile Photo</label>
-              <div className="group relative flex aspect-square w-full max-w-[200px] flex-col items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 transition-colors hover:border-primary">
+          
+          <div className="flex flex-col sm:flex-row gap-6 items-start">
+            {/* Profile Photo Uploader */}
+            <div className="flex flex-col items-center gap-2 flex-shrink-0 w-full sm:w-auto">
+              <span className="text-xs font-bold uppercase tracking-wider text-text-secondary pl-1 self-start">Profile Photo</span>
+              <div className="group relative flex aspect-square w-32 flex-col items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 transition-colors hover:border-primary cursor-pointer">
                 <div className="absolute inset-0 flex flex-col items-center justify-center p-4 text-center">
-                  <span className="material-symbols-outlined text-4xl text-slate-400 group-hover:text-primary transition-colors">add_a_photo</span>
-                  <p className="mt-2 text-xs font-medium text-slate-500">Upload Student Photo</p>
+                  <span className="material-symbols-outlined text-3xl text-slate-400 group-hover:text-primary transition-colors">add_a_photo</span>
+                  <p className="mt-1 text-[10px] font-medium text-slate-500">Upload Photo</p>
                 </div>
-                {/* Image preview could be added here */}
                 <input 
                   className="absolute inset-0 cursor-pointer opacity-0" 
                   type="file" 
@@ -41,256 +47,222 @@ const ProfileStep = ({ formData, setFormData, onNext, onCancel }) => {
                   onChange={handleChange}
                 />
               </div>
+              <span className="text-[9px] text-text-secondary/60">JPG, PNG (Max 2MB)</span>
             </div>
-            <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+            {/* Core Fields */}
+            <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
               <div className="sm:col-span-2">
-                <label className="block text-sm font-semibold mb-1.5 text-text-secondary">Full Name</label>
-                <input 
-                  className="w-full rounded-lg border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800 focus:border-primary focus:ring-primary h-12 px-4 transition-all" 
-                  placeholder="John Doe" 
-                  type="text"
+                <TextInput
+                  label="Full Name"
                   name="fullName"
                   value={formData.fullName || ''}
                   onChange={handleChange}
+                  placeholder="e.g. John Doe"
                   required
                 />
               </div>
-              <div>
-                <label className="block text-sm font-semibold mb-1.5 text-text-secondary">Gender</label>
-                <select 
-                  className="w-full rounded-lg border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800 focus:border-primary focus:ring-primary h-12 px-4 transition-all"
-                  name="gender"
-                  value={formData.gender || ''}
-                  onChange={handleChange}
-                >
-                  <option value="">Select Gender</option>
-                  <option value="Male">Male</option>
-                  <option value="Female">Female</option>
-                  <option value="Other">Other</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-semibold mb-1.5 text-text-secondary">Date of Birth</label>
-                <input 
-                  className="w-full rounded-lg border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800 focus:border-primary focus:ring-primary h-12 px-4 transition-all" 
-                  type="date"
-                  name="dob"
-                  value={formData.dob || ''}
-                  onChange={handleChange}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold mb-1.5 text-text-secondary">Mother's Name</label>
-                <input 
-                  className="w-full rounded-lg border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800 focus:border-primary focus:ring-primary h-12 px-4 transition-all" 
-                  type="text"
-                  name="motherName"
-                  value={formData.motherName || ''}
-                  onChange={handleChange}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold mb-1.5 text-text-secondary">Father's Name</label>
-                <input 
-                  className="w-full rounded-lg border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800 focus:border-primary focus:ring-primary h-12 px-4 transition-all" 
-                  type="text"
-                  name="fatherName"
-                  value={formData.fatherName || ''}
-                  onChange={handleChange}
-                />
-              </div>
+              
+              <SelectInput
+                label="Gender"
+                value={formData.gender || ''}
+                onChange={(val) => setFormData(prev => ({ ...prev, gender: val }))}
+                options={[
+                  { value: 'Male', label: 'Male' },
+                  { value: 'Female', label: 'Female' },
+                  { value: 'Other', label: 'Other' }
+                ]}
+                placeholder="Select Gender"
+              />
+
+              <DateInput
+                label="Date of Birth"
+                name="dob"
+                value={formData.dob || ''}
+                onChange={handleChange}
+              />
+
+              <TextInput
+                label="Father's Name"
+                name="fatherName"
+                value={formData.fatherName || ''}
+                onChange={handleChange}
+                placeholder="Father's Name"
+              />
+
+              <TextInput
+                label="Mother's Name"
+                name="motherName"
+                value={formData.motherName || ''}
+                onChange={handleChange}
+                placeholder="Mother's Name"
+              />
             </div>
           </div>
         </section>
 
         {/* Section 2: Contact & Address Details */}
-        <section className="rounded-2xl bg-white dark:bg-slate-900/50 p-6 shadow-sm border border-primary/5">
-          <div className="mb-6 flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-4">
+        <section className="rounded-2xl bg-white dark:bg-slate-900/50 p-6 border border-slate-200 dark:border-slate-800/80 shadow-sm backdrop-blur-md space-y-6">
+          <div className="flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
             <span className="material-symbols-outlined text-primary">location_on</span>
-            <h3 className="text-lg font-bold">2. Contact & Address Details</h3>
+            <h3 className="text-base font-bold text-slate-900 dark:text-white">2. Contact & Address Details</h3>
           </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-semibold mb-1.5 text-text-secondary">Email Address</label>
-              <input 
-                className="w-full rounded-lg border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800 focus:border-primary focus:ring-primary h-12 px-4 transition-all" 
-                placeholder="student@example.com" 
-                type="email"
-                name="email"
-                value={formData.email || ''}
-                onChange={handleChange}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold mb-1.5 text-text-secondary">Mobile Number</label>
-              <input 
-                className="w-full rounded-lg border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800 focus:border-primary focus:ring-primary h-12 px-4 transition-all" 
-                placeholder="+1 (555) 000-0000" 
-                type="tel"
-                name="mobile"
-                value={formData.mobile || ''}
-                onChange={handleChange}
-              />
-            </div>
+            <TextInput
+              label="Email Address"
+              type="email"
+              name="email"
+              value={formData.email || ''}
+              onChange={handleChange}
+              placeholder="student@example.com"
+              leftIcon="mail"
+            />
+
+            <PhoneInput
+              label="Mobile Number"
+              name="mobile"
+              value={formData.mobile || ''}
+              onChange={handleChange}
+              placeholder="Mobile Number"
+            />
+
             <div className="sm:col-span-2">
-              <label className="block text-sm font-semibold mb-1.5 text-text-secondary">Address Line 1</label>
-              <input 
-                className="w-full rounded-lg border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800 focus:border-primary focus:ring-primary h-12 px-4 transition-all" 
-                placeholder="Street name and number" 
-                type="text"
+              <TextInput
+                label="Address Line 1"
                 name="address1"
                 value={formData.address1 || ''}
                 onChange={handleChange}
+                placeholder="Street name and number"
               />
             </div>
+
             <div className="sm:col-span-2">
-              <label className="block text-sm font-semibold mb-1.5 text-text-secondary">Address Line 2 (Optional)</label>
-              <input 
-                className="w-full rounded-lg border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800 focus:border-primary focus:ring-primary h-12 px-4 transition-all" 
-                placeholder="Apartment, suite, unit, etc." 
-                type="text"
+              <TextInput
+                label="Address Line 2 (Optional)"
                 name="address2"
                 value={formData.address2 || ''}
                 onChange={handleChange}
+                placeholder="Apartment, suite, unit, etc."
               />
             </div>
-            <div className="grid grid-cols-3 sm:col-span-2 gap-4">
-              <div>
-                <label className="block text-sm font-semibold mb-1.5 text-text-secondary">City</label>
-                <input 
-                  className="w-full rounded-lg border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800 focus:border-primary focus:ring-primary h-12 px-4 transition-all" 
-                  type="text"
-                  name="city"
-                  value={formData.city || ''}
-                  onChange={handleChange}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold mb-1.5 text-text-secondary">State</label>
-                <input 
-                  className="w-full rounded-lg border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800 focus:border-primary focus:ring-primary h-12 px-4 transition-all" 
-                  type="text"
-                  name="state"
-                  value={formData.state || ''}
-                  onChange={handleChange}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold mb-1.5 text-text-secondary">Pin Code</label>
-                <input 
-                  className="w-full rounded-lg border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800 focus:border-primary focus:ring-primary h-12 px-4 transition-all" 
-                  type="text"
-                  name="pincode"
-                  value={formData.pincode || ''}
-                  onChange={handleChange}
-                />
-              </div>
+
+            <TextInput
+              label="City"
+              name="city"
+              value={formData.city || ''}
+              onChange={handleChange}
+              placeholder="City"
+            />
+
+            <div className="grid grid-cols-2 gap-4">
+              <TextInput
+                label="State"
+                name="state"
+                value={formData.state || ''}
+                onChange={handleChange}
+                placeholder="State"
+              />
+              <TextInput
+                label="Pin Code"
+                name="pincode"
+                value={formData.pincode || ''}
+                onChange={handleChange}
+                placeholder="Pin Code"
+              />
             </div>
           </div>
         </section>
+      </div>
 
+      {/* Right Column: Emergency and Educational background (5/12) */}
+      <div className="col-span-12 lg:col-span-5 space-y-6">
         {/* Section 3: Emergency Contact */}
-        <section className="rounded-2xl bg-white dark:bg-slate-900/50 p-6 shadow-sm border border-primary/5">
-          <div className="mb-6 flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-4">
+        <section className="rounded-2xl bg-white dark:bg-slate-900/50 p-6 border border-slate-200 dark:border-slate-800/80 shadow-sm backdrop-blur-md space-y-6">
+          <div className="flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
             <span className="material-symbols-outlined text-primary">contact_emergency</span>
-            <h3 className="text-lg font-bold">3. Emergency Contact</h3>
+            <h3 className="text-base font-bold text-slate-900 dark:text-white">3. Emergency Contact</h3>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-semibold mb-1.5 text-text-secondary">Contact Name</label>
-              <input 
-                className="w-full rounded-lg border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800 focus:border-primary focus:ring-primary h-12 px-4 transition-all" 
-                type="text"
-                name="emergencyContactName"
-                value={formData.emergencyContactName || ''}
-                onChange={handleChange}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold mb-1.5 text-text-secondary">Relationship</label>
-              <select 
-                className="w-full rounded-lg border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800 focus:border-primary focus:ring-primary h-12 px-4 transition-all"
-                name="emergencyContactRelationship"
-                value={formData.emergencyContactRelationship || ''}
-                onChange={handleChange}
-              >
-                <option value="">Select Relationship</option>
-                <option value="Parent">Parent</option>
-                <option value="Guardian">Guardian</option>
-                <option value="Sibling">Sibling</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-semibold mb-1.5 text-text-secondary">Phone Number</label>
-              <input 
-                className="w-full rounded-lg border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800 focus:border-primary focus:ring-primary h-12 px-4 transition-all" 
-                type="tel"
-                name="emergencyContactPhone"
-                value={formData.emergencyContactPhone || ''}
-                onChange={handleChange}
-              />
-            </div>
+
+          <div className="space-y-4">
+            <TextInput
+              label="Contact Name"
+              name="emergencyContactName"
+              value={formData.emergencyContactName || ''}
+              onChange={handleChange}
+              placeholder="Contact Person Name"
+            />
+
+            <SelectInput
+              label="Relationship"
+              value={formData.emergencyContactRelationship || ''}
+              onChange={(val) => setFormData(prev => ({ ...prev, emergencyContactRelationship: val }))}
+              options={[
+                { value: 'Parent', label: 'Parent' },
+                { value: 'Guardian', label: 'Guardian' },
+                { value: 'Sibling', label: 'Sibling' }
+              ]}
+              placeholder="Select Relationship"
+            />
+
+            <PhoneInput
+              label="Phone Number"
+              name="emergencyContactPhone"
+              value={formData.emergencyContactPhone || ''}
+              onChange={handleChange}
+              placeholder="Phone Number"
+            />
           </div>
         </section>
 
         {/* Section 4: Educational Background */}
-        <section className="rounded-2xl bg-white dark:bg-slate-900/50 p-6 shadow-sm border border-primary/5">
-          <div className="mb-6 flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-4">
+        <section className="rounded-2xl bg-white dark:bg-slate-900/50 p-6 border border-slate-200 dark:border-slate-800/80 shadow-sm backdrop-blur-md space-y-6">
+          <div className="flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
             <span className="material-symbols-outlined text-primary">history_edu</span>
-            <h3 className="text-lg font-bold">4. Educational Background</h3>
+            <h3 className="text-base font-bold text-slate-900 dark:text-white">4. Educational Background</h3>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-semibold mb-1.5 text-text-secondary">Highest Qualification</label>
-              <input 
-                className="w-full rounded-lg border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800 focus:border-primary focus:ring-primary h-12 px-4 transition-all" 
-                placeholder="e.g. High School, Bachelors" 
-                type="text"
-                name="highestQualification"
-                value={formData.highestQualification || ''}
-                onChange={handleChange}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold mb-1.5 text-text-secondary">Previous Institution</label>
-              <input 
-                className="w-full rounded-lg border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800 focus:border-primary focus:ring-primary h-12 px-4 transition-all" 
-                placeholder="Name of school/college" 
-                type="text"
-                name="previousInstitution"
-                value={formData.previousInstitution || ''}
-                onChange={handleChange}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold mb-1.5 text-text-secondary">Year of Passing</label>
-              <input 
-                className="w-full rounded-lg border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800 focus:border-primary focus:ring-primary h-12 px-4 transition-all" 
-                placeholder="YYYY" 
-                type="number"
+
+          <div className="space-y-4">
+            <TextInput
+              label="Highest Qualification"
+              name="highestQualification"
+              value={formData.highestQualification || ''}
+              onChange={handleChange}
+              placeholder="e.g. High School, Bachelors"
+            />
+
+            <TextInput
+              label="Previous Institution"
+              name="previousInstitution"
+              value={formData.previousInstitution || ''}
+              onChange={handleChange}
+              placeholder="Name of school/college"
+            />
+
+            <div className="grid grid-cols-2 gap-4">
+              <TextInput
+                label="Year of Passing"
                 name="passingYear"
+                type="number"
                 value={formData.passingYear || ''}
                 onChange={handleChange}
+                placeholder="YYYY"
               />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold mb-1.5 text-text-secondary">Percentage / CGPA</label>
-              <input 
-                className="w-full rounded-lg border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800 focus:border-primary focus:ring-primary h-12 px-4 transition-all" 
-                placeholder="e.g. 85% or 9.2" 
-                type="text"
+              <TextInput
+                label="Percentage / CGPA"
                 name="grade"
                 value={formData.grade || ''}
                 onChange={handleChange}
+                placeholder="e.g. 85% or 9.2"
               />
             </div>
           </div>
         </section>
 
         {/* Navigation Buttons */}
-        <div className="flex items-center justify-between pt-6 border-t border-slate-100 dark:border-slate-800">
+        <div className="flex items-center justify-between pt-6 border-t border-slate-100 dark:border-slate-800 gap-4">
           <button 
-            className="flex items-center gap-2 rounded-xl border border-border-light dark:border-border-dark px-6 py-3 font-bold transition-colors hover:bg-slate-50 dark:hover:bg-slate-800 text-text-secondary" 
+            className="flex items-center justify-center gap-2 rounded-xl border border-slate-250 dark:border-slate-800 px-6 py-3 font-bold transition-colors hover:bg-slate-50 dark:hover:bg-slate-800 text-text-secondary flex-1" 
             type="button"
             onClick={onCancel}
           >
@@ -298,7 +270,7 @@ const ProfileStep = ({ formData, setFormData, onNext, onCancel }) => {
             Cancel
           </button>
           <button 
-            className="flex items-center gap-2 rounded-xl bg-primary px-10 py-3 font-bold text-white shadow-lg shadow-primary/20 transition-all hover:bg-primary-dark hover:scale-[1.02] active:scale-95" 
+            className="flex items-center justify-center gap-2 rounded-xl bg-primary px-6 py-3 font-bold text-white shadow-lg shadow-primary/20 transition-all hover:bg-primary-dark hover:scale-[1.02] active:scale-95 flex-1" 
             type="button"
             onClick={onNext}
           >

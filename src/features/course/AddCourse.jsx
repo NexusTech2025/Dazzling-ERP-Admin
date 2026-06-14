@@ -75,33 +75,16 @@ const AddCourse = () => {
   ];
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      {/* Dynamic Breadcrumbs */}
-      <Breadcrumbs items={crumbs} />
-
-      <div className="flex flex-col gap-1">
-        <h1 className="text-3xl font-black text-text-main dark:text-white tracking-tight leading-tight">
-          {id ? 'Edit Offering' : 'Create New Offering'}
-        </h1>
-        <p className="text-text-secondary text-base">
-          {id 
-            ? 'Update course details or academic subject config and save changes.' 
-            : 'Define a new academic subject or skill course with specific board, medium, and fee structure.'
-          }
-        </p>
-      </div>
-
-      <CourseForm
-        initialData={existingCourse}
-        courseTypes={courseTypes}
-        isLoadingTypes={isLoadingTypes}
-        onSubmit={handleSubmit}
-        isSaving={createMutation.isPending || updateMutation.isPending}
-        externalError={error}
-        createTypeMutation={createTypeMutation}
-        onCancel={() => navigate('/admin/courses')}
-      />
-    </div>
+    <CourseForm
+      initialData={existingCourse}
+      courseTypes={courseTypes}
+      isLoadingTypes={isLoadingTypes}
+      onSubmit={handleSubmit}
+      isSaving={createMutation.isPending || updateMutation.isPending}
+      externalError={error}
+      createTypeMutation={createTypeMutation}
+      onCancel={() => navigate('/admin/courses')}
+    />
   );
 };
 

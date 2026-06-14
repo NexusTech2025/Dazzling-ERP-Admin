@@ -67,37 +67,13 @@ const EditBatch = () => {
   const displayError = fetchError ? fetchError.message : null;
 
   return (
-    <div className="max-w-7xl mx-auto pb-10">
-      {displayError && (
-        <div className="mb-6 bg-red-50 dark:bg-red-900/20 text-red-600 p-4 rounded-lg border border-red-100 dark:border-red-800 flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
-          <span className="material-symbols-outlined">error</span>
-          <span className="text-sm font-bold">{displayError}</span>
-        </div>
-      )}
-
-      <div className="mb-6">
-        <nav className="flex items-center gap-2 text-sm text-text-secondary font-medium mb-2">
-          <Link to="/admin/batches" className="hover:text-primary transition-colors">Batches</Link>
-          <span className="material-symbols-outlined text-[16px]">chevron_right</span>
-          {batch && (
-            <>
-              <Link to={`/admin/batches/${id}`} className="hover:text-primary transition-colors">
-                {batch.batch_name}
-              </Link>
-              <span className="material-symbols-outlined text-[16px]">chevron_right</span>
-            </>
-          )}
-          <span className="text-text-main dark:text-white">Edit Batch</span>
-        </nav>
-        <h2 className="text-3xl font-bold text-text-main dark:text-white">Update Batch</h2>
-        <p className="text-text-secondary mt-1">Configure existing batch details</p>
-      </div>
-
+    <>
       <BatchForm 
         initialData={batch}
         onSubmit={handleSubmit}
         onCancel={() => navigate('/admin/batches')}
         isSubmitting={updateMutation.isPending}
+        error={displayError}
       />
 
       <ConfirmModal 
@@ -115,7 +91,7 @@ const EditBatch = () => {
         title="Batch Update Error"
         error={modalState.error}
       />
-    </div>
+    </>
   );
 };
 

@@ -13,6 +13,8 @@ import {
 import { useBranchesQuery } from '../../features/core/hooks/useBranchQueries';
 import { useCoursesQuery } from '../../features/course/hooks/useCourseQueries';
 import TeacherForm from '../../features/teacher/components/TeacherForm';
+import APIErrorModal from '../../components/ui/APIErrorModal';
+import ConfirmModal from '../../components/ui/ConfirmModal';
 
 /**
  * AddTeacher Page Controller: Manages state, queries, mutations, and orchestration for Faculty forms.
@@ -23,8 +25,13 @@ const AddTeacher = () => {
   const navigate = useNavigate();
   const isEditMode = !!id;
 
-  const [error, setError] = useState(null);
   const [fieldErrors, setFieldErrors] = useState({});
+  const [modalState, setModalState] = useState({
+    isOpen: false,
+    status: 'idle', // 'success' | 'error'
+    error: null,
+    resultMessage: ''
+  });
 
   // Core Queries
   const { data: existingTeacher, isLoading: isFetchingTeacher } = useTeacherDetailQuery(id);
@@ -39,11 +46,8 @@ const AddTeacher = () => {
   // Mutations
   const addMutation = useCreateTeacherMutation();
   const updateMutation = useUpdateTeacherMutation();
-  const assignSubjectsMutation = useAssignTeacherSubjectsMutation();
-  const setSalaryConfigMutation = useSetTeacherSalaryConfigMutation();
 
   const handleFormSubmit = async (formData) => {
-    setError(null);
     setFieldErrors({});
 
     if (isEditMode) {
@@ -77,14 +81,26 @@ const AddTeacher = () => {
       updateMutation.mutate({ id, data: updateData }, {
         onSuccess: (res) => {
           if (res.success) {
-            navigate(`/admin/teachers/${id}`);
+            setModalState({
+              isOpen: true,
+              status: 'success',
+              resultMessage: `Faculty profile for "${formData.full_name}" was successfully updated.`
+            });
           } else {
-            setError(res.message || 'Failed to update profile.');
+            setModalState({
+              isOpen: true,
+              status: 'error',
+              error: res.error || { message: res.message || 'Failed to update profile.' }
+            });
           }
         },
         onError: (err) => {
           console.error('[AddTeacher] Update Profile Error:', err);
-          setError(err.message || 'Server error while updating profile.');
+          setModalState({
+            isOpen: true,
+            status: 'error',
+            error: err
+          });
         }
       });
     } else {
@@ -121,7 +137,11 @@ const AddTeacher = () => {
       addMutation.mutate(requestPayload, {
         onSuccess: (res) => {
           if (res.success) {
-            navigate('/admin/teachers');
+            setModalState({
+              isOpen: true,
+              status: 'success',
+              resultMessage: `Faculty "${formData.full_name}" was successfully registered.`
+            });
           } else {
             const err = res.error;
             if (err?.type === 'ValidationError' && err.details?.fields) {
@@ -130,17 +150,31 @@ const AddTeacher = () => {
                 errorsMap[item.field] = item.message;
               });
               setFieldErrors(errorsMap);
-              setError(err.message || 'Please fix the errors highlighted below.');
-            } else {
-              setError(res.message || err?.message || 'Failed to register faculty.');
             }
+            setModalState({
+              isOpen: true,
+              status: 'error',
+              error: err || { message: res.message || 'Failed to register faculty.' }
+            });
           }
         },
         onError: (err) => {
           console.error('[AddTeacher] Onboard Error:', err);
-          setError(err.message || 'Server error while onboarding teacher.');
+          setModalState({
+            isOpen: true,
+            status: 'error',
+            error: err
+          });
         }
       });
+    }
+  };
+
+  const handleDismissModals = () => {
+    const isSuccess = modalState.status === 'success';
+    setModalState({ isOpen: false, status: 'idle', error: null, resultMessage: '' });
+    if (isSuccess) {
+      navigate(isEditMode ? `/admin/teachers/${id}` : '/admin/teachers');
     }
   };
 
@@ -158,21 +192,39 @@ const AddTeacher = () => {
   }, [teacherSubjects]);
 
   return (
-    <TeacherForm
-      teacher={existingTeacher}
-      subjects={mappedSubjects}
-      salaryConfig={salaryConfig}
-      documents={teacherDocs}
-      courses={coursesData || []}
-      branches={branchesData || []}
-      isBranchesLoading={isBranchesLoading}
-      isDataLoading={isTeacherSubjectsLoading || isSalaryConfigsLoading || isTeacherDocsLoading}
-      isSubmitting={addMutation.isPending || updateMutation.isPending}
-      error={error}
-      fieldErrors={fieldErrors}
-      onSubmit={handleFormSubmit}
-      onCancel={() => navigate(isEditMode ? `/admin/teachers/${id}` : '/admin/teachers')}
-    />
+    <>
+      <TeacherForm
+        teacher={existingTeacher}
+        subjects={mappedSubjects}
+        salaryConfig={salaryConfig}
+        documents={teacherDocs}
+        courses={coursesData || []}
+        branches={branchesData || []}
+        isBranchesLoading={isBranchesLoading}
+        isDataLoading={isTeacherSubjectsLoading || isSalaryConfigsLoading || isTeacherDocsLoading}
+        isSubmitting={addMutation.isPending || updateMutation.isPending}
+        error={modalState.status === 'error' ? (modalState.error?.message || 'Action failed.') : null}
+        fieldErrors={fieldErrors}
+        onSubmit={handleFormSubmit}
+        onCancel={() => navigate(isEditMode ? `/admin/teachers/${id}` : '/admin/teachers')}
+      />
+
+      <ConfirmModal 
+        isOpen={modalState.isOpen && modalState.status === 'success'}
+        onClose={handleDismissModals}
+        onConfirm={handleDismissModals}
+        status="success"
+        title={isEditMode ? "Profile Updated Successfully" : "Faculty Registered Successfully"}
+        resultMessage={modalState.resultMessage}
+      />
+
+      <APIErrorModal 
+        isOpen={modalState.isOpen && modalState.status === 'error'}
+        onClose={handleDismissModals}
+        title={isEditMode ? "Profile Update Error" : "Faculty Registration Error"}
+        error={modalState.error}
+      />
+    </>
   );
 };
 

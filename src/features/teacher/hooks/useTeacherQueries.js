@@ -3,6 +3,7 @@ import { useAuth } from '../../../context/AuthContextCore';
 import { queryKeys, EMPTY_FILTER } from '../../../lib/react-query/queryKeys';
 import { apiClient } from '../../../services/apiClient';
 import { API_REGISTRY } from '../../../services/apiRegistry';
+import { getCachedRecord, resolveRecord } from '../../../lib/react-query/cacheHelper';
 
 /**
  * Hook for fetching all teachers
@@ -38,33 +39,27 @@ export const useTeacherDetailQuery = (id) => {
   return useQuery({
     queryKey: queryKeys.teacher.detail(id),
     queryFn: async ({ signal }) => {
-      const response = await apiClient.executeAction(
-        API_REGISTRY.DATA.QUERY,
-        {
-          target: 'Teacher',
-          where: { teacher_id: id },
-          pagination: { limit: 1 }
-        },
-        token,
-        { signal }
+      return resolveRecord(
+        queryClient,
+        'teacher',
+        id,
+        async () => {
+          const response = await apiClient.executeAction(
+            API_REGISTRY.DATA.QUERY,
+            {
+              target: 'Teacher',
+              where: { teacher_id: id },
+              pagination: { limit: 1 }
+            },
+            token,
+            { signal }
+          );
+          return response.data?.data?.[0] || null;
+        }
       );
-      return response.data?.data?.[0] || null;
     },
     enabled: !!token && !!id,
-    initialData: () => {
-      if (!id) return undefined;
-      const cachedDetail = queryClient.getQueryData(queryKeys.teacher.detail(id));
-      if (cachedDetail) return cachedDetail;
-
-      const listQueries = queryClient.getQueriesData({ queryKey: queryKeys.teacher.lists() });
-      for (const [key, listData] of listQueries) {
-        if (Array.isArray(listData)) {
-          const item = listData.find(t => t.teacher_id === id || t.id === id);
-          if (item) return item;
-        }
-      }
-      return undefined;
-    },
+    initialData: () => getCachedRecord(queryClient, 'teacher', id),
     initialDataUpdatedAt: () => queryClient.getQueryState(queryKeys.teacher.detail(id))?.dataUpdatedAt,
     staleTime: 1000 * 60 * 5,
   });
@@ -185,7 +180,7 @@ export const useCreateTeacherMutation = () => {
       ),
     onSuccess: (response) => {
       if (response.success) {
-        queryClient.refetchQueries({ queryKey: queryKeys.teacher.list({}) });
+        queryClient.invalidateQueries({ queryKey: queryKeys.teacher.all });
       }
     }
   });
@@ -234,7 +229,7 @@ export const useDeleteTeacherMutation = () => {
       ),
     onSuccess: (response) => {
       if (response.success) {
-        queryClient.refetchQueries({ queryKey: queryKeys.teacher.all });
+        queryClient.invalidateQueries({ queryKey: queryKeys.teacher.all });
       }
     }
   });

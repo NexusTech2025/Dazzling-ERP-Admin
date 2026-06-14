@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../../context/AuthContextCore';
 import { queryKeys, EMPTY_FILTER } from '../../../lib/react-query/queryKeys';
+import { getCachedRecord, resolveRecord } from '../../../lib/react-query/cacheHelper';
 import { normalizeCourse, normalizeCourseList } from '../utils/courseMappers';
 import { apiClient } from '../../../services/apiClient';
 import { API_REGISTRY } from '../../../services/apiRegistry';
@@ -122,26 +123,23 @@ export const useCourseDetailQuery = (id) => {
   return useQuery({
     queryKey: queryKeys.course.detail(id),
     queryFn: async ({ signal }) => {
-      const response = await fetchCourseDetail(token, id, { signal });
-      if (!response.success) {
-        throw new Error(response.error?.message || response.message || 'Failed to fetch course details');
-      }
-      return normalizeCourse(response.data?.data?.[0] || null);
+      return resolveRecord(
+        queryClient,
+        'course',
+        id,
+        async () => {
+          const response = await fetchCourseDetail(token, id, { signal });
+          if (!response.success) {
+            throw new Error(response.error?.message || response.message || 'Failed to fetch course details');
+          }
+          return normalizeCourse(response.data?.data?.[0] || null);
+        }
+      );
     },
     enabled: !!token && !!id,
     initialData: () => {
-      if (!id) return undefined;
-      const cachedDetail = queryClient.getQueryData(queryKeys.course.detail(id));
-      if (cachedDetail) return cachedDetail;
-
-      const listQueries = queryClient.getQueriesData({ queryKey: queryKeys.course.lists() });
-      for (const [key, listData] of listQueries) {
-        if (Array.isArray(listData)) {
-          const item = listData.find(c => c.course_id === id || c.id === id);
-          if (item) return normalizeCourse(item);
-        }
-      }
-      return undefined;
+      const cached = getCachedRecord(queryClient, 'course', id);
+      return cached ? normalizeCourse(cached) : undefined;
     },
     initialDataUpdatedAt: () => queryClient.getQueryState(queryKeys.course.detail(id))?.dataUpdatedAt,
     staleTime: 1000 * 60 * 5,
@@ -307,7 +305,7 @@ export const usePackagesQuery = (filter = EMPTY_FILTER) => {
       return hydrated;
     },
     staleTime: Infinity,
-    refetchOnMount: true,
+    refetchOnMount: false,
     refetchOnWindowFocus: false,
   });
 };
@@ -320,27 +318,21 @@ export const usePackageDetailQuery = (id) => {
     queryKey: queryKeys.course.package.detail(id),
     queryFn: async ({ signal }) => {
       await ensurePackageRelations(queryClient, token);
-      const response = await fetchPackageDetail(token, id, { signal });
-      if (!response.success) {
-        throw new Error(response.error?.message || response.message || 'Failed to fetch package details');
-      }
-      return response.data?.data?.[0] || null;
+      return resolveRecord(
+        queryClient,
+        'package',
+        id,
+        async () => {
+          const response = await fetchPackageDetail(token, id, { signal });
+          if (!response.success) {
+            throw new Error(response.error?.message || response.message || 'Failed to fetch package details');
+          }
+          return response.data?.data?.[0] || null;
+        }
+      );
     },
     enabled: !!token && !!id,
-    initialData: () => {
-      if (!id) return undefined;
-      const cachedDetail = queryClient.getQueryData(queryKeys.course.package.detail(id));
-      if (cachedDetail) return cachedDetail;
-
-      const listQueries = queryClient.getQueriesData({ queryKey: queryKeys.course.package.all });
-      for (const [key, listData] of listQueries) {
-        if (Array.isArray(listData)) {
-          const item = listData.find(p => p.package_id === id);
-          if (item) return item;
-        }
-      }
-      return undefined;
-    },
+    initialData: () => getCachedRecord(queryClient, 'package', id),
     initialDataUpdatedAt: () => queryClient.getQueryState(queryKeys.course.package.detail(id))?.dataUpdatedAt,
     select: (data) => hydratePackageRelations(data, queryClient),
     staleTime: 1000 * 60 * 5,

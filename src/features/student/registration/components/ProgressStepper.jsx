@@ -159,7 +159,7 @@ const GlassIndicatorStepper = ({ currentStep, totalSteps, steps, percentage }) =
         </span>
       </div>
 
-      <div className="flex-1 max-w-xs relative flex justify-between items-center px-4">
+      <div className="hidden sm:flex flex-1 max-w-xs relative justify-between items-center px-4">
         <div className="absolute left-0 right-0 h-[1px] bg-slate-300 dark:bg-slate-800 top-1/2 -translate-y-1/2 z-0">
           <div 
             className="h-full bg-primary transition-all duration-500" 
