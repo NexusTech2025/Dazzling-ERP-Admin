@@ -3,8 +3,35 @@ import { useAuth } from '../context/AuthContextCore';
 import { apiClient } from '../services/apiClient';
 import { API_REGISTRY } from '../services/apiRegistry';
 import { queryKeys, EMPTY_FILTER } from '../lib/react-query/queryKeys';
-import { normalizeBatchList } from '../features/batch/utils/batchMappers';
-import { normalizeCourseList } from '../features/course/utils/courseMappers';
+import { hasSchema } from '../lib/react-query/schemaRegistry.js';
+import { validateRecordSchema } from '../lib/react-query/validationEngine.js';
+import { normalizeRecord } from '../lib/react-query/hydrate.js';
+
+// 🎯 Hydration Strategies Registry
+// Encapsulates normalizations and validation keys for each entity type.
+const HYDRATION_STRATEGIES = {
+  'Course': {
+    entityName: 'course',
+    normalize: (records) => normalizeRecord('course', records),
+  },
+  'Batch': {
+    entityName: 'batch',
+    normalize: (records) => normalizeRecord('batch', records),
+  },
+  'Package': {
+    entityName: 'package',
+    normalize: (records) => normalizeRecord('package', records),
+  }
+};
+
+const getStrategy = (targetName) => {
+  const defaultStrategy = {
+    entityName: targetName.toLowerCase(),
+    normalize: (records) => normalizeRecord(targetName.toLowerCase(), records),
+  };
+  const strategy = HYDRATION_STRATEGIES[targetName] || {};
+  return { ...defaultStrategy, ...strategy };
+};
 
 /**
  * useErpHydration: Strategy 1 - App Initialization Guard
@@ -59,22 +86,27 @@ export const useErpHydration = () => {
         console.log(`🔍 Inspecting hydration for ${targetName} (Response Key: ${responseKey})...`);
 
         if (result && Array.isArray(result.data)) {
-          let records = result.data;
-
-          if (targetName === 'Batch') {
-            records = normalizeBatchList(records);
-          } else if (targetName === 'Course') {
-            records = normalizeCourseList(records);
-          }
+          const strategy = getStrategy(targetName);
+          const records = strategy.normalize(result.data, queryClient);
 
           console.log(`💧 Hydrating ${targetName}: ${records.length} records found.`);
-          console.log(`📦 Cache Key:`, JSON.stringify(config.query_key.list(EMPTY_FILTER)));
 
-          queryClient.setQueryData(
-            config.query_key.list(EMPTY_FILTER),
-            records,
-            { updatedAt: now }
-          );
+          if (hasSchema(strategy.entityName)) {
+            console.log(`🛡️ Validating hydration records for: ${targetName}`);
+            records.forEach(record => {
+              validateRecordSchema(strategy.entityName, record, { failMode: 'lazy', context: 'read' });
+            });
+          }
+
+          const listKey = config.query_key.list(EMPTY_FILTER);
+          console.log(`📦 Cache Key:`, JSON.stringify(listKey));
+
+          // Mirror the resolveList pattern in cacheHelper.js (setQueryData + setQueryDefaults)
+          // so the seeded entry is treated as fresh by any hook with staleTime: Infinity.
+          // Without setQueryDefaults, the entry has no staleTime and is considered stale
+          // immediately, triggering an unnecessary network refetch on first mount.
+          queryClient.setQueryData(listKey, records, { updatedAt: now });
+          queryClient.setQueryDefaults(listKey, { staleTime: Infinity, gcTime: Infinity });
         } else {
           console.warn(`⚠️ No records found in response for key: ${responseKey}. Data structure:`, result);
         }

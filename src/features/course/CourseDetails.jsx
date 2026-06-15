@@ -6,9 +6,9 @@ import {
   useCourseTeachersQuery, 
   useCourseAllocationsQuery, 
   useAssignCourseTeacherMutation, 
-  useUnassignCourseTeacherMutation, 
-  usePackagesQuery 
+  useUnassignCourseTeacherMutation 
 } from './hooks/useCourseQueries';
+import { usePackagesQuery } from './hooks/usePackageQueries';
 import { useTeachersQuery } from '../teacher/hooks/useTeacherQueries';
 import { useBatchesQuery, useUpdateBatchMutation, useDeleteBatchMutation } from '../batch/hooks/useBatchQueries';
 import SelectInput from '../../components/ui/v2/SelectInput';
@@ -141,7 +141,7 @@ const CourseDetails = () => {
     { id: 'structure', label: 'Fee Structure', icon: 'receipt_long' },
   ];
 
-  const connectedPackages = packages.filter(pkg => pkg.included_courses?.includes(id));
+  const connectedPackages = packages.filter(pkg => pkg.courses?.some(c => c.course_id === id));
 
   return (
     <MainLayout

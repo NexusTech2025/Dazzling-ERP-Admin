@@ -17,21 +17,35 @@ const CourseGridView = ({ courses = [], onDelete }) => {
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {courses.map(course => (
         <div key={course.course_id} className="group relative">
-          <CourseCardV2
-            course={course}
-            density="medium"
-            onClick={() => navigate(`/admin/courses/${course.course_id}`)}
-            onEdit={() => navigate(`/admin/courses/edit/${course.course_id}`)}
-          />
+          {/* Mobile View: Low Density */}
+          <div className="md:hidden">
+            <CourseCardV2
+              course={course}
+              density="low"
+              onClick={() => navigate(`/admin/courses/${course.course_id}`)}
+              onEdit={() => navigate(`/admin/courses/edit/${course.course_id}`)}
+              onDelete={onDelete ? () => onDelete(course.course_id, course.name) : undefined}
+            />
+          </div>
 
-          {/* Delete button (hover reveal) */}
+          {/* Desktop View: Medium Density */}
+          <div className="hidden md:block">
+            <CourseCardV2
+              course={course}
+              density="medium"
+              onClick={() => navigate(`/admin/courses/${course.course_id}`)}
+              onEdit={() => navigate(`/admin/courses/edit/${course.course_id}`)}
+            />
+          </div>
+
+          {/* Delete button (hover reveal, desktop only) */}
           {onDelete && (
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 onDelete(course.course_id, course.name);
               }}
-              className="absolute top-3 left-3 p-1 bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white border border-rose-500/20 rounded-lg transition-all opacity-0 group-hover:opacity-100 cursor-pointer shadow-sm flex items-center justify-center"
+              className="absolute top-3 left-3 p-1 bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white border border-rose-500/20 rounded-lg transition-all opacity-0 group-hover:opacity-100 cursor-pointer shadow-sm hidden md:flex items-center justify-center"
               title="Archive Course"
             >
               <span className="material-symbols-outlined text-[16px]">delete</span>

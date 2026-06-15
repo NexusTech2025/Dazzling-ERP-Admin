@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import masterPerksData from '../../../mockdata/academic/masterPerks.json';
+import React, { useState, useMemo } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '../../../lib/react-query/queryKeys';
 
 /**
  * Modern Perks Selection Modal
@@ -7,6 +8,39 @@ import masterPerksData from '../../../mockdata/academic/masterPerks.json';
  * Width increased to full width with 2rem margin.
  */
 const PerksSelectionModal = ({ isOpen, onClose, onSelect, selectedPerks = [] }) => {
+  const queryClient = useQueryClient();
+  const cachedPerks = queryClient.getQueryData(queryKeys.course.packagePerk.list()) || [];
+
+  // Get unique perks by perk_title to form the library
+  const libraryPerks = useMemo(() => {
+    const uniqueMap = new Map();
+    
+    // Add fallback standard perks first
+    const fallbacks = [
+      { perk_title: 'Doubt Solving Support', perk_description: '24/7 doubt solving with expert instructors.', icon: 'help', display_order: 1 },
+      { perk_title: 'Mock Test Series', perk_description: 'Chapter-wise tests and full-length exam simulations.', icon: 'quiz', display_order: 2 },
+      { perk_title: 'Printed Study Materials', perk_description: 'Comprehensive textbooks and worksheets.', icon: 'menu_book', display_order: 3 },
+      { perk_title: 'Recorded Lectures', perk_description: 'Lifetime access to video recordings of all live classes.', icon: 'videocam', display_order: 4 },
+      { perk_title: 'Personal Mentorship', perk_description: 'Monthly 1-on-1 session to track study progress.', icon: 'person', display_order: 5 }
+    ];
+    
+    fallbacks.forEach(p => uniqueMap.set(p.perk_title.toLowerCase(), p));
+    
+    // Merge live cached perks
+    cachedPerks.forEach(p => {
+      if (p.perk_title) {
+        uniqueMap.set(p.perk_title.toLowerCase(), {
+          perk_title: p.perk_title,
+          perk_description: p.perk_description || '',
+          icon: p.icon || 'stars',
+          display_order: p.display_order || 10
+        });
+      }
+    });
+    
+    return Array.from(uniqueMap.values()).sort((a, b) => (a.display_order || 99) - (b.display_order || 99));
+  }, [cachedPerks]);
+
   const [tempSelected, setTempSelected] = useState(selectedPerks);
   const [customTitle, setCustomTitle] = useState('');
   const [customDesc, setCustomDesc] = useState('');
@@ -60,7 +94,7 @@ const PerksSelectionModal = ({ isOpen, onClose, onSelect, selectedPerks = [] }) 
         <div className="p-6 overflow-y-auto space-y-8 flex-1 custom-scrollbar">
           {/* Library Section */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {masterPerksData.MasterPerks.map((perk) => {
+            {libraryPerks.map((perk) => {
               const isSelected = tempSelected.find(p => p.perk_title === perk.perk_title);
               return (
                 <button

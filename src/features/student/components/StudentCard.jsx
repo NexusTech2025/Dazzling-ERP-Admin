@@ -14,6 +14,8 @@ const StudentCard = ({
   onMessage,
   onEdit,
   onHistory,
+  onDelete,
+  icon,
   onMoreClick, // Action options trigger
   className = ''
 }) => {
@@ -23,31 +25,69 @@ const StudentCard = ({
 
   // Low Density
   if (density === 'low') {
-    const subtitle1 = student.joined_date ? `${student.joined_date}` : '';
-    const subtitle2 = student.phone || student.email || 'No Contact Info';
+    const isSelectionActive = !!icon;
+    const statusColor = student.status === 'active' ? 'success' : student.status === 'applicant' ? 'primary' : 'default';
+
+    const titleElement = (
+      <span className="inline-flex items-center gap-2 flex-wrap">
+        <span className="font-bold text-text-main dark:text-white text-xs sm:text-sm">{name}</span>
+        <Badge
+          variant="status"
+          color={statusColor}
+          content={student.status || 'active'}
+          size="sm"
+          className="scale-90 origin-left py-0"
+        />
+      </span>
+    );
+
+    const subtitle1 = student.email || '—';
+    const subtitle2 = student.phone || '—';
+
+    const batchText = student.current_batch || 'Science-A';
+    const duesText = student.outstanding_balance ? `₹${student.outstanding_balance.toLocaleString()} Due` : 'No Dues Pending';
+    const attendanceText = `Attendance: ${student.attendance_percentage || 94}%`;
 
     const bodyText = (
-      <div className="flex flex-wrap gap-1 justify-start md:justify-end w-full">
-        {student.current_class && (
-          <Tag variant="subtle" color="primary" label={`${student.current_class}`} size="sm" />
-        )}
-        {student.board && (
-          <Tag variant="subtle" color="neutral" label={`${student.board}`} size="sm" />
-        )}
+      <div className="flex flex-col gap-0.5 items-start md:items-end text-[10px] text-text-secondary font-medium w-full min-w-0">
+        <div className="flex items-center gap-1">
+          <span className="material-symbols-outlined text-[12px] text-primary">calendar_month</span>
+          <span>{batchText}</span>
+        </div>
+        <div className={`flex items-center gap-1 font-bold ${student.outstanding_balance ? 'text-rose-500' : 'text-emerald-500'}`}>
+          <span className="material-symbols-outlined text-[12px]">payments</span>
+          <span>{duesText}</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <span className="material-symbols-outlined text-[12px] text-teal-500">monitoring</span>
+          <span>{attendanceText}</span>
+        </div>
       </div>
     );
 
     const actions = [
-      { label: 'Message', icon: 'chat', priority: 'primary', onClick: (e) => { e.stopPropagation(); onMessage && onMessage(); } },
-      { label: 'Edit', icon: 'edit_note', priority: 'secondary', onClick: (e) => { e.stopPropagation(); onEdit && onEdit(); } },
-      { label: 'History', icon: 'history', priority: 'tertiary', onClick: (e) => { e.stopPropagation(); onHistory && onHistory(); } }
+      { label: 'Details', icon: 'person', priority: 'primary', onClick: (e) => { e.stopPropagation(); onClick && onClick(); } },
+      { label: 'Edit', icon: 'edit', priority: 'secondary', onClick: (e) => { e.stopPropagation(); onEdit && onEdit(); } }
     ];
+
+    if (onDelete) {
+      actions.push({
+        label: 'Delete',
+        icon: 'delete',
+        priority: 'tertiary',
+        onClick: (e) => {
+          e.stopPropagation();
+          onDelete();
+        }
+      });
+    }
 
     return (
       <LowDensityCard
-        avatar={student.avatar}
-        avatarText={initials}
-        title={name}
+        avatar={isSelectionActive ? null : student.avatar || student.avatarUrl}
+        avatarText={isSelectionActive ? null : initials}
+        icon={icon}
+        title={titleElement}
         subtitle1={subtitle1}
         subtitle2={subtitle2}
         bodyText={bodyText}

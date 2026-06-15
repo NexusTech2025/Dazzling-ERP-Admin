@@ -173,7 +173,7 @@ const PackageCardMobileVariant = ({ pkg, isSelected, onToggleSelect, isSelection
       subtitle2={
         <div className="flex items-center gap-1.5 mt-1">
           <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-primary/5 dark:bg-primary/[0.03] text-[8px] font-black text-primary border border-primary/10">
-            {pkg.included_courses?.length || 0} Courses Bundled
+            {pkg.courses?.length || 0} Courses Bundled
           </span>
           {pkg.discount_percent > 0 && (
             <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-rose-500/10 text-[8px] font-black text-rose-400 border border-rose-500/10">
@@ -229,21 +229,7 @@ const PackageCardMobileVariant = ({ pkg, isSelected, onToggleSelect, isSelection
 
 const PackageCard = ({ pkg, isSelected = false, onToggleSelect = null, isSelectionModeActive = false }) => {
   const iconData = getPackageIcon(pkg.name);
-  const queryClient = useQueryClient();
-  const coursesCache = queryClient.getQueryData(queryKeys.course.list(EMPTY_FILTER)) || [];
-
-
-  // Identify course IDs from any of the potential package fields
-  const courseIds = pkg.included_courses ||
-    pkg.package_items?.map(item => item.entity_id) ||
-    pkg.packageitems?.map(item => item.entity_id) ||
-    [];
-
-  // Resolve course names from the cache
-  const courseDisplayList = courseIds.map(id => {
-    const matched = coursesCache.find(c => c.course_id === id || c.id === id);
-    return matched ? matched.name : id;
-  });
+  const courseDisplayList = (pkg.courses || []).map(course => course.name);
 
   return (
     <>

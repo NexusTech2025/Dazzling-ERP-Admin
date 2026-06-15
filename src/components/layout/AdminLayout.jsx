@@ -15,7 +15,7 @@ const AdminLayout = () => {
       <Header onMenuClick={toggleSidebar} />
       <div className="flex flex-1 overflow-hidden">
         <Sidebar isOpen={isSidebarOpen} onClose={closeSidebar} />
-        <main className="flex-1 bg-background-light dark:bg-background-dark overflow-y-auto overflow-x-hidden px-4 lg:px-6 flex flex-col">
+        <main className="flex-1 bg-background-light dark:bg-background-dark overflow-y-auto overflow-x-hidden px-1 lg:px-6 flex flex-col">
           <div className="w-full flex-grow flex flex-col min-h-0">
             <PageErrorBoundary>
               <Outlet />

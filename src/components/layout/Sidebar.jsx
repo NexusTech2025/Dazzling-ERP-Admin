@@ -35,6 +35,7 @@ const Sidebar = ({ isOpen, onClose }) => {
       subItems: [
         { name: 'Student Directory', path: '/admin/students' },
         { name: 'Student Leads', path: '/admin/students/leads' },
+        { name: 'Student Attendance', path: '/admin/students/attendance' },
         { name: 'New Registration', path: '/admin/students/add' }
       ]
     },

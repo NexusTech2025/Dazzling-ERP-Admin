@@ -2,11 +2,13 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate, Link, useParams } from 'react-router-dom';
 import { 
   useCoursesQuery, 
-  useCreatePackageMutation, 
-  useUpdatePackageMutation,
-  usePackageDetailQuery,
   useCourseTypesQuery
 } from './hooks/useCourseQueries';
+import {
+  useCreatePackageMutation,
+  useUpdatePackageMutation,
+  usePackageDetailQuery
+} from './hooks/usePackageQueries';
 import Breadcrumbs from '../../components/ui/Breadcrumbs';
 import FormInput from '../../components/ui/form/FormInput';
 import FormTextarea from '../../components/ui/form/FormTextarea';

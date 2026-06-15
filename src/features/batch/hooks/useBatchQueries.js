@@ -23,8 +23,8 @@ import { useAuth } from '../../../context/AuthContextCore';
 import { apiClient } from '../../../services/apiClient';
 import { API_REGISTRY } from '../../../services/apiRegistry';
 import { queryKeys, EMPTY_FILTER } from '../../../lib/react-query/queryKeys';
-import { getCachedRecord, resolveRecord } from '../../../lib/react-query/cacheHelper';
-import { transformBatchList, transformBatchRecord, resolveBatchRelations, normalizeBatch, normalizeBatchList } from '../utils/batchMappers';
+import { getCachedRecord, resolveRecord, getCachedList, resolveList } from '../../../lib/react-query/cacheHelper';
+import { normalizeRecord, hydrateRecord } from '../../../lib/react-query/hydrate.js';
 
 /**
  * Ensures Course, Teacher, and Branch datasets are loaded in the React Query cache.
@@ -66,36 +66,6 @@ export const ensureBatchRelations = async (queryClient, token) => {
 };
 
 /**
- * Hydrates a normalized batch record by appending full course, teacher, and branch objects from query cache.
- * 
- * @function hydrateBatchRelations
- * @param {object} batch - The target normalized batch.
- * @param {QueryClient} queryClient - The active TanStack QueryClient instance.
- * @returns {object} The fully hydrated batch object.
- */
-export const hydrateBatchRelations = (batch, queryClient) => {
-  if (!batch) return null;
-
-  const courses = queryClient.getQueryData(queryKeys.course.list(EMPTY_FILTER)) || [];
-  const teachers = queryClient.getQueryData(queryKeys.teacher.list(EMPTY_FILTER)) || [];
-  const branches = queryClient.getQueryData(queryKeys.branch.list(EMPTY_FILTER)) || [];
-
-  const course = courses.find(c => c.course_id === batch.course_id || c.id === batch.course_id);
-  const teacher = teachers.find(t => t.teacher_id === batch.teacher_id || t.id === batch.teacher_id);
-  const branch = branches.find(b => b.branch_id === batch.branch_id || b.id === batch.branch_id);
-
-  return {
-    ...batch,
-    course: course || null,
-    teacher: teacher || null,
-    branch: branch || null,
-    course_name: course ? course.name : batch.course_name,
-    instructor_name: teacher ? (teacher.teacher_name || teacher.full_name) : batch.instructor_name,
-    branch_name: branch ? (branch.branch_name || branch.name) : batch.branch_name
-  };
-};
-
-/**
  * Hook for fetching a list of batches with optional filtering.
  * Automatically resolves relations (courses, teachers, branches) using cached data to reduce network overhead.
  * Implements a list-wide query cache scan as a fallback before issuing API calls.
@@ -112,39 +82,33 @@ export const useBatchesQuery = (filter = EMPTY_FILTER) => {
     queryKey: queryKeys.batch.list(filter),
     queryFn: async ({ signal }) => {
       await ensureBatchRelations(queryClient, token);
-      const response = await apiClient.executeAction(
-        API_REGISTRY.DATA.QUERY,
-        {
-          target: 'Batch',
-          where: filter
-        },
-        token,
-        { signal }
+      return resolveList(
+        queryClient,
+        'batch',
+        filter,
+        async () => {
+          const response = await apiClient.executeAction(
+            API_REGISTRY.DATA.QUERY,
+            {
+              target: 'Batch',
+              where: filter
+            },
+            token,
+            { signal }
+          );
+          if (!response.success) {
+            throw new Error(response.error?.message || response.message || 'Failed to fetch batches');
+          }
+          return normalizeRecord('batch', response.data?.data || []);
+        }
       );
-      if (!response.success) {
-        throw new Error(response.error?.message || response.message || 'Failed to fetch batches');
-      }
-      return normalizeBatchList(response.data?.data || []);
     },
     enabled: !!token,
-    select: (data) => transformBatchList(data).map(b => hydrateBatchRelations(b, queryClient)),
-    initialData: () => {
-      // 1. Check if the specific filtered list is already in cache
-      const cached = queryClient.getQueryData(queryKeys.batch.list(filter));
-      if (cached) return cached;
-
-      // 2. Fallback: Search across all batch list queries to find any list data
-      const listQueries = queryClient.getQueriesData({ queryKey: queryKeys.batch.lists() });
-      for (const [key, listData] of listQueries) {
-        if (Array.isArray(listData) && listData.length > 0) {
-          return listData;
-        }
-      }
-      return undefined;
-    },
+    select: (data) => hydrateRecord('batch', data, queryClient),
+    initialData: () => getCachedList(queryClient, 'batch', filter),
     initialDataUpdatedAt: () => queryClient.getQueryState(queryKeys.batch.list(filter))?.dataUpdatedAt,
     staleTime: Infinity,
-    refetchOnMount: true,
+    refetchOnMount: false,
     refetchOnWindowFocus: false,
   });
 };
@@ -182,12 +146,12 @@ export const useBatchDetailQuery = (id) => {
             { signal }
           );
           if (!response.success) throw new Error(response.message);
-          return normalizeBatch(response.data?.data?.[0] || null);
+          return normalizeRecord('batch', response.data?.data?.[0] || null);
         }
       );
     },
     enabled: !!token && !!id,
-    select: (data) => hydrateBatchRelations(transformBatchRecord(data), queryClient),
+    select: (data) => hydrateRecord('batch', data, queryClient),
     initialData: () => getCachedRecord(queryClient, 'batch', id),
     initialDataUpdatedAt: () => queryClient.getQueryState(queryKeys.batch.detail(id))?.dataUpdatedAt,
     staleTime: 1000 * 60 * 5,
@@ -293,8 +257,8 @@ export const useBatchStudentsQuery = (id, searchQuery = '', options = {}) => {
       if (!searchQuery) return mapped;
 
       const query = searchQuery.toLowerCase();
-      return mapped.filter(s => 
-        (s.student_name || '').toLowerCase().includes(query) || 
+      return mapped.filter(s =>
+        (s.student_name || '').toLowerCase().includes(query) ||
         (s.student_id || '').toLowerCase().includes(query)
       );
     },

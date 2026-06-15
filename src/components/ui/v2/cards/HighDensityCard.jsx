@@ -27,7 +27,7 @@ const HighDensityCard = ({
       className={mergeSlotClasses("flex flex-col border border-border-light dark:border-border-dark", `${className} ${slotClasses.container || ''}`)}
     >
       {/* 1. Header Section */}
-      <div className={mergeSlotClasses("p-6 bg-slate-50/50 dark:bg-slate-900/30 border-b border-border-light dark:border-border-dark flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4", slotClasses.header)}>
+      <div className={mergeSlotClasses("p-4 sm:p-6 bg-slate-50/50 dark:bg-slate-900/30 border-b border-border-light dark:border-border-dark flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4", slotClasses.header)}>
         <div className="flex items-center gap-4 min-w-0">
           {avatar ? (
             <img 
@@ -69,7 +69,7 @@ const HighDensityCard = ({
       </div>
 
       {/* 2. Body Section */}
-      <div className={mergeSlotClasses("p-6 space-y-5 flex-1", slotClasses.body)}>
+      <div className={mergeSlotClasses("p-4 sm:p-6 space-y-5 flex-1", slotClasses.body)}>
         {/* Metrics Grid */}
         {metrics.length > 0 && (
           <div className={mergeSlotClasses("grid grid-cols-2 sm:grid-cols-3 gap-3", slotClasses.metricsGrid)}>

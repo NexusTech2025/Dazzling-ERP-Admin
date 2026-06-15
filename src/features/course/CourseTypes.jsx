@@ -19,6 +19,7 @@ import SelectInput from '../../components/ui/v2/SelectInput';
 import Button from '../../components/ui/v2/Button';
 import DataTable from '../../components/ui/DataTable';
 import Badge from '../../components/ui/Badge';
+import { LowDensityCard } from '../../components/ui/v2/cards';
 import ConfirmModal from '../../components/ui/ConfirmModal';
 import MainLayout from '../../components/layout/MainLayout';
 
@@ -332,7 +333,7 @@ const CourseTypes = () => {
         </div>
       }
       body={
-        <div className="px-4 lg:px-0 pt-6 lg:pt-10 pb-6 space-y-6">
+        <div className="px-2 sm:px-4 lg:px-0 pt-6 lg:pt-10 pb-6 space-y-6">
           {/* Breadcrumbs */}
           <Breadcrumbs items={crumbs} />
 
@@ -364,18 +365,87 @@ const CourseTypes = () => {
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
             {/* Left Side: Existing Categories Table */}
-            <div className={`${showCreateForm ? 'lg:col-span-7' : 'lg:col-span-12'} bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-2xl p-6 shadow-sm transition-all duration-300`}>
-              <div className="flex items-center gap-3 mb-6">
+            <div className={`${showCreateForm ? 'lg:col-span-7' : 'lg:col-span-12'} bg-transparent sm:bg-surface-light dark:sm:bg-surface-dark border-0 sm:border border-border-light dark:border-border-dark rounded-2xl p-0 sm:p-6 shadow-none sm:shadow-sm transition-all duration-300`}>
+              <div className="hidden sm:flex items-center gap-3 mb-6">
                 <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
                   <span className="material-symbols-outlined">category</span>
                 </div>
                 <h3 className="font-bold text-lg text-text-main dark:text-white">Active Categories</h3>
               </div>
-              <DataTable
-                data={courseTypes}
-                columns={columns}
-                isLoading={false}
-              />
+              {/* Mobile Card list */}
+              <div className="flex flex-col gap-4 md:hidden">
+                {courseTypes.length === 0 ? (
+                  <div className="py-10 text-center border border-dashed border-border-light dark:border-border-dark rounded-xl bg-surface-light dark:bg-surface-dark w-full">
+                    <span className="material-symbols-outlined text-text-secondary/20 text-4xl mb-2">search_off</span>
+                    <p className="text-sm font-bold text-text-main dark:text-white">No categories found</p>
+                  </div>
+                ) : (
+                  courseTypes.map((row) => {
+                    const isSelected = selectedIds.includes(row.segment_id);
+                    const isSelectionMode = selectedIds.length > 0;
+
+                    const checkboxElement = (
+                      <input
+                        type="checkbox"
+                        className="size-5 rounded border-slate-350 dark:border-slate-700 bg-white dark:bg-slate-800 text-primary focus:ring-primary/20 cursor-pointer transition-all"
+                        checked={isSelected}
+                        onChange={() => toggleSelect(row.segment_id)}
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    );
+
+                    const normalIconName = row.entity_label === 'Subject' ? 'menu_book' : row.entity_label === 'Course' ? 'computer' : 'school';
+
+                    const cardIcon = isSelectionMode ? checkboxElement : (
+                      <div
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleSelect(row.segment_id);
+                        }}
+                        className="cursor-pointer hover:opacity-80 transition-opacity flex items-center justify-center w-full h-full"
+                        title="Click to select"
+                      >
+                        <span className="material-symbols-outlined text-sm">{normalIconName}</span>
+                      </div>
+                    );
+
+                    const bodyText = (
+                      <div className="flex flex-col gap-1 items-start md:items-end text-left md:text-right w-full min-w-0">
+                        <Badge variant={row.status === 'active' ? 'success' : 'default'}>
+                          {row.status}
+                        </Badge>
+                      </div>
+                    );
+                    const actions = [
+                      { label: 'Edit', icon: 'edit', priority: 'primary', onClick: (e) => { e.stopPropagation(); handleEditClick(row); } },
+                      { label: 'Delete', icon: 'delete', priority: 'secondary', onClick: (e) => { e.stopPropagation(); handleDeleteClick(row.segment_id, row.segment_name); } }
+                    ];
+
+                    return (
+                      <div key={row.segment_id} className="w-full">
+                        <LowDensityCard
+                          icon={cardIcon}
+                          title={row.segment_name}
+                          subtitle1={row.segment_id}
+                          subtitle2={`Label: ${row.entity_label}`}
+                          bodyText={bodyText}
+                          actions={actions}
+                          onClick={() => handleEditClick(row)}
+                        />
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+
+              {/* Desktop Table View */}
+              <div className="hidden md:block">
+                <DataTable
+                  data={courseTypes}
+                  columns={columns}
+                  isLoading={false}
+                />
+              </div>
             </div>
 
             {/* Right Side: Create/Edit Category Card */}

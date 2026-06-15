@@ -21,6 +21,7 @@ import Settings from '../pages/admin/Settings';
 import AddStudent from '../pages/admin/AddStudent';
 import AddTeacher from '../pages/admin/AddTeacher';
 import StudentLeads from '../pages/admin/StudentLeads';
+import StudentAttendanceManager from '../features/student/components/StudentAttendanceManager';
 import TestFilters from '../pages/admin/TestFilters';
 import TestButtons from '../pages/admin/TestButtons';
 import TestProfileComponents from '../pages/admin/TestProfileComponents';
@@ -75,6 +76,7 @@ const AppRoutes = () => {
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="students" element={<Students />} />
         <Route path="students/add" element={<AddStudent />} />
+        <Route path="students/attendance" element={<StudentAttendanceManager />} />
         <Route path="students/leads" element={<StudentLeads />} />
         <Route path="students/:id" element={<StudentProfile />} />
         

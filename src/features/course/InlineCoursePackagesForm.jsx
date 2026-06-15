@@ -1,10 +1,12 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  useCreatePackageMutation, 
   useCourseTypesQuery,
   useCoursesQuery
 } from './hooks/useCourseQueries';
+import {
+  useCreatePackageMutation
+} from './hooks/usePackageQueries';
 import Breadcrumbs from '../../components/ui/Breadcrumbs';
 import CourseSelectionModal from './components/CourseSelectionModal';
 import APIErrorModal from '../../components/ui/APIErrorModal';

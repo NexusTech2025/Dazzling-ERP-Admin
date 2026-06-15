@@ -30,7 +30,7 @@ export const queryKeys = {
     list: (filter = EMPTY_FILTER) => [...queryKeys.teacher.lists(), { filter }],
     details: () => [...queryKeys.teacher.all, 'detail'],
     detail: (id) => [...queryKeys.teacher.details(), id],
-    attendanceDaily: (date) => [...queryKeys.teacher.all, 'attendance-daily', date],
+    attendanceDaily: (date, batchId) => [...queryKeys.teacher.all, 'attendance-daily', date, batchId],
     attendanceProfile: (id, yearMonth) => [...queryKeys.teacher.all, 'attendance-profile', id, yearMonth],
   },
   course: {

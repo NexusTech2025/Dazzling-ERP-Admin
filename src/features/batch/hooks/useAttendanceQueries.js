@@ -9,9 +9,13 @@ export const useBatchAttendanceQuery = (batchId, date) => {
   return useQuery({
     queryKey: queryKeys.attendance.batch(batchId, date),
     queryFn: async ({ signal }) => {
+      const where = { attendance_date: date };
+      if (batchId && batchId !== 'all') {
+        where.batch_id = batchId;
+      }
       const response = await apiClient.executeAction(
         API_REGISTRY.ATTENDANCE.GET_BATCH_REGISTRY,
-        { where: { batch_id: batchId, attendance_date: date } },
+        { where },
         token,
         { signal }
       );

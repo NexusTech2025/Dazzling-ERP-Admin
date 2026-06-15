@@ -12,6 +12,7 @@ import ConfirmModal from '../../components/ui/ConfirmModal';
 import RefreshButton from '../../components/ui/btn/RefreshButton';
 import StudentDetailModal from '../../features/student/components/StudentDetailModal';
 import StudentEditModal from '../../features/student/components/StudentEditModal';
+import StudentCard from '../../features/student/components/StudentCard';
 import useSelection from '../../hooks/useSelection';
 import useDeleteManyMutation from '../../hooks/useDeleteManyMutation';
 import SelectionActionBar from '../../components/ui/v2/SelectionActionBar';
@@ -254,24 +255,15 @@ const Students = () => {
 
   return (
     <>
-      <DataTable
-        title="Student Directory"
-        subtitle="Manage student enrollment and academic records"
-        columns={columns}
-        data={filteredStudents}
-        isLoading={isLoading}
-        error={error}
-        onRetry={() => queryClient.invalidateQueries({ queryKey: queryKeys.student.all })}
-        emptyMessage="No students found matching your filters."
-        filters={filters}
-        primaryAction={
-          <Link to="/admin/students/add" className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary-dark transition-colors">
-            <span className="material-symbols-outlined text-lg">add</span>
-            Add Student
-          </Link>
-        }
-        secondaryAction={
-          <>
+      {/* Mobile Viewport Layout */}
+      <div className="md:hidden flex flex-col gap-6 animate-in fade-in duration-300 px-2 pt-6 pb-24">
+        {/* Header Block */}
+        <div className="flex flex-col gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-text-main dark:text-white">Student Directory</h1>
+            <p className="text-xs text-text-secondary">Manage student enrollment and academic records</p>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
             <RefreshButton
               isFetching={isFetching}
               onRefresh={() => queryClient.invalidateQueries({ queryKey: queryKeys.student.all })}
@@ -280,9 +272,103 @@ const Students = () => {
               <span className="material-symbols-outlined text-lg">download</span>
               Export
             </button>
-          </>
-        }
-      />
+            <Link to="/admin/students/add" className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary-dark transition-colors ml-auto">
+              <span className="material-symbols-outlined text-lg">add</span>
+              Add Student
+            </Link>
+          </div>
+        </div>
+
+        {/* Filters Block */}
+        {filters && (
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-4 rounded-xl border border-border-light dark:border-border-dark bg-surface-light dark:bg-surface-dark p-4 shadow-sm">
+            {filters}
+          </div>
+        )}
+
+        {/* Loading/Error/List Block */}
+        {isLoading ? (
+          <div className="py-20 text-center">
+            <span className="size-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin inline-block"></span>
+            <p className="text-xs text-text-secondary mt-2">Loading students...</p>
+          </div>
+        ) : error ? (
+          <div className="py-10 text-center bg-rose-50 dark:bg-rose-900/10 rounded-xl border border-rose-100 dark:border-rose-900/20 text-rose-600">
+            <p className="text-sm font-bold">{error.message || 'Failed to load student data'}</p>
+            <button onClick={() => queryClient.invalidateQueries({ queryKey: queryKeys.student.all })} className="text-xs text-primary font-bold underline mt-2">
+              Retry
+            </button>
+          </div>
+        ) : filteredStudents.length === 0 ? (
+          <div className="py-20 text-center border-2 border-dashed border-border-light dark:border-border-dark rounded-xl bg-surface-light dark:bg-surface-dark">
+            <span className="material-symbols-outlined text-text-secondary/20 text-5xl mb-2">person_off</span>
+            <p className="text-sm font-bold text-text-main dark:text-white">No students found matching your filters.</p>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-4">
+            {filteredStudents.map((student) => {
+              const isSelected = selectedIds.includes(student.student_id);
+              const isSelectionMode = selectedIds.length > 0;
+
+              const checkboxElement = (
+                <input
+                  type="checkbox"
+                  checked={isSelected}
+                  onChange={() => toggleSelect(student.student_id)}
+                  onClick={(e) => e.stopPropagation()}
+                  className="size-5 rounded border-border-light dark:border-border-dark text-primary focus:ring-primary/20 cursor-pointer"
+                />
+              );
+
+              return (
+                <div key={student.student_id} className="w-full">
+                  <StudentCard
+                    student={student}
+                    density="low"
+                    icon={isSelectionMode ? checkboxElement : undefined}
+                    onClick={() => handlers.onView(student)}
+                    onEdit={() => handlers.onEdit(student)}
+                    onDelete={() => handlers.onDelete(student.student_id, student.student_name)}
+                  />
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Desktop view */}
+      <div className="hidden md:block">
+        <DataTable
+          title="Student Directory"
+          subtitle="Manage student enrollment and academic records"
+          columns={columns}
+          data={filteredStudents}
+          isLoading={isLoading}
+          error={error}
+          onRetry={() => queryClient.invalidateQueries({ queryKey: queryKeys.student.all })}
+          emptyMessage="No students found matching your filters."
+          filters={filters}
+          primaryAction={
+            <Link to="/admin/students/add" className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary-dark transition-colors">
+              <span className="material-symbols-outlined text-lg">add</span>
+              Add Student
+            </Link>
+          }
+          secondaryAction={
+            <>
+              <RefreshButton
+                isFetching={isFetching}
+                onRefresh={() => queryClient.invalidateQueries({ queryKey: queryKeys.student.all })}
+              />
+              <button className="flex items-center gap-2 rounded-lg border border-border-light dark:border-border-dark bg-surface-light dark:bg-surface-dark px-4 py-2 text-sm font-medium text-text-main dark:text-white hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                <span className="material-symbols-outlined text-lg">download</span>
+                Export
+              </button>
+            </>
+          }
+        />
+      </div>
 
       {/* Floating Selection Action Bar */}
       <SelectionActionBar

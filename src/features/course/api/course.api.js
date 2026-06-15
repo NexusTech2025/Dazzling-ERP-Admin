@@ -193,7 +193,11 @@ export const deleteCourseType = (token, id, options = {}) =>
 export const fetchPackages = (token, filter = {}, options = {}) =>
   executeAction(API_REGISTRY.DATA.QUERY, {
     target: 'Package',
-    where: { status: 'active', ...filter }
+    where: { status: 'active', ...filter },
+    include: {
+      packageitems: {},
+      packageperks: {}
+    }
   }, token, options);
 
 /**
@@ -237,7 +241,11 @@ export const fetchPackagePerks = (token, options = {}) =>
 export const fetchPackageDetail = (token, id, options = {}) =>
   executeAction(API_REGISTRY.DATA.QUERY, {
     target: 'Package',
-    where: { package_id: id }
+    where: { package_id: id },
+    include: {
+      packageitems: {},
+      packageperks: {}
+    }
   }, token, options);
 
 /**
@@ -285,4 +293,44 @@ export const updatePackage = (token, id, data, options = {}) =>
 export const deletePackage = (token, id, options = {}) =>
   executeAction(API_REGISTRY.ACADEMIC.DELETE_PACKAGE, {
     package_id: id
+  }, token, options);
+
+/**
+ * Fetches all enrollments for a specific package, including the associated student record.
+ *
+ * @async
+ * @function fetchPackageEnrollments
+ * @param {string} token - Authorization token.
+ * @param {string} packageId - The package identifier to filter enrollments by.
+ * @param {object} [options={}] - HTTP fetch options.
+ * @returns {Promise<object>}
+ */
+export const fetchPackageEnrollments = (token, packageId, options = {}) =>
+  executeAction(API_REGISTRY.DATA.QUERY, {
+    target: 'Enrollment',
+    where: { enrollment_type: 'package', item_id: packageId },
+    include: {
+      student: {}
+    }
+  }, token, options);
+
+/**
+ * Fetches all StudentFeeAccount records for a specific package enrollment set,
+ * including nested installment records for ledger rendering.
+ *
+ * @async
+ * @function fetchPackageFeeAccounts
+ * @param {string} token - Authorization token.
+ * @param {string} packageId - The package identifier used to scope the fee accounts via enrollment join.
+ * @param {object} [options={}] - HTTP fetch options.
+ * @returns {Promise<object>}
+ */
+export const fetchPackageFeeAccounts = (token, packageId, options = {}) =>
+  executeAction(API_REGISTRY.DATA.QUERY, {
+    target: 'StudentFeeAccount',
+    where: {},
+    include: {
+      enrollment: { where: { enrollment_type: 'package', item_id: packageId } },
+      installments: {}
+    }
   }, token, options);

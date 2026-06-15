@@ -45,10 +45,10 @@ const LowDensityCard = ({
       onClick={onClick} 
       density="low" 
       overflowVisible={true}
-      className={mergeSlotClasses("min-h-[84px] py-4 flex items-center justify-between px-6 relative", `${className} ${slotClasses.container || ''}`)}
+      className={mergeSlotClasses("min-h-[84px] py-4 flex items-center justify-between px-2 sm:px-4 relative", `${className} ${slotClasses.container || ''}`)}
     >
       {/* Left side content: Avatar & Typographical Stack (60%) */}
-      <div className="w-[60%] flex items-center gap-3 sm:gap-4 min-w-0 pr-4 flex-shrink-0">
+      <div className="w-[60%] flex items-center gap-3 sm:gap-4 min-w-0 pr-2 sm:pr-3 flex-shrink-0">
         {avatar ? (
           <img 
             src={avatar} 

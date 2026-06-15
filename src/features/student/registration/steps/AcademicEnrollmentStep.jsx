@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { useCoursesQuery, usePackagesQuery, usePackageItemsQuery } from '../../../course/hooks/useCourseQueries';
+import { useCoursesQuery } from '../../../course/hooks/useCourseQueries';
+import { usePackagesQuery } from '../../../course/hooks/usePackageQueries';
 import { useBatchesQuery } from '../../../batch/hooks/useBatchQueries';
 import Card from '../../../../components/ui/Card';
 import Avatar from '../../../../components/ui/v2/Avatar';
@@ -16,7 +17,6 @@ import ProgramSelectionModal from '../components/ProgramSelectionModal';
 const AcademicEnrollmentStep = ({ formData, setFormData, onNext, onBack }) => {
   // Query catalogs and active schedules from cache/API
   const { data: packages = [], isLoading: isLoadingPkgs } = usePackagesQuery();
-  const { data: packageItems = [], isLoading: isLoadingPkgItems } = usePackageItemsQuery();
   const { data: courses = [], isLoading: isLoadingCourses } = useCoursesQuery();
   const { data: batches = [], isLoading: isLoadingBatches } = useBatchesQuery();
 
@@ -51,21 +51,10 @@ const AcademicEnrollmentStep = ({ formData, setFormData, onNext, onBack }) => {
 
   // Compile full-fidelity catalog list by joining packages/courses with physical scheduled batches
   const catalog = useMemo(() => {
-    if (isLoadingPkgs || isLoadingPkgItems || isLoadingCourses || isLoadingBatches) return [];
+    if (isLoadingPkgs || isLoadingCourses || isLoadingBatches) return [];
 
     const mappedPackages = packages.map(pkg => {
-      // Fallback: if included_courses is empty, resolve dynamically from packageItems
-      let included = pkg.included_courses;
-      if (!included || included.length === 0) {
-        included = packageItems
-          .filter(item => item.package_id === pkg.package_id && (item.entity_type === 'course' || item.entity_type === 'subject'))
-          .map(item => item.entity_id);
-      }
-
-      const pkgCourses = (included || []).map(code => {
-        const course = courses.find(c => c.short_code === code || c.course_id === code);
-        if (!course) return null;
-
+      const pkgCourses = (pkg.courses || []).map(course => {
         const courseBatches = batches.filter(b => b.course_id === course.course_id && b.status === 'active');
         return {
           id: course.course_id,
@@ -82,7 +71,7 @@ const AcademicEnrollmentStep = ({ formData, setFormData, onNext, onBack }) => {
               : 'text-emerald-500'
           }))
         };
-      }).filter(Boolean);
+      });
 
       return {
         id: pkg.package_id,
@@ -296,7 +285,7 @@ const AcademicEnrollmentStep = ({ formData, setFormData, onNext, onBack }) => {
                          !isBasketValidationValid || 
                          (formData.isManualPlan && !isChecksumValid);
 
-  if (isLoadingPkgs || isLoadingPkgItems || isLoadingCourses || isLoadingBatches) {
+  if (isLoadingPkgs || isLoadingCourses || isLoadingBatches) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[350px] gap-3">
         <div className="h-10 w-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>

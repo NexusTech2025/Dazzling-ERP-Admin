@@ -55,7 +55,7 @@ const MediumDensityCard = ({
     <CardContainer
       onClick={onClick}
       density="medium"
-      className={mergeSlotClasses("p-5 flex flex-col justify-between min-h-[180px]", `${className} ${slotClasses.container || ''}`)}
+      className={mergeSlotClasses("p-3.5 sm:p-5 flex flex-col justify-between min-h-[180px]", `${className} ${slotClasses.container || ''}`)}
     >
       {/* Header Row: Image & (Title, Subtitle) in horizontal alignment, Pills on the far right */}
       <div className={mergeSlotClasses("flex justify-between items-start gap-3 w-full", slotClasses.header)}>

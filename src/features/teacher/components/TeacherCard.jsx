@@ -15,6 +15,8 @@ const TeacherCard = ({
   onMessage,
   onEdit,
   onHistory,
+  onDelete,
+  icon,
   onMoreClick, // Action options trigger
   className = '',
   actionText,
@@ -33,37 +35,52 @@ const TeacherCard = ({
 
   // Low Density
   if (density === 'low') {
-    const subtitle1 = teacher.experience_years ? `${teacher.experience_years} yrs exp` : null;
-    const subtitle2 = teacher.specialization || teacher.qualification || null;
+    const isSelectionActive = !!icon;
+    const statusColor = teacher.status === 'active' ? 'success' : teacher.status === 'pending' ? 'primary' : 'default';
 
-    const bodyText = (
-      <div className="flex flex-col gap-1 items-start md:items-end text-left md:text-right w-full">
+    const titleElement = (
+      <span className="inline-flex items-center gap-2 flex-wrap">
+        <span className="font-bold text-text-main dark:text-white text-xs sm:text-sm">{name}</span>
         {teacher.status && (
           <Badge
             variant="status"
-            color={teacher.status === 'active' ? 'success' : 'error'}
-            content={teacher.status.toUpperCase()}
+            color={statusColor}
+            content={teacher.status === 'active' ? 'Active' : teacher.status === 'inactive' ? 'Suspended' : 'On Hold'}
             size="sm"
-            className="self-start md:self-end"
+            className="scale-90 origin-left py-0"
           />
         )}
-        <p className="hidden sm:block text-[10px] sm:text-[11px] text-text-secondary dark:text-slate-400 font-semibold truncate max-w-full">
-          {teacher.email || teacher.mobile_number || 'No Contact Info'}
-        </p>
+      </span>
+    );
+
+    const subtitle1 = teacher.email || '—';
+    const subtitle2 = teacher.mobile_number || '—';
+
+    const bodyText = (
+      <div className="flex flex-col gap-0.5 items-start md:items-end text-[10px] text-text-secondary font-medium w-full min-w-0">
+        <div className="flex items-center gap-1">
+          <span className="material-symbols-outlined text-[12px] text-primary">menu_book</span>
+          <span>{teacher.specialization || 'General'}</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <span className="material-symbols-outlined text-[12px] text-indigo-500">work</span>
+          <span>{formatType(teacher.teacher_type) || 'Full Time'}</span>
+        </div>
       </div>
     );
 
     const actions = [
-      onMessage && { label: 'Message', icon: 'chat', priority: 'primary', onClick: (e) => { e.stopPropagation(); onMessage(); } },
-      onEdit && { label: 'Edit', icon: 'edit_note', priority: 'secondary', onClick: (e) => { e.stopPropagation(); onEdit(); } },
-      onHistory && { label: 'History', icon: 'history', priority: 'tertiary', onClick: (e) => { e.stopPropagation(); onHistory(); } }
+      { label: 'Details', icon: 'person', priority: 'primary', onClick: (e) => { e.stopPropagation(); onClick && onClick(); } },
+      onEdit && { label: 'Edit', icon: 'edit', priority: 'secondary', onClick: (e) => { e.stopPropagation(); onEdit(); } },
+      onDelete && { label: 'Delete', icon: 'delete', priority: 'tertiary', onClick: (e) => { e.stopPropagation(); onDelete(); } }
     ].filter(Boolean);
 
     return (
       <LowDensityCard
-        avatar={teacher.profile_photo_url || undefined}
-        avatarText={initials}
-        title={name}
+        avatar={isSelectionActive ? null : teacher.profile_photo_url || undefined}
+        avatarText={isSelectionActive ? null : initials}
+        icon={icon}
+        title={titleElement}
         subtitle1={subtitle1}
         subtitle2={subtitle2}
         bodyText={bodyText}

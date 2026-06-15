@@ -1,29 +1,22 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../../context/AuthContextCore';
 import { queryKeys, EMPTY_FILTER } from '../../../lib/react-query/queryKeys';
-import { getCachedRecord, resolveRecord } from '../../../lib/react-query/cacheHelper';
-import { normalizeCourse, normalizeCourseList } from '../utils/courseMappers';
+import { getCachedRecord, resolveRecord, getCachedList, resolveList } from '../../../lib/react-query/cacheHelper';
+import { normalizeRecord, hydrateRecord } from '../../../lib/react-query/hydrate.js';
 import { apiClient } from '../../../services/apiClient';
 import { API_REGISTRY } from '../../../services/apiRegistry';
 
 // IMPORT FROM REAL API
-import { 
-  fetchCourses, 
-  fetchCourseDetail, 
-  createCourse, 
-  updateCourse, 
-  deleteCourse, 
-  fetchCourseTypes, 
+import {
+  fetchCourses,
+  fetchCourseDetail,
+  createCourse,
+  updateCourse,
+  deleteCourse,
+  fetchCourseTypes,
   createCourseType,
   updateCourseType,
-  deleteCourseType,
-  fetchPackages,
-  fetchPackageItems,
-  fetchPackagePerks,
-  fetchPackageDetail,
-  createPackage,
-  updatePackage,
-  deletePackage
+  deleteCourseType
 } from '../api/course.api';
 
 // --- COURSE TYPES ---
@@ -40,8 +33,8 @@ export const useCourseTypesQuery = () => {
       return response.data?.data || [];
     },
     enabled: !!token,
-    staleTime: Infinity,
-    refetchOnMount: false,
+    staleTime: 1000 * 60 * 2.5, // 2.5 Minute Grace Window
+    refetchOnMount: true,       // Background revalidation once stale
     refetchOnWindowFocus: false,
   });
 };
@@ -90,25 +83,32 @@ export const useDeleteCourseTypeMutation = () => {
 
 // --- COURSES ---
 
-/**
- * Hook for fetching all courses
- */
 export const useCoursesQuery = (filter = EMPTY_FILTER) => {
   const { token } = useAuth();
+  const queryClient = useQueryClient();
 
   return useQuery({
     queryKey: queryKeys.course.list(filter),
     queryFn: async ({ signal }) => {
-      const response = await fetchCourses(token, filter, { signal });
-      if (!response.success) {
-        throw new Error(response.error?.message || response.message || 'Failed to fetch courses');
-      }
-      return response.data?.data || [];
+      return resolveList(
+        queryClient,
+        'course',
+        filter,
+        async () => {
+          const response = await fetchCourses(token, filter, { signal });
+          if (!response.success) {
+            throw new Error(response.error?.message || response.message || 'Failed to fetch courses');
+          }
+          return normalizeRecord('course', response.data?.data || []);
+        }
+      );
     },
-    select: normalizeCourseList,
+    select: (data) => hydrateRecord('course', data, queryClient),
     enabled: !!token,
-    staleTime: Infinity,
-    refetchOnMount: false,
+    initialData: () => getCachedList(queryClient, 'course', filter),
+    initialDataUpdatedAt: () => queryClient.getQueryState(queryKeys.course.list(filter))?.dataUpdatedAt,
+    staleTime: 1000 * 60 * 2.5, // 2.5 Minute Grace Window
+    refetchOnMount: true,       // Background revalidation once stale
     refetchOnWindowFocus: false,
   });
 };
@@ -132,15 +132,13 @@ export const useCourseDetailQuery = (id) => {
           if (!response.success) {
             throw new Error(response.error?.message || response.message || 'Failed to fetch course details');
           }
-          return normalizeCourse(response.data?.data?.[0] || null);
+          return normalizeRecord('course', response.data?.data?.[0] || null);
         }
       );
     },
     enabled: !!token && !!id,
-    initialData: () => {
-      const cached = getCachedRecord(queryClient, 'course', id);
-      return cached ? normalizeCourse(cached) : undefined;
-    },
+    select: (data) => hydrateRecord('course', data, queryClient),
+    initialData: () => getCachedRecord(queryClient, 'course', id),
     initialDataUpdatedAt: () => queryClient.getQueryState(queryKeys.course.detail(id))?.dataUpdatedAt,
     staleTime: 1000 * 60 * 5,
   });
@@ -195,219 +193,6 @@ export const useDeleteCourseMutation = () => {
         queryClient.invalidateQueries({ queryKey: queryKeys.course.all });
       }
     }
-  });
-};
-
-// --- PACKAGES ---
-
-/**
- * Ensures relation catalogs (Courses and PackageItems) are loaded in the query client cache.
- * 
- * @async
- * @function ensurePackageRelations
- * @param {QueryClient} queryClient - The active TanStack QueryClient instance.
- * @param {string} token - Authorization token.
- * @returns {Promise<void>}
- */
-export const ensurePackageRelations = async (queryClient, token) => {
-  await Promise.all([
-    queryClient.ensureQueryData({
-      queryKey: queryKeys.course.list(EMPTY_FILTER),
-      queryFn: async () => {
-        const res = await fetchCourses(token, EMPTY_FILTER);
-        if (!res.success) throw new Error(res.message || 'Failed to fetch courses');
-        return res.data?.data || [];
-      }
-    }),
-    queryClient.ensureQueryData({
-      queryKey: queryKeys.course.packageItem.list(),
-      queryFn: async () => {
-        const res = await fetchPackageItems(token);
-        if (!res.success) throw new Error(res.message || 'Failed to fetch package items');
-        return res.data?.data || [];
-      }
-    }),
-    queryClient.ensureQueryData({
-      queryKey: queryKeys.course.packagePerk.list(),
-      queryFn: async () => {
-        const res = await fetchPackagePerks(token);
-        if (!res.success) throw new Error(res.message || 'Failed to fetch package perks');
-        return res.data?.data || [];
-      }
-    })
-  ]);
-};
-
-/**
- * Hydrates a package record by scanning the PackageItems cache for courses.
- * 
- * @function hydratePackageRelations
- * @param {object} pkg - The raw package record.
- * @param {QueryClient} queryClient - The active TanStack QueryClient instance.
- * @returns {object} Hydrated package record with included_courses array.
- */
-export const hydratePackageRelations = (pkg, queryClient) => {
-  if (!pkg) return null;
-
-  const packageItems = queryClient.getQueryData(queryKeys.course.packageItem.list()) || [];
-  const courses = queryClient.getQueryData(queryKeys.course.list(EMPTY_FILTER)) || [];
-  const packagePerks = queryClient.getQueryData(queryKeys.course.packagePerk.list()) || [];
-  
-  // Find all items associated with this package
-  const items = packageItems.filter(item => item.package_id === pkg.package_id);
-  
-  // Map items to include their full course objects
-  const hydratedItems = items.map(item => {
-    const course = courses.find(c => c.course_id === item.entity_id);
-    return {
-      ...item,
-      course
-    };
-  });
-
-  // Extract entity_id (pointing to course_id) for compatibility
-  const includedCourses = items
-    .filter(item => item.entity_type === 'course' || item.entity_type === 'subject')
-    .map(item => item.entity_id);
-
-  const resolvedCourses = courses.filter(c => includedCourses.includes(c.course_id));
-
-  // Find all perks associated with this package
-  const perks = packagePerks.filter(perk => perk.package_id === pkg.package_id);
-
-  return {
-    ...pkg,
-    included_courses: includedCourses,
-    courses: resolvedCourses,
-    package_items: hydratedItems,
-    perks: perks
-  };
-};
-
-export const usePackagesQuery = (filter = EMPTY_FILTER) => {
-  const { token } = useAuth();
-  const queryClient = useQueryClient();
-
-  return useQuery({
-    queryKey: queryKeys.course.package.list(filter),
-    queryFn: async ({ signal }) => {
-      await ensurePackageRelations(queryClient, token);
-      const response = await fetchPackages(token, filter, { signal });
-      if (!response.success) {
-        throw new Error(response.error?.message || response.message || 'Failed to fetch packages');
-      }
-      return response.data?.data || [];
-    },
-    enabled: !!token,
-    select: (data) => {
-      const hydrated = (data || []).map(pkg => hydratePackageRelations(pkg, queryClient));
-      console.log('[usePackagesQuery] Loaded and Hydrated Packages:', hydrated);
-      return hydrated;
-    },
-    staleTime: Infinity,
-    refetchOnMount: false,
-    refetchOnWindowFocus: false,
-  });
-};
-
-export const usePackageDetailQuery = (id) => {
-  const { token } = useAuth();
-  const queryClient = useQueryClient();
-
-  return useQuery({
-    queryKey: queryKeys.course.package.detail(id),
-    queryFn: async ({ signal }) => {
-      await ensurePackageRelations(queryClient, token);
-      return resolveRecord(
-        queryClient,
-        'package',
-        id,
-        async () => {
-          const response = await fetchPackageDetail(token, id, { signal });
-          if (!response.success) {
-            throw new Error(response.error?.message || response.message || 'Failed to fetch package details');
-          }
-          return response.data?.data?.[0] || null;
-        }
-      );
-    },
-    enabled: !!token && !!id,
-    initialData: () => getCachedRecord(queryClient, 'package', id),
-    initialDataUpdatedAt: () => queryClient.getQueryState(queryKeys.course.package.detail(id))?.dataUpdatedAt,
-    select: (data) => hydratePackageRelations(data, queryClient),
-    staleTime: 1000 * 60 * 5,
-  });
-};
-
-export const useCreatePackageMutation = () => {
-  const { token } = useAuth();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({ data, options }) => createPackage(token, data, options),
-    onSuccess: (response) => {
-      if (response.success) {
-        queryClient.invalidateQueries({ queryKey: queryKeys.course.package.all });
-        queryClient.invalidateQueries({ queryKey: queryKeys.course.packageItem.all });
-        queryClient.invalidateQueries({ queryKey: queryKeys.course.packagePerk.all });
-      }
-    }
-  });
-};
-
-export const useUpdatePackageMutation = () => {
-  const { token } = useAuth();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({ id, data, options }) => updatePackage(token, id, data, options),
-    onSuccess: (response, { id }) => {
-      if (response.success) {
-        queryClient.invalidateQueries({ queryKey: queryKeys.course.package.all });
-        queryClient.invalidateQueries({ queryKey: queryKeys.course.package.detail(id) });
-        queryClient.invalidateQueries({ queryKey: queryKeys.course.packageItem.all });
-        queryClient.invalidateQueries({ queryKey: queryKeys.course.packagePerk.all });
-      }
-    }
-  });
-};
-
-export const useDeletePackageMutation = () => {
-  const { token } = useAuth();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({ id, options }) => {
-      console.log('[useDeletePackageMutation] Deleting Package ID:', id);
-      return deletePackage(token, id, options);
-    },
-    onSuccess: (response) => {
-      console.log('[useDeletePackageMutation] API Response:', response);
-      if (response.success) {
-        queryClient.invalidateQueries({ queryKey: queryKeys.course.package.all });
-        queryClient.invalidateQueries({ queryKey: queryKeys.course.packageItem.all });
-        queryClient.invalidateQueries({ queryKey: queryKeys.course.packagePerk.all });
-      }
-    },
-    onError: (err) => {
-      console.error('[useDeletePackageMutation] API Error:', err);
-    }
-  });
-};
-
-export const usePackageItemsQuery = () => {
-  const { token } = useAuth();
-  return useQuery({
-    queryKey: queryKeys.course.packageItem.list(),
-    queryFn: async () => {
-      const res = await fetchPackageItems(token);
-      if (!res.success) throw new Error(res.message || 'Failed to fetch package items');
-      return res.data?.data || [];
-    },
-    enabled: !!token,
-    staleTime: Infinity,
-    refetchOnMount: false,
-    refetchOnWindowFocus: false,
   });
 };
 

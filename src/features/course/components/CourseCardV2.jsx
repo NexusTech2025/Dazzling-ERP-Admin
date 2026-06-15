@@ -13,40 +13,118 @@ const CourseCardV2 = ({
   onClick,
   onEdit,
   onAssign,
+  onDelete,
   onMoreClick, // Action options trigger
+  icon,
   className = ''
 }) => {
   const name = course.name || '';
   const id = course.course_id || course.id || '';
-  const priceLabel = course.base_fee ? `₹ ${course.base_fee.toLocaleString()}` : '—';
+  const priceLabel = course.base_fee ? `₹${course.base_fee.toLocaleString()}` : '—';
 
 
   // Low Density
   if (density === 'low') {
+    const discount = course.discount_percent || 0;
+    const hasDiscount = discount > 0;
+    const offerPrice = hasDiscount ? course.base_fee * (1 - discount / 100) : course.base_fee;
+    const offerPriceLabel = course.base_fee ? `₹${offerPrice.toLocaleString()}` : '—';
+
+    // Segment specific icon
+    const segmentIcons = { 'SEG-CMP': 'computer', 'SEG-FND': 'star' };
+    const iconName = icon || segmentIcons[course.segment_id] || 'auto_stories';
+
+    // Subtitle 2: Class • Board • Language Medium
+    const sub2Parts = [
+      course.metadata?.class ? `Class ${course.metadata.class}` : null,
+      course.metadata?.board || null,
+      course.language_medium || null
+    ].filter(Boolean);
+    const subtitle2 = sub2Parts.length > 0 ? sub2Parts.join(' • ') : (course.instructor_name || 'Dr. Emily Blunt');
+
     const bodyText = (
-      <div className="flex flex-col gap-1 items-start md:items-end text-left md:text-right w-full">
-        <Tag
-          variant="subtle"
-          color="neutral"
-          label="Academic"
-          size="sm"
-          className="hidden sm:inline-block self-start md:self-end"
-        />
-        <p className="font-mono text-xs sm:text-sm font-bold text-secondary">{priceLabel}</p>
+      <div className="flex flex-col gap-0.5 items-start md:items-end text-left md:text-right w-full min-w-0">
+        <div className="flex items-center gap-1.5 flex-wrap md:justify-end">
+          {hasDiscount && (
+            <span className="text-[10px] font-mono line-through text-text-secondary">
+              {priceLabel}
+            </span>
+          )}
+          <span className="font-mono text-xs sm:text-sm font-black text-secondary">
+            {offerPriceLabel}
+          </span>
+        </div>
+        <div className="flex flex-wrap items-center gap-1 text-[10px] text-text-secondary font-medium md:justify-end">
+          {hasDiscount && (
+            <Badge
+              variant="status"
+              color="success"
+              content={`${discount}% OFF`}
+              size="sm"
+              className="py-0 px-1 text-[9px] font-bold"
+            />
+          )}
+          {hasDiscount && <span>•</span>}
+          <span>{course.duration_value || 12} {course.duration_unit || 'months'}</span>
+          <span>•</span>
+          <span>{course.default_installment_count || 1} Inst.</span>
+        </div>
       </div>
     );
 
     const actions = [
-      { label: 'Assign Task', icon: 'pending_actions', priority: 'primary', onClick: (e) => { e.stopPropagation(); onAssign && onAssign(); } },
+      { label: 'Details', icon: 'analytics', priority: 'primary', onClick: (e) => { e.stopPropagation(); onClick && onClick(); } },
       { label: 'Edit Course', icon: 'edit', priority: 'secondary', onClick: (e) => { e.stopPropagation(); onEdit && onEdit(); } }
     ];
 
+    if (onDelete) {
+      actions.push({
+        label: 'Delete',
+        icon: 'delete',
+        priority: 'tertiary',
+        onClick: (e) => {
+          e.stopPropagation();
+          onDelete();
+        }
+      });
+    }
+
+    const segmentName = course.segment_name || '';
+    const entityType = course.entity_type ? (course.entity_type.charAt(0).toUpperCase() + course.entity_type.slice(1)) : 'Subject';
+    const shortCode = course.short_code || '';
+
+    const subtitle1 = (
+      <span className="inline-flex flex-wrap items-center gap-1 text-[10px] font-bold text-text-secondary uppercase tracking-wider">
+        <span className={`px-1.5 py-0.5 rounded text-[8px] font-black tracking-widest ${
+          course.entity_type === 'subject'
+            ? 'bg-blue-500/10 text-blue-500 border border-blue-500/15'
+            : 'bg-purple-500/10 text-purple-500 border border-purple-500/15'
+        }`}>
+          {entityType}
+        </span>
+        {segmentName && (
+          <>
+            <span className="text-slate-300 dark:text-slate-700">•</span>
+            <span className="text-text-main dark:text-slate-300 normal-case">{segmentName}</span>
+          </>
+        )}
+        {shortCode && (
+          <>
+            <span className="text-slate-300 dark:text-slate-700">•</span>
+            <span className="font-mono text-primary bg-primary/5 px-1.5 py-0.5 rounded border border-primary/10">
+              {shortCode}
+            </span>
+          </>
+        )}
+      </span>
+    );
+
     return (
       <LowDensityCard
-        icon="calculate"
+        icon={iconName}
         title={name}
-        subtitle1={id}
-        subtitle2={course.instructor_name || 'Dr. Emily Blunt'}
+        subtitle1={subtitle1}
+        subtitle2={subtitle2}
         bodyText={bodyText}
         actions={actions}
         onClick={onClick}
@@ -57,6 +135,11 @@ const CourseCardV2 = ({
 
   // Medium Density
   if (density === 'medium') {
+    const discount = course.discount_percent || 0;
+    const hasDiscount = discount > 0;
+    const offerPrice = hasDiscount ? course.base_fee * (1 - discount / 100) : course.base_fee;
+    const offerPriceLabel = course.base_fee ? `₹${offerPrice.toLocaleString()}` : '—';
+
     // Resolve segment icon from segment_id
     const segmentIcons = { 'SEG-CMP': 'computer', 'SEG-FND': 'star' };
     const iconName = segmentIcons[course.segment_id] || 'auto_stories';
@@ -69,10 +152,11 @@ const CourseCardV2 = ({
     ].filter(Boolean);
 
     const metrics = [
-      { label: 'Base Fee', value: priceLabel, colorClass: 'text-secondary' },
+      { label: 'Base Fee', value: priceLabel, colorClass: hasDiscount ? 'line-through opacity-60 text-text-secondary' : 'text-secondary' },
+      hasDiscount ? { label: 'Offer Price', value: offerPriceLabel, colorClass: 'text-emerald-500 font-bold' } : null,
       { label: 'Duration', value: course.duration_value ? `${course.duration_value} ${course.duration_unit || 'months'}` : '—' },
       { label: 'Installments', value: course.default_installment_count ? `${course.default_installment_count} steps` : '—' }
-    ];
+    ].filter(Boolean);
 
     // Status color mapping
     const statusColor = course.status === 'active' ? 'success' : 'error';
@@ -82,7 +166,8 @@ const CourseCardV2 = ({
         icon={iconName}
         title={name}
         subtitle={course.segment_name || course.entity_type || ''}
-        badgeText={course.short_code || id}
+        badgeText={hasDiscount ? `${discount}% OFF` : (course.short_code || id)}
+        badgeClass={hasDiscount ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : undefined}
         tags={tags}
         metrics={metrics}
         onClick={onClick}
