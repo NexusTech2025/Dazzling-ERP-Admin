@@ -107,8 +107,8 @@ export const useBatchesQuery = (filter = EMPTY_FILTER) => {
     select: (data) => hydrateRecord('batch', data, queryClient),
     initialData: () => getCachedList(queryClient, 'batch', filter),
     initialDataUpdatedAt: () => queryClient.getQueryState(queryKeys.batch.list(filter))?.dataUpdatedAt,
-    staleTime: Infinity,
-    refetchOnMount: false,
+    staleTime: 1000 * 60 * 2.5,
+    refetchOnMount: true,
     refetchOnWindowFocus: false,
   });
 };

@@ -1,5 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useTeacherAttendanceQuery, useUpdateTeacherAttendanceMutation } from '../../hooks/useTeacherQueries';
+import { useAuth } from '../../../../context/AuthContextCore';
+import { isPastLocalDate } from '../../../../lib/dateUtils';
 
 // Helper utilities for structured time objects
 const parseTimeToStructured = (timeStr) => {
@@ -22,6 +24,7 @@ const formatStructuredToTime = (structTime) => {
 };
 
 const TeachersAttendance = ({ teacherId }) => {
+  const { user } = useAuth();
   const { data: attendance = [], isLoading } = useTeacherAttendanceQuery(teacherId);
   const updateMutation = useUpdateTeacherAttendanceMutation();
   
@@ -233,6 +236,7 @@ const TeachersAttendance = ({ teacherId }) => {
                 const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                 const record = monthData.find(r => r.attendance_date === dateStr);
                 const isOpen = activeMenu === dateStr;
+                const isPastRecordLocked = isPastLocalDate(dateStr) && user?.role !== 'superadmin';
                 
                 return (
                   <CalendarDayCellCell 
@@ -245,6 +249,7 @@ const TeachersAttendance = ({ teacherId }) => {
                     onUpdate={(updates) => handleUpdateDay(dateStr, updates)}
                     onClose={() => setActiveMenu(null)}
                     isToday={day === new Date().getDate() && currentMonth === new Date().getMonth() && currentYear === new Date().getFullYear()}
+                    isPastRecordLocked={isPastRecordLocked}
                   />
                 );
               })}
@@ -255,7 +260,8 @@ const TeachersAttendance = ({ teacherId }) => {
             <LegendItem color="bg-emerald-500" label="Present" />
             <LegendItem color="bg-amber-500" label="Late" />
             <LegendItem color="bg-rose-500" label="Absent" />
-            <LegendItem color="bg-slate-350 dark:bg-slate-700" label="Unmarked" />
+            <LegendItem color="bg-slate-400 dark:bg-slate-500" label="Not Recorded (NR)" />
+            <LegendItem color="bg-slate-355 dark:bg-slate-700" label="Unmarked" />
           </div>
         </div>
 
@@ -337,10 +343,11 @@ const TeachersAttendance = ({ teacherId }) => {
 };
 
 // Internal Day Cell Component
-const CalendarDayCellCell = ({ day, record, isOpen, onToggleMenu, onUpdate, onClose, isToday }) => {
+const CalendarDayCellCell = ({ day, record, dateStr, isOpen, onToggleMenu, onUpdate, onClose, isToday, isPastRecordLocked }) => {
   const isPresent = record?.status === 'P' || record?.status === 'present';
   const isLate = record?.status === 'L' || record?.status === 'Late';
   const isAbsent = record?.status === 'A' || record?.status === 'absent';
+  const isUnmarkedPastDate = !record && isPastLocalDate(dateStr);
   
   let colorClasses = "bg-slate-50/50 dark:bg-white/[0.02] border-border-light dark:border-white/5 border-l-slate-400 dark:border-l-slate-600";
   if (isPresent) {
@@ -377,12 +384,18 @@ const CalendarDayCellCell = ({ day, record, isOpen, onToggleMenu, onUpdate, onCl
           {String(day).padStart(2, '0')}
         </span>
 
-        <button
-          onClick={onToggleMenu}
-          className="p-0.5 text-text-secondary dark:text-slate-500 hover:text-text-main dark:hover:text-white rounded hover:bg-slate-200 dark:hover:bg-white/5 transition-colors cursor-pointer"
-        >
-          <span className="material-symbols-outlined text-[13px]">edit_note</span>
-        </button>
+        {!isPastRecordLocked ? (
+          <button
+            onClick={onToggleMenu}
+            className="p-0.5 text-text-secondary dark:text-slate-500 hover:text-text-main dark:hover:text-white rounded hover:bg-slate-200 dark:hover:bg-white/5 transition-colors cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-[13px]">edit_note</span>
+          </button>
+        ) : (
+          <span className="material-symbols-outlined text-[12px] text-slate-350 dark:text-slate-600 pointer-events-none" title="Locked">
+            lock
+          </span>
+        )}
       </div>
 
       <div className="text-[9px] font-semibold text-text-secondary dark:text-slate-400 mt-1 leading-tight">
@@ -393,13 +406,18 @@ const CalendarDayCellCell = ({ day, record, isOpen, onToggleMenu, onUpdate, onCl
             <span className={isLate ? "text-amber-650 dark:text-amber-400" : ""}>In: {inTimeStr}</span>
             <span>Out: {outTimeStr}</span>
           </div>
+        ) : isUnmarkedPastDate ? (
+          <span className="inline-flex items-center gap-1 bg-slate-500/10 text-slate-500 dark:text-slate-400 px-1.5 py-0.5 rounded-full font-bold text-[8px] uppercase tracking-wider">
+            <span className="w-1 h-1 rounded-full bg-slate-400 dark:bg-slate-500"></span>
+            NR
+          </span>
         ) : (
           <span className="text-text-secondary/50 dark:text-slate-500 italic">Unmarked</span>
         )}
       </div>
 
       {/* Popover Editor Panel */}
-      {isOpen && (
+      {isOpen && !isPastRecordLocked && (
         <div className="absolute z-50 top-7 left-1/2 -translate-x-1/2 bg-surface-light dark:bg-[#122131] border border-border-light dark:border-white/10 rounded-2xl shadow-2xl p-4 w-52 space-y-3 animate-in zoom-in-95 duration-150">
           <div className="flex justify-between items-center border-b border-border-light dark:border-white/5 pb-1.5">
             <span className="text-[10px] font-black uppercase text-text-secondary dark:text-slate-400">Day {day} punches</span>

@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import BatchCardV2 from './components/BatchCardV2';
 import { useQueryClient } from '@tanstack/react-query';
 import { useBatchesQuery, useDeleteBatchMutation } from './hooks/useBatchQueries';
 import { useCoursesQuery } from '../course/hooks/useCourseQueries';
@@ -217,7 +218,6 @@ const Batches = () => {
     </>
   );
 
-  if (isLoading) return <LoadingState message="Fetching batch records..." />;
   if (error) return <ErrorState message={error.message} onRetry={() => queryClient.invalidateQueries({ queryKey: queryKeys.batch.all })} />;
 
   const crumbs = [
@@ -241,6 +241,12 @@ const Batches = () => {
               <span className="text-sm font-bold text-text-main dark:text-white">
                 Batch Directory
               </span>
+              {isFetching && (
+                <div className="ml-3 flex items-center gap-1.5 px-2 py-0.5 bg-primary/5 rounded-full border border-primary/10 animate-pulse">
+                  <div className="size-2.5 border-2 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+                  <span className="text-[9px] font-black text-primary uppercase tracking-wider">Updating...</span>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -248,25 +254,115 @@ const Batches = () => {
       body={
         <div className="pt-6 lg:pt-10 pb-6 space-y-6">
           <Breadcrumbs items={crumbs} className="mb-4" />
-          <DataTable
-            title="Batch Directory"
-            subtitle="Manage class schedules, capacities, and course assignments."
-            data={filteredBatches}
-            columns={columns}
-            filters={filters}
-            primaryAction={
-              <Link to="/admin/batches/add" className="flex items-center gap-2 bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-lg text-sm font-bold shadow-md transition-all active:scale-95">
-                <span className="material-symbols-outlined text-lg">add</span>
-                Create Batch
-              </Link>
-            }
-            secondaryAction={
-              <RefreshButton
-                isFetching={isFetching}
-                onRefresh={() => queryClient.invalidateQueries({ queryKey: queryKeys.batch.all })}
-              />
-            }
-          />
+          
+          {/* Desktop Table View */}
+          <div className="hidden md:block">
+            <DataTable
+              title="Batch Directory"
+              subtitle="Manage class schedules, capacities, and course assignments."
+              data={filteredBatches}
+              columns={columns}
+              filters={filters}
+              isLoading={isLoading}
+              primaryAction={
+                <Link to="/admin/batches/add" className="flex items-center gap-2 bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-lg text-sm font-bold shadow-md transition-all active:scale-95">
+                  <span className="material-symbols-outlined text-lg">add</span>
+                  Create Batch
+                </Link>
+              }
+              secondaryAction={
+                <RefreshButton
+                  isFetching={isFetching}
+                  onRefresh={() => queryClient.invalidateQueries({ queryKey: queryKeys.batch.all })}
+                />
+              }
+            />
+          </div>
+
+          {/* Mobile Card View */}
+          <div className="md:hidden space-y-4">
+            <div className="flex flex-col gap-4">
+              <div>
+                <h1 className="text-xl font-bold text-text-main dark:text-white">Batch Directory</h1>
+                <p className="text-xs text-text-secondary">Manage class schedules, capacities, and course assignments.</p>
+              </div>
+              <div className="flex items-center gap-3">
+                <Link to="/admin/batches/add" className="flex items-center gap-2 bg-primary hover:bg-primary-dark text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-md transition-all active:scale-95">
+                  <span className="material-symbols-outlined text-sm">add</span>
+                  Create Batch
+                </Link>
+                <RefreshButton
+                  isFetching={isFetching}
+                  onRefresh={() => queryClient.invalidateQueries({ queryKey: queryKeys.batch.all })}
+                />
+              </div>
+            </div>
+
+            {/* Filters Section */}
+            {filters && (
+              <div className="grid grid-cols-1 gap-3 rounded-xl border border-border-light dark:border-border-dark bg-surface-light dark:bg-surface-dark p-4 shadow-sm">
+                {filters}
+              </div>
+            )}
+
+            {/* Mobile Loading / Empty / List State */}
+            {isLoading ? (
+              <div className="flex flex-col items-center justify-center py-10 space-y-3">
+                <div className="size-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+                <p className="text-xs text-text-secondary">Loading batches...</p>
+              </div>
+            ) : filteredBatches.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-10 border border-dashed border-border-light dark:border-border-dark rounded-xl bg-surface-light dark:bg-surface-dark">
+                <span className="material-symbols-outlined text-4xl text-text-secondary mb-2">calendar_today</span>
+                <p className="text-sm font-semibold text-text-main dark:text-white">No batches found</p>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-3">
+                {filteredBatches.map((batch) => {
+                  const isSelected = selectedIds.includes(batch.batch_id);
+                  const cardIcon = (
+                    <div
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleSelect(batch.batch_id);
+                      }}
+                      className="w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 flex items-center justify-center font-bold text-xs sm:text-sm cursor-pointer select-none"
+                    >
+                      {selectedIds.length > 0 ? (
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          readOnly
+                          className="rounded border-slate-300 dark:border-slate-700 text-primary focus:ring-primary size-4 cursor-pointer"
+                        />
+                      ) : (
+                        (batch.batch_name || 'BC').split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
+                      )}
+                    </div>
+                  );
+
+                  return (
+                    <BatchCardV2
+                      key={batch.batch_id}
+                      batch={batch}
+                      density="low"
+                      icon={cardIcon}
+                      onClick={() => navigate(`/admin/batches/${batch.batch_id}`)}
+                      onEdit={() => navigate(`/admin/batches/edit/${batch.batch_id}`)}
+                      onDelete={() => setDeleteModal({
+                        isOpen: true,
+                        id: batch.batch_id,
+                        name: batch.batch_name,
+                        type: 'batch',
+                        status: 'idle',
+                        resultMessage: null
+                      })}
+                    />
+                  );
+                })}
+              </div>
+            )}
+          </div>
 
           {/* Floating Selection Action Bar */}
           <SelectionActionBar

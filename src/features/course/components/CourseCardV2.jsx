@@ -73,9 +73,17 @@ const CourseCardV2 = ({
     );
 
     const actions = [
-      { label: 'Details', icon: 'analytics', priority: 'primary', onClick: (e) => { e.stopPropagation(); onClick && onClick(); } },
-      { label: 'Edit Course', icon: 'edit', priority: 'secondary', onClick: (e) => { e.stopPropagation(); onEdit && onEdit(); } }
+      { label: 'Details', icon: 'analytics', priority: 'primary', onClick: (e) => { e.stopPropagation(); onClick && onClick(); } }
     ];
+
+    if (onEdit) {
+      actions.push({
+        label: 'Edit Course',
+        icon: 'edit',
+        priority: 'secondary',
+        onClick: (e) => { e.stopPropagation(); onEdit(); }
+      });
+    }
 
     if (onDelete) {
       actions.push({

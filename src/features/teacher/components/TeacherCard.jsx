@@ -53,7 +53,7 @@ const TeacherCard = ({
       </span>
     );
 
-    const subtitle1 = teacher.email || '—';
+    const subtitle1 = teacher.experience_years ? `${teacher.experience_years} yrs experience` : 'General Faculty';
     const subtitle2 = teacher.mobile_number || '—';
 
     const bodyText = (

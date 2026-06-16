@@ -4,7 +4,7 @@ import { mergeSlotClasses } from '../ui/v2/cards/cardUtils';
 // Default style maps for slot fallbacks
 const DEFAULT_LAYOUT_CLASSES = {
   container: "relative w-full lg:w-[98%] lg:mx-auto xl:w-[95%] max-w-[1440px]",
-  body: "py-0 px-0",
+  body: "py-0 px-2",
   header: "",
   footer: ""
 };

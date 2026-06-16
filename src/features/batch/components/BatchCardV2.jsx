@@ -5,7 +5,7 @@ import {
   HighDensityCard 
 } from '../../../components/ui/v2/cards';
 import Button from '../../../components/ui/v2/Button';
-import { Tag } from '../../../components/ui/v2/indicators';
+import { Tag, Badge } from '../../../components/ui/v2/indicators';
 
 const BatchCardV2 = ({
   batch = {},
@@ -14,6 +14,8 @@ const BatchCardV2 = ({
   onEdit,
   onSchedule,
   onRoster,
+  onDelete,
+  icon,
   onMoreClick, // Action options trigger
   className = ''
 }) => {
@@ -23,35 +25,78 @@ const BatchCardV2 = ({
 
   // Low Density
   if (density === 'low') {
-    const batchDetails = [
-      batch.course_name || 'Advanced Quantum Physics',
-      batch.timing || 'Mon-Wed-Fri 08:00 AM'
-    ].filter(Boolean).join(' • ');
+    const isSelectionActive = !!icon;
+    const statusColor = batch.status === 'active' ? 'success' : batch.status === 'completed' ? 'neutral' : 'default';
 
+    const titleElement = (
+      <span className="inline-flex items-center gap-2 flex-wrap">
+        <span className="font-bold text-text-main dark:text-white text-xs sm:text-sm">{name}</span>
+        {batch.status && (
+          <Badge
+            variant="status"
+            color={statusColor}
+            content={batch.status}
+            size="sm"
+            className="scale-90 origin-left py-0"
+          />
+        )}
+      </span>
+    );
+
+    const initials = name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+
+    const subtitle1 = batch.teacher_name || batch.instructor_name || '—';
+
+    const hasDays = batch.schedule?.days_of_week?.length > 0;
+    const daysOfWeeks = hasDays ? batch.schedule.days_of_week : [];
+    const subtitle2 = daysOfWeeks.length > 0 ? (
+      <div className="flex flex-wrap gap-1 mt-1">
+        {daysOfWeeks.map((day, idx) => (
+          <span key={idx} className="px-1.5 py-0.5 text-[9px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-md border border-border-light dark:border-border-dark uppercase tracking-wider">
+            {day.substring(0, 3)}
+          </span>
+        ))}
+      </div>
+    ) : null;
+
+    const hasTime = batch.schedule?.start_time && batch.schedule?.end_time;
     const bodyText = (
-      <div className="flex flex-col gap-1 items-start md:items-end text-left md:text-right w-full">
-        <Tag
-          variant="subtle"
-          color="warning"
-          label={batch.branch_name || 'Main Campus'}
-          size="sm"
-          className="hidden sm:inline-block self-start md:self-end"
-        />
-        <p className="font-mono text-[10px] sm:text-xs text-text-secondary dark:text-slate-400 font-bold">{capacityLabel}</p>
+      <div className="flex flex-col gap-0.5 items-start md:items-end text-[10px] text-text-secondary font-medium w-full min-w-0">
+        <div className="font-semibold text-text-main dark:text-slate-300 truncate w-full md:text-right">
+          {batch.course_name}
+        </div>
+        {hasTime && (
+          <div className="text-[10px] text-text-secondary dark:text-slate-400 truncate">
+            {`${batch.schedule.start_time} - ${batch.schedule.end_time}`}
+          </div>
+        )}
       </div>
     );
 
     const actions = [
-      { label: 'View Roster', icon: 'groups', priority: 'primary', onClick: (e) => { e.stopPropagation(); onRoster && onRoster(); } },
-      { label: 'Schedule', icon: 'calendar_today', priority: 'secondary', onClick: (e) => { e.stopPropagation(); onSchedule && onSchedule(); } }
+      { label: 'View', icon: 'visibility', priority: 'primary', onClick: (e) => { e.stopPropagation(); onClick && onClick(); } },
+      { label: 'Edit', icon: 'edit', priority: 'secondary', onClick: (e) => { e.stopPropagation(); onEdit && onEdit(); } }
     ];
+
+    if (onDelete) {
+      actions.push({
+        label: 'Delete',
+        icon: 'delete',
+        priority: 'tertiary',
+        onClick: (e) => {
+          e.stopPropagation();
+          onDelete();
+        }
+      });
+    }
 
     return (
       <LowDensityCard
-        icon="groups"
-        title={name}
-        subtitle1={id}
-        subtitle2={batchDetails}
+        icon={icon}
+        avatarText={!icon ? initials : undefined}
+        title={titleElement}
+        subtitle1={subtitle1}
+        subtitle2={subtitle2}
         bodyText={bodyText}
         actions={actions}
         onClick={onClick}

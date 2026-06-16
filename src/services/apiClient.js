@@ -5,7 +5,10 @@ import { API_REGISTRY } from './apiRegistry';
 import { ApiError } from './ApiError';
 import { getFriendlyErrorMessage } from './errorMapper';
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+// const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const BASE_URL = import.meta.env.DEV
+  ? '/api/gs/exec' // Hits the local Vite dev proxy server 
+  : `${import.meta.env.VITE_API_BASE_URL}/exec`; // Hits production directly [cite: 68]
 
 export const executeAction = async (actionPath, payload = {}, token = null, options = {}) => {
   let backendActionString;

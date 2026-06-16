@@ -91,19 +91,15 @@ export const useTeacherAttendanceQuery = (teacherId) => {
 /**
  * Hook for fetching daily teacher attendance registry
  */
-export const useTeacherAttendanceListQuery = (date, batchId) => {
+export const useTeacherAttendanceListQuery = (date) => {
   const { token } = useAuth();
 
   return useQuery({
-    queryKey: queryKeys.teacher.attendanceDaily(date, batchId),
+    queryKey: queryKeys.teacher.attendanceDaily(date, 'all'),
     queryFn: async ({ signal }) => {
-      const where = { attendance_date: date };
-      if (batchId && batchId !== 'all') {
-        where.batch_id = batchId;
-      }
       const response = await apiClient.executeAction(
         API_REGISTRY.STAFF.QUERY_ATTENDANCE,
-        { where },
+        { where: { attendance_date: date } },
         token,
         { signal }
       );

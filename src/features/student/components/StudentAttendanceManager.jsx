@@ -3,6 +3,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useBatchesQuery } from '../../batch/hooks/useBatchQueries';
 import { useBatchAttendanceQuery, useMarkAttendanceMutation } from '../../batch/hooks/useAttendanceQueries';
 import { queryKeys } from '../../../lib/react-query/queryKeys';
+import { useAuth } from '../../../context/AuthContextCore';
+import { isPastLocalDate } from '../../../lib/dateUtils';
 
 // Layout & UI Components
 import MainLayout from '../../../components/layout/MainLayout';
@@ -35,6 +37,7 @@ const EMPTY_ARRAY = Object.freeze([]);
 
 const StudentAttendanceManager = () => {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const [isSticky, setIsSticky] = useState(false);
   const [selectedBatchId, setSelectedBatchId] = useState('all');
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
@@ -45,9 +48,9 @@ const StudentAttendanceManager = () => {
   // 1. Fetch available batches
   const { data: batches = EMPTY_ARRAY, isLoading: isLoadingBatches } = useBatchesQuery();
 
-  // 2. Fetch daily student attendance records for selected batch & date
+  // 2. Fetch daily student attendance records for selected batch & date (Fetch all batches)
   const { data: registry = EMPTY_ARRAY, isLoading: isLoadingRegistry, isFetching: isFetchingRegistry, error } = useBatchAttendanceQuery(
-    selectedBatchId,
+    'all',
     selectedDate
   );
 
@@ -55,8 +58,13 @@ const StudentAttendanceManager = () => {
 
   // Local staged records before saving
   const [stagedRecords, setStagedRecords] = useState({});
+  const [initialSnapshot, setInitialSnapshot] = useState({});
   const [isDirty, setIsDirty] = useState(false);
   const [saveStatus, setSaveStatus] = useState(null); // 'saving', 'success', 'error'
+
+  const isEditingDisabled = useMemo(() => {
+    return isPastLocalDate(selectedDate) && user?.role !== 'superadmin';
+  }, [selectedDate, user]);
 
   // Options for batch dropdown
   const batchOptions = useMemo(() => {
@@ -74,15 +82,28 @@ const StudentAttendanceManager = () => {
     }
   }, [batches, selectedBatchId]);
 
-  // Initialize staging state when registry is loaded
+  // Initialize staging state when registry is loaded (Process all rows locally)
   useEffect(() => {
-    if (registry && selectedBatchId) {
+    if (registry) {
       const initial = {};
+      const todayStr = new Date().toLocaleDateString('sv-SE');
+      const isToday = selectedDate === todayStr;
+      const isPastDate = isPastLocalDate(selectedDate);
+
       registry.forEach(rec => {
         let statusVal = 'P';
-        if (rec.status === 'Absent' || rec.status === 'A') statusVal = 'A';
-        else if (rec.status === 'Late' || rec.status === 'L') statusVal = 'L';
-        else statusVal = 'P';
+        const isUnrecorded = !rec.status && isPastDate;
+        const isUnrecordedToday = !rec.status && isToday;
+
+        if (rec.status) {
+          if (rec.status === 'Absent' || rec.status === 'A') statusVal = 'A';
+          else if (rec.status === 'Late' || rec.status === 'L') statusVal = 'L';
+          else statusVal = 'P';
+        } else {
+          if (isToday) {
+            statusVal = ''; // unselected by default for current date
+          }
+        }
 
         const entryTimeStr = formatStructuredToTime(rec.entry_time) || '08:00';
         const exitTimeStr = formatStructuredToTime(rec.exit_time) || '13:00';
@@ -95,29 +116,37 @@ const StudentAttendanceManager = () => {
           status: statusVal,
           entry_time: entryTimeStr,
           exit_time: exitTimeStr,
-          remarks: rec.remarks || ''
+          remarks: rec.remarks || '',
+          isUnmarkedPastDate: isUnrecorded,
+          isUnmarkedCurrentDate: isUnrecordedToday
         };
       });
+
       setStagedRecords(initial);
+      setInitialSnapshot(JSON.parse(JSON.stringify(initial)));
       setIsDirty(false);
     } else {
       setStagedRecords({});
+      setInitialSnapshot({});
       setIsDirty(false);
     }
-  }, [registry, selectedBatchId, selectedDate]);
+  }, [registry, selectedDate]);
 
   const handleStatusChange = (studentId, status) => {
+    if (isEditingDisabled) return;
     setStagedRecords(prev => ({
       ...prev,
       [studentId]: {
         ...prev[studentId],
-        status
+        status,
+        isUnmarkedCurrentDate: false
       }
     }));
     setIsDirty(true);
   };
 
   const handleTimeChange = (studentId, field, value) => {
+    if (isEditingDisabled) return;
     setStagedRecords(prev => ({
       ...prev,
       [studentId]: {
@@ -129,6 +158,7 @@ const StudentAttendanceManager = () => {
   };
 
   const handleRemarksChange = (studentId, value) => {
+    if (isEditingDisabled) return;
     setStagedRecords(prev => ({
       ...prev,
       [studentId]: {
@@ -140,12 +170,14 @@ const StudentAttendanceManager = () => {
   };
 
   const handleMarkAllPresent = () => {
+    if (isEditingDisabled) return;
     setStagedRecords(prev => {
       const updated = {};
       Object.keys(prev).forEach(id => {
         updated[id] = {
           ...prev[id],
-          status: 'P'
+          status: 'P',
+          isUnmarkedCurrentDate: false
         };
       });
       return updated;
@@ -155,6 +187,21 @@ const StudentAttendanceManager = () => {
 
   const handleSave = () => {
     if (!selectedBatchId) return;
+    if (isEditingDisabled) {
+      alert("Access Denied: Past records can only be updated by a superadmin.");
+      return;
+    }
+
+    const recordsArray = Object.values(stagedRecords);
+    const hasUnmarkedEntries = recordsArray.some(rec => 
+      (selectedBatchId === 'all' || rec.batch_id === selectedBatchId) && rec.status === ''
+    );
+
+    if (hasUnmarkedEntries) {
+      alert("Validation Error: Please select a status (P, A, or L) for all students before saving today's register.");
+      return;
+    }
+
     setSaveStatus('saving');
 
     if (selectedBatchId === 'all') {
@@ -198,15 +245,17 @@ const StudentAttendanceManager = () => {
           setTimeout(() => setSaveStatus(null), 5000);
         });
     } else {
-      const recordsPayload = Object.values(stagedRecords).map(rec => {
-        return {
-          student_id: rec.student_id,
-          status: rec.status,
-          entry_time: parseTimeToStructured(rec.entry_time),
-          exit_time: parseTimeToStructured(rec.exit_time),
-          remarks: rec.remarks || null
-        };
-      });
+      const recordsPayload = Object.values(stagedRecords)
+        .filter(rec => rec.batch_id === selectedBatchId)
+        .map(rec => {
+          return {
+            student_id: rec.student_id,
+            status: rec.status,
+            entry_time: parseTimeToStructured(rec.entry_time),
+            exit_time: parseTimeToStructured(rec.exit_time),
+            remarks: rec.remarks || null
+          };
+        });
 
       const payload = {
         batch_id: selectedBatchId,
@@ -256,23 +305,32 @@ const StudentAttendanceManager = () => {
     return '08:00 AM - 10:00 AM';
   }, [selectedBatchObj]);
 
-  // Stats from stagedRecords
+  // Stats from stagedRecords (Client-side batch filtering)
   const studentsList = Object.values(stagedRecords);
-  const totalCount = studentsList.length;
-  const presentCount = studentsList.filter(s => s.status === 'P').length;
-  const absentCount = studentsList.filter(s => s.status === 'A').length;
-  const lateCount = studentsList.filter(s => s.status === 'L').length;
-  const attendanceRate = totalCount > 0 ? Math.round(((presentCount + lateCount) / totalCount) * 100) : 0;
+
+  const activeBatchRecords = useMemo(() => {
+    if (selectedBatchId === 'all') {
+      return studentsList;
+    }
+    return studentsList.filter(s => s.batch_id === selectedBatchId);
+  }, [studentsList, selectedBatchId]);
+
+  const totalCount = activeBatchRecords.length;
+  const presentCount = activeBatchRecords.filter(s => s.status === 'P' && !s.isUnmarkedPastDate && !s.isUnmarkedCurrentDate).length;
+  const absentCount = activeBatchRecords.filter(s => s.status === 'A' && !s.isUnmarkedPastDate && !s.isUnmarkedCurrentDate).length;
+  const lateCount = activeBatchRecords.filter(s => s.status === 'L' && !s.isUnmarkedPastDate && !s.isUnmarkedCurrentDate).length;
+  const unrecordedCount = activeBatchRecords.filter(s => s.isUnmarkedPastDate || s.isUnmarkedCurrentDate).length;
+  const attendanceRate = totalCount > 0 ? Math.round(((presentCount + lateCount) / (totalCount - unrecordedCount || 1)) * 100) : 0;
 
   // Filtered List for rendering
   const filteredStudents = useMemo(() => {
-    return studentsList.filter(s => {
-      const matchesStatus = statusFilter === 'ALL' || s.status === statusFilter;
+    return activeBatchRecords.filter(s => {
+      const matchesStatus = statusFilter === 'ALL' || (s.status === statusFilter && !s.isUnmarkedPastDate && !s.isUnmarkedCurrentDate);
       const matchesSearch = s.student_name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
                             s.student_id?.toLowerCase().includes(searchQuery.toLowerCase());
       return matchesStatus && matchesSearch;
     });
-  }, [studentsList, statusFilter, searchQuery]);
+  }, [activeBatchRecords, statusFilter, searchQuery]);
 
   // columns configuration for DataTable
   const columns = useMemo(() => [
@@ -285,31 +343,45 @@ const StudentAttendanceManager = () => {
     {
       header: 'Student Details',
       accessor: 'student_name',
-      render: (row) => (
-        <div className="flex flex-col">
-          <span className="font-bold text-text-main dark:text-white text-sm">{row.student_name}</span>
-          <div className="flex items-center gap-2 mt-0.5">
-            <span className="text-[10px] text-text-secondary dark:text-slate-400 tracking-wider uppercase font-mono">{row.student_id}</span>
-            {row.batch_id && (
-              <span className="text-[9px] bg-indigo-500/10 text-indigo-500 dark:text-indigo-300 px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider">
-                {batches.find(b => b.batch_id === row.batch_id)?.batch_name || row.batch_id}
-              </span>
-            )}
+      render: (row) => {
+        const showNRBadge = row.isUnmarkedPastDate || row.isUnmarkedCurrentDate;
+        return (
+          <div className="flex items-center gap-3">
+            <div className="flex flex-col">
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-text-main dark:text-white text-sm">{row.student_name}</span>
+                {showNRBadge && (
+                  <span className="inline-flex items-center gap-1 bg-slate-500/10 text-slate-500 dark:text-slate-400 px-1.5 py-0.5 rounded-full font-bold text-[9px] uppercase tracking-wider">
+                    <span className={`w-1.5 h-1.5 rounded-full bg-slate-400 dark:bg-slate-500 ${row.isUnmarkedCurrentDate ? 'animate-pulse bg-blue-400 dark:bg-blue-500' : ''}`}></span>
+                    NR
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-2 mt-0.5">
+                <span className="text-[10px] text-text-secondary dark:text-slate-400 tracking-wider uppercase font-mono">{row.student_id}</span>
+                {row.batch_id && (
+                  <span className="text-[9px] bg-indigo-500/10 text-indigo-500 dark:text-indigo-300 px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider">
+                    {batches.find(b => b.batch_id === row.batch_id)?.batch_name || row.batch_id}
+                  </span>
+                )}
+              </div>
+            </div>
           </div>
-        </div>
-      )
+        );
+      }
     },
     {
       header: 'Attendance Status',
       accessor: 'status',
       align: 'center',
-      className: 'w-48',
+      className: 'w-60',
       render: (row) => (
-        <div className="flex items-center justify-center gap-1.5 p-1 bg-slate-100 dark:bg-black/30 border border-border-light dark:border-white/5 rounded-xl w-fit mx-auto">
+        <div className={`flex items-center justify-center gap-1.5 p-1 bg-slate-100 dark:bg-black/30 border border-border-light dark:border-white/5 rounded-2xl w-fit mx-auto ${isEditingDisabled ? 'opacity-60 pointer-events-none' : ''}`}>
           <button 
+            disabled={isEditingDisabled}
             onClick={() => handleStatusChange(row.student_id, 'P')}
-            className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all duration-200 cursor-pointer ${
-              row.status === 'P' 
+            className={`w-12 h-12 rounded-xl text-[32px] font-black uppercase transition-all duration-200 cursor-pointer flex items-center justify-center ${
+              row.status === 'P' && !row.isUnmarkedPastDate && !row.isUnmarkedCurrentDate
                 ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/20 scale-105' 
                 : 'text-text-secondary dark:text-slate-400 hover:text-text-main dark:hover:text-white'
             }`}
@@ -317,9 +389,10 @@ const StudentAttendanceManager = () => {
             P
           </button>
           <button 
+            disabled={isEditingDisabled}
             onClick={() => handleStatusChange(row.student_id, 'A')}
-            className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all duration-200 cursor-pointer ${
-              row.status === 'A' 
+            className={`w-12 h-12 rounded-xl text-[32px] font-black uppercase transition-all duration-200 cursor-pointer flex items-center justify-center ${
+              row.status === 'A' && !row.isUnmarkedPastDate && !row.isUnmarkedCurrentDate
                 ? 'bg-rose-500 text-white shadow-md shadow-rose-500/20 scale-105' 
                 : 'text-text-secondary dark:text-slate-400 hover:text-text-main dark:hover:text-white'
             }`}
@@ -327,10 +400,11 @@ const StudentAttendanceManager = () => {
             A
           </button>
           <button 
+            disabled={isEditingDisabled}
             onClick={() => handleStatusChange(row.student_id, 'L')}
-            className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all duration-200 cursor-pointer ${
-              row.status === 'L' 
-                ? 'bg-amber-500 text-white shadow-md shadow-amber-500/20 scale-105' 
+            className={`w-12 h-12 rounded-xl text-[32px] font-black uppercase transition-all duration-200 cursor-pointer flex items-center justify-center ${
+              row.status === 'L' && !row.isUnmarkedPastDate && !row.isUnmarkedCurrentDate
+                ? 'bg-emerald-500 text-white dark:bg-amber-500 shadow-md dark:shadow-amber-500/20 scale-105' 
                 : 'text-text-secondary dark:text-slate-400 hover:text-text-main dark:hover:text-white'
             }`}
           >
@@ -343,27 +417,35 @@ const StudentAttendanceManager = () => {
       header: 'Check-In',
       accessor: 'entry_time',
       className: 'w-44',
-      render: (row) => (
-        <input 
-          type="time" 
-          value={row.entry_time}
-          onChange={(e) => handleTimeChange(row.student_id, 'entry_time', e.target.value)}
-          className="w-full bg-white dark:bg-[#0a1420] border border-border-light dark:border-white/8 rounded-lg px-3 py-1.5 text-xs font-bold text-text-main dark:text-white outline-none focus:border-indigo-500 transition-all"
-        />
-      )
+      render: (row) => {
+        const isAbsent = row.status === 'A';
+        return (
+          <input 
+            type="time" 
+            value={row.entry_time}
+            disabled={isEditingDisabled || isAbsent}
+            onChange={(e) => handleTimeChange(row.student_id, 'entry_time', e.target.value)}
+            className="w-full bg-white dark:bg-[#0a1420] border border-border-light dark:border-white/8 rounded-lg px-3 py-1.5 text-xs font-bold text-text-main dark:text-white outline-none focus:border-indigo-500 transition-all disabled:opacity-50 disabled:bg-slate-100 dark:disabled:bg-slate-900"
+          />
+        );
+      }
     },
     {
       header: 'Check-Out',
       accessor: 'exit_time',
       className: 'w-44',
-      render: (row) => (
-        <input 
-          type="time" 
-          value={row.exit_time}
-          onChange={(e) => handleTimeChange(row.student_id, 'exit_time', e.target.value)}
-          className="w-full bg-white dark:bg-[#0a1420] border border-border-light dark:border-white/8 rounded-lg px-3 py-1.5 text-xs font-bold text-text-main dark:text-white outline-none focus:border-indigo-500 transition-all"
-        />
-      )
+      render: (row) => {
+        const isAbsent = row.status === 'A';
+        return (
+          <input 
+            type="time" 
+            value={row.exit_time}
+            disabled={isEditingDisabled || isAbsent}
+            onChange={(e) => handleTimeChange(row.student_id, 'exit_time', e.target.value)}
+            className="w-full bg-white dark:bg-[#0a1420] border border-border-light dark:border-white/8 rounded-lg px-3 py-1.5 text-xs font-bold text-text-main dark:text-white outline-none focus:border-indigo-500 transition-all disabled:opacity-50 disabled:bg-slate-100 dark:disabled:bg-slate-900"
+          />
+        );
+      }
     },
     {
       header: 'Remarks / Notes',
@@ -372,13 +454,14 @@ const StudentAttendanceManager = () => {
         <input 
           type="text" 
           value={row.remarks}
-          placeholder="Remarks"
+          disabled={isEditingDisabled}
+          placeholder={isEditingDisabled ? "Entries Locked" : "Remarks"}
           onChange={(e) => handleRemarksChange(row.student_id, e.target.value)}
-          className="w-full bg-white dark:bg-[#0a1420] border border-border-light dark:border-white/8 rounded-lg px-3 py-1.5 text-xs text-text-main dark:text-white placeholder-slate-400 dark:placeholder-slate-600 outline-none focus:border-indigo-500 transition-all"
+          className="w-full bg-white dark:bg-[#0a1420] border border-border-light dark:border-white/8 rounded-lg px-3 py-1.5 text-xs text-text-main dark:text-white placeholder-slate-400 dark:placeholder-slate-600 outline-none focus:border-indigo-500 transition-all disabled:opacity-50 disabled:bg-slate-100 dark:disabled:bg-slate-900"
         />
       )
     }
-  ], []);
+  ], [isEditingDisabled]);
 
   const crumbs = [
     { label: 'Dashboard', path: '/admin/dashboard', icon: 'home' },
@@ -455,50 +538,95 @@ const StudentAttendanceManager = () => {
           <Breadcrumbs items={crumbs} />
 
           {/* Title Header */}
-          <div>
-            <h1 className="text-2xl font-black text-text-main dark:text-white">
-              Student Attendance Register
-            </h1>
-            <p className="text-xs text-text-secondary dark:text-slate-400 font-medium mt-1">
-              Manage daily check-ins, check-outs, status registers, and shift tracking for students by batch.
-            </p>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-2xl font-black text-text-main dark:text-white">
+                Student Attendance Register
+              </h1>
+              <p className="text-xs text-text-secondary dark:text-slate-400 font-medium mt-1">
+                Manage daily check-ins, check-outs, status registers, and shift tracking for students by batch.
+              </p>
+            </div>
+            {isEditingDisabled && (
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 rounded-xl text-xs font-bold self-start sm:self-auto">
+                <span className="material-symbols-outlined text-sm">lock</span>
+                Past Attendance Logs Locked (Superadmin Only)
+              </div>
+            )}
           </div>
 
-          {/* KPI Cards (2x2 Grid on Mobile, 4 Cols on Desktop) */}
+          {/* Stats Section (Desktop Small Cards vs Mobile Compact Ribbon) */}
           {selectedBatchId && (
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-surface-light dark:bg-[#122131] border border-border-light dark:border-white/8 p-5 rounded-2xl flex flex-col justify-between backdrop-blur-md shadow-sm">
-                <div className="flex justify-between items-start">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-text-secondary dark:text-slate-400">Total Students</span>
-                  <span className="material-symbols-outlined text-[20px] text-indigo-500 dark:text-indigo-400 font-bold">groups</span>
+            <>
+              {/* Desktop Stats Cards (small size) */}
+              <div className="hidden md:grid grid-cols-5 gap-3">
+                <div className="bg-surface-light dark:bg-[#122131] border border-border-light dark:border-white/8 p-3.5 rounded-xl flex flex-col justify-between backdrop-blur-md shadow-sm">
+                  <div className="flex justify-between items-start">
+                    <span className="text-[9px] font-black uppercase tracking-widest text-text-secondary dark:text-slate-400">Total Students</span>
+                    <span className="material-symbols-outlined text-sm text-indigo-500">groups</span>
+                  </div>
+                  <p className="text-xl font-black mt-1.5 text-text-main dark:text-white leading-none">{totalCount}</p>
                 </div>
-                <p className="text-3xl font-black mt-3 leading-none text-text-main dark:text-white">{totalCount}</p>
+
+                <div className="bg-surface-light dark:bg-[#122131] border border-border-light dark:border-white/8 p-3.5 rounded-xl flex flex-col justify-between backdrop-blur-md shadow-sm">
+                  <div className="flex justify-between items-start">
+                    <span className="text-[9px] font-black uppercase tracking-widest text-text-secondary dark:text-slate-400">Present</span>
+                    <span className="material-symbols-outlined text-sm text-emerald-500">check_circle</span>
+                  </div>
+                  <p className="text-xl font-black mt-1.5 text-emerald-500 leading-none">{presentCount}</p>
+                </div>
+
+                <div className="bg-surface-light dark:bg-[#122131] border border-border-light dark:border-white/8 p-3.5 rounded-xl flex flex-col justify-between backdrop-blur-md shadow-sm">
+                  <div className="flex justify-between items-start">
+                    <span className="text-[9px] font-black uppercase tracking-widest text-text-secondary dark:text-slate-400">Late</span>
+                    <span className="material-symbols-outlined text-sm text-amber-500">schedule</span>
+                  </div>
+                  <p className="text-xl font-black mt-1.5 text-amber-500 leading-none">{lateCount}</p>
+                </div>
+
+                <div className="bg-surface-light dark:bg-[#122131] border border-border-light dark:border-white/8 p-3.5 rounded-xl flex flex-col justify-between backdrop-blur-md shadow-sm">
+                  <div className="flex justify-between items-start">
+                    <span className="text-[9px] font-black uppercase tracking-widest text-text-secondary dark:text-slate-400">Absent</span>
+                    <span className="material-symbols-outlined text-sm text-rose-500">cancel</span>
+                  </div>
+                  <p className="text-xl font-black mt-1.5 text-rose-500 leading-none">{absentCount}</p>
+                </div>
+
+                <div className="bg-surface-light dark:bg-[#122131] border border-border-light dark:border-white/8 p-3.5 rounded-xl flex flex-col justify-between backdrop-blur-md shadow-sm">
+                  <div className="flex justify-between items-start">
+                    <span className="text-[9px] font-black uppercase tracking-widest text-text-secondary dark:text-slate-400">Not Recorded</span>
+                    <span className="material-symbols-outlined text-sm text-slate-500">help</span>
+                  </div>
+                  <p className="text-xl font-black mt-1.5 text-slate-500 dark:text-slate-400 leading-none">{unrecordedCount}</p>
+                </div>
               </div>
 
-              <div className="bg-surface-light dark:bg-[#122131] border border-border-light dark:border-white/8 p-5 rounded-2xl flex flex-col justify-between backdrop-blur-md shadow-sm">
-                <div className="flex justify-between items-start">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-text-secondary dark:text-slate-400">Present Today</span>
-                  <span className="material-symbols-outlined text-[20px] text-emerald-500 dark:text-emerald-400">check_circle</span>
+              {/* Mobile Stats Ribbon */}
+              <div className="flex md:hidden flex-wrap items-center gap-2 bg-slate-100/50 dark:bg-black/30 p-1.5 border border-border-light dark:border-white/5 rounded-xl self-start">
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
+                  <span className="text-[9px] font-black uppercase tracking-wider">Total</span>
+                  <span className="text-xs font-black">{totalCount}</span>
                 </div>
-                <p className="text-3xl font-black mt-3 leading-none text-emerald-500 dark:text-emerald-400">{presentCount}</p>
-              </div>
-
-              <div className="bg-surface-light dark:bg-[#122131] border border-border-light dark:border-white/8 p-5 rounded-2xl flex flex-col justify-between backdrop-blur-md shadow-sm">
-                <div className="flex justify-between items-start">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-text-secondary dark:text-slate-400">Late Arrivals</span>
-                  <span className="material-symbols-outlined text-[20px] text-amber-500 dark:text-amber-400">schedule</span>
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                  <span className="text-[9px] font-black uppercase tracking-wider">Present</span>
+                  <span className="text-xs font-black">{presentCount}</span>
                 </div>
-                <p className="text-3xl font-black mt-3 leading-none text-amber-500 dark:text-amber-400">{lateCount}</p>
-              </div>
-
-              <div className="bg-surface-light dark:bg-[#122131] border border-border-light dark:border-white/8 p-5 rounded-2xl flex flex-col justify-between backdrop-blur-md shadow-sm">
-                <div className="flex justify-between items-start">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-text-secondary dark:text-slate-400">Absent</span>
-                  <span className="material-symbols-outlined text-[20px] text-rose-500 dark:text-rose-400">cancel</span>
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                  <span className="text-[9px] font-black uppercase tracking-wider">Late</span>
+                  <span className="text-xs font-black">{lateCount}</span>
                 </div>
-                <p className="text-3xl font-black mt-3 leading-none text-rose-500 dark:text-rose-400">{absentCount}</p>
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400">
+                  <span className="text-[9px] font-black uppercase tracking-wider">Absent</span>
+                  <span className="text-xs font-black">{absentCount}</span>
+                </div>
+                {unrecordedCount > 0 && (
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-500/10 text-slate-600 dark:text-slate-400">
+                    <span className="text-[9px] font-black uppercase tracking-wider">NR</span>
+                    <span className="text-xs font-black">{unrecordedCount}</span>
+                  </div>
+                )}
               </div>
-            </div>
+            </>
           )}
 
           {/* Main Register Sheet */}
@@ -521,23 +649,23 @@ const StudentAttendanceManager = () => {
               <div className="hidden md:block">
                 <DataTable 
                   title="Daily Registry"
-                  subtitle="Staging changes before committing bulk student register updates"
+                  subtitle={isEditingDisabled ? "Viewing historical records (Read-Only Mode)" : "Staging changes before committing bulk student register updates"}
                   columns={columns}
                   data={filteredStudents}
                   isLoading={isLoadingRegistry}
                   error={error}
-                  onRetry={() => queryClient.invalidateQueries({ queryKey: queryKeys.attendance.batch(selectedBatchId, selectedDate) })}
+                  onRetry={() => queryClient.invalidateQueries({ queryKey: queryKeys.attendance.all })}
                   emptyMessage="No student records found for this batch on the selected date."
                   filters={filters}
                   secondaryAction={
                     <>
                       <RefreshButton 
                         isFetching={isFetchingRegistry} 
-                        onRefresh={() => queryClient.invalidateQueries({ queryKey: queryKeys.attendance.batch(selectedBatchId, selectedDate) })} 
+                        onRefresh={() => queryClient.invalidateQueries({ queryKey: queryKeys.attendance.all })} 
                       />
                       <button 
                         onClick={handleMarkAllPresent}
-                        disabled={isLoadingRegistry || studentsList.length === 0}
+                        disabled={isLoadingRegistry || studentsList.length === 0 || isEditingDisabled}
                         className="px-4 py-2 bg-slate-100 dark:bg-slate-800 border border-border-light dark:border-white/8 hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed text-[11px] font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer text-text-main dark:text-white"
                       >
                         Mark All Present
@@ -547,7 +675,7 @@ const StudentAttendanceManager = () => {
                 />
               </div>
 
-              {/* Mobile view (Refined to match the provided Mockup specs) */}
+              {/* Mobile view */}
               <div className="md:hidden flex flex-col gap-6">
                 {/* Batch & Date Selectors side-by-side */}
                 <div className="flex gap-4 items-center">
@@ -608,11 +736,19 @@ const StudentAttendanceManager = () => {
                           <div className="flex items-center justify-between w-full">
                             {/* Left Avatar & Name Stack */}
                             <div className="flex items-center gap-3 flex-1 min-w-0 pr-2">
-                              <div className="w-10 h-10 rounded-full bg-primary/10 text-primary border border-primary/20 flex items-center justify-center font-bold text-sm flex-shrink-0">
+                              <div className="w-10 h-10 rounded-full bg-primary/10 text-primary border border-primary/20 flex items-center justify-center font-bold text-xs flex-shrink-0">
                                 {row.student_name?.charAt(0) || 'S'}
                               </div>
                               <div className="flex flex-col min-w-0">
-                                <span className="font-bold text-text-main dark:text-white text-xs truncate">{row.student_name}</span>
+                                <div className="flex items-center gap-2">
+                                  <span className="font-bold text-text-main dark:text-white text-xs truncate">{row.student_name}</span>
+                                  {(row.isUnmarkedPastDate || row.isUnmarkedCurrentDate) && (
+                                    <span className="inline-flex items-center gap-1 bg-slate-500/10 text-slate-500 dark:text-slate-400 px-1.5 py-0.5 rounded-full font-bold text-[9px] uppercase tracking-wider flex-shrink-0">
+                                      <span className={`w-1.5 h-1.5 rounded-full bg-slate-400 dark:bg-slate-500 ${row.isUnmarkedCurrentDate ? 'animate-pulse bg-blue-400 dark:bg-blue-500' : ''}`}></span>
+                                      NR
+                                    </span>
+                                  )}
+                                </div>
                                 <span className="text-[10px] text-text-secondary truncate mt-0.5 font-medium">Batch: {displayBatchName}</span>
                                 <span className="flex items-center gap-1 text-[9px] text-emerald-500 font-bold mt-1">
                                   <span className="material-symbols-outlined text-[11px]">schedule</span>
@@ -622,20 +758,21 @@ const StudentAttendanceManager = () => {
                             </div>
 
                             {/* Right Interactive Status Buttons */}
-                            <div className="flex items-center gap-1 bg-slate-100/50 dark:bg-black/30 border border-border-light dark:border-white/5 p-1 rounded-full flex-shrink-0">
+                            <div className={`flex items-center gap-1.5 bg-slate-100/50 dark:bg-black/30 border border-border-light dark:border-white/5 p-1 rounded-2xl flex-shrink-0 ${isEditingDisabled ? 'opacity-50 pointer-events-none' : ''}`}>
                               {['P', 'A', 'L'].map(st => {
                                 const isActive = row.status === st;
                                 let activeClass = 'text-text-secondary hover:text-text-main dark:hover:text-white';
-                                if (isActive) {
+                                if (isActive && !row.isUnmarkedPastDate && !row.isUnmarkedCurrentDate) {
                                   if (st === 'P') activeClass = 'bg-emerald-500 text-white shadow-md shadow-emerald-500/20';
                                   else if (st === 'A') activeClass = 'bg-rose-500 text-white shadow-md shadow-rose-500/20';
-                                  else if (st === 'L') activeClass = 'bg-amber-500 text-white shadow-md shadow-amber-500/20';
+                                  else if (st === 'L') activeClass = 'bg-emerald-500 text-white dark:bg-amber-500 shadow-md dark:shadow-amber-500/20';
                                 }
                                 return (
                                   <button
                                     key={st}
+                                    disabled={isEditingDisabled}
                                     onClick={() => handleStatusChange(row.student_id, st)}
-                                    className={`w-7 h-7 rounded-full text-[10px] font-black transition-all flex items-center justify-center cursor-pointer ${activeClass}`}
+                                    className={`w-10 h-10 rounded-xl text-[26px] font-black transition-all flex items-center justify-center cursor-pointer ${activeClass}`}
                                   >
                                     {st}
                                   </button>
@@ -653,7 +790,7 @@ const StudentAttendanceManager = () => {
                             >
                               <div className="flex items-center gap-1">
                                 <span className="material-symbols-outlined text-sm">schedule</span>
-                                <span>In: {row.entry_time || '--:--'} • Out: {row.exit_time || '--:--'}</span>
+                                <span>{row.isUnmarkedPastDate ? 'Not Recorded (NR)' : `In: ${row.entry_time || '--:--'} • Out: ${row.exit_time || '--:--'}`}</span>
                                 {row.remarks && (
                                   <span className="truncate max-w-[120px] text-indigo-500"> • {row.remarks}</span>
                                 )}
@@ -670,18 +807,20 @@ const StudentAttendanceManager = () => {
                                   <span className="text-[9px] font-black uppercase tracking-wider text-text-secondary dark:text-slate-400">Check-In</span>
                                   <input 
                                     type="time" 
+                                    disabled={isEditingDisabled || row.status === 'A'}
                                     value={row.entry_time}
                                     onChange={(e) => handleTimeChange(row.student_id, 'entry_time', e.target.value)}
-                                    className="w-full bg-white dark:bg-[#122131] border border-border-light dark:border-white/8 rounded-lg px-2.5 py-1.5 text-xs font-bold text-text-main dark:text-white outline-none focus:border-indigo-500 transition-all"
+                                    className="w-full bg-white dark:bg-[#122131] border border-border-light dark:border-white/8 rounded-lg px-2.5 py-1.5 text-xs font-bold text-text-main dark:text-white outline-none focus:border-indigo-500 transition-all disabled:opacity-50"
                                   />
                                 </div>
                                 <div className="flex flex-col gap-1">
                                   <span className="text-[9px] font-black uppercase tracking-wider text-text-secondary dark:text-slate-400">Check-Out</span>
                                   <input 
                                     type="time" 
+                                    disabled={isEditingDisabled || row.status === 'A'}
                                     value={row.exit_time}
                                     onChange={(e) => handleTimeChange(row.student_id, 'exit_time', e.target.value)}
-                                    className="w-full bg-white dark:bg-[#122131] border border-border-light dark:border-white/8 rounded-lg px-2.5 py-1.5 text-xs font-bold text-text-main dark:text-white outline-none focus:border-indigo-500 transition-all"
+                                    className="w-full bg-white dark:bg-[#122131] border border-border-light dark:border-white/8 rounded-lg px-2.5 py-1.5 text-xs font-bold text-text-main dark:text-white outline-none focus:border-indigo-500 transition-all disabled:opacity-50"
                                   />
                                 </div>
                               </div>
@@ -689,10 +828,11 @@ const StudentAttendanceManager = () => {
                                 <span className="text-[9px] font-black uppercase tracking-wider text-text-secondary dark:text-slate-400">Remarks / Notes</span>
                                 <input 
                                   type="text" 
+                                  disabled={isEditingDisabled}
                                   value={row.remarks}
-                                  placeholder="Remarks"
+                                  placeholder={isEditingDisabled ? "Entries Locked" : "Remarks"}
                                   onChange={(e) => handleRemarksChange(row.student_id, e.target.value)}
-                                  className="w-full bg-white dark:bg-[#122131] border border-border-light dark:border-white/8 rounded-lg px-2.5 py-1.5 text-xs text-text-main dark:text-white placeholder-slate-400 dark:placeholder-slate-600 outline-none focus:border-indigo-500 transition-all"
+                                  className="w-full bg-white dark:bg-[#122131] border border-border-light dark:border-white/8 rounded-lg px-2.5 py-1.5 text-xs text-text-main dark:text-white placeholder-slate-400 dark:placeholder-slate-600 outline-none focus:border-indigo-500 transition-all disabled:opacity-50"
                                 />
                               </div>
                             </div>
@@ -722,31 +862,8 @@ const StudentAttendanceManager = () => {
               <div className="flex items-center gap-3">
                 <button 
                   onClick={() => {
-                    if (registry) {
-                      const initial = {};
-                      registry.forEach(rec => {
-                        let statusVal = 'P';
-                        if (rec.status === 'Absent' || rec.status === 'A') statusVal = 'A';
-                        else if (rec.status === 'Late' || rec.status === 'L') statusVal = 'L';
-                        else statusVal = 'P';
-
-                        const entryTimeStr = formatStructuredToTime(rec.entry_time) || '08:00';
-                        const exitTimeStr = formatStructuredToTime(rec.exit_time) || '13:00';
-
-                        initial[rec.student_id] = {
-                          student_id: rec.student_id,
-                          student_name: rec.student_name,
-                          roll_number: rec.roll_number,
-                          batch_id: rec.batch_id,
-                          status: statusVal,
-                          entry_time: entryTimeStr,
-                          exit_time: exitTimeStr,
-                          remarks: rec.remarks || ''
-                        };
-                      });
-                      setStagedRecords(initial);
-                      setIsDirty(false);
-                    }
+                    setStagedRecords(JSON.parse(JSON.stringify(initialSnapshot)));
+                    setIsDirty(false);
                   }}
                   className="px-4 py-2 border border-border-light dark:border-white/8 hover:bg-slate-100 dark:hover:bg-white/5 rounded-xl text-xs font-bold transition-all cursor-pointer text-text-main dark:text-slate-300"
                 >
