@@ -10,13 +10,16 @@ import TextInput from '../../../components/ui/v2/TextInput';
 import PhoneInput from '../../../components/ui/v2/PhoneInput';
 import SelectInput from '../../../components/ui/v2/SelectInput';
 import RadioGroup from '../../../components/ui/v2/RadioGroup';
+import MainLayout from '../../../components/layout/MainLayout';
+import Breadcrumbs from '../../../components/ui/Breadcrumbs';
+import Button from '../../../components/ui/v2/Button';
 
 /**
  * QuickAddStudent: High-density, 30-second prospect capture form.
  * Optimized for peak-hour walk-ins. Connects directly to production GAS endpoints.
  * Features a dual-column layout with collapsible nested groups in the advanced CRM settings sidebar.
  */
-const QuickAddStudent = ({ onUpgrade, initialData, isEdit = false, onSubmitSuccess, onCancel }) => {
+const QuickAddStudent = ({ onUpgrade, initialData, isEdit = false, onSubmitSuccess, onCancel, modeToggle, crumbs }) => {
   const navigate = useNavigate();
   const createMutation = useCreateStudentLeadMutation();
   const updateMutation = useUpdateStudentLeadMutation();
@@ -43,6 +46,11 @@ const QuickAddStudent = ({ onUpgrade, initialData, isEdit = false, onSubmitSucce
   const [showCrmOptions, setShowCrmOptions] = useState(true); // Main advanced card toggle
   const [showPriorityOptions, setShowPriorityOptions] = useState(true); // Nested Priority toggle
   const [showWorkflowOptions, setShowWorkflowOptions] = useState(true); // Nested Workflow toggle
+  const [isSticky, setIsSticky] = useState(false);
+
+  const handleBodyScroll = (e) => {
+    setIsSticky(e.currentTarget.scrollTop > 80);
+  };
 
   // Transform batches for SelectInput
   const batchOptions = useMemo(() => {
@@ -74,7 +82,7 @@ const QuickAddStudent = ({ onUpgrade, initialData, isEdit = false, onSubmitSucce
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
     if (!validateForm()) return;
 
     setSuccessMessage('');
@@ -204,161 +212,132 @@ const QuickAddStudent = ({ onUpgrade, initialData, isEdit = false, onSubmitSucce
     return actions[act] || act;
   };
 
-  const getStatusLabel = (st) => {
-    const statuses = {
-      'prospect': 'Prospect',
-      'contacted': 'Contacted',
-      'converted': 'Converted',
-      'lost': 'Lost'
-    };
-    return statuses[st] || st;
-  };
-
-  return (
-    <div className={isEdit ? "w-full animate-in fade-in zoom-in-95 duration-300" : "max-w-5xl mx-auto bg-white dark:bg-slate-900/50 rounded-2xl border border-primary/5 shadow-lg p-6 md:p-8 animate-in fade-in zoom-in-95 duration-300"}>
-      {!isEdit && (
-        <div className="mb-6 pb-4 border-b border-slate-100 dark:border-slate-800">
-          <div className="flex items-center gap-2 text-primary font-black uppercase tracking-wider text-xs mb-1">
-            <span className="material-symbols-outlined text-[16px] animate-pulse">bolt</span>
-            High-Speed Prospect Capture
+  if (isEdit) {
+    return (
+      <div className="w-full animate-in fade-in zoom-in-95 duration-300">
+        {successMessage && (
+          <div className="mb-6 p-4 rounded-xl bg-green-500/10 border border-green-500/20 text-green-600 dark:text-green-400 text-xs font-semibold flex items-center gap-2 animate-in slide-in-from-top-2">
+            <span className="material-symbols-outlined text-lg">check_circle</span>
+            {successMessage}
           </div>
-          <h2 className="text-xl font-bold text-slate-950 dark:text-white">Quick Student Lead Form</h2>
-          <p className="text-xs text-text-secondary mt-1">Capture basic walk-in or inquiry details in under 30 seconds. This creates a student profile lead only.</p>
-        </div>
-      )}
+        )}
 
-      {successMessage && (
-        <div className="mb-6 p-4 rounded-xl bg-green-500/10 border border-green-500/20 text-green-600 dark:text-green-400 text-xs font-semibold flex items-center gap-2 animate-in slide-in-from-top-2">
-          <span className="material-symbols-outlined text-lg">check_circle</span>
-          {successMessage}
-        </div>
-      )}
-
-      {errors.submit && (
-        <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 text-xs font-semibold flex items-center gap-2 animate-in slide-in-from-top-2">
-          <span className="material-symbols-outlined text-lg">error</span>
-          {errors.submit}
-        </div>
-      )}
-
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          
-          {/* Left Column: Core Fields (Spans 8 cols on large screens) */}
-          <div className="lg:col-span-8 space-y-5">
-            <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 mb-3 border-b border-slate-100 dark:border-slate-800/60 pb-2">
-              <span className="material-symbols-outlined text-primary text-base">badge</span>
-              Core Profile Details
-            </h3>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <FormField label="Full Name" name="fullName" required error={errors.fullName}>
-                <TextInput
-                  placeholder="e.g. John Doe"
-                  value={formData.fullName}
-                  onChange={(e) => handleChange('fullName', e.target.value)}
-                  leftIcon="person"
-                />
-              </FormField>
-
-              <FormField label="Mobile Number" name="mobile" required error={errors.mobile}>
-                <PhoneInput
-                  placeholder="10-digit number"
-                  value={formData.mobile}
-                  onChange={(e) => handleChange('mobile', e.target.value)}
-                />
-              </FormField>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <FormField label="Email Address (Optional)" name="email" error={errors.email}>
-                <TextInput
-                  type="email"
-                  placeholder="student@example.com"
-                  value={formData.email}
-                  onChange={(e) => handleChange('email', e.target.value)}
-                  leftIcon="mail"
-                />
-              </FormField>
-
-              <FormField label="Target Batch" name="batchId" required error={errors.batchId}>
-                <SelectInput
-                  options={batchOptions}
-                  value={formData.batchId}
-                  onChange={(val) => handleChange('batchId', val)}
-                  placeholder={isBatchesLoading ? "Loading Batches..." : "Select Batch..."}
-                  searchable
-                  leftIcon="group"
-                />
-              </FormField>
-            </div>
-
-            <FormField label="Referral ID / Name (Optional)" name="referral">
-              <TextInput
-                placeholder="Enter Referral code or partner name"
-                value={formData.referral}
-                onChange={(e) => handleChange('referral', e.target.value)}
-                leftIcon="redeem"
-              />
-            </FormField>
-
-            <FormField label="Internal Notes" name="note">
-              <textarea
-                value={formData.note}
-                onChange={(e) => handleChange('note', e.target.value)}
-                placeholder="Add walk-in background, specific queries, or special callback instructions..."
-                className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-transparent hover:border-slate-300 focus:border-primary focus:ring-2 focus:ring-primary/10 px-4 py-2.5 text-sm text-inherit placeholder:text-text-secondary/50 min-h-[120px] resize-y outline-none transition-all"
-              />
-            </FormField>
+        {errors.submit && (
+          <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 text-xs font-semibold flex items-center gap-2 animate-in slide-in-from-top-2">
+            <span className="material-symbols-outlined text-lg">error</span>
+            {errors.submit}
           </div>
+        )}
 
-          {/* Right Column: CRM Sidebar (Spans 4 cols on large screens, collapsible) */}
-          <div className="lg:col-span-4 space-y-5">
-            <div className="rounded-2xl border border-slate-200/60 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/40 backdrop-blur-sm overflow-hidden transition-all duration-300 shadow-sm">
-              
-              {/* Header / Click Toggle */}
-              <button
-                type="button"
-                onClick={() => setShowCrmOptions(!showCrmOptions)}
-                className="w-full flex items-center justify-between p-4 bg-slate-100/50 dark:bg-slate-800/40 hover:bg-slate-100/80 dark:hover:bg-slate-800/60 border-b border-slate-200/50 dark:border-slate-800/50 transition-colors text-left cursor-pointer outline-none"
-              >
-                <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-primary text-xl">settings_account_box</span>
-                  <div>
-                    <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">Advanced Lead Options</h3>
-                    {!showCrmOptions && (
-                      <p className="text-[10px] text-text-secondary mt-0.5 font-medium tracking-wide flex items-center gap-1.5 truncate">
-                        <span className="inline-block w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
-                        {getSourceLabel(formData.leadSource)} • {getPriorityLabel(formData.priority)} {isEdit ? `• ${getStatusLabel(formData.status)}` : `• ${getWorkflowLabel(formData.workflowAction)}`}
-                      </p>
-                    )}
-                  </div>
-                </div>
-                <span className={`material-symbols-outlined text-slate-400 transition-transform duration-300 ${showCrmOptions ? 'rotate-180' : ''}`}>
-                  expand_more
-                </span>
-              </button>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            
+            {/* Left Column: Core Fields */}
+            <div className="lg:col-span-8 space-y-5">
+              <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 mb-3 border-b border-slate-100 dark:border-slate-800/60 pb-2">
+                <span className="material-symbols-outlined text-primary text-base">badge</span>
+                Core Profile Details
+              </h3>
 
-              {/* Collapsible Body */}
-              <div className={`transition-all duration-300 ease-in-out overflow-hidden ${showCrmOptions ? 'max-h-[1200px] opacity-100 p-4 space-y-5' : 'max-h-0 opacity-0 p-0'}`}>
-                
-                <FormField label="Lead Source" name="leadSource">
-                  <SelectInput
-                    options={[
-                      { label: 'Walk-In Inquiry', value: 'walk-in' },
-                      { label: 'Social Media (Meta/Insta)', value: 'social_media' },
-                      { label: 'Website Inquiry', value: 'website' },
-                      { label: 'Google Search / Maps', value: 'google' },
-                      { label: 'Event / Flyer Campaign', value: 'event' },
-                      { label: 'Existing Friend Referral', value: 'referral' }
-                    ]}
-                    value={formData.leadSource}
-                    onChange={(val) => handleChange('leadSource', val)}
-                    leftIcon="campaign"
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <FormField label="Full Name" name="fullName" required error={errors.fullName}>
+                  <TextInput
+                    placeholder="e.g. John Doe"
+                    value={formData.fullName}
+                    onChange={(e) => handleChange('fullName', e.target.value)}
+                    leftIcon="person"
                   />
                 </FormField>
 
-                {isEdit && (
+                <FormField label="Mobile Number" name="mobile" required error={errors.mobile}>
+                  <PhoneInput
+                    placeholder="10-digit number"
+                    value={formData.mobile}
+                    onChange={(e) => handleChange('mobile', e.target.value)}
+                  />
+                </FormField>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <FormField label="Email Address (Optional)" name="email" error={errors.email}>
+                  <TextInput
+                    type="email"
+                    placeholder="student@example.com"
+                    value={formData.email}
+                    onChange={(e) => handleChange('email', e.target.value)}
+                    leftIcon="mail"
+                  />
+                </FormField>
+
+                <FormField label="Target Batch" name="batchId" required error={errors.batchId}>
+                  <SelectInput
+                    options={batchOptions}
+                    value={formData.batchId}
+                    onChange={(val) => handleChange('batchId', val)}
+                    placeholder={isBatchesLoading ? "Loading Batches..." : "Select Batch..."}
+                    searchable
+                    leftIcon="group"
+                  />
+                </FormField>
+              </div>
+
+              <FormField label="Referral ID / Name (Optional)" name="referral">
+                <TextInput
+                  placeholder="Enter Referral code or partner name"
+                  value={formData.referral}
+                  onChange={(e) => handleChange('referral', e.target.value)}
+                  leftIcon="redeem"
+                />
+              </FormField>
+
+              <FormField label="Internal Notes" name="note">
+                <textarea
+                  value={formData.note}
+                  onChange={(e) => handleChange('note', e.target.value)}
+                  placeholder="Add walk-in background, specific queries, or special callback instructions..."
+                  className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-transparent hover:border-slate-300 focus:border-primary focus:ring-2 focus:ring-primary/10 px-4 py-2.5 text-sm text-inherit placeholder:text-text-secondary/50 min-h-[120px] resize-y outline-none transition-all"
+                />
+              </FormField>
+            </div>
+
+            {/* Right Column: CRM Sidebar */}
+            <div className="lg:col-span-4 space-y-5">
+              <div className="rounded-2xl border border-slate-200/60 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/40 backdrop-blur-sm overflow-hidden transition-all duration-300 shadow-sm">
+                
+                <button
+                  type="button"
+                  onClick={() => setShowCrmOptions(!showCrmOptions)}
+                  className="w-full flex items-center justify-between p-4 bg-slate-100/50 dark:bg-slate-800/40 hover:bg-slate-100/80 dark:hover:bg-slate-800/60 border-b border-slate-200/50 dark:border-slate-800/50 transition-colors text-left cursor-pointer outline-none"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-primary text-xl">settings_account_box</span>
+                    <div>
+                      <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">Advanced Lead Options</h3>
+                    </div>
+                  </div>
+                  <span className={`material-symbols-outlined text-slate-400 transition-transform duration-300 ${showCrmOptions ? 'rotate-180' : ''}`}>
+                    expand_more
+                  </span>
+                </button>
+
+                <div className={`transition-all duration-300 ease-in-out overflow-hidden ${showCrmOptions ? 'max-h-[1200px] opacity-100 p-4 space-y-5' : 'max-h-0 opacity-0 p-0'}`}>
+                  
+                  <FormField label="Lead Source" name="leadSource">
+                    <SelectInput
+                      options={[
+                        { label: 'Walk-In Inquiry', value: 'walk-in' },
+                        { label: 'Social Media (Meta/Insta)', value: 'social_media' },
+                        { label: 'Website Inquiry', value: 'website' },
+                        { label: 'Google Search / Maps', value: 'google' },
+                        { label: 'Event / Flyer Campaign', value: 'event' },
+                        { label: 'Existing Friend Referral', value: 'referral' }
+                      ]}
+                      value={formData.leadSource}
+                      onChange={(val) => handleChange('leadSource', val)}
+                      leftIcon="campaign"
+                    />
+                  </FormField>
+
                   <FormField label="Lead Status" name="status">
                     <SelectInput
                       options={[
@@ -372,107 +351,58 @@ const QuickAddStudent = ({ onUpgrade, initialData, isEdit = false, onSubmitSucce
                       leftIcon="track_changes"
                     />
                   </FormField>
-                )}
 
-                {/* Sub-Collapsible Priority Group */}
-                <div className="border border-slate-100 dark:border-slate-800/60 rounded-xl bg-slate-100/20 dark:bg-slate-900/30 overflow-hidden shadow-2xs">
-                  <button
-                    type="button"
-                    onClick={() => setShowPriorityOptions(!showPriorityOptions)}
-                    className="w-full flex items-center justify-between px-3 py-2 bg-slate-100/50 dark:bg-slate-800/30 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-left cursor-pointer outline-none"
-                  >
-                    <div className="flex items-center gap-1.5">
-                      <span className="material-symbols-outlined text-primary text-base">local_fire_department</span>
-                      <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Lead Temperature</span>
-                      {!showPriorityOptions && (
-                        <span className="text-[9px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-black uppercase tracking-wider ml-1.5 scale-90">
-                          {getPriorityLabel(formData.priority).split(' ')[0]}
-                        </span>
-                      )}
-                    </div>
-                    <span className={`material-symbols-outlined text-slate-400 text-sm transition-transform duration-300 ${showPriorityOptions ? 'rotate-180' : ''}`}>
-                      expand_more
-                    </span>
-                  </button>
-                  
-                  <div className={`transition-all duration-300 ease-in-out overflow-hidden ${showPriorityOptions ? 'max-h-[500px] opacity-100 p-3 border-t border-slate-100 dark:border-slate-800/40' : 'max-h-0 opacity-0 p-0 border-t-0'}`}>
-                    <RadioGroup
-                      name="priority"
-                      layout="list"
-                      value={formData.priority}
-                      onChange={(val) => handleChange('priority', val)}
-                      options={[
-                        { label: 'Ready to Enroll (Hot)', value: 'ready_to_enroll', description: 'Wants to enroll immediately', icon: 'local_fire_department' },
-                        { label: 'Demo Class Scheduled', value: 'demo_scheduled', description: 'Booked next demo class', icon: 'event_available' },
-                        { label: 'Needs Callback (Warm)', value: 'needs_callback', description: 'Requires a follow-up call', icon: 'phone_callback' },
-                        { label: 'General Inquiry (Cold)', value: 'general_inquiry', description: 'Only collected brochures', icon: 'help_outline' }
-                      ]}
-                    />
-                  </div>
-                </div>
-
-                {/* Sub-Collapsible Workflow Group (Only shown in creation mode) */}
-                {!isEdit && (
                   <div className="border border-slate-100 dark:border-slate-800/60 rounded-xl bg-slate-100/20 dark:bg-slate-900/30 overflow-hidden shadow-2xs">
                     <button
                       type="button"
-                      onClick={() => setShowWorkflowOptions(!showWorkflowOptions)}
+                      onClick={() => setShowPriorityOptions(!showPriorityOptions)}
                       className="w-full flex items-center justify-between px-3 py-2 bg-slate-100/50 dark:bg-slate-800/30 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-left cursor-pointer outline-none"
                     >
                       <div className="flex items-center gap-1.5">
-                        <span className="material-symbols-outlined text-primary text-base">settings_input_component</span>
-                        <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Submit Action</span>
-                        {!showWorkflowOptions && (
-                          <span className="text-[9px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-black uppercase tracking-wider ml-1.5 scale-90">
-                            {getWorkflowLabel(formData.workflowAction)}
-                          </span>
-                        )}
+                        <span className="material-symbols-outlined text-primary text-base">local_fire_department</span>
+                        <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Lead Temperature</span>
                       </div>
-                      <span className={`material-symbols-outlined text-slate-400 text-sm transition-transform duration-300 ${showWorkflowOptions ? 'rotate-180' : ''}`}>
+                      <span className={`material-symbols-outlined text-slate-400 text-sm transition-transform duration-300 ${showPriorityOptions ? 'rotate-180' : ''}`}>
                         expand_more
                       </span>
                     </button>
                     
-                    <div className={`transition-all duration-300 ease-in-out overflow-hidden ${showWorkflowOptions ? 'max-h-[500px] opacity-100 p-3 border-t border-slate-100 dark:border-slate-800/40' : 'max-h-0 opacity-0 p-0'}`}>
+                    <div className={`transition-all duration-300 ease-in-out overflow-hidden ${showPriorityOptions ? 'max-h-[500px] opacity-100 p-3 border-t border-slate-100 dark:border-slate-800/40' : 'max-h-0 opacity-0 p-0 border-t-0'}`}>
                       <RadioGroup
-                        name="workflowAction"
+                        name="priority"
                         layout="list"
-                        value={formData.workflowAction}
-                        onChange={(val) => handleChange('workflowAction', val)}
+                        value={formData.priority}
+                        onChange={(val) => handleChange('priority', val)}
                         options={[
-                          { label: 'Stay & Clear Form', value: 'add_another', description: 'Clear form for the next prospect', icon: 'refresh' },
-                          { label: 'Upgrade to Full Wizard', value: 'upgrade', description: 'Prepopulate into full registration wizard', icon: 'arrow_forward' },
-                          { label: 'Go to Student Directory', value: 'profile', description: 'Redirect back to records list', icon: 'dns' }
+                          { label: 'Ready to Enroll (Hot)', value: 'ready_to_enroll', description: 'Wants to enroll immediately', icon: 'local_fire_department' },
+                          { label: 'Demo Class Scheduled', value: 'demo_scheduled', description: 'Booked next demo class', icon: 'event_available' },
+                          { label: 'Needs Callback (Warm)', value: 'needs_callback', description: 'Requires a follow-up call', icon: 'phone_callback' },
+                          { label: 'General Inquiry (Cold)', value: 'general_inquiry', description: 'Only collected brochures', icon: 'help_outline' }
                         ]}
                       />
                     </div>
                   </div>
-                )}
 
+                </div>
               </div>
-
             </div>
+
           </div>
-
-        </div>
-
-        {/* Submit Actions (Full width outside the columns) */}
-        <div className="pt-6 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-          <button
-            type="button"
-            onClick={isEdit ? onCancel : () => navigate('/admin/students')}
-            className="px-6 py-2.5 rounded-xl border border-border-light dark:border-border-dark font-bold text-text-secondary text-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
-          >
-            Cancel
-          </button>
-          
-          <button
-            type="submit"
-            disabled={isEdit ? updateMutation.isPending : createMutation.isPending}
-            className="flex items-center gap-2 rounded-xl bg-primary px-8 py-2.5 font-bold text-white shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
-          >
-            {isEdit ? (
-              updateMutation.isPending ? (
+          <div className="pt-6 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+            <button
+              type="button"
+              onClick={onCancel}
+              className="px-6 py-2.5 rounded-xl border border-border-light dark:border-border-dark font-bold text-text-secondary text-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+            >
+              Cancel
+            </button>
+            
+            <button
+              type="submit"
+              disabled={updateMutation.isPending}
+              className="flex items-center gap-2 rounded-xl bg-primary px-8 py-2.5 font-bold text-white shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
+            >
+              {updateMutation.isPending ? (
                 <>
                   <span className="animate-spin material-symbols-outlined text-lg">progress_activity</span>
                   Saving Changes...
@@ -482,24 +412,292 @@ const QuickAddStudent = ({ onUpgrade, initialData, isEdit = false, onSubmitSucce
                   <span className="material-symbols-outlined text-lg">save</span>
                   Save Changes
                 </>
-              )
-            ) : (
-              createMutation.isPending ? (
-                <>
-                  <span className="animate-spin material-symbols-outlined text-lg">progress_activity</span>
-                  Creating Lead...
-                </>
-              ) : (
-                <>
-                  <span className="material-symbols-outlined text-lg">save</span>
-                  Save Student Lead
-                </>
-              )
-            )}
-          </button>
+              )}
+            </button>
+          </div>
+        </form>
+      </div>
+    );
+  }
+
+  return (
+    <MainLayout
+      onBodyScroll={handleBodyScroll}
+      header={
+        <div
+          className={`absolute top-0 left-0 right-0 z-50 transition-all duration-300 w-full ${
+            isSticky
+              ? 'opacity-100 translate-y-0 shadow-md pointer-events-auto'
+              : 'opacity-0 -translate-y-4 pointer-events-none'
+          }`}
+        >
+          <div className="bg-surface-light/95 dark:bg-surface-dark/95 backdrop-blur-md border-b border-border-light dark:border-border-dark px-4 lg:px-6 py-3 flex items-center justify-between rounded-b-xl">
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-primary text-lg font-black">person_add</span>
+              <span className="text-sm font-bold text-text-main dark:text-white">
+                Add New Student
+              </span>
+              <span className="text-slate-300 dark:text-slate-700">•</span>
+              <span className="text-xs text-text-secondary dark:text-slate-400 font-semibold uppercase tracking-wider">
+                Quick Lead Mode
+              </span>
+            </div>
+          </div>
         </div>
-      </form>
-    </div>
+      }
+      body={
+        <div className="pt-6 lg:pt-10 pb-6 space-y-6">
+          {crumbs && <Breadcrumbs items={crumbs} className="mb-2" />}
+          {modeToggle}
+
+          <div className="bg-white dark:bg-slate-900/50 rounded-2xl border border-primary/5 shadow-lg p-6 md:p-8">
+            <div className="mb-6 pb-4 border-b border-slate-100 dark:border-slate-800">
+              <div className="flex items-center gap-2 text-primary font-black uppercase tracking-wider text-xs mb-1">
+                <span className="material-symbols-outlined text-[16px] animate-pulse">bolt</span>
+                High-Speed Prospect Capture
+              </div>
+              <h2 className="text-xl font-bold text-slate-950 dark:text-white">Quick Student Lead Form</h2>
+              <p className="text-xs text-text-secondary mt-1">Capture basic walk-in or inquiry details in under 30 seconds. This creates a student profile lead only.</p>
+            </div>
+
+            {successMessage && (
+              <div className="mb-6 p-4 rounded-xl bg-green-500/10 border border-green-500/20 text-green-600 dark:text-green-400 text-xs font-semibold flex items-center gap-2 animate-in slide-in-from-top-2">
+                <span className="material-symbols-outlined text-lg">check_circle</span>
+                {successMessage}
+              </div>
+            )}
+
+            {errors.submit && (
+              <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 text-xs font-semibold flex items-center gap-2 animate-in slide-in-from-top-2">
+                <span className="material-symbols-outlined text-lg">error</span>
+                {errors.submit}
+              </div>
+            )}
+
+            <form id="quick-student-form" onSubmit={handleSubmit} className="space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                
+                {/* Left Column: Core Fields */}
+                <div className="lg:col-span-8 space-y-5">
+                  <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 mb-3 border-b border-slate-100 dark:border-slate-800/60 pb-2">
+                    <span className="material-symbols-outlined text-primary text-base">badge</span>
+                    Core Profile Details
+                  </h3>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <FormField label="Full Name" name="fullName" required error={errors.fullName}>
+                      <TextInput
+                        placeholder="e.g. John Doe"
+                        value={formData.fullName}
+                        onChange={(e) => handleChange('fullName', e.target.value)}
+                        leftIcon="person"
+                      />
+                    </FormField>
+
+                    <FormField label="Mobile Number" name="mobile" required error={errors.mobile}>
+                      <PhoneInput
+                        placeholder="10-digit number"
+                        value={formData.mobile}
+                        onChange={(e) => handleChange('mobile', e.target.value)}
+                      />
+                    </FormField>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <FormField label="Email Address (Optional)" name="email" error={errors.email}>
+                      <TextInput
+                        type="email"
+                        placeholder="student@example.com"
+                        value={formData.email}
+                        onChange={(e) => handleChange('email', e.target.value)}
+                        leftIcon="mail"
+                      />
+                    </FormField>
+
+                    <FormField label="Target Batch" name="batchId" required error={errors.batchId}>
+                      <SelectInput
+                        options={batchOptions}
+                        value={formData.batchId}
+                        onChange={(val) => handleChange('batchId', val)}
+                        placeholder={isBatchesLoading ? "Loading Batches..." : "Select Batch..."}
+                        searchable
+                        leftIcon="group"
+                      />
+                    </FormField>
+                  </div>
+
+                  <FormField label="Referral ID / Name (Optional)" name="referral">
+                    <TextInput
+                      placeholder="Enter Referral code or partner name"
+                      value={formData.referral}
+                      onChange={(e) => handleChange('referral', e.target.value)}
+                      leftIcon="redeem"
+                    />
+                  </FormField>
+
+                  <FormField label="Internal Notes" name="note">
+                    <textarea
+                      value={formData.note}
+                      onChange={(e) => handleChange('note', e.target.value)}
+                      placeholder="Add walk-in background, specific queries, or special callback instructions..."
+                      className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-transparent hover:border-slate-300 focus:border-primary focus:ring-2 focus:ring-primary/10 px-4 py-2.5 text-sm text-inherit placeholder:text-text-secondary/50 min-h-[120px] resize-y outline-none transition-all"
+                    />
+                  </FormField>
+                </div>
+
+                {/* Right Column: CRM Sidebar */}
+                <div className="lg:col-span-4 space-y-5">
+                  <div className="rounded-2xl border border-slate-200/60 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/40 backdrop-blur-sm overflow-hidden transition-all duration-300 shadow-sm">
+                    
+                    <button
+                      type="button"
+                      onClick={() => setShowCrmOptions(!showCrmOptions)}
+                      className="w-full flex items-center justify-between p-4 bg-slate-100/50 dark:bg-slate-800/40 hover:bg-slate-100/80 dark:hover:bg-slate-800/60 border-b border-slate-200/50 dark:border-slate-800/50 transition-colors text-left cursor-pointer outline-none"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="material-symbols-outlined text-primary text-xl">settings_account_box</span>
+                        <div>
+                          <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">Advanced Lead Options</h3>
+                          {!showCrmOptions && (
+                            <p className="text-[10px] text-text-secondary mt-0.5 font-medium tracking-wide flex items-center gap-1.5 truncate">
+                              <span className="inline-block w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+                              {getSourceLabel(formData.leadSource)} • {getPriorityLabel(formData.priority)} • {getWorkflowLabel(formData.workflowAction)}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <span className={`material-symbols-outlined text-slate-400 transition-transform duration-300 ${showCrmOptions ? 'rotate-180' : ''}`}>
+                        expand_more
+                      </span>
+                    </button>
+
+                    <div className={`transition-all duration-300 ease-in-out overflow-hidden ${showCrmOptions ? 'max-h-[1200px] opacity-100 p-4 space-y-5' : 'max-h-0 opacity-0 p-0'}`}>
+                      
+                      <FormField label="Lead Source" name="leadSource">
+                        <SelectInput
+                          options={[
+                            { label: 'Walk-In Inquiry', value: 'walk-in' },
+                            { label: 'Social Media (Meta/Insta)', value: 'social_media' },
+                            { label: 'Website Inquiry', value: 'website' },
+                            { label: 'Google Search / Maps', value: 'google' },
+                            { label: 'Event / Flyer Campaign', value: 'event' },
+                            { label: 'Existing Friend Referral', value: 'referral' }
+                          ]}
+                          value={formData.leadSource}
+                          onChange={(val) => handleChange('leadSource', val)}
+                          leftIcon="campaign"
+                        />
+                      </FormField>
+
+                      <div className="border border-slate-100 dark:border-slate-800/60 rounded-xl bg-slate-100/20 dark:bg-slate-900/30 overflow-hidden shadow-2xs">
+                        <button
+                          type="button"
+                          onClick={() => setShowPriorityOptions(!showPriorityOptions)}
+                          className="w-full flex items-center justify-between px-3 py-2 bg-slate-100/50 dark:bg-slate-800/30 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-left cursor-pointer outline-none"
+                        >
+                          <div className="flex items-center gap-1.5">
+                            <span className="material-symbols-outlined text-primary text-base">local_fire_department</span>
+                            <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Lead Temperature</span>
+                            {!showPriorityOptions && (
+                              <span className="text-[9px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-black uppercase tracking-wider ml-1.5 scale-90">
+                                {getPriorityLabel(formData.priority).split(' ')[0]}
+                              </span>
+                            )}
+                          </div>
+                          <span className={`material-symbols-outlined text-slate-400 text-sm transition-transform duration-300 ${showPriorityOptions ? 'rotate-180' : ''}`}>
+                            expand_more
+                          </span>
+                        </button>
+                        
+                        <div className={`transition-all duration-300 ease-in-out overflow-hidden ${showPriorityOptions ? 'max-h-[500px] opacity-100 p-3 border-t border-slate-100 dark:border-slate-800/40' : 'max-h-0 opacity-0 p-0 border-t-0'}`}>
+                          <RadioGroup
+                            name="priority"
+                            layout="list"
+                            value={formData.priority}
+                            onChange={(val) => handleChange('priority', val)}
+                            options={[
+                              { label: 'Ready to Enroll (Hot)', value: 'ready_to_enroll', description: 'Wants to enroll immediately', icon: 'local_fire_department' },
+                              { label: 'Demo Class Scheduled', value: 'demo_scheduled', description: 'Booked next demo class', icon: 'event_available' },
+                              { label: 'Needs Callback (Warm)', value: 'needs_callback', description: 'Requires a follow-up call', icon: 'phone_callback' },
+                              { label: 'General Inquiry (Cold)', value: 'general_inquiry', description: 'Only collected brochures', icon: 'help_outline' }
+                            ]}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="border border-slate-100 dark:border-slate-800/60 rounded-xl bg-slate-100/20 dark:bg-slate-900/30 overflow-hidden shadow-2xs">
+                        <button
+                          type="button"
+                          onClick={() => setShowWorkflowOptions(!showWorkflowOptions)}
+                          className="w-full flex items-center justify-between px-3 py-2 bg-slate-100/50 dark:bg-slate-800/30 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-left cursor-pointer outline-none"
+                        >
+                          <div className="flex items-center gap-1.5">
+                            <span className="material-symbols-outlined text-primary text-base">settings_input_component</span>
+                            <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Submit Action</span>
+                            {!showWorkflowOptions && (
+                              <span className="text-[9px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-black uppercase tracking-wider ml-1.5 scale-90">
+                                {getWorkflowLabel(formData.workflowAction)}
+                              </span>
+                            )}
+                          </div>
+                          <span className={`material-symbols-outlined text-slate-400 text-sm transition-transform duration-300 ${showWorkflowOptions ? 'rotate-180' : ''}`}>
+                            expand_more
+                          </span>
+                        </button>
+                        
+                        <div className={`transition-all duration-300 ease-in-out overflow-hidden ${showWorkflowOptions ? 'max-h-[500px] opacity-100 p-3 border-t border-slate-100 dark:border-slate-800/40' : 'max-h-0 opacity-0 p-0'}`}>
+                          <RadioGroup
+                            name="workflowAction"
+                            layout="list"
+                            value={formData.workflowAction}
+                            onChange={(val) => handleChange('workflowAction', val)}
+                            options={[
+                              { label: 'Stay & Clear Form', value: 'add_another', description: 'Clear form for the next prospect', icon: 'refresh' },
+                              { label: 'Upgrade to Full Wizard', value: 'upgrade', description: 'Prepopulate into full registration wizard', icon: 'arrow_forward' },
+                              { label: 'Go to Student Directory', value: 'profile', description: 'Redirect back to records list', icon: 'dns' }
+                            ]}
+                          />
+                        </div>
+                      </div>
+
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </form>
+          </div>
+        </div>
+      }
+      footer={
+        <footer className="border border-border-light dark:border-border-dark bg-white dark:bg-slate-900 shadow-lg px-4 lg:px-6 py-3 flex items-center justify-between gap-4 rounded-lg w-full sticky bottom-0">
+          <div className="flex items-center justify-start w-1/2 md:w-auto">
+            <Button 
+              type="button" 
+              variant="outlined"
+              size="md"
+              className="!rounded-md"
+              onClick={() => navigate('/admin/students')}
+            >
+              Cancel
+            </Button>
+          </div>
+          <div className="flex justify-end w-1/2 md:w-auto ml-auto">
+            <Button 
+              type="submit" 
+              form="quick-student-form"
+              variant="contained"
+              size="md"
+              className="!rounded-md"
+              loading={createMutation.isPending}
+              startIcon="save"
+            >
+              Save Student Lead
+            </Button>
+          </div>
+        </footer>
+      }
+    />
   );
 };
 

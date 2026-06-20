@@ -4,7 +4,7 @@ import SelectInput from '../../../../components/ui/v2/SelectInput';
 import PhoneInput from '../../../../components/ui/v2/PhoneInput';
 import DateInput from '../../../../components/ui/v2/DateInput';
 
-const ProfileStep = ({ formData, setFormData, onNext, onCancel }) => {
+const ProfileStep = ({ formData, setFormData, onNext, onCancel, errors = {} }) => {
   const handleChange = (e) => {
     const { name, value, type, files } = e.target;
     if (type === 'file') {
@@ -60,11 +60,12 @@ const ProfileStep = ({ formData, setFormData, onNext, onCancel }) => {
                   onChange={handleChange}
                   placeholder="e.g. John Doe"
                   required
+                  error={errors.fullName?.message}
                 />
               </div>
               
               <SelectInput
-                label="Gender"
+                label="Gender *"
                 value={formData.gender || ''}
                 onChange={(val) => setFormData(prev => ({ ...prev, gender: val }))}
                 options={[
@@ -73,6 +74,7 @@ const ProfileStep = ({ formData, setFormData, onNext, onCancel }) => {
                   { value: 'Other', label: 'Other' }
                 ]}
                 placeholder="Select Gender"
+                error={errors.gender?.message}
               />
 
               <DateInput
@@ -80,6 +82,8 @@ const ProfileStep = ({ formData, setFormData, onNext, onCancel }) => {
                 name="dob"
                 value={formData.dob || ''}
                 onChange={handleChange}
+                required
+                error={errors.dob?.message}
               />
 
               <TextInput
@@ -117,6 +121,7 @@ const ProfileStep = ({ formData, setFormData, onNext, onCancel }) => {
               onChange={handleChange}
               placeholder="student@example.com"
               leftIcon="mail"
+              error={errors.email?.message}
             />
 
             <PhoneInput
@@ -125,6 +130,8 @@ const ProfileStep = ({ formData, setFormData, onNext, onCancel }) => {
               value={formData.mobile || ''}
               onChange={handleChange}
               placeholder="Mobile Number"
+              required
+              error={errors.mobile?.message}
             />
 
             <div className="sm:col-span-2">
@@ -134,6 +141,7 @@ const ProfileStep = ({ formData, setFormData, onNext, onCancel }) => {
                 value={formData.address1 || ''}
                 onChange={handleChange}
                 placeholder="Street name and number"
+                error={errors.address1?.message}
               />
             </div>
 
@@ -153,6 +161,7 @@ const ProfileStep = ({ formData, setFormData, onNext, onCancel }) => {
               value={formData.city || ''}
               onChange={handleChange}
               placeholder="City"
+              error={errors.city?.message}
             />
 
             <div className="grid grid-cols-2 gap-4">
@@ -162,6 +171,7 @@ const ProfileStep = ({ formData, setFormData, onNext, onCancel }) => {
                 value={formData.state || ''}
                 onChange={handleChange}
                 placeholder="State"
+                error={errors.state?.message}
               />
               <TextInput
                 label="Pin Code"
@@ -169,6 +179,7 @@ const ProfileStep = ({ formData, setFormData, onNext, onCancel }) => {
                 value={formData.pincode || ''}
                 onChange={handleChange}
                 placeholder="Pin Code"
+                error={errors.pincode?.message}
               />
             </div>
           </div>
@@ -191,6 +202,7 @@ const ProfileStep = ({ formData, setFormData, onNext, onCancel }) => {
               value={formData.emergencyContactName || ''}
               onChange={handleChange}
               placeholder="Contact Person Name"
+              error={errors.emergencyContactName?.message}
             />
 
             <SelectInput
@@ -203,6 +215,7 @@ const ProfileStep = ({ formData, setFormData, onNext, onCancel }) => {
                 { value: 'Sibling', label: 'Sibling' }
               ]}
               placeholder="Select Relationship"
+              error={errors.emergencyContactRelationship?.message}
             />
 
             <PhoneInput
@@ -211,6 +224,7 @@ const ProfileStep = ({ formData, setFormData, onNext, onCancel }) => {
               value={formData.emergencyContactPhone || ''}
               onChange={handleChange}
               placeholder="Phone Number"
+              error={errors.emergencyContactPhone?.message}
             />
           </div>
         </section>
@@ -259,25 +273,7 @@ const ProfileStep = ({ formData, setFormData, onNext, onCancel }) => {
           </div>
         </section>
 
-        {/* Navigation Buttons */}
-        <div className="flex items-center justify-between pt-6 border-t border-slate-100 dark:border-slate-800 gap-4">
-          <button 
-            className="flex items-center justify-center gap-2 rounded-xl border border-slate-250 dark:border-slate-800 px-6 py-3 font-bold transition-colors hover:bg-slate-50 dark:hover:bg-slate-800 text-text-secondary flex-1" 
-            type="button"
-            onClick={onCancel}
-          >
-            <span className="material-symbols-outlined text-lg">arrow_back</span>
-            Cancel
-          </button>
-          <button 
-            className="flex items-center justify-center gap-2 rounded-xl bg-primary px-6 py-3 font-bold text-white shadow-lg shadow-primary/20 transition-all hover:bg-primary-dark hover:scale-[1.02] active:scale-95 flex-1" 
-            type="button"
-            onClick={onNext}
-          >
-            Save & Continue
-            <span className="material-symbols-outlined text-lg">arrow_forward</span>
-          </button>
-        </div>
+
       </div>
     </div>
   );

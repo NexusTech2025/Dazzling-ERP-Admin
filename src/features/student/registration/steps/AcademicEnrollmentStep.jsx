@@ -14,7 +14,7 @@ import ProgramSelectionModal from '../components/ProgramSelectionModal';
  * Integrates dynamic catalog item selection (Packages, Courses, Subjects),
  * batch allocations, manual discount overrides, and custom installment schedule customization.
  */
-const AcademicEnrollmentStep = ({ formData, setFormData, onNext, onBack }) => {
+const AcademicEnrollmentStep = ({ formData, setFormData, onNext, onBack, errors = {} }) => {
   // Query catalogs and active schedules from cache/API
   const { data: packages = [], isLoading: isLoadingPkgs } = usePackagesQuery();
   const { data: courses = [], isLoading: isLoadingCourses } = useCoursesQuery();
@@ -177,6 +177,20 @@ const AcademicEnrollmentStep = ({ formData, setFormData, onNext, onBack }) => {
     });
   }, [basePackageSum, regFee, totalAmount, setFormData]);
 
+  // Auto-populate basket and selected batches from initial lead data if available
+  useEffect(() => {
+    if (formData.courseId && catalog.length > 0 && (formData.enrollmentBasket || []).length === 0) {
+      const matchedItem = catalog.find(item => item.id === formData.courseId && item.type !== 'package');
+      if (matchedItem) {
+        setBasket([matchedItem]);
+        setSelectedBatches(prev => ({
+          ...prev,
+          [formData.courseId]: formData.batchId || matchedItem.batches?.[0]?.id || ''
+        }));
+      }
+    }
+  }, [formData.courseId, formData.batchId, catalog]);
+
   // Construct a default split date in YYYY-MM-DD
   const getDefaultDateStr = (monthsAhead = 0) => {
     const d = new Date();
@@ -324,6 +338,12 @@ const AcademicEnrollmentStep = ({ formData, setFormData, onNext, onBack }) => {
         </div>
 
         {/* Selected Items */}
+        {errors.enrollmentBasket && (
+          <div className="p-4 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-500 text-xs font-semibold flex items-center gap-2">
+            <span className="material-symbols-outlined text-base">error_outline</span>
+            {errors.enrollmentBasket.message}
+          </div>
+        )}
         <div className="space-y-4">
           <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 pl-1">
             SELECTED ITEMS IN CART ({(formData.enrollmentBasket || []).length})
@@ -387,6 +407,7 @@ const AcademicEnrollmentStep = ({ formData, setFormData, onNext, onBack }) => {
                                   inputSize="sm"
                                   containerClassName="min-w-[170px]"
                                   placeholder="Select Batch"
+                                  error={!currentBatchId && errors.selectedBatches ? 'Batch is required' : null}
                                 />
                                 <div className="flex items-center gap-1">
                                   <span className={`size-1.5 rounded-full bg-current ${currentBatch?.seatsColor || 'text-emerald-500'}`}></span>
@@ -414,6 +435,7 @@ const AcademicEnrollmentStep = ({ formData, setFormData, onNext, onBack }) => {
                           inputSize="sm"
                           containerClassName="min-w-[200px]"
                           placeholder="Select Batch"
+                          error={!(formData.selectedBatches || {})[item.id] && errors.selectedBatches ? 'Batch is required' : null}
                         />
                         
                         <div className="flex items-center gap-1 px-1">
@@ -545,9 +567,9 @@ const AcademicEnrollmentStep = ({ formData, setFormData, onNext, onBack }) => {
                 </span>
               </div>
               
-              {!isChecksumValid && (
+              {(errors.installments || !isChecksumValid) && (
                 <p className="text-[10px] text-rose-500 dark:text-rose-400 leading-tight">
-                  Installments sum does not match total amount. Click "Auto-Split" below to rebalance.
+                  {errors.installments?.message || 'Installments sum does not match total amount. Click "Auto-Split" below to rebalance.'}
                 </p>
               )}
 
@@ -633,27 +655,6 @@ const AcademicEnrollmentStep = ({ formData, setFormData, onNext, onBack }) => {
             )}
           </div>
         </Card>
-
-        {/* Step Navigation Actions */}
-        <div className="flex gap-4 pt-4">
-          <Button 
-            onClick={onBack}
-            variant="outlined"
-            size="lg"
-            className="flex-1 font-bold border-slate-200 dark:border-slate-800"
-          >
-            Back
-          </Button>
-          <Button 
-            onClick={onNext}
-            disabled={isNextDisabled}
-            variant="contained"
-            size="lg"
-            className="flex-1 font-bold"
-          >
-            Next
-          </Button>
-        </div>
 
       </div>
 

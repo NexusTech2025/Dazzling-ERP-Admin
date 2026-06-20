@@ -22,8 +22,7 @@ import HighlightBox from '../../../../components/ui/v2/HighlightBox';
  * @param {function} props.onBack - Wizard back callback.
  * @param {boolean} props.isPending - Loading state of registration mutation.
  */
-const ActivationStep = ({ formData, setFormData, onFinish, onBack, isPending }) => {
-  const [immediatePayment, setImmediatePayment] = useState(true);
+const ActivationStep = ({ formData, setFormData, onFinish, onBack, isPending, immediatePayment, setImmediatePayment, errors = {} }) => {
   const [photoPreview, setPhotoPreview] = useState(null);
 
   // Generate safe memory-leak-free object URL for profile photo preview
@@ -289,16 +288,16 @@ const ActivationStep = ({ formData, setFormData, onFinish, onBack, isPending }) 
                   onChange={(e) => handleChange('initialPaymentAmount', Number(e.target.value))}
                   leftIcon="currency_rupee"
                   helperText="Prepopulated with initial deposit installment amount"
+                  error={errors.initialPaymentAmount?.message}
                 />
 
                 <RadioGroup
-                  label="Payment Channel"
+                  label="Payment Method"
                   name="paymentMethod"
                   value={formData.paymentMethod}
                   onChange={(val) => handleChange('paymentMethod', val)}
                   options={paymentOptions}
-                  layout="grid"
-                  columns={3}
+                  layout="list"
                 />
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -307,6 +306,7 @@ const ActivationStep = ({ formData, setFormData, onFinish, onBack, isPending }) 
                     label="Receipt Date"
                     value={formData.paymentDate || ''}
                     onChange={(e) => handleChange('paymentDate', e.target.value)}
+                    error={errors.paymentDate?.message}
                   />
                   <TextInput 
                     type="text"
@@ -316,6 +316,7 @@ const ActivationStep = ({ formData, setFormData, onFinish, onBack, isPending }) 
                     onChange={(e) => handleChange('transactionRef', e.target.value)}
                     placeholder="e.g. TXN-98234"
                     leftIcon="tag"
+                    error={errors.transactionRef?.message}
                   />
                 </div>
               </div>
@@ -334,29 +335,7 @@ const ActivationStep = ({ formData, setFormData, onFinish, onBack, isPending }) 
               />
             )}
 
-            {/* Complete CTAs */}
-            <div className="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
-              <Button 
-                onClick={handleComplete}
-                disabled={isPending}
-                loading={isPending}
-                variant="contained"
-                size="lg"
-                startIcon="task_alt"
-                className="w-full font-bold"
-              >
-                Complete & Activate
-              </Button>
-              
-              <Button 
-                onClick={onBack}
-                variant="text"
-                size="md"
-                className="w-full text-slate-500"
-              >
-                Back to Finance Settings
-              </Button>
-            </div>
+
 
           </div>
 

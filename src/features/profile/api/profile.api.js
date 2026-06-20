@@ -28,18 +28,38 @@ import { API_REGISTRY } from '../../../services/apiRegistry';
  */
 export const fetchProfileDetails = async (token, studentId, options = {}) => {
   try {
-    // Query Address, ContactInfo, Education, and Enrollments in parallel, plus Courses and Batches for joins
-    // using the modern Query DSL engine (DATA.QUERY)
-    const [addressRes, contactRes, educationRes, enrollmentsRes, coursesRes, batchesRes] = await Promise.all([
+    // Query Address, ContactInfo, Education, and Enrollments in parallel, plus Courses, Batches, Packages,
+    // and BatchAllocations for dynamic relation mapping (using the modern Query DSL engine DATA.QUERY)
+    const [
+      addressRes,
+      contactRes,
+      educationRes,
+      enrollmentsRes,
+      coursesRes,
+      batchesRes,
+      allocationsRes,
+      packagesRes
+    ] = await Promise.all([
       apiClient.executeAction(API_REGISTRY.DATA.QUERY, { target: 'Address', where: { student_id: studentId } }, token, options),
       apiClient.executeAction(API_REGISTRY.DATA.QUERY, { target: 'ContactInfo', where: { student_id: studentId } }, token, options),
       apiClient.executeAction(API_REGISTRY.DATA.QUERY, { target: 'Education', where: { student_id: studentId } }, token, options),
       apiClient.executeAction(API_REGISTRY.DATA.QUERY, { target: 'Enrollment', where: { student_id: studentId } }, token, options),
       apiClient.executeAction(API_REGISTRY.DATA.QUERY, { target: 'Course', where: {} }, token, options),
-      apiClient.executeAction(API_REGISTRY.DATA.QUERY, { target: 'Batch', where: {} }, token, options)
+      apiClient.executeAction(API_REGISTRY.DATA.QUERY, { target: 'Batch', where: {} }, token, options),
+      apiClient.executeAction(API_REGISTRY.DATA.QUERY, { target: 'BatchAllocation', where: { student_id: studentId } }, token, options),
+      apiClient.executeAction(API_REGISTRY.DATA.QUERY, { target: 'Package', where: {} }, token, options)
     ]);
 
-    if (!addressRes.success || !contactRes.success || !educationRes.success || !enrollmentsRes.success || !coursesRes.success || !batchesRes.success) {
+    if (
+      !addressRes.success ||
+      !contactRes.success ||
+      !educationRes.success ||
+      !enrollmentsRes.success ||
+      !coursesRes.success ||
+      !batchesRes.success ||
+      !allocationsRes.success ||
+      !packagesRes.success
+    ) {
       return {
         success: false,
         message: 'Failed to retrieve profile details from the database.'
@@ -52,16 +72,32 @@ export const fetchProfileDetails = async (token, studentId, options = {}) => {
     
     const courses = coursesRes.data?.data || [];
     const batches = batchesRes.data?.data || [];
+    const allocations = allocationsRes.data?.data || [];
+    const packages = packagesRes.data?.data || [];
 
     const enrollments = (enrollmentsRes.data?.data || []).map(enr => {
-      const course = courses.find(c => c.course_id === enr.item_id || c.course_id === enr.course_id);
-      const batch = batches.find(b => b.batch_id === enr.batch_id);
+      // Resolve allocated batch via BatchAllocation table
+      const allocation = allocations.find(a => a.enrollment_id === enr.enrollment_id);
+      const batch = allocation ? batches.find(b => b.batch_id === allocation.batch_id) : null;
       
+      let course_name = 'Unknown Course';
+      let duration = 'N/A';
+
+      if (enr.enrollment_type === 'package') {
+        const pkg = packages.find(p => p.package_id === enr.item_id);
+        course_name = pkg ? pkg.name : 'Unknown Package';
+        duration = pkg ? `${pkg.month} Months` : 'N/A';
+      } else if (enr.enrollment_type === 'course' || enr.enrollment_type === 'subject') {
+        const course = courses.find(c => c.course_id === enr.item_id);
+        course_name = course ? course.name : 'Unknown Course';
+        duration = course ? `${course.duration_value} ${course.duration_unit}` : 'N/A';
+      }
+
       return {
         ...enr,
-        course_name: course ? course.name : 'Unknown Course',
-        batch_name: batch ? batch.batch_name : 'Unknown Batch',
-        duration: course ? `${course.duration_value} ${course.duration_unit}` : 'N/A'
+        course_name,
+        batch_name: batch ? batch.batch_name : 'Not Allocated',
+        duration
       };
     });
 

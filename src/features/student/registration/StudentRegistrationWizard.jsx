@@ -1,7 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useRegisterStudentMutation } from '../hooks/useStudentQueries';
 import APIErrorModal from '../../../components/ui/APIErrorModal';
+import MainLayout from '../../../components/layout/MainLayout';
+import Breadcrumbs from '../../../components/ui/Breadcrumbs';
+import Button from '../../../components/ui/v2/Button';
+import { useForm, FormProvider } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
+import { profileSchema, enrollmentSchema, activationSchema } from './utils/schemas';
+import { handleAPIError } from './utils/apiErrorHandler';
 
 // Child components & Steps
 import ProgressStepper from './components/ProgressStepper';
@@ -9,71 +16,107 @@ import ProfileStep from './steps/ProfileStep';
 import AcademicEnrollmentStep from './steps/AcademicEnrollmentStep';
 import ActivationStep from './steps/ActivationStep';
 
-const StudentRegistrationWizard = ({ initialData }) => {
+const StudentRegistrationWizard = ({ initialData, modeToggle, crumbs }) => {
   const navigate = useNavigate();
   const registerMutation = useRegisterStudentMutation();
   const [currentStep, setCurrentStep] = useState(1);
   const [errorModal, setErrorModal] = useState({ isOpen: false, title: '', error: null });
   const [showSuccessModal, setShowSuccessModal] = useState(false);
 
-  const [formData, setFormData] = useState({
-    // Step 1: Profile
-    fullName: initialData?.fullName || '',
-    gender: '',
-    dob: '',
-    motherName: '',
-    fatherName: '',
-    email: initialData?.email || '',
-    mobile: initialData?.mobile || '',
-    address1: '',
-    address2: '',
-    city: '',
-    state: '',
-    pincode: '',
-    emergencyContactName: '',
-    emergencyContactRelationship: '',
-    emergencyContactPhone: '',
-    highestQualification: '',
-    previousInstitution: '',
-    passingYear: '',
-    grade: '',
-    profilePhoto: null,
+  // Lifted payment activation states from Step 3
+  const [isSticky, setIsSticky] = useState(false);
 
-    // Step 2: Academic Enrollment (Merged Program + Batch)
-    programType: 'academic',
-    admissionType: 'direct',
-    couponCode: '',
-    referralId: initialData?.referral || '',
-    entranceScore: '',
-    applicableScholarship: 0,
-    batchId: initialData?.batchId || '',
-    batchName: initialData?.batchName || '',
-    courseId: initialData?.courseId || '',
-    courseName: initialData?.courseName || '',
+  const handleBodyScroll = (e) => {
+    setIsSticky(e.currentTarget.scrollTop > 80);
+  };
 
-    // Step 3: Finance
-    // ... no changes needed to structure
-
-    // Step 2 & 3: Enrollment Basket and custom pricing/installments
-    enrollmentBasket: [],
-    selectedBatches: {},
-    installments: [],
-    isManualPlan: false,
-    discountVal: 0,
-    discountReason: '',
-    baseFee: 0,
-    registrationFee: 0,
-    finalFee: 0,
-
-    // Step 3 (old Step 4): Activation/Payment
-    initialPaymentAmount: '',
-    paymentMethod: 'cash',
-    paymentDate: new Date().toISOString().split('T')[0],
-    transactionRef: ''
+  const methods = useForm({
+    defaultValues: {
+      fullName: initialData?.fullName || '',
+      gender: 'Male',
+      dob: '',
+      motherName: '',
+      fatherName: '',
+      email: initialData?.email || '',
+      mobile: initialData?.mobile || '',
+      address1: '',
+      address2: '',
+      city: 'Jagatpura',
+      state: 'Rajasthan',
+      pincode: '302017',
+      emergencyContactName: '',
+      emergencyContactRelationship: '',
+      emergencyContactPhone: '',
+      highestQualification: '',
+      previousInstitution: '',
+      passingYear: '',
+      grade: '',
+      profilePhoto: null,
+      programType: 'academic',
+      admissionType: 'direct',
+      couponCode: '',
+      referralId: initialData?.referral || '',
+      entranceScore: '',
+      applicableScholarship: 0,
+      batchId: initialData?.batchId || '',
+      batchName: initialData?.batchName || '',
+      courseId: initialData?.courseId || '',
+      courseName: initialData?.courseName || '',
+      enrollmentBasket: [],
+      selectedBatches: {},
+      installments: [],
+      isManualPlan: false,
+      discountVal: 0,
+      discountReason: '',
+      baseFee: 0,
+      registrationFee: 0,
+      finalFee: 0,
+      initialPaymentAmount: '',
+      paymentMethod: 'cash',
+      paymentDate: new Date().toISOString().split('T')[0],
+      transactionRef: '',
+      immediatePayment: true
+    },
+    resolver: useCallback((values, context, options) => {
+      if (currentStep === 1) {
+        return yupResolver(profileSchema)(values, context, options);
+      } else if (currentStep === 2) {
+        return yupResolver(enrollmentSchema)(values, context, options);
+      } else {
+        return yupResolver(activationSchema)(values, context, options);
+      }
+    }, [currentStep]),
+    mode: 'onChange'
   });
+
+  const { trigger, formState: { errors }, watch, setValue, getValues, setError } = methods;
+  
+  const formData = watch();
+  const immediatePayment = watch('immediatePayment');
+  
+  const setImmediatePayment = useCallback((val) => {
+    setValue('immediatePayment', val, { shouldValidate: true });
+  }, [setValue]);
+
+  const setFormData = useCallback((updater) => {
+    const current = getValues();
+    const next = typeof updater === 'function' ? updater(current) : updater;
+    Object.keys(next).forEach(key => {
+      if (next[key] !== current[key]) {
+        setValue(key, next[key], { shouldValidate: true });
+      }
+    });
+  }, [getValues, setValue]);
 
   const nextStep = () => setCurrentStep(prev => Math.min(prev + 1, 3));
   const prevStep = () => setCurrentStep(prev => Math.max(prev - 1, 1));
+
+  const handleNextClick = async () => {
+    const isValid = await trigger();
+    if (isValid) {
+      nextStep();
+    }
+  };
 
   const handleFinish = async (overrides = {}) => {
     const finalPayment = { ...formData, ...overrides };
@@ -216,26 +259,25 @@ const StudentRegistrationWizard = ({ initialData }) => {
         if (response.success) {
           setShowSuccessModal(true);
         } else {
-          setErrorModal({
-            isOpen: true,
-            title: 'Registration Failed',
-            error: {
-              type: response.error?.type || 'APIError',
-              message: response.message || response.error?.message || 'Server rejected the registration request.'
-            }
-          });
+          console.error('[Mutation] API Correlation ID:', response.meta?.correlation_id || 'NONE');
+          handleAPIError(response, setError, setErrorModal, setCurrentStep);
         }
       },
       onError: (error) => {
         console.error('[Wizard] API Error:', error);
-        setErrorModal({
-          isOpen: true,
-          title: 'Request Failed',
-          error: {
-            type: error.name || 'NetworkError',
-            message: error.message || 'An error occurred during registration. Please check your connection.'
-          }
-        });
+        handleAPIError(
+          {
+            success: false,
+            error: {
+              code: 'DEFAULT',
+              message: error.message || 'An error occurred during registration. Please check your connection.',
+              details: error.stack
+            }
+          },
+          setError,
+          setErrorModal,
+          setCurrentStep
+        );
       }
     });
   };
@@ -243,59 +285,196 @@ const StudentRegistrationWizard = ({ initialData }) => {
   const renderStep = () => {
     switch (currentStep) {
       case 1:
-        return <ProfileStep formData={formData} setFormData={setFormData} onNext={nextStep} onCancel={() => navigate('/admin/students')} />;
+        return <ProfileStep formData={formData} setFormData={setFormData} onNext={handleNextClick} onCancel={() => navigate('/admin/students')} errors={errors} />;
       case 2:
-        return <AcademicEnrollmentStep formData={formData} setFormData={setFormData} onNext={nextStep} onBack={prevStep} />;
+        return <AcademicEnrollmentStep formData={formData} setFormData={setFormData} onNext={handleNextClick} onBack={prevStep} errors={errors} />;
       case 3:
-        return <ActivationStep formData={formData} setFormData={setFormData} onFinish={handleFinish} onBack={prevStep} isPending={registerMutation.isPending} />;
+        return (
+          <ActivationStep 
+            formData={formData} 
+            setFormData={setFormData} 
+            onFinish={handleFinish} 
+            onBack={prevStep} 
+            isPending={registerMutation.isPending}
+            immediatePayment={immediatePayment}
+            setImmediatePayment={setImmediatePayment}
+            errors={errors}
+          />
+        );
       default:
         return null;
     }
   };
 
+  const handleStepCompleteClick = async () => {
+    const isValid = await trigger();
+    if (isValid) {
+      if (!immediatePayment) {
+        // Deferred Payment Overrides
+        handleFinish({
+          initialPaymentAmount: 0,
+          paymentMethod: 'none',
+          transactionRef: 'DEFERRED'
+        });
+      } else {
+        handleFinish();
+      }
+    }
+  };
+
   return (
-    <div className="max-w-7xl mx-auto space-y-8">
-      <ProgressStepper 
-        currentStep={currentStep} 
-        totalSteps={3} 
-        steps={['Profile', 'Enrollment & Fees', 'Activation']} 
-        variant='glass-indicator' 
+    <FormProvider {...methods}>
+      <MainLayout
+        onBodyScroll={handleBodyScroll}
+        header={
+          <div
+            className={`absolute top-0 left-0 right-0 z-50 transition-all duration-300 w-full ${
+              isSticky
+                ? 'opacity-100 translate-y-0 shadow-md pointer-events-auto'
+                : 'opacity-0 -translate-y-4 pointer-events-none'
+            }`}
+          >
+            <div className="bg-surface-light/95 dark:bg-surface-dark/95 backdrop-blur-md border-b border-border-light dark:border-border-dark px-4 lg:px-6 py-3 flex items-center justify-between rounded-b-xl">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary text-lg font-black">person_add</span>
+                <span className="text-sm font-bold text-text-main dark:text-white">
+                  Add New Student
+                </span>
+                <span className="text-slate-300 dark:text-slate-700">•</span>
+                <span className="text-xs text-text-secondary dark:text-slate-400 font-semibold uppercase tracking-wider">
+                  Wizard Mode
+                </span>
+              </div>
+            </div>
+          </div>
+        }
+        body={
+          <div className="pt-6 lg:pt-10 pb-6 space-y-6">
+            {crumbs && <Breadcrumbs items={crumbs} className="mb-2" />}
+            {modeToggle}
+
+            <ProgressStepper 
+              currentStep={currentStep} 
+              totalSteps={3} 
+              steps={['Profile', 'Enrollment & Fees', 'Activation']} 
+              variant="glass-indicator" 
+            />
+
+            <div className="pb-6">
+              {renderStep()}
+            </div>
+          </div>
+        }
+        footer={
+          <footer className="border border-border-light dark:border-border-dark bg-white dark:bg-slate-900 shadow-lg px-4 lg:px-6 py-3 flex items-center justify-between gap-4 rounded-lg w-full sticky bottom-0">
+            <div className="flex items-center justify-start w-1/2 md:w-auto">
+              {currentStep === 1 ? (
+                <Button 
+                  type="button" 
+                  variant="outlined"
+                  size="md"
+                  className="!rounded-md"
+                  onClick={() => navigate('/admin/students')}
+                >
+                  Cancel
+                </Button>
+              ) : (
+                <Button 
+                  type="button" 
+                  variant="outlined"
+                  size="md"
+                  className="!rounded-md"
+                  onClick={prevStep}
+                  startIcon="arrow_back"
+                >
+                  Back
+                </Button>
+              )}
+            </div>
+            <div className="flex justify-end w-1/2 md:w-auto ml-auto">
+              {currentStep < 3 ? (
+                <Button 
+                  type="button" 
+                  variant="contained"
+                  size="md"
+                  className="!rounded-md"
+                  onClick={handleNextClick}
+                  endIcon="arrow_forward"
+                >
+                  Save & Continue
+                </Button>
+              ) : (
+                <Button 
+                  type="button" 
+                  variant="contained"
+                  size="md"
+                  className="!rounded-md"
+                  disabled={registerMutation.isPending}
+                  onClick={handleStepCompleteClick}
+                  loading={registerMutation.isPending}
+                  startIcon="task_alt"
+                >
+                  Complete & Activate
+                </Button>
+              )}
+            </div>
+          </footer>
+        }
       />
+      {/* Success Modal Overlay */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="bg-gradient-to-b from-slate-900 to-slate-950 border border-emerald-500/20 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all animate-in zoom-in-95 duration-200">
+            <div className="p-8 text-center space-y-6">
+              {/* Success Icon */}
+              <div className="mx-auto size-16 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 animate-pulse">
+                <span className="material-symbols-outlined text-4xl font-black">task_alt</span>
+              </div>
+              
+              <div className="space-y-2">
+                <h3 className="text-xl font-black text-white tracking-tight">Registration Successful</h3>
+                <p className="text-sm text-slate-400 font-semibold leading-relaxed">
+                  The student account has been created and activated in the database successfully.
+                </p>
+              </div>
 
-      <main>
-        {renderStep()}
-      </main>
+              {/* Student ID Badge */}
+              {registerMutation.data?.data?.student_id && (
+                <div className="p-4 bg-slate-900/60 border border-slate-800 rounded-xl space-y-1">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block">System Assigned ID</span>
+                  <span className="text-base font-mono font-black text-emerald-400">
+                    {registerMutation.data.data.student_id}
+                  </span>
+                </div>
+              )}
 
-      <APIErrorModal 
+              <div className="pt-2">
+                <Button
+                  type="button"
+                  variant="contained"
+                  size="md"
+                  className="w-full !rounded-md bg-emerald-600 hover:bg-emerald-500 text-white font-black"
+                  onClick={() => {
+                    setShowSuccessModal(false);
+                    navigate('/admin/students');
+                  }}
+                >
+                  Go to Student List
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reusable API Error Modal */}
+      <APIErrorModal
         isOpen={errorModal.isOpen}
         onClose={() => setErrorModal({ isOpen: false, title: '', error: null })}
         title={errorModal.title}
         error={errorModal.error}
       />
-
-      {showSuccessModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-slate-900/90 border border-slate-800 rounded-2xl shadow-xl w-full max-w-md overflow-hidden p-6 text-center space-y-4 backdrop-blur-md">
-            <div className="mx-auto size-14 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500">
-              <span className="material-symbols-outlined text-3xl">check_circle</span>
-            </div>
-            <div className="space-y-2">
-              <h3 className="text-xl font-black text-white">Student Registered Successfully</h3>
-              <p className="text-sm text-slate-400">The student profile, batch enrollment, and billing ledger have been successfully initialized.</p>
-            </div>
-            <button
-              onClick={() => {
-                setShowSuccessModal(false);
-                navigate('/admin/students');
-              }}
-              className="w-full py-3 bg-primary hover:bg-primary-dark text-white rounded-xl font-bold shadow-lg shadow-primary/20 transition-all active:scale-[0.98]"
-            >
-              Go to Student List
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
+    </FormProvider>
   );
 };
 
