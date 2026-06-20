@@ -13,7 +13,7 @@ The layout is divided into a static sidebar/app-header wrapper and a main conten
 | App Header (Fixed)                                        |
 +-----------------------------------------------------------+
 | Sidebar | Main Scrollport (AdminLayout <main>)            |
-| (Fixed) | - Horizontal Padding: px-6 lg:px-10             |
+| (Fixed) | - Horizontal Padding: px-4 lg:px-6             |
 |         | - Vertical Padding: Removed (0px)               |
 |         | - Scroll Lock: Controlled dynamically by views   |
 +---------+-------------------------------------------------+
@@ -21,22 +21,23 @@ The layout is divided into a static sidebar/app-header wrapper and a main conten
 
 ### The Role of `<main>` in [AdminLayout.jsx](e:/NAST/Dazzling/ERP System/dazzling-erp-admin/src/components/layout/AdminLayout.jsx)
 1. **Vertical Bounds**: `<main>` stretches to occupy the full remaining vertical viewport height.
-2. **Horizontal Padding**: Enforces a standard gutter of `px-6` (24px) on mobile and `lg:px-10` (40px) on desktop.
+2. **Horizontal Padding**: Enforces a standard gutter of `px-4` (16px) on mobile and `lg:px-6` (24px) on desktop.
 3. **No Vertical Padding**: Vertical padding must remain `0` on `<main>`. Page containers are responsible for setting their own vertical margins so sticky footers can sit flush at the screen bottom.
 
 ---
 
 ## 2. Standard Width Constraints (`max-w`)
 
-To prevent forms and dashboards from stretching awkwardly on ultra-wide monitors, page views must choose one of three standardized width classes:
+To prevent pages and dashboards from stretching awkwardly on ultra-wide monitors while keeping them responsive on standard laptops and mobile screens, we enforce a fluid, percentage-based sizing strategy:
 
-| Page Category | Max Width Class | Target Width | Example Views |
+| Screen Viewport | Width Class | Centering Behavior | Visual Purpose |
 | :--- | :--- | :--- | :--- |
-| **Directory / List Views** | `max-w-7xl mx-auto` or `w-full` | 1280px or Full | `Students.jsx`, `Teachers.jsx` |
-| **Complex Multi-Column Forms** | `max-w-7xl mx-auto` | 1280px | `TeacherForm.jsx` (2 columns) |
-| **Standard / Narrow Forms** | `max-w-4xl mx-auto` | 896px | `CourseForm.jsx` (1 column) |
+| **Mobile / Tablet (<1024px)** | `w-full` | Sit flush | Minimal padding and margin |
+| **Desktop (>=1024px)** | `lg:w-[98%]` | `lg:mx-auto` (Centered) | Narrower spacing gutter |
+| **Large Monitors (>=1280px)** | `xl:w-[95%]` | `xl:mx-auto` (Centered) | Comfortable reading span |
+| **Widescreen Ceilings** | `max-w-[1440px]` | Centered | Caps maximum layout stretch |
 
-*Always pair width constraints with `mx-auto` to center the page container horizontally within the viewport.*
+*By default, MainLayout applies this fluid relative class list (`relative w-full lg:w-[98%] lg:mx-auto xl:w-[95%] max-w-[1440px]`) automatically. Child views can omit slotClasses settings to inherit these standard dimensions.*
 
 ---
 
@@ -45,8 +46,8 @@ To prevent forms and dashboards from stretching awkwardly on ultra-wide monitors
 To avoid "double padding" visual bugs where layout spaces accumulate, components must respect padding boundaries:
 
 ### A. Horizontal Spacing
-* The global `<main>` container provides the primary horizontal boundary (`px-6 lg:px-10`).
-* Layout containers (like `MainLayout`) should not declare extra horizontal margins. Set `slotClasses.body` or parent wrappers to `px-4 lg:px-0` so that text elements align flush with desktop bounds but stay padded on mobile screens.
+* The global `<main>` container provides the primary horizontal boundary (`px-4 lg:px-6`).
+* Layout containers and page body slots (like `MainLayout` body slots) should not declare horizontal padding (e.g. omit `px-4` or set to `px-0`) because the global `<main>` wrapper handles it automatically. This prevents nested "double padding" bugs on mobile devices.
 
 ### B. Vertical Spacing
 * **Page-Level Top Margin**: Pages must set a top padding of `pt-6 lg:pt-10` on their main content headers.
@@ -76,10 +77,7 @@ const EntityForm = ({ initialData, onCancel, onSubmit }) => {
   return (
     <MainLayout
       onBodyScroll={handleBodyScroll}
-      slotClasses={{
-        container: "relative max-w-4xl mx-auto", // Choose width constraint
-        body: "py-0 px-0"                        // Zero out padding conflicts
-      }}
+      // Omit slotClasses to automatically inherit default layout width and zero body padding
       header={
         /* Compact Header Slot */
         <div className={`absolute top-0 left-0 right-0 z-50 transition-all ${isSticky ? 'block shadow-md' : 'hidden'}`}>
@@ -88,7 +86,7 @@ const EntityForm = ({ initialData, onCancel, onSubmit }) => {
       }
       body={
         /* Scrollable Body Slot */
-        <div className="px-4 lg:px-0 pt-6 lg:pt-10 pb-6">
+        <div className="pt-6 lg:pt-10 pb-6 space-y-6">
           <Breadcrumbs items={crumbs} className="mb-4" />
           <h1 className="text-3xl font-black mb-8">Page Title</h1>
           <form className="space-y-6">{/* Form fields */}</form>
