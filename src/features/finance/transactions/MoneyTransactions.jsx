@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { 
   useMoneyTransactionsQuery, 
   useExpenseCategoriesQuery,
@@ -23,8 +24,18 @@ const MoneyTransactions = () => {
   const [isCategoryOpen, setIsCategoryOpen] = useState(false);
   const [selectedTx, setSelectedTx] = useState(null);
 
+  const [searchParams] = useSearchParams();
+
   // Filters state
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(() => searchParams.get('search') || '');
+
+  // Synchronize searchQuery with search query param changes
+  useEffect(() => {
+    const s = searchParams.get('search');
+    if (s !== null) {
+      setSearchQuery(s);
+    }
+  }, [searchParams]);
   const [flowType, setFlowType] = useState('all'); // 'all', 'in', 'out'
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [startDate, setStartDate] = useState('');

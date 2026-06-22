@@ -25,8 +25,7 @@ const Sidebar = ({ isOpen, onClose }) => {
       subItems: [
         { name: 'Finance Dashboard', path: '/admin/finance' },
         { name: 'Fee Installment', path: '/admin/finance/installments' },
-        { name: 'Transactions', path: '/admin/finance/transactions' },
-        { name: 'OverDue', path: '/admin/finance/overdue' }
+        { name: 'Transactions', path: '/admin/finance/transactions' }
       ]
     },
     { 

@@ -1,211 +1,682 @@
-import React from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { useRevenueSummaryQuery, useInstallmentsQuery } from './hooks/useFinanceQueries';
+import { useQuery } from '@tanstack/react-query';
+import { useAuth } from '../../context/AuthContextCore';
+import { executeAction } from '../../services/apiClient';
+import { useAccountingDataQuery } from './hooks/useFinanceQueries';
+import { useStudentsQuery } from '../student/hooks/useStudentQueries';
+import { useCoursesQuery } from '../course/hooks/useCourseQueries';
+import { usePackagesQuery } from '../course/hooks/usePackageQueries';
 import { LoadingState, ErrorState } from '../../components/ui/QueryStatus';
+import { hydrateStudentFeeAccounts, aggregateBillingAccountsByStudent } from './utils';
+import DataTableV2 from '../../components/ui/table/DataTableV2';
+import KpiCard from '../../components/ui/v2/KpiCard';
+import KpiGrid from '../../components/ui/v2/KpiGrid';
+import MainLayout from '../../components/layout/MainLayout';
 
 /**
- * Institutional Finance Dashboard
- * High-level overview of revenue, collections, and overdue payments.
+ * Live Institutional Finance Dashboard & Billing Directory
+ * Displays global KPIs, student billing directory, and side-by-side transaction ledgers.
+ * Renders with a premium Navy & Gold Light Theme using high-density cards and micro-animations.
+ * 
+ * @component
  */
 const FinanceDashboard = () => {
-  const { data: summary, isLoading: isSummaryLoading, error: summaryError } = useRevenueSummaryQuery();
-  const { data: recentPayments = [], isLoading: isPaymentsLoading } = useInstallmentsQuery({ limit: 5 });
+  // Benchmark Timing (Rule N5)
+  useEffect(() => {
+    console.time('[FinanceDashboard] Load Data');
+    return () => {
+      console.timeEnd('[FinanceDashboard] Load Data');
+    };
+  }, []);
 
-  if (isSummaryLoading) return <LoadingState message="Calculating financial metrics..." />;
-  if (summaryError) return <ErrorState message={summaryError.message} />;
+  const { token } = useAuth();
+  const { data: accountingData, isLoading: isAccountingLoading, error: accountingError } = useAccountingDataQuery();
+  const { data: students = [], isLoading: isStudentsLoading } = useStudentsQuery();
+  const { data: courses = [], isLoading: isCoursesLoading } = useCoursesQuery();
+  const { data: packages = [], isLoading: isPackagesLoading } = usePackagesQuery();
 
-  const kpis = [
-    { 
-      label: 'Total Collected', 
-      value: summary?.total_collected || 0, 
-      trend: '+12%', 
-      color: 'text-emerald-600', 
-      bg: 'bg-blue-50 dark:bg-blue-900/30', 
-      icon: 'payments' 
+  // Fetch Enrollments and Allocations for the hydration utility
+  const { data: enrollments = [], isLoading: isEnrollmentsLoading } = useQuery({
+    queryKey: ['finance', 'dashboard-enrollments'],
+    queryFn: async () => {
+      const res = await executeAction('data_query', { target: 'Enrollment' }, token);
+      return res.data?.data || [];
     },
-    { 
-      label: 'Pending Fees', 
-      value: summary?.total_pending || 0, 
-      trend: '+5%', 
-      color: 'text-amber-600', 
-      bg: 'bg-amber-50 dark:bg-amber-900/30', 
-      icon: 'hourglass_top' 
+    enabled: !!token
+  });
+
+  const { data: batchAllocations = [], isLoading: isAllocationsLoading } = useQuery({
+    queryKey: ['finance', 'dashboard-allocations'],
+    queryFn: async () => {
+      const res = await executeAction('data_query', { target: 'BatchAllocation' }, token);
+      return res.data?.data || [];
     },
-    { 
-      label: 'Overdue', 
-      value: summary?.total_overdue || 0, 
-      trend: '-2%', 
-      color: 'text-red-600', 
-      bg: 'bg-red-50 dark:bg-red-900/30', 
-      icon: 'warning',
-      link: '/admin/finance/delinquent'
+    enabled: !!token
+  });
+
+  const [selectedStudentId, setSelectedStudentId] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [courseFilter, setCourseFilter] = useState('');
+  const [isSticky, setIsSticky] = useState(false);
+
+  const handleBodyScroll = (e) => {
+    const shouldBeSticky = e.currentTarget.scrollTop > 80;
+    setIsSticky(prev => (prev !== shouldBeSticky ? shouldBeSticky : prev));
+  };
+
+  // Stop timer when data finishes loading
+  useEffect(() => {
+    if (!isAccountingLoading && accountingData) {
+      console.timeEnd('[FinanceDashboard] Load Data');
+    }
+  }, [isAccountingLoading, accountingData]);
+
+  const { studentFeeAccounts = [], installments = [], payments = [], feeAdjustments = [] } = accountingData || {};
+
+  // Map student name and course to fee account records in memory using the hydrate utility (Rule D4/D2)
+  const mappedFeeAccounts = useMemo(() => {
+    const hydratedAccounts = hydrateStudentFeeAccounts({
+      studentFeeAccounts,
+      enrollments,
+      students,
+      courses,
+      packages,
+      batchAllocations
+    });
+
+    return hydratedAccounts.map(acc => {
+      const student = acc.enrollment?.student;
+      const item = acc.enrollment?.item;
+      const targetClass = item?.target_class || item?.metadata?.class || '';
+      return {
+        ...acc,
+        student_id: student?.student_id || acc.enrollment?.student_id || '',
+        studentName: student?.student_name || 'Unknown Student',
+        courseName: item?.name || 'N/A',
+        studentClass: targetClass
+      };
+    });
+  }, [studentFeeAccounts, enrollments, students, courses, packages, batchAllocations]);
+
+  // Derived Global KPIs (Calculated dynamically from live records)
+  const kpis = useMemo(() => {
+    const totalReceivables = studentFeeAccounts.reduce((sum, acc) =>
+      sum + Number(acc.final_fee !== undefined ? acc.final_fee : (acc.total_fee - (acc.discount || 0))), 0);
+    const totalCollected = studentFeeAccounts.reduce((sum, acc) => sum + Number(acc.amount_paid || 0), 0);
+    const outstandingBalance = studentFeeAccounts.reduce((sum, acc) => sum + Number(acc.balance_due || 0), 0);
+    const overdueCount = installments.filter(inst => inst.status?.toLowerCase() === 'overdue').length;
+    const activeAccounts = studentFeeAccounts.filter(acc => acc.status?.toLowerCase() === 'active').length;
+
+    return [
+      {
+        label: 'Total Receivables',
+        value: totalReceivables,
+        icon: 'account_balance_wallet',
+        color: 'text-slate-900',
+        bgColor: 'bg-slate-50',
+        borderColor: 'border-slate-200'
+      },
+      {
+        label: 'Total Collected',
+        value: totalCollected,
+        icon: 'payments',
+        color: 'text-emerald-700',
+        bgColor: 'bg-emerald-50/50',
+        borderColor: 'border-emerald-200'
+      },
+      {
+        label: 'Outstanding Balance',
+        value: outstandingBalance,
+        icon: 'hourglass_top',
+        color: 'text-amber-800',
+        bgColor: 'bg-amber-50/40',
+        borderColor: 'border-amber-200'
+      },
+      {
+        label: 'Overdue Installments',
+        value: overdueCount,
+        icon: 'warning',
+        color: 'text-rose-700',
+        bgColor: 'bg-rose-50/50',
+        borderColor: 'border-rose-200',
+        isCount: true
+      },
+      {
+        label: 'Active Accounts',
+        value: activeAccounts,
+        icon: 'group',
+        color: 'text-blue-700',
+        bgColor: 'bg-blue-50/40',
+        borderColor: 'border-blue-200',
+        isCount: true
+      },
+    ];
+  }, [studentFeeAccounts, installments]);
+
+  // Filter courses for dropdown list
+  const availableCourses = useMemo(() => {
+    const courses = new Set(mappedFeeAccounts.map(acc => acc.courseName).filter(Boolean));
+    return Array.from(courses);
+  }, [mappedFeeAccounts]);
+
+  const aggregatedStudents = useMemo(() => {
+    return aggregateBillingAccountsByStudent(mappedFeeAccounts);
+  }, [mappedFeeAccounts]);
+
+  // Filtered students matching search and dropdown controls
+  const filteredStudents = useMemo(() => {
+    return aggregatedStudents.filter(student => {
+      const studentId = student.student_id || '';
+      const studentName = student.studentName || '';
+      const matchQuery =
+        studentId.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        studentName.toLowerCase().includes(searchQuery.toLowerCase());
+
+      const matchStatus = !statusFilter || student.status.toLowerCase() === statusFilter.toLowerCase();
+      const matchCourse = !courseFilter || student.accounts.some(acc => acc.courseName.toLowerCase() === courseFilter.toLowerCase());
+
+      return matchQuery && matchStatus && matchCourse;
+    });
+  }, [aggregatedStudents, searchQuery, statusFilter, courseFilter]);
+
+  const selectedStudentAccounts = useMemo(() => {
+    if (!selectedStudentId) return [];
+    const student = aggregatedStudents.find(s => s.student_id === selectedStudentId);
+    return student ? student.accounts : [];
+  }, [selectedStudentId, aggregatedStudents]);
+
+  // Find currently selected student details across all their accounts
+  const selectedRecord = useMemo(() => {
+    if (!selectedStudentId) return null;
+    const student = aggregatedStudents.find(s => s.student_id === selectedStudentId);
+    if (!student || student.accounts.length === 0) return null;
+
+    const feeAccountIds = student.accounts.map(acc => acc.student_fee_id);
+
+    const studentInsts = installments.filter(inst => feeAccountIds.includes(inst.student_fee_id));
+    const studentPays = payments.filter(pay => feeAccountIds.includes(pay.student_fee_id));
+    const studentAdjs = feeAdjustments.filter(adj => feeAccountIds.includes(adj.student_fee_id));
+
+    return {
+      account: {
+        ...student,
+        courseName: student.accounts.map(acc => acc.courseName).join(', ')
+      },
+      installments: studentInsts,
+      payments: studentPays,
+      adjustments: studentAdjs
+    };
+  }, [selectedStudentId, aggregatedStudents, installments, payments, feeAdjustments]);
+
+  // --- DataTableV2 Column Configurations ---
+
+  const directoryColumns = useMemo(() => [
+    {
+      header: 'Student Name',
+      className: 'font-bold text-slate-900',
+      cell: (row) => (
+        <div className="flex flex-col gap-0.5">
+          <span className="font-extrabold text-slate-900">{row.studentName}</span>
+          {row.studentClass && row.studentClass !== 'N/A' && (
+            <span className="inline-flex self-start px-1.5 py-0.5 rounded-md text-[8px] font-black bg-indigo-50 text-[#1a237e] border border-indigo-100 uppercase tracking-wide mt-0.5">
+              Class {row.studentClass}
+            </span>
+          )}
+        </div>
+      )
     },
-    { 
-      label: 'Monthly Revenue', 
-      value: 120000, 
-      trend: '+8%', 
-      color: 'text-emerald-600', 
-      bg: 'bg-purple-50 dark:bg-purple-900/30', 
-      icon: 'calendar_today' 
+    {
+      header: 'Total Fee',
+      align: 'right',
+      width: '110px',
+      className: 'font-bold text-slate-800',
+      cell: (row) => `₹${Number(row.total_fee || 0).toLocaleString()}`
     },
-  ];
+    {
+      header: 'Amount Paid',
+      align: 'right',
+      width: '110px',
+      className: 'text-emerald-600 font-bold',
+      cell: (row) => `₹${Number(row.amount_paid || 0).toLocaleString()}`
+    },
+    {
+      header: 'Balance Due',
+      align: 'right',
+      width: '110px',
+      className: 'text-rose-600 font-extrabold',
+      cell: (row) => `₹${Number(row.balance_due || 0).toLocaleString()}`
+    },
+    {
+      header: 'Status',
+      align: 'center',
+      width: '110px',
+      cell: (row) => (
+        <span className={`inline-flex px-2.5 py-1 rounded-lg text-[9px] font-extrabold border uppercase tracking-wider ${row.status === 'paid' || row.status === 'completed' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+            row.status === 'overdue' || row.status === 'defaulted' ? 'bg-rose-50 text-rose-700 border-rose-200' :
+              row.status === 'partially_paid' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                'bg-amber-50 text-amber-700 border-amber-200/80'
+          }`}>
+          {row.status}
+        </span>
+      )
+    }
+  ], []);
+
+  const programColumns = useMemo(() => [
+    {
+      header: 'Program / Course',
+      accessor: 'courseName',
+      className: 'font-bold text-slate-900'
+    },
+    {
+      header: 'Total Fee',
+      align: 'right',
+      width: '100px',
+      className: 'font-bold text-slate-800',
+      cell: (row) => {
+        const total = Number(row.final_fee !== undefined ? row.final_fee : (row.total_fee - (row.discount || 0)));
+        return `₹${total.toLocaleString()}`;
+      }
+    },
+    {
+      header: 'Paid',
+      align: 'right',
+      width: '100px',
+      className: 'text-emerald-600 font-bold',
+      cell: (row) => `₹${Number(row.amount_paid || 0).toLocaleString()}`
+    },
+    {
+      header: 'Balance',
+      align: 'right',
+      width: '100px',
+      className: 'text-rose-600 font-extrabold',
+      cell: (row) => `₹${Number(row.balance_due || 0).toLocaleString()}`
+    },
+    {
+      header: 'Status',
+      align: 'center',
+      width: '100px',
+      cell: (row) => (
+        <span className={`inline-flex px-2 py-0.5 rounded text-[9px] font-extrabold border uppercase tracking-wider ${
+          row.status === 'paid' || row.status === 'completed' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+          row.status === 'overdue' || row.status === 'defaulted' ? 'bg-rose-50 text-rose-700 border-rose-200' :
+          row.status === 'partially_paid' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+          'bg-amber-50 text-amber-700 border-amber-200'
+        }`}>
+          {row.status}
+        </span>
+      )
+    }
+  ], []);
+
+  const installmentColumns = useMemo(() => [
+    {
+      header: 'Inst #',
+      accessor: 'installment_number',
+      width: '64px',
+      className: 'font-bold text-slate-800'
+    },
+    {
+      header: 'Due Date',
+      className: 'text-slate-500 font-semibold',
+      cell: (row) => new Date(row.due_date).toLocaleDateString()
+    },
+    {
+      header: 'Due',
+      align: 'right',
+      width: '96px',
+      className: 'font-bold text-slate-800',
+      cell: (row) => `₹${Number(row.due_amount).toLocaleString()}`
+    },
+    {
+      header: 'Paid',
+      align: 'right',
+      width: '96px',
+      className: 'text-emerald-600 font-bold',
+      cell: (row) => `₹${Number(row.paid_amount || 0).toLocaleString()}`
+    },
+    {
+      header: 'Status',
+      align: 'center',
+      width: '96px',
+      cell: (row) => (
+        <span className={`inline-flex px-2 py-0.5 rounded text-[9px] font-extrabold border uppercase tracking-wider ${row.status === 'paid' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+            row.status === 'overdue' ? 'bg-rose-50 text-rose-700 border-rose-200' :
+              'bg-amber-50 text-amber-700 border-amber-200'
+          }`}>
+          {row.status}
+        </span>
+      )
+    }
+  ], []);
+
+  const paymentColumns = useMemo(() => [
+    {
+      header: 'Date',
+      className: 'text-slate-500 font-semibold',
+      cell: (row) => new Date(row.payment_date).toLocaleDateString()
+    },
+    {
+      header: 'Amount',
+      align: 'right',
+      width: '96px',
+      className: 'text-emerald-600 font-bold',
+      cell: (row) => `₹${Number(row.amount_paid).toLocaleString()}`
+    },
+    {
+      header: 'Method',
+      align: 'center',
+      width: '96px',
+      className: 'text-slate-500 font-bold uppercase',
+      accessor: 'payment_method'
+    },
+    {
+      header: 'Reference ID',
+      className: 'font-mono text-[10px] text-slate-400',
+      cell: (row) => row.reference_number || row.transaction_reference || 'N/A'
+    }
+  ], []);
+
+  const adjustmentColumns = useMemo(() => [
+    {
+      header: 'Type',
+      className: 'font-extrabold uppercase text-[#1a237e]',
+      accessor: 'adjustment_type'
+    },
+    {
+      header: 'Amount',
+      align: 'right',
+      width: '96px',
+      className: 'text-rose-600 font-bold',
+      cell: (row) => `-₹${Number(row.amount).toLocaleString()}`
+    },
+    {
+      header: 'Reason / Remarks',
+      className: 'text-slate-500 font-medium',
+      cell: (row) => row.reason || row.remarks || 'Discount adjustment applied.'
+    }
+  ], []);
+
+  if (isAccountingLoading || isStudentsLoading || isCoursesLoading || isPackagesLoading || isEnrollmentsLoading || isAllocationsLoading) {
+    return <LoadingState message="Hydrating student transactional accounting ledger..." />;
+  }
+
+  if (accountingError) {
+    return <ErrorState message={accountingError.message} />;
+  }
 
   return (
-    <div className="space-y-8">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-black text-text-main dark:text-white tracking-tight">Finance Dashboard</h1>
-          <p className="text-text-secondary mt-1">Institutional financial health and revenue distribution.</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <button className="flex items-center gap-2 bg-surface-light dark:bg-surface-dark hover:bg-gray-50 dark:hover:bg-gray-800 text-text-main dark:text-white font-bold py-2.5 px-4 rounded-xl transition-all border border-border-light dark:border-border-dark shadow-sm active:scale-95">
-            <span className="material-symbols-outlined text-[20px]">download</span>
-            <span className="hidden sm:inline">Export</span>
-          </button>
-          <Link to="/admin/finance/fee-plan" className="flex items-center gap-2 bg-primary hover:bg-primary-dark text-white font-bold py-2.5 px-5 rounded-xl transition-all shadow-md active:scale-95">
-            <span className="material-symbols-outlined text-[20px]">add_circle</span>
-            <span>Generate Fee Plan</span>
-          </Link>
-        </div>
-      </div>
-
-      {/* KPI Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {kpis.map((kpi, idx) => {
-          const CardContent = (
-            <div className={`bg-surface-light dark:bg-surface-dark rounded-2xl p-6 shadow-sm border border-border-light dark:border-border-dark flex flex-col justify-between h-40 group transition-all ${kpi.link ? 'hover:border-primary cursor-pointer hover:shadow-md' : 'hover:border-primary/50'}`}>
-              <div className="flex justify-between items-start">
-                <div className={`p-2 ${kpi.bg} rounded-lg text-primary`}>
-                  <span className="material-symbols-outlined">{kpi.icon}</span>
-                </div>
-                <span className={`flex items-center text-xs font-black ${kpi.color} bg-background-light dark:bg-background-dark px-2.5 py-1 rounded-full border border-border-light dark:border-border-dark`}>
-                  {kpi.trend}
-                </span>
-              </div>
-              <div>
-                <p className="text-xs font-bold text-text-secondary uppercase tracking-wider">{kpi.label}</p>
-                <div className="flex items-center justify-between mt-1">
-                  <h3 className="text-2xl font-black text-text-main dark:text-white">
-                    ${Number(kpi.value).toLocaleString()}
-                  </h3>
-                  {kpi.link && <span className="material-symbols-outlined text-primary opacity-0 group-hover:opacity-100 transition-opacity">arrow_forward</span>}
-                </div>
-              </div>
+    <MainLayout
+      onBodyScroll={handleBodyScroll}
+      slotClasses={{
+        container: "relative w-full lg:w-[98%] lg:mx-auto xl:w-[95%] max-w-[1440px]",
+        body: "py-0 px-2 text-slate-800"
+      }}
+      header={
+        <div
+          className={`absolute top-0 left-0 right-0 z-50 transition-all duration-300 w-full ${
+            isSticky ? 'opacity-100 translate-y-0 shadow-md pointer-events-auto' : 'opacity-0 -translate-y-4 pointer-events-none'
+          }`}
+        >
+          <div className="bg-[#f9fbff]/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 px-4 lg:px-6 py-2.5 flex items-center justify-between rounded-b-xl shadow-sm">
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-[#1a237e] text-sm">payments</span>
+              <span className="text-sm font-bold text-[#1a237e] dark:text-white">Finance Dashboard</span>
             </div>
-          );
-
-          return kpi.link ? <Link key={idx} to={kpi.link}>{CardContent}</Link> : <React.Fragment key={idx}>{CardContent}</React.Fragment>;
-        })}
-      </div>
-
-      {/* Main Insights */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="bg-surface-light dark:bg-surface-dark rounded-2xl p-6 shadow-sm border border-border-light dark:border-border-dark lg:col-span-2">
-          <div className="flex justify-between items-center mb-10">
-            <div>
-              <h3 className="text-lg font-bold text-text-main dark:text-white tracking-tight">Revenue Trend</h3>
-              <p className="text-sm text-text-secondary">Academic Year 2023-24 Performance</p>
-            </div>
-            <div className="text-right">
-              <span className="text-2xl font-black text-text-main dark:text-white">$1.2M</span>
-              <p className="text-xs font-bold text-emerald-600 uppercase">+8.5% VS LAST YEAR</p>
+            <div className="flex items-center gap-3">
+              <Link
+                to="/admin/finance/fee-plan"
+                className="flex items-center gap-1.5 bg-[#1a237e] hover:bg-indigo-950 text-white font-bold py-1 px-3 rounded-lg text-[11px] transition-all duration-300 shadow-md"
+              >
+                <span className="material-symbols-outlined text-[14px]">add_circle</span>
+                <span>Generate Fee Plan</span>
+              </Link>
             </div>
           </div>
-          
-          {/* Mock Chart Area */}
-          <div className="h-64 flex items-end justify-between gap-2 px-2">
-            {[40, 55, 35, 70, 60, 80, 45, 90, 65, 85, 50, 95].map((h, i) => (
-              <div key={i} className="w-full bg-primary/5 dark:bg-primary/10 rounded-t-lg relative group h-full">
-                <div 
-                  className="absolute bottom-0 w-full bg-primary rounded-t-lg opacity-80 group-hover:opacity-100 transition-all cursor-pointer" 
-                  style={{ height: `${h}%` }}
-                >
-                  <div className="opacity-0 group-hover:opacity-100 absolute -top-10 left-1/2 -translate-x-1/2 bg-text-main text-white text-[10px] font-bold py-1 px-2 rounded whitespace-nowrap transition-all">
-                    ${h}k
+        </div>
+      }
+      body={
+        <div className="space-y-4 pt-6 lg:pt-8 pb-12">
+          {/* Title Header */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-3 border-b border-slate-100 pb-4">
+            <div>
+              <h1 className="text-2xl font-extrabold tracking-tight text-[#1a237e]">
+                Finance Dashboard
+              </h1>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Real-time tuition collections, billing schedules, and relational adjustments ledger.
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <Link
+                to="/admin/finance/fee-plan"
+                className="flex items-center gap-2 bg-[#1a237e] hover:bg-indigo-950 text-white font-bold py-1.5 px-4 rounded-xl text-xs transition-all duration-300 shadow-md hover:shadow-indigo-900/10 active:scale-[0.98]"
+              >
+                <span className="material-symbols-outlined text-[16px]">add_circle</span>
+                <span>Generate Fee Plan</span>
+              </Link>
+            </div>
+          </div>
+
+          {/* KPI Cards Grid */}
+          <KpiGrid cols={1} smCols={2} lgCols={5} gap={3}>
+            {kpis.map((kpi, idx) => {
+              const variant =
+                kpi.color.includes('emerald') ? 'success' :
+                  kpi.color.includes('rose') ? 'danger' :
+                    kpi.color.includes('amber') ? 'warning' :
+                      kpi.color.includes('blue') ? 'info' : 'neutral';
+
+              return (
+                <KpiCard
+                  key={idx}
+                  label={kpi.label}
+                  value={kpi.value}
+                  icon={kpi.icon}
+                  isCount={kpi.isCount}
+                  variant={variant}
+                  size="md"
+                />
+              );
+            })}
+          </KpiGrid>
+
+          {/* Filter and Search Panel */}
+          <div className="bg-white rounded-2xl border border-slate-200/80 p-3 shadow-sm flex flex-col md:flex-row gap-3 items-center">
+            <div className="relative flex-1 w-full">
+              <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                <span className="material-symbols-outlined text-md">search</span>
+              </span>
+              <input
+                type="text"
+                className="w-full pl-9 pr-4 py-2 text-sm rounded-xl border border-slate-200 focus:outline-none focus:border-[#1a237e] focus:ring-1 focus:ring-[#1a237e]/20 bg-slate-50/50 transition-all font-semibold"
+                placeholder="Search student name or ID..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+            <div className="flex gap-3 w-full md:w-auto">
+              <select
+                className="w-full md:w-44 px-3 py-2 text-sm rounded-xl border border-slate-200 focus:outline-none focus:border-[#1a237e] bg-white cursor-pointer transition-all font-bold text-slate-700"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+              >
+                <option value="">Status: All</option>
+                <option value="active">Active Account</option>
+                <option value="paid">Fully Paid</option>
+                <option value="completed">Completed</option>
+                <option value="partially_paid">Partially Paid</option>
+                <option value="overdue">Overdue</option>
+                <option value="defaulted">Defaulted</option>
+              </select>
+              <select
+                className="w-full md:w-44 px-3 py-2 text-sm rounded-xl border border-slate-200 focus:outline-none focus:border-[#1a237e] bg-white cursor-pointer transition-all font-bold text-slate-700"
+                value={courseFilter}
+                onChange={(e) => setCourseFilter(e.target.value)}
+              >
+                <option value="">Course: All</option>
+                {availableCourses.map((c, i) => (
+                  <option key={i} value={c}>{c}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Side-by-side Directory and Program Accounts Panel */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            {/* Left Side: Directory Table */}
+            <div className="lg:col-span-7 bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden transition-all duration-300">
+              <div className="py-2.5 px-4 bg-slate-50/50 border-b border-slate-100 flex items-center justify-between">
+                <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2">
+                  <span className="material-symbols-outlined text-[18px] text-slate-400">list_alt</span>
+                  Student Billing Directory (Aggregated)
+                </h3>
+                <span className="text-[10px] text-slate-500 font-bold bg-slate-100 px-2 py-0.5 rounded-lg">
+                  {filteredStudents.length} Students
+                </span>
+              </div>
+
+              <DataTableV2
+                data={filteredStudents}
+                columns={directoryColumns}
+                density="high"
+                maxHeight="220px"
+                stickyHeader={true}
+                selectedRowKey="student_id"
+                selectedRowValue={selectedStudentId}
+                onRowClick={(row) => setSelectedStudentId(selectedStudentId === row.student_id ? null : row.student_id)}
+                emptyMessage="No students found matching the criteria."
+              />
+            </div>
+
+            {/* Right Side: Program Accounts Table */}
+            <div className="lg:col-span-5 bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden transition-all duration-300">
+              <div className="py-2.5 px-4 bg-slate-50/50 border-b border-slate-100 flex items-center justify-between">
+                <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2">
+                  <span className="material-symbols-outlined text-[18px] text-slate-400">school</span>
+                  Student Program Accounts
+                </h3>
+                {selectedStudentId && (
+                  <span className="text-[10px] text-slate-500 font-bold bg-slate-100 px-2 py-0.5 rounded-lg">
+                    {selectedStudentAccounts.length} Programs
+                  </span>
+                )}
+              </div>
+
+              {!selectedStudentId ? (
+                <div className="h-[220px] flex flex-col items-center justify-center text-slate-400 text-xs">
+                  <span className="material-symbols-outlined text-4xl mb-1 opacity-20">info</span>
+                  <p className="font-bold text-slate-500">Select a student to load program accounts</p>
+                </div>
+              ) : (
+                <DataTableV2
+                  data={selectedStudentAccounts}
+                  columns={programColumns}
+                  density="high"
+                  maxHeight="220px"
+                  stickyHeader={true}
+                  emptyMessage="No program accounts found."
+                />
+              )}
+            </div>
+          </div>
+
+          {/* Selected Student Drill-Down Panel */}
+          <div className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-sm transition-all duration-300">
+            {!selectedRecord ? (
+              <div className="py-12 text-center text-slate-400 border border-dashed border-slate-200 rounded-2xl bg-slate-50/20">
+                <div className="p-3 bg-indigo-50/50 rounded-full inline-flex items-center justify-center mb-2">
+                  <span className="material-symbols-outlined text-3xl text-[#1a237e]">payments</span>
+                </div>
+                <p className="text-sm font-bold text-slate-600">Select a student from the directory list to load billing schedules and transaction logs.</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="border-b border-slate-100 pb-3 flex justify-between items-center">
+                  <div>
+                    <h3 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
+                      <span className="material-symbols-outlined text-xl text-[#1a237e]">account_circle</span>
+                      {selectedRecord.account.studentName}
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-2">
+                      <span>Student ID:</span>
+                      <span className="font-mono font-bold text-[#1a237e] bg-slate-100 px-2 py-0.5 rounded">{selectedRecord.account.student_id}</span>
+                      <span>•</span>
+                      <span>Course:</span>
+                      <span className="font-semibold text-slate-700">{selectedRecord.account.courseName}</span>
+                    </p>
+                  </div>
+                  <Link
+                    to={`/admin/students/${selectedRecord.account.student_id}?tab=fees`}
+                    className="text-xs text-[#1a237e] hover:underline font-bold flex items-center gap-1 bg-indigo-50 px-3 py-1.5 rounded-lg transition-all hover:bg-indigo-100/80"
+                  >
+                    <span>View Full Profile</span>
+                    <span className="material-symbols-outlined text-xs">arrow_forward</span>
+                  </Link>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Installments Table */}
+                  <div className="space-y-2">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                      <span className="material-symbols-outlined text-[16px] text-[#1a237e]">schedule</span>
+                      Installment Schedule
+                    </h4>
+                    <div className="border border-slate-200/80 rounded-xl overflow-hidden shadow-sm">
+                      <DataTableV2
+                        data={selectedRecord.installments}
+                        columns={installmentColumns}
+                        density="high"
+                        emptyMessage="No installments configured."
+                      />
+                    </div>
+                  </div>
+
+                  {/* Payments & Adjustments Table */}
+                  <div className="space-y-4">
+                    {/* Payments */}
+                    <div className="space-y-2">
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                        <span className="material-symbols-outlined text-[16px] text-emerald-600">receipt_long</span>
+                        Payment History
+                      </h4>
+                      <div className="border border-slate-200/80 rounded-xl overflow-hidden shadow-sm">
+                        <DataTableV2
+                          data={selectedRecord.payments}
+                          columns={paymentColumns}
+                          density="high"
+                          emptyMessage="No payments logged in the ledger."
+                        />
+                      </div>
+                    </div>
+
+                    {/* Adjustments */}
+                    {selectedRecord.adjustments.length > 0 && (
+                      <div className="space-y-2">
+                        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                          <span className="material-symbols-outlined text-[16px] text-indigo-600">percent</span>
+                          Fee Adjustments & Discounts
+                        </h4>
+                        <div className="border border-slate-200/80 rounded-xl overflow-hidden shadow-sm">
+                          <DataTableV2
+                            data={selectedRecord.adjustments}
+                            columns={adjustmentColumns}
+                            density="high"
+                            emptyMessage="No adjustments applied."
+                          />
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
-            ))}
-          </div>
-          <div className="flex justify-between mt-4 text-[10px] font-black text-text-secondary uppercase tracking-widest px-2">
-            <span>Jan</span><span>Dec</span>
+            )}
           </div>
         </div>
-
-        <div className="bg-surface-light dark:bg-surface-dark rounded-2xl p-6 shadow-sm border border-border-light dark:border-border-dark flex flex-col">
-          <div className="mb-8">
-            <h3 className="text-lg font-bold text-text-main dark:text-white tracking-tight">Revenue by Course</h3>
-            <p className="text-sm text-text-secondary">Current Semester Distribution</p>
-          </div>
-          <div className="space-y-6 flex-1">
-            {[
-              { name: 'Business Admin', val: 340, p: 85, color: 'bg-primary' },
-              { name: 'Computer Science', val: 210, p: 65, color: 'bg-purple-500' },
-              { name: 'Medical Sciences', val: 180, p: 45, color: 'bg-amber-500' },
-              { name: 'Arts & Humanities', val: 120, p: 30, color: 'bg-emerald-500' }
-            ].map((item, i) => (
-              <div key={i}>
-                <div className="flex justify-between text-xs font-bold mb-2">
-                  <span className="text-text-secondary">{item.name}</span>
-                  <span className="text-text-main dark:text-white">${item.val}k</span>
-                </div>
-                <div className="w-full bg-background-light dark:bg-background-dark rounded-full h-2">
-                  <div className={`${item.color} h-full rounded-full transition-all duration-1000`} style={{ width: `${item.p}%` }}></div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Recent Payments Table */}
-      <div className="bg-surface-light dark:bg-surface-dark rounded-2xl shadow-sm border border-border-light dark:border-border-dark overflow-hidden">
-        <div className="p-6 border-b border-border-light dark:border-border-dark flex justify-between items-center">
-          <h3 className="text-lg font-bold text-text-main dark:text-white tracking-tight">Recent Payments</h3>
-          <Link to="/admin/finance/installments" className="text-sm font-bold text-primary hover:text-primary-dark transition-colors flex items-center gap-1">
-            View All Installments <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
-          </Link>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="border-b border-border-light dark:border-border-dark bg-background-light/50 dark:bg-background-dark/30">
-                <th className="p-4 text-xs font-black text-text-secondary uppercase tracking-widest">Student</th>
-                <th className="p-4 text-xs font-black text-text-secondary uppercase tracking-widest">Course</th>
-                <th className="p-4 text-xs font-black text-text-secondary uppercase tracking-widest">Date</th>
-                <th className="p-4 text-xs font-black text-text-secondary uppercase tracking-widest text-right">Amount</th>
-                <th className="p-4 text-xs font-black text-text-secondary uppercase tracking-widest text-center">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border-light dark:divide-border-dark">
-              {recentPayments.length > 0 ? recentPayments.map((p, i) => (
-                <tr key={i} className="hover:bg-background-light/50 dark:hover:bg-background-dark/50 transition-colors">
-                  <td className="p-4">
-                    <Link to={`/admin/finance/student/${p.student_id}`} className="text-sm font-bold text-text-main dark:text-white hover:text-primary transition-colors">
-                      {p.student_name || 'Anonymous'}
-                    </Link>
-                  </td>
-                  <td className="p-4 text-sm text-text-secondary">{p.course_name || 'General'}</td>
-                  <td className="p-4 text-sm text-text-secondary">{new Date(p.due_date).toLocaleDateString()}</td>
-                  <td className="p-4 text-sm font-black text-text-main dark:text-white text-right">${p.amount}</td>
-                  <td className="p-4 text-center">
-                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400">
-                      Completed
-                    </span>
-                  </td>
-                </tr>
-              )) : (
-                <tr>
-                  <td colSpan="5" className="p-10 text-center text-text-secondary text-sm font-medium">
-                    No recent payment data available.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
+      }
+    />
   );
 };
 

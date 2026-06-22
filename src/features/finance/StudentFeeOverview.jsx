@@ -9,6 +9,9 @@ import { queryKeys } from '../../lib/react-query/queryKeys';
 /**
  * Individual Student Fee Overview
  * Detailed financial profile for a specific student.
+ * 
+ * @deprecated Use the unified student profile page (/admin/students/:id?tab=fees)
+ * and the master-detail Finance Dashboard (/admin/finance) instead.
  */
 const StudentFeeOverview = () => {
   const { id } = useParams();

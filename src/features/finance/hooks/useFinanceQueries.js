@@ -17,7 +17,8 @@ import {
   createExpenseCategory,
   updateExpenseCategory,
   deleteExpenseCategory,
-  fetchStaffMembers
+  fetchStaffMembers,
+  fetchAccountingData
 } from '../api/finance.api';
 
 /**
@@ -36,6 +37,7 @@ export const useRevenueSummaryQuery = () => {
       return response.data?.data?.[0] || null;
     },
     enabled: !!token,
+    staleTime: 1000 * 60 * 10, // 10 minutes
   });
 };
 
@@ -55,6 +57,7 @@ export const useInstallmentsQuery = (filter = {}) => {
       return response.data?.data || [];
     },
     enabled: !!token,
+    staleTime: 1000 * 60 * 10, // 10 minutes
   });
 };
 
@@ -74,6 +77,7 @@ export const useOverdueAccountsQuery = (filter = {}) => {
       return response.data?.data || [];
     },
     enabled: !!token,
+    staleTime: 1000 * 60 * 10, // 10 minutes
   });
 };
 
@@ -93,6 +97,7 @@ export const useStudentFeeOverviewQuery = (studentId) => {
       return response.data?.data || []; // Note: changed from response.data to response.data.data based on mock structure
     },
     enabled: !!token && !!studentId,
+    staleTime: 1000 * 60 * 10, // 10 minutes
   });
 };
 
@@ -146,6 +151,7 @@ export const useMoneyTransactionsQuery = (filter = {}) => {
       return response.data?.data || [];
     },
     enabled: !!token,
+    staleTime: 1000 * 60 * 10, // 10 minutes
   });
 };
 
@@ -224,6 +230,7 @@ export const useExpenseCategoriesQuery = (filter = {}) => {
       return response.data?.data || [];
     },
     enabled: !!token,
+    staleTime: 1000 * 60 * 10, // 10 minutes
   });
 };
 
@@ -294,5 +301,25 @@ export const useStaffMembersQuery = (filter = {}) => {
       return response.data?.data || [];
     },
     enabled: !!token,
+  });
+};
+
+/**
+ * Hook for batch fetching all accounting records (fee accounts, installments, payments, adjustments).
+ */
+export const useAccountingDataQuery = () => {
+  const { token } = useAuth();
+
+  return useQuery({
+    queryKey: queryKeys.finance.accountingData,
+    queryFn: async ({ signal }) => {
+      const response = await fetchAccountingData(token, { signal });
+      if (!response.success) {
+        throw new Error(response.error?.message || response.message || 'Failed to fetch accounting data');
+      }
+      return response.data || { studentFeeAccounts: [], installments: [], payments: [], feeAdjustments: [] };
+    },
+    enabled: !!token,
+    staleTime: 1000 * 60 * 10, // 10 minutes
   });
 };

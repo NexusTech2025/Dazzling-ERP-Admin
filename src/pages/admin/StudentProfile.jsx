@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useStudentById } from '../../features/student/hooks/useStudentById';
 import { useStudentFeeOverviewQuery } from '../../features/finance/hooks/useFinanceQueries';
 import { useUpdateStudentMutation } from '../../features/student/hooks/useStudentQueries';
@@ -18,8 +18,34 @@ import AttendanceHeatmap from '../../features/student/components/profile/Attenda
 const StudentProfile = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('Overview');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState(() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam) {
+      const formatted = tabParam.charAt(0).toUpperCase() + tabParam.slice(1).toLowerCase();
+      if (['Overview', 'Attendance', 'Fees', 'Performance', 'Documents'].includes(formatted)) {
+        return formatted;
+      }
+    }
+    return 'Overview';
+  });
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
+  // Keep tab state synchronized with query parameters
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam) {
+      const formatted = tabParam.charAt(0).toUpperCase() + tabParam.slice(1).toLowerCase();
+      if (['Overview', 'Attendance', 'Fees', 'Performance', 'Documents'].includes(formatted)) {
+        setActiveTab(formatted);
+      }
+    }
+  }, [searchParams]);
+
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    setSearchParams({ tab: tab.toLowerCase() });
+  };
 
   const updateMutation = useUpdateStudentMutation();
 
@@ -125,7 +151,7 @@ const StudentProfile = () => {
       <ProfileHeader 
         student={student} 
         activeTab={activeTab} 
-        onTabChange={setActiveTab} 
+        onTabChange={handleTabChange} 
         onEdit={() => setIsEditModalOpen(true)}
       />
 

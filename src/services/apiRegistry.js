@@ -27,7 +27,8 @@ export const API_REGISTRY = {
     GET_STUDENT_FEES: 'getstudentfees',
     RECORD_PAYMENT: 'recordpayment',
     GENERATE_FEE_PLAN: 'generatefeeplan',
-    PREVIEW_FEE: 'finance_preview_fee'
+    PREVIEW_FEE: 'finance_preview_fee',
+    GET_ACCOUNTING_DATA: 'sheet_get_accounting_data'
   },
   ACADEMIC: {
     CREATE_COURSE_TYPE: 'academic_create_course_type',

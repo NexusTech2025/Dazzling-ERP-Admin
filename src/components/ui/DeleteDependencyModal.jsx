@@ -39,7 +39,7 @@ const getRedirectPath = (tableName, id, studentId) => {
     return `/admin/finance/transactions?search=${id}`;
   }
   if (tableName === 'Enrollment') {
-    return `/admin/students/${studentId || id}`;
+    return `/admin/students/${studentId || id}?tab=overview`;
   }
   if (tableName === 'Batch') {
     return `/admin/batches/${id}`;
@@ -156,12 +156,6 @@ const DeleteDependencyModal = ({
     return 'System Dependency';
   };
 
-  const handleActionClick = (path) => {
-    onClose();
-    // Navigate using browser behavior or parent handler if routing is not local
-    window.location.hash = path; // basic hash fallback or standard router navigate
-  };
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/65 backdrop-blur-sm animate-in fade-in duration-200">
       <div 
@@ -233,16 +227,16 @@ const DeleteDependencyModal = ({
                       </div>
                     </div>
 
-                    <a
-                      href={path}
-                      onClick={() => onClose()}
+                    <Link
+                      to={path}
+                      onClick={onClose}
                       className="shrink-0 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 border border-border-light dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 bg-white dark:bg-slate-950/50 hover:bg-slate-50 dark:hover:bg-slate-900 text-text-main dark:text-slate-300 hover:text-primary dark:hover:text-white rounded-lg text-xs font-bold transition-all shadow-sm"
                     >
                       {btnLabel}
                       <svg className="size-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
                       </svg>
-                    </a>
+                    </Link>
                   </div>
                 );
               })}

@@ -7,8 +7,8 @@ const API_CONFIG = {
   // Base URL from environment variables (Vite requires VITE_ prefix)
   BASE_URL: import.meta.env.VITE_API_BASE_URL || '',
   
-  // Toggle between REAL and MOCK mode
-  MODE: import.meta.env.VITE_API_MODE || 'MOCK',
+  // Always run in REAL mode
+  MODE: import.meta.env.VITE_API_MODE || 'REAL',
 
   // Global Endpoints
   ENDPOINTS: {

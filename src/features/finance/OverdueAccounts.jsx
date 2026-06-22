@@ -10,6 +10,8 @@ import { useQueryClient } from '@tanstack/react-query';
 /**
  * Overdue Accounts Page
  * Specifically tracks overdue installments requiring immediate attention.
+ * 
+ * @deprecated Merged into the unified Global Installments view (Installments.jsx).
  */
 const OverdueAccounts = () => {
   const queryClient = useQueryClient();
@@ -28,7 +30,7 @@ const OverdueAccounts = () => {
             {row.student_name.substring(0, 2).toUpperCase()}
           </div>
           <div>
-            <Link to={`/admin/finance/student/${row.student_id}`} className="font-bold text-text-main dark:text-white hover:text-primary transition-colors">
+            <Link to={`/admin/students/${row.student_id}?tab=fees`} className="font-bold text-text-main dark:text-white hover:text-primary transition-colors">
               {row.student_name}
             </Link>
             <div className="text-[10px] text-text-secondary uppercase font-bold tracking-tight">ID: {row.student_id}</div>
@@ -69,7 +71,7 @@ const OverdueAccounts = () => {
       className: 'text-center',
       cell: (row) => (
         <button 
-          onClick={() => navigate(`/admin/finance/student/${row.student_id}`)}
+          onClick={() => navigate(`/admin/students/${row.student_id}?tab=fees`)}
           className="px-3 py-1 bg-primary text-white text-[10px] font-black uppercase tracking-widest rounded-lg shadow-sm hover:bg-primary-dark transition-all active:scale-95"
         >
           View Profile

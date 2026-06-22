@@ -105,5 +105,6 @@ export const queryKeys = {
     },
     overdue: (filter = EMPTY_FILTER) => ['finance', 'overdue', { filter }],
     payments: (filter = EMPTY_FILTER) => ['finance', 'payments', { filter }],
+    accountingData: ['finance', 'accounting-data']
   }
 };

@@ -164,3 +164,16 @@ export const deleteExpenseCategory = (token, id, options = {}) =>
 export const fetchStaffMembers = (token, filter = {}, options = {}) =>
   executeAction(API_REGISTRY.DATA.QUERY, { target: 'StaffMember', where: filter }, token, options);
 
+/**
+ * Fetches all student financial ledger tables at once from the transactional accounting endpoint.
+ * 
+ * @async
+ * @function fetchAccountingData
+ * @param {string} token - Active authorization session token.
+ * @param {Object} [options={}] - HTTP configuration options (AbortController signal).
+ * @returns {Promise<Object>} Standard response containing studentFeeAccounts, installments, payments, and feeAdjustments.
+ */
+export const fetchAccountingData = (token, options = {}) =>
+  executeAction(API_REGISTRY.FINANCE.GET_ACCOUNTING_DATA, {}, token, options);
+
+
