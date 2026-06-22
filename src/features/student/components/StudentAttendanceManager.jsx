@@ -374,13 +374,13 @@ const StudentAttendanceManager = () => {
       header: 'Attendance Status',
       accessor: 'status',
       align: 'center',
-      className: 'w-60',
+      className: 'w-44',
       render: (row) => (
-        <div className={`flex items-center justify-center gap-1.5 p-1 bg-slate-100 dark:bg-black/30 border border-border-light dark:border-white/5 rounded-2xl w-fit mx-auto ${isEditingDisabled ? 'opacity-60 pointer-events-none' : ''}`}>
+        <div className={`flex items-center justify-center gap-1.5 p-1 bg-slate-100 dark:bg-black/30 border border-border-light dark:border-white/5 rounded-xl w-fit mx-auto ${isEditingDisabled ? 'opacity-60 pointer-events-none' : ''}`}>
           <button 
             disabled={isEditingDisabled}
             onClick={() => handleStatusChange(row.student_id, 'P')}
-            className={`w-12 h-12 rounded-xl text-[32px] font-black uppercase transition-all duration-200 cursor-pointer flex items-center justify-center ${
+            className={`w-9 h-9 rounded-lg text-[24px] font-black uppercase transition-all duration-200 cursor-pointer flex items-center justify-center ${
               row.status === 'P' && !row.isUnmarkedPastDate && !row.isUnmarkedCurrentDate
                 ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/20 scale-105' 
                 : 'text-text-secondary dark:text-slate-400 hover:text-text-main dark:hover:text-white'
@@ -391,7 +391,7 @@ const StudentAttendanceManager = () => {
           <button 
             disabled={isEditingDisabled}
             onClick={() => handleStatusChange(row.student_id, 'A')}
-            className={`w-12 h-12 rounded-xl text-[32px] font-black uppercase transition-all duration-200 cursor-pointer flex items-center justify-center ${
+            className={`w-9 h-9 rounded-lg text-[24px] font-black uppercase transition-all duration-200 cursor-pointer flex items-center justify-center ${
               row.status === 'A' && !row.isUnmarkedPastDate && !row.isUnmarkedCurrentDate
                 ? 'bg-rose-500 text-white shadow-md shadow-rose-500/20 scale-105' 
                 : 'text-text-secondary dark:text-slate-400 hover:text-text-main dark:hover:text-white'
@@ -402,7 +402,7 @@ const StudentAttendanceManager = () => {
           <button 
             disabled={isEditingDisabled}
             onClick={() => handleStatusChange(row.student_id, 'L')}
-            className={`w-12 h-12 rounded-xl text-[32px] font-black uppercase transition-all duration-200 cursor-pointer flex items-center justify-center ${
+            className={`w-9 h-9 rounded-lg text-[24px] font-black uppercase transition-all duration-200 cursor-pointer flex items-center justify-center ${
               row.status === 'L' && !row.isUnmarkedPastDate && !row.isUnmarkedCurrentDate
                 ? 'bg-emerald-500 text-white dark:bg-amber-500 shadow-md dark:shadow-amber-500/20 scale-105' 
                 : 'text-text-secondary dark:text-slate-400 hover:text-text-main dark:hover:text-white'
@@ -758,7 +758,7 @@ const StudentAttendanceManager = () => {
                             </div>
 
                             {/* Right Interactive Status Buttons */}
-                            <div className={`flex items-center gap-1.5 bg-slate-100/50 dark:bg-black/30 border border-border-light dark:border-white/5 p-1 rounded-2xl flex-shrink-0 ${isEditingDisabled ? 'opacity-50 pointer-events-none' : ''}`}>
+                            <div className={`flex items-center gap-1.5 bg-slate-100/50 dark:bg-black/30 border border-border-light dark:border-white/5 p-1 rounded-xl flex-shrink-0 ${isEditingDisabled ? 'opacity-50 pointer-events-none' : ''}`}>
                               {['P', 'A', 'L'].map(st => {
                                 const isActive = row.status === st;
                                 let activeClass = 'text-text-secondary hover:text-text-main dark:hover:text-white';
@@ -772,7 +772,7 @@ const StudentAttendanceManager = () => {
                                     key={st}
                                     disabled={isEditingDisabled}
                                     onClick={() => handleStatusChange(row.student_id, st)}
-                                    className={`w-10 h-10 rounded-xl text-[26px] font-black transition-all flex items-center justify-center cursor-pointer ${activeClass}`}
+                                    className={`w-9 h-9 rounded-lg text-[24px] font-black transition-all flex items-center justify-center cursor-pointer ${activeClass}`}
                                   >
                                     {st}
                                   </button>
