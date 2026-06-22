@@ -155,25 +155,10 @@ export const useDeleteStudentMutation = () => {
       try {
         const response = await removeStudent(token, id, options);
         console.log('[useDeleteStudentMutation] API Response:', response);
-        
-        if (!response) {
-          throw new Error('No response received from the server.');
-        }
-        
-        if (response.success === false || !response.success) {
-          const errorMessage = response.error?.message || response.message || `Failed to delete student with ID: ${id} on the database.`;
-          throw new Error(errorMessage);
-        }
-        
         return response;
       } catch (error) {
-        const finalMessage = error.response?.data?.error?.message 
-          || error.response?.data?.message 
-          || error.message 
-          || `Failed to delete student with ID: ${id} due to a network or server issue.`;
-        
         console.error('[useDeleteStudentMutation] Error caught in mutationFn:', error);
-        throw new Error(finalMessage);
+        throw error;
       }
     },
     onSuccess: (response, variables) => {

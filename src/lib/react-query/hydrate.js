@@ -248,6 +248,8 @@ export function normalizeRecord(entityName, data) {
   return Array.isArray(data) ? data.map(normalizer) : normalizer(data);
 }
 
+const validatedRecords = new WeakSet();
+
 /**
  * Global router for record relational hydration (reads).
  */
@@ -263,7 +265,10 @@ export function hydrateRecord(entityName, data, queryClient) {
   if (hydrated) {
     const recordsToValidate = Array.isArray(hydrated) ? hydrated : [hydrated];
     for (const record of recordsToValidate) {
-      validateRecordSchema(entityName, record, { failMode: 'fast', context: 'read' });
+      if (record && typeof record === 'object' && !validatedRecords.has(record)) {
+        validateRecordSchema(entityName, record, { failMode: 'lazy', context: 'read' });
+        validatedRecords.add(record);
+      }
     }
   }
 

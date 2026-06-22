@@ -32,6 +32,9 @@ export const executeAction = async (actionPath, payload = {}, token = null, opti
   };
 
   if (token) requestBody.token = token;
+  if (options.actionOptions) {
+    requestBody.options = options.actionOptions;
+  }
 
   // --- Centralized Request Logger ---
   console.groupCollapsed(`🚀 API Request: [${actionPath}] -> ${backendActionString}`);

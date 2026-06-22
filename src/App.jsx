@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import AppRoutes from './routes/AppRoutes';
+import AlertContainer from './components/ui/AlertContainer';
 import './App.css';
 
 // Initialize Query Client
@@ -37,6 +38,7 @@ function App() {
         >
           <AuthProvider>
             <AppRoutes />
+            <AlertContainer />
           </AuthProvider>
         </Router>
       </ThemeProvider>

@@ -66,7 +66,7 @@ export const API_REGISTRY = {
     REPAIR_TABLE: 'admin_repair_table',
     PEEK_DATA: 'admin_peek_data',
     BOOTSTRAP: 'admin_bootstrap',
-    INIT_ERP: 'init_erp'
+    SHEET_BATCH_READ: 'sheet_batch_read'
   },
   BATCH: {
     CREATE: 'academic_create_batch',

@@ -27,6 +27,21 @@ export const packageItemSchema = {
       required: true,
       description: 'Foreign key pointing to the target entity (course_id/subject_id).'
     },
+    __tx_id: {
+      type: 'string',
+      required: false,
+      description: 'Transaction ID for sync tracing.'
+    },
+    __tx_status: {
+      type: 'string',
+      required: false,
+      description: 'Transaction status for sync tracing.'
+    },
+    __created_at: {
+      type: 'string',
+      required: false,
+      description: 'Timestamp when the record was created in the system.'
+    },
 
     // Relations / Resolved Fields
     package: {

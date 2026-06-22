@@ -1,4 +1,5 @@
 import { getSchema } from './schemaRegistry.js';
+import { alertStore } from './alertStore.js';
 
 export class SchemaValidationError extends Error {
   constructor(message, entityName, errors, record) {
@@ -131,6 +132,16 @@ export function validateRecordSchema(entityName, record, options = {}) {
       console.info(`  ↳ Description: ${err.description || 'No description provided.'}`);
     });
     console.groupEnd();
+
+    // Trigger non-blocking toast warning alert
+    const fieldsStr = errors.map(e => `- [${e.field}]: ${e.message}`).join('\n');
+    const description = `The following schema violations were detected during data operations:\n\n${fieldsStr}\n\nRecord details:\n${JSON.stringify(record, null, 2)}`;
+    
+    alertStore.addAlert({
+      variant: 'warning',
+      title: `Schema Violation: ${entityName.toUpperCase()}`,
+      description
+    });
 
     if (failMode === 'fast') {
       throw new SchemaValidationError(summaryMessage, entityName, errors, record);

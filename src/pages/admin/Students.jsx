@@ -13,6 +13,7 @@ import RefreshButton from '../../components/ui/btn/RefreshButton';
 import StudentDetailModal from '../../features/student/components/StudentDetailModal';
 import StudentEditModal from '../../features/student/components/StudentEditModal';
 import StudentCard from '../../features/student/components/StudentCard';
+import DeleteDependencyModal, { parseDeleteBlockers } from '../../components/ui/DeleteDependencyModal';
 import useSelection from '../../hooks/useSelection';
 import useDeleteManyMutation from '../../hooks/useDeleteManyMutation';
 import SelectionActionBar from '../../components/ui/v2/SelectionActionBar';
@@ -35,6 +36,10 @@ const Students = () => {
 
   const [selectedStudentForView, setSelectedStudentForView] = useState(null);
   const [selectedStudentForEdit, setSelectedStudentForEdit] = useState(null);
+  const [dependencyViolations, setDependencyViolations] = useState([]);
+  const [isDependencyModalOpen, setIsDependencyModalOpen] = useState(false);
+  const [blockedParentId, setBlockedParentId] = useState('');
+  const [blockedParentName, setBlockedParentName] = useState('');
 
   // 1. Fetch raw data from server
   const { data: students = [], isLoading, isFetching, error } = useStudentsQuery();
@@ -113,6 +118,18 @@ const Students = () => {
       },
       onError: (err) => {
         console.error('Delete Many Students Error:', err);
+        const rawErr = err.rawBackendError;
+        if (rawErr?.details?.failed) {
+          const parsedBlockers = parseDeleteBlockers(rawErr, 'Student');
+          if (parsedBlockers.length > 0) {
+            setDependencyViolations(parsedBlockers);
+            setBlockedParentId('Multiple Students');
+            setBlockedParentName(`${Object.keys(rawErr.details.failed).length} selected profiles`);
+            setIsDependencyModalOpen(true);
+            setDeleteModal(prev => ({ ...prev, isOpen: false }));
+            return;
+          }
+        }
         setDeleteModal(prev => ({
           ...prev,
           status: 'error',
@@ -140,6 +157,18 @@ const Students = () => {
       },
       onError: (err) => {
         console.error('Delete Student Error:', err);
+        const rawErr = err.rawBackendError;
+        if (rawErr?.details?.violations) {
+          const parsedBlockers = parseDeleteBlockers(rawErr, 'Student');
+          if (parsedBlockers.length > 0) {
+            setDependencyViolations(parsedBlockers);
+            setBlockedParentId(id);
+            setBlockedParentName(deleteModal.name || 'Rahul Sharma');
+            setIsDependencyModalOpen(true);
+            setDeleteModal(prev => ({ ...prev, isOpen: false }));
+            return;
+          }
+        }
         setDeleteModal(prev => ({
           ...prev,
           status: 'error',
@@ -424,6 +453,22 @@ const Students = () => {
         onClose={() => setSelectedStudentForEdit(null)}
         student={selectedStudentForEdit}
         onSave={handleSaveStudent}
+      />
+
+      <DeleteDependencyModal
+        isOpen={isDependencyModalOpen}
+        onClose={() => {
+          setIsDependencyModalOpen(false);
+          setDependencyViolations([]);
+        }}
+        errorPayload={dependencyViolations}
+        parentId={blockedParentId}
+        parentName={blockedParentName}
+        onResolve={() => {
+          setIsDependencyModalOpen(false);
+          setDependencyViolations([]);
+          navigate('/admin/finance');
+        }}
       />
     </>
   );

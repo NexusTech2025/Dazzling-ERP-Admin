@@ -58,6 +58,21 @@ export const packageSchema = {
       choices: ['active', 'inactive', 'draft'],
       description: 'The operational status of the package. Must be active, inactive, or draft.'
     },
+    __tx_id: {
+      type: 'string',
+      required: false,
+      description: 'Transaction ID for sync tracing.'
+    },
+    __tx_status: {
+      type: 'string',
+      required: false,
+      description: 'Transaction status for sync tracing.'
+    },
+    __created_at: {
+      type: 'string',
+      required: false,
+      description: 'Timestamp when the record was created in the system.'
+    },
 
     // Raw database relations (hasMany/hasOne at root level)
     packageitems: {

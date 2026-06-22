@@ -27,6 +27,21 @@ export const branchSchema = {
       choices: ['active', 'inactive'],
       description: 'The operational status of the branch.'
     },
+    __tx_id: {
+      type: 'string',
+      required: false,
+      description: 'Transaction ID for sync tracing.'
+    },
+    __tx_status: {
+      type: 'string',
+      required: false,
+      description: 'Transaction status for sync tracing.'
+    },
+    __created_at: {
+      type: 'string',
+      required: false,
+      description: 'Timestamp when the record was created in the system.'
+    },
 
     // Relations
     batches: {

@@ -7,6 +7,7 @@ import SegmentedControl from '../../components/ui/v2/SegmentedControl';
 import KeyValuePair from '../../components/ui/v2/KeyValuePair';
 import Badge from '../../components/ui/Badge';
 import ProgressStepper from '../../features/student/registration/components/ProgressStepper';
+import DeleteDependencyModal from '../../components/ui/DeleteDependencyModal';
 
 /**
  * TestPrototype: High-Fidelity Step 2 Academic Enrollment Prototype.
@@ -14,8 +15,27 @@ import ProgressStepper from '../../features/student/registration/components/Prog
  */
 const TestPrototype = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [isDeleteBlockedOpen, setIsDeleteBlockedOpen] = useState(false);
   const [programType, setProgramType] = useState('package'); // 'package' or 'batch'
   const [categoryFilter, setCategoryFilter] = useState('All'); // 'All', 'Academic', 'Computer', 'Competitive', 'Foundation'
+  
+  const dummyBlockers = [
+    {
+      blockerTable: 'Enrollment',
+      blockerId: 'ENR-9999',
+      detailLabel: 'Full Stack Web Development'
+    },
+    {
+      blockerTable: 'Payment',
+      blockerId: 'PAY-K3J4H5L',
+      detailLabel: '$450.00 Installment'
+    },
+    {
+      blockerTable: 'StudentFeeAccount',
+      blockerId: 'ACT-8899',
+      detailLabel: 'Personal Ledger'
+    }
+  ];
   
   // Selection States
   const [selectedItems, setSelectedItems] = useState([
@@ -104,9 +124,19 @@ const TestPrototype = () => {
     <div className="p-8 space-y-8 pb-40 relative min-h-screen bg-background-light dark:bg-background-dark text-text-main dark:text-white font-sans">
       {/* Wizard Progress Header */}
       <header className="space-y-4">
-        <div>
-          <h1 className="text-3xl font-black text-text-main dark:text-white">Student Registration Wizard</h1>
-          <p className="text-text-secondary mt-1">Multi-step relational registration profile builder.</p>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-black text-text-main dark:text-white">Student Registration Wizard</h1>
+            <p className="text-text-secondary mt-1">Multi-step relational registration profile builder.</p>
+          </div>
+          <Button 
+            variant="outlined" 
+            startIcon="warning"
+            className="border-amber-500/40 hover:border-amber-500 text-amber-500 hover:bg-amber-500/10 shrink-0"
+            onClick={() => setIsDeleteBlockedOpen(true)}
+          >
+            Demo: Delete Blocker Modal
+          </Button>
         </div>
         
         {/* Stepper */}
@@ -484,6 +514,18 @@ const TestPrototype = () => {
           </Card>
         </div>
       )}
+
+      <DeleteDependencyModal
+        isOpen={isDeleteBlockedOpen}
+        onClose={() => setIsDeleteBlockedOpen(false)}
+        errorPayload={dummyBlockers}
+        parentId="STU-001"
+        parentName="Rahul Sharma"
+        onResolve={() => {
+          alert('Resolve Dependencies button clicked inside the Demo modal!');
+          setIsDeleteBlockedOpen(false);
+        }}
+      />
     </div>
   );
 };

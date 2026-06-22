@@ -79,6 +79,21 @@ export const batchSchema = {
       required: false,
       description: 'Record modification timestamp.'
     },
+    __tx_id: {
+      type: 'string',
+      required: false,
+      description: 'Transaction ID for sync tracing.'
+    },
+    __tx_status: {
+      type: 'string',
+      required: false,
+      description: 'Transaction status for sync tracing.'
+    },
+    __created_at: {
+      type: 'string',
+      required: false,
+      description: 'Timestamp when the record was created in the system.'
+    },
 
     // UI-Derived and Normalization Mapped Fields
     course_name: {

@@ -43,33 +43,58 @@ export const useErpHydration = () => {
 
   // 📋 Hydration Configuration Mapping: 
   // Maps API target names (singular schema names for request) 
-  // to their pluralized response keys and Query Key factories.
+  // to their cache Query Key factories, spreadsheet category, and sheet name.
   const HYDRATION_CONFIG = {
-    'Course': { query_key: queryKeys.course, response_key: 'courses' },
-    'Teacher': { query_key: queryKeys.teacher, response_key: 'teachers' },
-    'Student': { query_key: queryKeys.student, response_key: 'students' },
-    'Batch': { query_key: queryKeys.batch, response_key: 'batches' },
-    'Branch': { query_key: queryKeys.branch, response_key: 'branchs' },
-    'Package': { query_key: queryKeys.course.package, response_key: 'packages' },
-    'PackageItem': { query_key: queryKeys.course.packageItem, response_key: 'packageitems' },
-    'PackagePerk': { query_key: queryKeys.course.packagePerk, response_key: 'packageperks' },
+    'Course': { query_key: queryKeys.course, category: 'Academic', sheet: 'Course' },
+    'Teacher': { query_key: queryKeys.teacher, category: 'Staff', sheet: 'Teacher' },
+    'Student': { query_key: queryKeys.student, category: 'Students', sheet: 'Student' },
+    'Batch': { query_key: queryKeys.batch, category: 'Academic', sheet: 'Batch' },
+    'Branch': { query_key: queryKeys.branch, category: 'Core', sheet: 'Branch' },
+    'Package': { query_key: queryKeys.course.package, category: 'Academic', sheet: 'Package' },
+    'PackageItem': { query_key: queryKeys.course.packageItem, category: 'Academic', sheet: 'PackageItem' },
+    'PackagePerk': { query_key: queryKeys.course.packagePerk, category: 'Academic', sheet: 'PackagePerk' },
   };
 
   const HYDRATION_TARGETS = Object.keys(HYDRATION_CONFIG);
 
   return useQuery({
-    queryKey: ['init_erp', { targets: HYDRATION_TARGETS }],
+    queryKey: ['sheet_batch_read', { targets: HYDRATION_TARGETS }],
     queryFn: async () => {
-      console.log('🚀 Starting ERP Hydration with targets:', HYDRATION_TARGETS);
+      console.log('🚀 Starting ERP Hydration via sheet_batch_read with targets:', HYDRATION_TARGETS);
+
+      const payload = [
+        {
+          spreadsheetId: 'Students',
+          sheets: ['Student']
+        },
+        {
+          spreadsheetId: 'Academic',
+          sheets: ['Course', 'Batch', 'Package', 'PackageItem', 'PackagePerk']
+        },
+        {
+          spreadsheetId: 'Staff',
+          sheets: ['Teacher']
+        },
+        {
+          spreadsheetId: 'Core',
+          sheets: ['Branch']
+        }
+      ];
 
       const response = await apiClient.executeAction(
-        API_REGISTRY.ADMIN.INIT_ERP,
-        { targets: HYDRATION_TARGETS },
-        token
+        API_REGISTRY.ADMIN.SHEET_BATCH_READ,
+        payload,
+        token,
+        {
+          actionOptions: {
+            responseKey: 'NAME',
+            driverType: 'ADVANCED'
+          }
+        }
       );
 
       if (!response.success) {
-        throw new Error(response.message || 'Failed to initialize ERP data');
+        throw new Error(response.message || 'Failed to initialize ERP data via sheet_batch_read');
       }
 
       const data = response.data || {};
@@ -80,14 +105,14 @@ export const useErpHydration = () => {
         const config = HYDRATION_CONFIG[targetName];
         if (!config) return;
 
-        const responseKey = config.response_key;
-        const result = data[responseKey];
+        const { category, sheet } = config;
+        const result = data[category]?.[sheet];
 
-        console.log(`🔍 Inspecting hydration for ${targetName} (Response Key: ${responseKey})...`);
+        console.log(`🔍 Inspecting hydration for ${targetName} (Category: ${category}, Sheet: ${sheet})...`);
 
-        if (result && Array.isArray(result.data)) {
+        if (result && Array.isArray(result)) {
           const strategy = getStrategy(targetName);
-          const records = strategy.normalize(result.data, queryClient);
+          const records = strategy.normalize(result, queryClient);
 
           console.log(`💧 Hydrating ${targetName}: ${records.length} records found.`);
 
@@ -103,12 +128,10 @@ export const useErpHydration = () => {
 
           // Mirror the resolveList pattern in cacheHelper.js (setQueryData + setQueryDefaults)
           // so the seeded entry is treated as fresh by any hook with staleTime: Infinity.
-          // Without setQueryDefaults, the entry has no staleTime and is considered stale
-          // immediately, triggering an unnecessary network refetch on first mount.
           queryClient.setQueryData(listKey, records, { updatedAt: now });
           queryClient.setQueryDefaults(listKey, { staleTime: Infinity, gcTime: Infinity });
         } else {
-          console.warn(`⚠️ No records found in response for key: ${responseKey}. Data structure:`, result);
+          console.warn(`⚠️ No records found in response for Category: ${category}, Sheet: ${sheet}. Data structure:`, result);
         }
       });
 
