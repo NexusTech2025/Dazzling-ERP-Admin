@@ -6,6 +6,9 @@ const Header = ({ onMenuClick }) => {
   const { user } = useAuth();
   const { theme, toggleTheme } = useTheme();
 
+  const appVersion = import.meta.env.VITE_APP_VERSION || '0.0.1';
+  const appStage = import.meta.env.VITE_APP_STAGE || 'dev';
+
   return (
     <header className="flex items-center justify-between whitespace-nowrap border-b border-border-light bg-surface-light dark:bg-surface-dark dark:border-border-dark px-4 lg:px-10 py-3 sticky top-0 z-50">
       <div className="flex items-center gap-4 lg:gap-8">
@@ -21,7 +24,12 @@ const Header = ({ onMenuClick }) => {
           <div className="size-8 text-primary flex items-center justify-center">
             <span className="material-symbols-outlined text-4xl">school</span>
           </div>
-          <h2 className="text-text-main dark:text-white text-xl font-bold leading-tight tracking-[-0.015em]">Dazzling ERP</h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-text-main dark:text-white text-xl font-bold leading-tight tracking-[-0.015em]">Dazzling ERP</h2>
+            <span className="bg-primary/10 dark:bg-primary/20 text-primary border border-primary/20 dark:border-primary/30 px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase">
+              v{appVersion} • {appStage}
+            </span>
+          </div>
         </div>
         
         {/* Search Bar */}
