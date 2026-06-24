@@ -65,10 +65,8 @@ const CourseForm = ({
   });
 
   const [isCreatingType, setIsCreatingType] = useState(false);
-  const generateSegmentId = () => "SEG-" + Date.now().toString().slice(-6);
 
   const [newTypeData, setNewTypeData] = useState({
-    segment_id: generateSegmentId(),
     segment_name: '',
     entity_label: 'Course',
     description: ''
@@ -129,7 +127,6 @@ const CourseForm = ({
           setFormData(prev => ({ ...prev, segment_id: res.data.segment_id }));
           setIsCreatingType(false);
           setNewTypeData({
-            segment_id: generateSegmentId(),
             segment_name: '',
             entity_label: 'Course',
             description: ''
@@ -161,7 +158,7 @@ const CourseForm = ({
 
     // 2. Assemble surgical payload matching full_schema.json
     const alignedPayload = {
-      course_id: formData.course_id || `CRS-${Date.now().toString().slice(-6)}`,
+      ...(isEditMode && { course_id: formData.course_id }),
       segment_id: formData.segment_id,
       entity_type: formData.entity_type,
       name: formData.name,

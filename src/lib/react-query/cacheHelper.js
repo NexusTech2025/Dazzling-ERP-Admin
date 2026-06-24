@@ -1,7 +1,9 @@
 import { queryKeys } from './queryKeys.js';
-import { hasSchema } from './schemaRegistry.js';
+import { hasSchema, getSchema } from './schemaRegistry.js';
 import { validateRecordSchema } from './validationEngine.js';
 import { normalizeRecord } from './hydrate.js';
+import { alertStore } from './alertStore.js';
+
 
 export class CacheLayerError extends Error {
   constructor(message, context = {}) {
@@ -306,11 +308,60 @@ export async function resolveList(queryClient, entity, filter = {}, fetchFn, opt
       // This validates each record against the schema registry using 'lazy' failMode
       // and 'read' context, which aggregates validation violations to the developer
       // console as non-blocking warnings, preventing a broken application shell.
+      const failedViolationsList = [];
       if (hasSchema(entity)) {
+        const schema = getSchema(entity);
         data.forEach(record => {
-          validateRecordSchema(entity, record, { failMode: 'lazy', context: 'read' });
+          // Run validation engine to keep developer console logs active
+          validateRecordSchema(entity, record, {
+            failMode: 'lazy',
+            context: 'read',
+            suppressAlert: true
+          });
+
+          // Check for Unknown Fields
+          Object.keys(record).forEach(key => {
+            if (!schema.fields[key]) {
+              failedViolationsList.push({ field: key, type: 'unknown_field' });
+            }
+          });
+
+          // Check for Field Policy Rules
+          Object.entries(schema.fields).forEach(([fieldName, rules]) => {
+            const value = record[fieldName];
+            const isPresent = fieldName in record;
+
+            if (rules.required && (!isPresent || value === null || value === undefined || value === '')) {
+              failedViolationsList.push({ field: fieldName, type: 'required' });
+            } else if (isPresent && value !== null && value !== undefined) {
+              // Simple type verification hook
+              let valid = true;
+              if (rules.type === 'string' && typeof value !== 'string') valid = false;
+              if (rules.type === 'number' && typeof value !== 'number') valid = false;
+              if (!valid) failedViolationsList.push({ field: fieldName, type: 'type_mismatch' });
+              
+              // Choices verification hook
+              if (rules.choices && !rules.choices.includes(value)) {
+                failedViolationsList.push({ field: fieldName, type: 'invalid_choice' });
+              }
+            }
+          });
         });
       }
+
+      // Fire consolidated alerts based on collected data points
+      if (failedViolationsList.length > 0) {
+        failedViolationsList.forEach(violation => {
+          alertStore.addAlert({
+            variant: 'warning',
+            title: `Bulk Schema Violation: ${entity.toUpperCase()}`,
+            signature: `${entity}:bulk_list_failure`, // Unified component wrapper key
+            metaField: violation.field,
+            metaType: violation.type
+          });
+        });
+      }
+
 
       // Update centralized list cache key
       const targetKey = config.listKey(filter);

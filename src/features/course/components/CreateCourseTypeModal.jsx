@@ -6,11 +6,7 @@ import { ApiError } from '../../../services/ApiError';
 const CreateCourseTypeModal = ({ isOpen, onClose, onSuccess }) => {
   const { token } = useAuth();
   
-  // Generate a unique ID on component initialization or when the modal opens
-  const generateId = () => "SEG-" + Date.now().toString().slice(-6);
-
   const [formData, setFormData] = useState({
-    segment_id: generateId(),
     segment_name: '',
     entity_label: 'Subject', 
     description: ''
@@ -32,9 +28,7 @@ const CreateCourseTypeModal = ({ isOpen, onClose, onSuccess }) => {
       const response = await executeAction('ACADEMIC.CREATE_COURSE_TYPE', formData, token);
       if (response.success) {
         onSuccess?.(response.data);
-        // Reset with a fresh ID for the next potential creation
         setFormData({ 
-          segment_id: generateId(), 
           segment_name: '', 
           entity_label: 'Subject', 
           description: '' 
@@ -74,9 +68,9 @@ const CreateCourseTypeModal = ({ isOpen, onClose, onSuccess }) => {
                 <label className="block text-[10px] font-black text-text-secondary uppercase tracking-widest mb-1.5 ml-1">
                   System Generated ID
                 </label>
-                <div className="w-full bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm font-mono font-bold text-primary flex items-center gap-2">
+                <div className="w-full bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-[11px] font-mono font-bold text-primary/70 flex items-center gap-2">
                   <span className="material-symbols-outlined text-sm">fingerprint</span>
-                  {formData.segment_id}
+                  Auto-assigned by database
                 </div>
               </div>
 

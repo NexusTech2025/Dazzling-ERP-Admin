@@ -1,10 +1,10 @@
 import React, { useState, useMemo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { 
-  useCourseTypesQuery, 
+import {
+  useCourseTypesQuery,
   useCreateCourseTypeMutation,
   useUpdateCourseTypeMutation,
-  useDeleteCourseTypeMutation 
+  useDeleteCourseTypeMutation
 } from './hooks/useCourseQueries';
 import useSelection from '../../hooks/useSelection';
 import useDeleteManyMutation from '../../hooks/useDeleteManyMutation';
@@ -39,7 +39,7 @@ const CourseTypes = () => {
     });
   };
   const { data: courseTypes = [], isLoading: isLoadingTypes, error: typesError } = useCourseTypesQuery();
-  
+
   const createTypeMutation = useCreateCourseTypeMutation();
   const updateTypeMutation = useUpdateCourseTypeMutation();
   const deleteTypeMutation = useDeleteCourseTypeMutation();
@@ -65,10 +65,7 @@ const CourseTypes = () => {
   const [validationError, setValidationError] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
 
-  const generateSegmentId = () => "SEG-" + Date.now().toString().slice(-6);
-
   const [formData, setFormData] = useState({
-    segment_id: generateSegmentId(),
     segment_name: '',
     entity_label: 'Course',
     description: ''
@@ -76,7 +73,6 @@ const CourseTypes = () => {
 
   const resetForm = () => {
     setFormData({
-      segment_id: generateSegmentId(),
       segment_name: '',
       entity_label: 'Course',
       description: ''
@@ -145,7 +141,6 @@ const CourseTypes = () => {
   const handleEditClick = (row) => {
     setEditingType(row);
     setFormData({
-      segment_id: row.segment_id,
       segment_name: row.segment_name,
       entity_label: row.entity_label || 'Course',
       description: row.description || ''
@@ -311,16 +306,15 @@ const CourseTypes = () => {
   ];
 
   if (isLoadingTypes) return <LoadingState message="Loading categories list..." />;
-  if (typesError) return <ErrorState message={typesError.message} onRetry={() => queryClient.invalidateQueries({ queryKey: queryKeys.course.type.all })} />;  return (
+  if (typesError) return <ErrorState message={typesError.message} onRetry={() => queryClient.invalidateQueries({ queryKey: queryKeys.course.type.all })} />; return (
     <MainLayout
       onBodyScroll={handleBodyScroll}
       header={
         <div
-          className={`absolute top-0 left-0 right-0 z-50 transition-all duration-300 w-full ${
-            isSticky
+          className={`absolute top-0 left-0 right-0 z-50 transition-all duration-300 w-full ${isSticky
               ? 'opacity-100 translate-y-0 shadow-md pointer-events-auto'
               : 'opacity-0 -translate-y-4 pointer-events-none'
-          }`}
+            }`}
         >
           <div className="bg-surface-light/95 dark:bg-surface-dark/95 backdrop-blur-md border-b border-border-light dark:border-border-dark px-4 lg:px-6 py-3 flex items-center justify-between rounded-b-xl">
             <div className="flex items-center gap-2">
@@ -346,7 +340,7 @@ const CourseTypes = () => {
                 Define and manage segments, labels, and metadata structures for curriculum cataloging.
               </p>
             </div>
-            
+
             <button
               onClick={() => {
                 if (showCreateForm) {
@@ -452,9 +446,9 @@ const CourseTypes = () => {
             {showCreateForm && (
               <div className="lg:col-span-5 animate-in fade-in slide-in-from-right-4 duration-300">
                 <form onSubmit={handleSubmit}>
-                  <FormSection 
-                    title={editingType ? "Edit Category" : "Create Category"} 
-                    icon={editingType ? "edit_square" : "add_box"} 
+                  <FormSection
+                    title={editingType ? "Edit Category" : "Create Category"}
+                    icon={editingType ? "edit_square" : "add_box"}
                     className="p-0"
                   >
                     <div className="col-span-1 md:col-span-2 space-y-4">

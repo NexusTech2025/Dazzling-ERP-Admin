@@ -4,8 +4,8 @@ import AlertItem from './AlertItem';
 
 const AlertContainer = () => {
   const { alerts, removeAlert } = useAlerts();
-  const [isCollapsed, setIsCollapsed] = useState(false);
-  const [isHidden, setIsHidden] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(true);
+  const [isHidden, setIsHidden] = useState(true);
   const [headerHeight, setHeaderHeight] = useState(64); // Fallback height
   const prevAlertsCount = useRef(alerts.length);
 
