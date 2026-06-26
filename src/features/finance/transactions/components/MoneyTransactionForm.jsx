@@ -1,4 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { useAuth } from '../../../../context/AuthContextCore';
+import { apiClient } from '../../../../services/apiClient';
+import { API_REGISTRY } from '../../../../services/apiRegistry';
 import { useStudentsQuery } from '../../../student/hooks/useStudentQueries';
 import { useTeachersQuery } from '../../../teacher/hooks/useTeacherQueries';
 import { 
@@ -22,6 +26,22 @@ const PAYMENT_METHODS = [
 ];
 
 const MoneyTransactionForm = ({ isOpen, onClose, initialData }) => {
+  const { token, user } = useAuth();
+
+  // Query Users for the System Handler (by) dropdown
+  const { data: users = [] } = useQuery({
+    queryKey: ['users', 'list'],
+    queryFn: async () => {
+      const response = await apiClient.executeAction(
+        API_REGISTRY.DATA.QUERY,
+        { target: 'User', where: { status: 'active' } },
+        token
+      );
+      return response.data?.data || [];
+    },
+    enabled: !!token
+  });
+
   const queryParams = { status: 'active' };
   const { data: students = [] } = useStudentsQuery(queryParams);
   const { data: teachers = [] } = useTeachersQuery(queryParams);
@@ -40,6 +60,9 @@ const MoneyTransactionForm = ({ isOpen, onClose, initialData }) => {
   const [paymentReference, setPaymentReference] = useState('');
   const [notes, setNotes] = useState('');
   const [remarks, setRemarks] = useState('');
+  const [by, setBy] = useState('');
+  const [reconciliationStatus, setReconciliationStatus] = useState('unreconciled');
+  const [attachmentDriveId, setAttachmentDriveId] = useState('');
 
   // Polymorphic Party State
   const [partyType, setPartyType] = useState('student'); // 'student', 'teacher', 'staff', 'external'
@@ -63,6 +86,9 @@ const MoneyTransactionForm = ({ isOpen, onClose, initialData }) => {
       setPartyType(initialData.party_type || 'external');
       setPartyId(initialData.party_id || '');
       setPartyName(initialData.party_name || '');
+      setBy(initialData.by || '');
+      setReconciliationStatus(initialData.reconciliation_status || 'unreconciled');
+      setAttachmentDriveId(initialData.attachment_drive_id || '');
     } else {
       setType('in');
       setAmount('');
@@ -75,10 +101,13 @@ const MoneyTransactionForm = ({ isOpen, onClose, initialData }) => {
       setPartyType('student');
       setPartyId('');
       setPartyName('');
+      setBy(user?.username || '');
+      setReconciliationStatus('unreconciled');
+      setAttachmentDriveId('');
     }
     setValidationErrors({});
     setSubmitError('');
-  }, [initialData, isOpen]);
+  }, [initialData, isOpen, user]);
 
   // Restrict categories based on type
   const filteredCategories = categories.filter(cat => 
@@ -88,6 +117,11 @@ const MoneyTransactionForm = ({ isOpen, onClose, initialData }) => {
   const categoryOptions = filteredCategories.map(cat => ({
     label: cat.name,
     value: cat.category_id
+  }));
+
+  const userOptions = users.map(u => ({
+    label: u.username,
+    value: u.username
   }));
 
   // Party Options mapping
@@ -142,6 +176,9 @@ const MoneyTransactionForm = ({ isOpen, onClose, initialData }) => {
     if (!categoryId) {
       errors.categoryId = 'Category is required';
     }
+    if (!by) {
+      errors.by = 'Handler signature is required';
+    }
     if (partyType !== 'external' && !partyId) {
       errors.partyId = `Please select a ${partyType}`;
     }
@@ -162,15 +199,20 @@ const MoneyTransactionForm = ({ isOpen, onClose, initialData }) => {
     const payload = {
       amount: parseFloat(amount),
       type,
+      by: by.trim(),
+      from_to: partyName.trim(),
       category_id: categoryId,
       payment_method: paymentMethod,
       payment_reference: paymentReference.trim() || null,
+      attachment_drive_id: attachmentDriveId.trim() || null,
+      reconciliation_status: reconciliationStatus,
       party_type: partyType,
       party_id: partyType === 'external' ? null : partyId,
       party_name: partyName.trim(),
       transaction_date: transactionDate,
       notes: notes.trim() || null,
-      remarks: remarks.trim() || null
+      remarks: remarks.trim() || null,
+      created_by: user?.username || null
     };
 
     try {
@@ -307,10 +349,36 @@ const MoneyTransactionForm = ({ isOpen, onClose, initialData }) => {
             </FormField>
           </div>
 
+          {/* System Handler and Reconciliation Status */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField label={type === 'in' ? 'Received By' : 'Sent By'} required error={validationErrors.by}>
+              <SelectInput 
+                options={userOptions}
+                value={by}
+                onChange={setBy}
+                placeholder="Select handler..."
+                searchable
+                leftIcon="assignment_ind"
+              />
+            </FormField>
+
+            <FormField label="Reconciliation Status" required>
+              <SelectInput 
+                options={[
+                  { label: 'Unreconciled', value: 'unreconciled' },
+                  { label: 'Matched', value: 'matched' },
+                  { label: 'Discrepancy', value: 'discrepancy' }
+                ]}
+                value={reconciliationStatus}
+                onChange={setReconciliationStatus}
+              />
+            </FormField>
+          </div>
+
           {/* Counterparty section */}
           <div className="space-y-3">
             <label className="text-xs font-bold uppercase tracking-wider text-text-secondary pl-1">
-              Counterparty Information
+              Transaction For
             </label>
 
             {/* Tabs */}
@@ -339,7 +407,7 @@ const MoneyTransactionForm = ({ isOpen, onClose, initialData }) => {
             {/* Sub-inputs based on Tab selection */}
             <div className="p-4 rounded-xl bg-slate-50/50 dark:bg-slate-900/10 border border-dashed border-border-light dark:border-border-dark">
               {partyType === 'student' && (
-                <FormField label="Select Student" required error={validationErrors.partyId}>
+                <FormField label={type === 'in' ? 'Sender' : 'Receiver'} required error={validationErrors.partyId}>
                   <SelectInput 
                     options={studentOptions}
                     value={partyId}
@@ -351,7 +419,7 @@ const MoneyTransactionForm = ({ isOpen, onClose, initialData }) => {
               )}
 
               {partyType === 'teacher' && (
-                <FormField label="Select Teacher" required error={validationErrors.partyId}>
+                <FormField label={type === 'in' ? 'Sender' : 'Receiver'} required error={validationErrors.partyId}>
                   <SelectInput 
                     options={teacherOptions}
                     value={partyId}
@@ -363,7 +431,7 @@ const MoneyTransactionForm = ({ isOpen, onClose, initialData }) => {
               )}
 
               {partyType === 'staff' && (
-                <FormField label="Select Staff Member" required error={validationErrors.partyId}>
+                <FormField label={type === 'in' ? 'Sender' : 'Receiver'} required error={validationErrors.partyId}>
                   <SelectInput 
                     options={staffOptions}
                     value={partyId}
@@ -375,7 +443,7 @@ const MoneyTransactionForm = ({ isOpen, onClose, initialData }) => {
               )}
 
               {partyType === 'external' && (
-                <FormField label="Payer/Payee Name" required error={validationErrors.partyName}>
+                <FormField label={type === 'in' ? 'Sender Name' : 'Receiver Name'} required error={validationErrors.partyName}>
                   <TextInput 
                     value={partyName}
                     onChange={(e) => setPartyName(e.target.value)}
@@ -387,14 +455,14 @@ const MoneyTransactionForm = ({ isOpen, onClose, initialData }) => {
               {partyType !== 'external' && partyName && (
                 <div className="mt-2 text-xs font-semibold text-primary flex items-center gap-1.5">
                   <span className="material-symbols-outlined text-sm">person</span>
-                  Selected Name: {partyName} (ID: {partyId})
+                  Selected {type === 'in' ? 'Sender' : 'Receiver'}: {partyName} (ID: {partyId})
                 </div>
               )}
             </div>
           </div>
 
           {/* Reference # and Remarks */}
-          <div className="grid grid-cols-1 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField label="Reference / Check #">
               <TextInput 
                 value={paymentReference}
@@ -403,6 +471,17 @@ const MoneyTransactionForm = ({ isOpen, onClose, initialData }) => {
               />
             </FormField>
 
+            <FormField label="Attachment Drive ID (Optional)">
+              <TextInput 
+                value={attachmentDriveId}
+                onChange={(e) => setAttachmentDriveId(e.target.value)}
+                placeholder="Google Drive file ID..."
+                leftIcon="link"
+              />
+            </FormField>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4">
             <FormField label="Notes / Remarks">
               <textarea
                 value={notes}

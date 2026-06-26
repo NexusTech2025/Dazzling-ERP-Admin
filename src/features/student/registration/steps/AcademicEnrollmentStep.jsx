@@ -309,7 +309,7 @@ const AcademicEnrollmentStep = ({ formData, setFormData, onNext, onBack, errors 
   }
 
   return (
-    <div className="grid grid-cols-12 gap-6 md:gap-8 animate-in fade-in slide-in-from-right-4 duration-500 max-w-7xl mx-auto px-4 lg:px-0 w-full text-slate-700 dark:text-slate-200">
+    <div className="grid grid-cols-12 gap-6 md:gap-8 animate-in fade-in slide-in-from-right-4 duration-500 w-full text-slate-700 dark:text-slate-200">
       
       {/* Left Column: Cart Selection & Configuration (Col span 7/12 Equivalent) */}
       <div className="col-span-12 lg:col-span-7 space-y-6">

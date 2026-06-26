@@ -1,6 +1,7 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
+import { ResolveDeleteConflict } from './ResolveDeleteConflict';
 
 // Dictionary to map database tables to humanized singular and plural labels
 const tableLabels = {
@@ -11,7 +12,8 @@ const tableLabels = {
   Payment: { singular: 'Cash/UPI Payment', plural: 'Cash/UPI Payments', btnText: 'View Transaction' },
   Batch: { singular: 'Subject Batch Section', plural: 'Subject Batch Sections', btnText: 'View Batch' },
   Course: { singular: 'Subject Course', plural: 'Subject Courses', btnText: 'View Course' },
-  Package: { singular: 'Academic Program Package', plural: 'Academic Program Packages', btnText: 'View Package' }
+  Package: { singular: 'Academic Program Package', plural: 'Academic Program Packages', btnText: 'View Package' },
+  CourseType: { singular: 'Course Category', plural: 'Course Categories', btnText: 'View Category' }
 };
 
 /**
@@ -50,13 +52,19 @@ const getRedirectPath = (tableName, id, studentId) => {
   if (tableName === 'Package') {
     return `/admin/packages/${id}`;
   }
+  if (tableName === 'CourseType') {
+    return `/admin/courses/types`;
+  }
   return '#';
 };
 
 /**
  * Helper to parse backend delete blocker violations from single or batch operations.
  */
-export function parseDeleteBlockers(responseError, parentTable = 'Student') {
+export function parseDeleteBlockers(responseError, parentTable) {
+  if (!parentTable) {
+    console.warn('[parseDeleteBlockers] Warning: parentTable is missing.');
+  }
   if (!responseError) return [];
   const details = responseError.details || responseError || {};
   const blockers = [];
@@ -102,7 +110,6 @@ export function parseDeleteBlockers(responseError, parentTable = 'Student') {
 
   return blockers;
 }
-
 /**
  * DeleteDependencyModal component.
  * Displays referential integrity blocks in a modern dark-slate theme matching glassmorphic specs.
@@ -113,14 +120,20 @@ const DeleteDependencyModal = ({
   errorPayload,
   parentId,
   parentName = 'Rahul Sharma',
-  onResolve
+  onResolve,
+  parentType
 }) => {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   if (!isOpen) return null;
 
+  if (!parentType) {
+    console.warn('[DeleteDependencyModal] Warning: parentType prop is missing.');
+  }
+
   // Parse blockers
-  const blockers = parseDeleteBlockers(errorPayload);
+  const blockers = parseDeleteBlockers(errorPayload, parentType);
 
   // Fallback if no blockers parsed but we are open
   if (blockers.length === 0 && errorPayload) {
@@ -129,32 +142,6 @@ const DeleteDependencyModal = ({
       blockers.push(...errorPayload);
     }
   }
-
-  // Helper to dynamically get secondary detail name (looks up from query cache if possible)
-  const getBlockerDetailName = (blocker) => {
-    if (blocker.detailLabel) return blocker.detailLabel;
-    
-    const table = blocker.blockerTable;
-    const id = blocker.blockerId;
-
-    try {
-      if (table === 'Enrollment') {
-        const enrollments = queryClient.getQueryData(['enrollment', 'list']) || [];
-        const item = enrollments.find(e => e.enrollment_id === id);
-        if (item) return item.course_name || 'Class Core Enrollment';
-        return 'Active Enrollment';
-      }
-      if (table === 'Payment') {
-        return 'Installment Due';
-      }
-      if (table === 'StudentFeeAccount') {
-        return 'Personal Ledger';
-      }
-    } catch (err) {
-      console.warn('Failed to scan client cache for label:', err);
-    }
-    return 'System Dependency';
-  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/65 backdrop-blur-sm animate-in fade-in duration-200">
@@ -194,7 +181,7 @@ const DeleteDependencyModal = ({
               <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             <p className="text-xs text-rose-700 dark:text-rose-200/90 leading-relaxed font-medium">
-              No changes have been made to the database. These records must be resolved or deleted before the student profile can be removed.
+              No changes have been made to the database. These records must be resolved or deleted before the {parentType ? parentType.toLowerCase() : 'entity'} can be removed.
             </p>
           </div>
 
@@ -204,48 +191,16 @@ const DeleteDependencyModal = ({
               Active Dependencies Detected
             </h4>
 
-            <div className="space-y-3">
-              {blockers.map((blocker, index) => {
-                const targetStudentId = blocker.targetId || parentId;
-                const path = getRedirectPath(blocker.blockerTable, blocker.blockerId, targetStudentId);
-                const tableLabel = getTableLabel(blocker.blockerTable);
-                const btnLabel = getButtonText(blocker.blockerTable);
-                const detailsLabel = getBlockerDetailName(blocker);
-
-                return (
-                  <div 
-                    key={index}
-                    className="bg-background-light/60 dark:bg-slate-900/30 border border-border-light dark:border-slate-900 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-slate-350 dark:hover:border-slate-800/80 transition-all duration-300"
-                  >
-                    <div className="space-y-1.5">
-                      <h5 className="font-bold text-sm text-text-main dark:text-slate-100">{tableLabel}</h5>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-900/30 px-2.5 py-0.5 rounded text-[11px] font-mono font-bold">
-                          {blocker.blockerId}
-                        </span>
-                        <span className="text-xs text-text-secondary dark:text-slate-400 font-medium">{detailsLabel}</span>
-                      </div>
-                    </div>
-
-                    <Link
-                      to={path}
-                      onClick={onClose}
-                      className="shrink-0 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 border border-border-light dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 bg-white dark:bg-slate-950/50 hover:bg-slate-50 dark:hover:bg-slate-900 text-text-main dark:text-slate-300 hover:text-primary dark:hover:text-white rounded-lg text-xs font-bold transition-all shadow-sm"
-                    >
-                      {btnLabel}
-                      <svg className="size-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
-                      </svg>
-                    </Link>
-                  </div>
-                );
-              })}
-            </div>
+            <ResolveDeleteConflict
+              blockers={blockers}
+              parentType={parentType}
+              onItemDeleted={onResolve}
+            />
           </div>
 
           {/* Context Banner */}
           <div className="text-center py-2 text-xs text-text-secondary dark:text-slate-400 italic">
-            Referenced Student: <span className="font-bold text-text-main dark:text-slate-200 not-italic">{parentId || blockers[0]?.targetId || 'STU-001'} ({parentName})</span>
+            Referenced {parentType || 'Entity'}: <span className="font-bold text-text-main dark:text-slate-200 not-italic">{parentId || blockers[0]?.targetId || 'STU-001'} ({parentName})</span>
           </div>
         </div>
 
@@ -258,14 +213,33 @@ const DeleteDependencyModal = ({
           >
             Close
           </button>
+          
+          {errorPayload?.deleted?.length > 0 && (
+            <button 
+              type="button"
+              onClick={() => {
+                if (onResolve) {
+                  onResolve(blockers, true);
+                }
+              }}
+              className="px-5 py-2 bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white shadow-lg shadow-rose-500/20 rounded-lg text-xs font-bold transition-all"
+            >
+              Delete Safe Items ({errorPayload.deleted.length})
+            </button>
+          )}
+
           <button 
             type="button"
             onClick={() => {
-              if (onResolve) {
-                onResolve(blockers);
-              } else {
-                onClose();
-              }
+              navigate('/admin/resolve-conflict', {
+                state: {
+                  blockers,
+                  parentId,
+                  parentName,
+                  parentType
+                }
+              });
+              onClose();
             }}
             className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white shadow-lg shadow-indigo-500/20 rounded-lg text-xs font-bold transition-all"
           >

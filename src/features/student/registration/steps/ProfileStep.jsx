@@ -16,11 +16,7 @@ const ProfileStep = ({ formData, setFormData, onNext, onCancel, errors = {} }) =
   };
 
   return (
-    <div className="grid grid-cols-12 gap-6 md:gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-7xl mx-auto w-full text-slate-700 dark:text-slate-200">
-      <div className="col-span-12 mb-2">
-        <h1 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white">Student Registration</h1>
-        <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">Please fill in the student profile information accurately to proceed.</p>
-      </div>
+    <div className="grid grid-cols-12 gap-6 md:gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500 w-full text-slate-700 dark:text-slate-200">
 
       {/* Left Column: Personal and Contact Info (7/12) */}
       <div className="col-span-12 lg:col-span-7 space-y-6">

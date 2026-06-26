@@ -63,15 +63,9 @@ const ActivationStep = ({ formData, setFormData, onFinish, onBack, isPending, im
   ];
 
   return (
-    <div className="layout-content-container flex flex-col max-w-7xl px-4 lg:px-0 flex-1 gap-6 mx-auto animate-in fade-in slide-in-from-right-4 duration-500">
+    <div className="layout-content-container flex flex-col flex-1 gap-6 mx-auto animate-in fade-in slide-in-from-right-4 duration-500">
       
-      {/* Header Title */}
-      <div className="flex flex-col gap-2 px-4 mb-2">
-        <h1 className="text-slate-900 dark:text-slate-100 text-3xl font-black leading-tight tracking-tight">Review & Finalize</h1>
-        <p className="text-slate-600 dark:text-slate-400 text-sm">Verify gathered records and configure registration activation.</p>
-      </div>
-
-      <div className="grid grid-cols-12 gap-6 md:gap-8 p-4 items-start">
+      <div className="grid grid-cols-12 gap-6 md:gap-8 py-4 items-start">
         
         {/* Left Column: Comprehensive Reviews (Spans 7 cols on large screens) */}
         <div className="col-span-12 lg:col-span-7 space-y-6">

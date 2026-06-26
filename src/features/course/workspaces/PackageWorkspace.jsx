@@ -12,6 +12,8 @@ import DataTable from '../../../components/ui/DataTable';
 import SelectionActionBar from '../../../components/ui/v2/SelectionActionBar';
 import ConfirmModal from '../../../components/ui/ConfirmModal';
 import useSelectableTable from '../../../hooks/useSelectableTable';
+import DeleteDependencyModal from '../../../components/ui/DeleteDependencyModal';
+import { useState } from 'react';
 
 /**
  * PackageWorkspace - Decoupled sub-workspace component for curriculum packages management.
@@ -50,6 +52,8 @@ const PackageWorkspace = () => {
     deleteManyPackagesMutation,
     queryClient
   } = usePackageWorkspaceState();
+
+  const [dependencyModal, setDependencyModal] = useState({ isOpen: false, errorPayload: null, parentId: null, parentName: '' });
 
   const {
     selectedIds,
@@ -143,74 +147,77 @@ const PackageWorkspace = () => {
    * @function handleConfirmDelete
    * @returns {void}
    */
-  const handleConfirmDelete = () => {
+  const executePhysicalDelete = (idsToDelete) => {
     setDeleteModal(prev => ({ ...prev, status: 'processing' }));
-    
-    if (deleteModal.type === 'bulk_package') {
-      deleteManyPackagesMutation.mutate({ ids: deleteModal.id }, {
-        onSuccess: (res) => {
-          if (res.success) {
-            const manifest = res.data?.manifest || {};
-            const deleted = manifest.deleted || [];
-            const failed = manifest.failed || {};
-            const failedCount = Object.keys(failed).length;
-            
-            let msg = `Successfully deleted ${deleted.length} packages.`;
-            if (failedCount > 0) {
-              msg += ` Failed to delete ${failedCount} packages due to referential constraints.`;
-            }
-            
-            setDeleteModal(prev => ({
-              ...prev,
-              status: failedCount > 0 && deleted.length === 0 ? 'error' : 'success',
-              resultMessage: msg
-            }));
-            
-            if (deleted.length > 0) {
-              setSelectedIds(prev => prev.filter(id => !deleted.includes(id)));
-            }
-          } else {
-            setDeleteModal(prev => ({
-              ...prev,
-              status: 'error',
-              resultMessage: res.message || 'Failed to delete packages.'
-            }));
+    deleteManyPackagesMutation.mutate({ ids: idsToDelete, dryRun: false }, {
+      onSuccess: (res) => {
+        if (res.success) {
+          const deleted = res.data?.manifest?.deleted || idsToDelete;
+          setDeleteModal(prev => ({
+            ...prev,
+            status: 'success',
+            resultMessage: `Successfully deleted ${deleted.length} packages.`
+          }));
+          if (deleted.length > 0) {
+            setSelectedIds(prev => prev.filter(id => !deleted.includes(id)));
           }
-        },
-        onError: (err) => {
+        } else {
           setDeleteModal(prev => ({
             ...prev,
             status: 'error',
-            resultMessage: err.message || 'An unexpected error occurred.'
+            resultMessage: res.message || 'Failed to delete packages.'
           }));
         }
-      });
-    } else {
-      deletePackageMutation.mutate({ id: deleteModal.id }, {
-        onSuccess: (res) => {
-          if (res.success) {
-            setDeleteModal(prev => ({
-              ...prev,
-              status: 'success',
-              resultMessage: `Package "${deleteModal.name}" was successfully deleted.`
-            }));
+      },
+      onError: (err) => {
+        setDeleteModal(prev => ({
+          ...prev,
+          status: 'error',
+          resultMessage: err.message || 'An unexpected error occurred.'
+        }));
+      }
+    });
+  };
+
+  const handleConfirmDelete = () => {
+    if (!deleteModal.id) return;
+    setDeleteModal(prev => ({ ...prev, status: 'processing' }));
+    const ids = Array.isArray(deleteModal.id) ? deleteModal.id : [deleteModal.id];
+
+    deleteManyPackagesMutation.mutate({ ids, dryRun: true }, {
+      onSuccess: (res) => {
+        if (res.success) {
+          const manifest = res.data?.manifest || {};
+          const failed = manifest.failed || {};
+          const failedCount = Object.keys(failed).length;
+
+          if (failedCount > 0) {
+            setDeleteModal({ isOpen: false, id: null, name: '', type: 'package', status: 'idle', resultMessage: null });
+            setDependencyModal({
+              isOpen: true,
+              errorPayload: manifest,
+              parentId: ids.join(', '),
+              parentName: deleteModal.type === 'bulk_package' ? `${ids.length} selected packages` : deleteModal.name
+            });
           } else {
-            setDeleteModal(prev => ({
-              ...prev,
-              status: 'error',
-              resultMessage: res.error?.message || `Failed to delete package: ${res.message || 'Unknown error'}`
-            }));
+            executePhysicalDelete(ids);
           }
-        },
-        onError: (err) => {
+        } else {
           setDeleteModal(prev => ({
             ...prev,
             status: 'error',
-            resultMessage: err.message || 'An unexpected server error occurred.'
+            resultMessage: res.message || 'Verification inspection failed.'
           }));
         }
-      });
-    }
+      },
+      onError: (err) => {
+        setDeleteModal(prev => ({
+          ...prev,
+          status: 'error',
+          resultMessage: err.message || 'Validation check failed.'
+        }));
+      }
+    });
   };
 
   return (
@@ -350,6 +357,21 @@ const PackageWorkspace = () => {
         title={deleteTitle}
         message={deleteMessage}
         isProcessing={isDeleteProcessing}
+      />
+
+      <DeleteDependencyModal
+        isOpen={dependencyModal.isOpen}
+        onClose={() => setDependencyModal({ isOpen: false, errorPayload: null, parentId: null, parentName: '' })}
+        errorPayload={dependencyModal.errorPayload}
+        parentId={dependencyModal.parentId}
+        parentName={dependencyModal.parentName}
+        parentType="Package"
+        onResolve={(blockers, deleteSafe) => {
+          if (deleteSafe && dependencyModal.errorPayload?.deleted) {
+            executePhysicalDelete(dependencyModal.errorPayload.deleted);
+          }
+          setDependencyModal({ isOpen: false, errorPayload: null, parentId: null, parentName: '' });
+        }}
       />
     </div>
   );

@@ -38,6 +38,8 @@ export const API_REGISTRY = {
     UPDATE_PACKAGE: 'academic_update_package',
     DELETE_PACKAGE: 'academic_delete_package',
     DELETE_MANY_PACKAGES: 'academic_delete_many_packages',
+    DELETE_MANY_COURSES: 'academic_delete_many_courses',
+    DELETE_MANY_COURSE_TYPES: 'academic_delete_many_course_types',
     ENROLL_STUDENT: 'academic_enroll_student'
   },
   DATA: {

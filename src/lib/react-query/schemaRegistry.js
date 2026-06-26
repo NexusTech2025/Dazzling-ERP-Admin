@@ -6,6 +6,7 @@ import { batchSchema } from './schemas/batch.schema.js';
 import { branchSchema } from './schemas/branch.schema.js';
 import { packageItemSchema } from './schemas/packageItem.schema.js';
 import { packagePerkSchema } from './schemas/packagePerk.schema.js';
+import { courseTypeSchema } from './schemas/courseType.schema.js';
 
 export const SCHEMA_REGISTRY = {
   package: packageSchema,
@@ -15,7 +16,8 @@ export const SCHEMA_REGISTRY = {
   batch: batchSchema,
   branch: branchSchema,
   packageitem: packageItemSchema,
-  packageperk: packagePerkSchema
+  packageperk: packagePerkSchema,
+  coursetype: courseTypeSchema
 };
 
 /**

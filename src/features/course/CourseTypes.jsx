@@ -12,6 +12,8 @@ import SelectionActionBar from '../../components/ui/v2/SelectionActionBar';
 import { queryKeys } from '../../lib/react-query/queryKeys';
 import { LoadingState, ErrorState } from '../../components/ui/QueryStatus';
 import Breadcrumbs from '../../components/ui/Breadcrumbs';
+import { API_REGISTRY } from '../../services/apiRegistry';
+import DeleteDependencyModal from '../../components/ui/DeleteDependencyModal';
 import FormSection from '../../components/ui/v2/FormSection';
 import FormField from '../../components/ui/v2/FormField';
 import TextInput from '../../components/ui/v2/TextInput';
@@ -22,6 +24,7 @@ import Badge from '../../components/ui/Badge';
 import { LowDensityCard } from '../../components/ui/v2/cards';
 import ConfirmModal from '../../components/ui/ConfirmModal';
 import MainLayout from '../../components/layout/MainLayout';
+import RefreshButton from '../../components/ui/btn/RefreshButton';
 
 /**
  * CourseTypes Categories Management Page
@@ -38,7 +41,7 @@ const CourseTypes = () => {
       return prev;
     });
   };
-  const { data: courseTypes = [], isLoading: isLoadingTypes, error: typesError } = useCourseTypesQuery();
+  const { data: courseTypes = [], isLoading: isLoadingTypes, isFetching: isFetchingTypes, error: typesError } = useCourseTypesQuery();
 
   const createTypeMutation = useCreateCourseTypeMutation();
   const updateTypeMutation = useUpdateCourseTypeMutation();
@@ -55,12 +58,14 @@ const CourseTypes = () => {
 
   const deleteManyMutation = useDeleteManyMutation(
     'CourseType',
-    [queryKeys.course.type.all]
+    [queryKeys.course.type.all],
+    API_REGISTRY.ACADEMIC.DELETE_MANY_COURSE_TYPES
   );
 
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingType, setEditingType] = useState(null);
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, id: null, name: '', type: 'single', status: 'idle', resultMessage: null });
+  const [dependencyModal, setDependencyModal] = useState({ isOpen: false, errorPayload: null, parentId: null, parentName: '' });
 
   const [validationError, setValidationError] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
@@ -152,29 +157,27 @@ const CourseTypes = () => {
     setDeleteModal({ isOpen: true, id, name, type: 'single', status: 'idle', resultMessage: null });
   };
 
-  const handleBulkDelete = (ids) => {
-    deleteManyMutation.mutate({ ids }, {
+  const executePhysicalDelete = (idsToDelete) => {
+    setDeleteModal(prev => ({ ...prev, status: 'processing' }));
+    deleteManyMutation.mutate({ ids: idsToDelete, dryRun: false }, {
       onSuccess: (res) => {
         if (res.success) {
-          const manifest = res.data?.manifest || {};
-          const deleted = manifest.deleted || [];
-          const failed = manifest.failed || {};
-          const failedCount = Object.keys(failed).length;
-          let msg = `Successfully deleted ${deleted.length} categories.`;
-          if (failedCount > 0) {
-            msg += ` ${failedCount} could not be deleted due to existing courses.`;
-          }
+          const deleted = res.data?.manifest?.deleted || idsToDelete;
           if (editingType && deleted.includes(editingType.segment_id)) {
             resetForm();
           }
-          setDeleteModal(prev => ({ ...prev, status: failedCount > 0 && deleted.length === 0 ? 'error' : 'success', resultMessage: msg }));
-          if (deleted.length > 0) clearSelection();
+          setDeleteModal(prev => ({ 
+            ...prev, 
+            status: 'success', 
+            resultMessage: `Successfully deleted ${deleted.length} categories.` 
+          }));
+          clearSelection();
         } else {
           setDeleteModal(prev => ({ ...prev, status: 'error', resultMessage: res.message || 'Failed to delete categories.' }));
         }
       },
       onError: (err) => {
-        setDeleteModal(prev => ({ ...prev, status: 'error', resultMessage: err.message || 'A server error occurred.' }));
+        setDeleteModal(prev => ({ ...prev, status: 'error', resultMessage: err.message || 'A server error occurred during deletion.' }));
       }
     });
   };
@@ -182,23 +185,34 @@ const CourseTypes = () => {
   const handleConfirmDelete = () => {
     if (!deleteModal.id) return;
     setDeleteModal(prev => ({ ...prev, status: 'processing' }));
-    if (deleteModal.type === 'bulk') {
-      handleBulkDelete(deleteModal.id);
-    } else {
-      deleteTypeMutation.mutate({ id: deleteModal.id }, {
-        onSuccess: (res) => {
-          if (res.success) {
-            if (editingType?.segment_id === deleteModal.id) resetForm();
+    const ids = deleteModal.type === 'bulk' ? deleteModal.id : [deleteModal.id];
+
+    deleteManyMutation.mutate({ ids, dryRun: true }, {
+      onSuccess: (res) => {
+        if (res.success) {
+          const manifest = res.data?.manifest || {};
+          const failed = manifest.failed || {};
+          const failedCount = Object.keys(failed).length;
+
+          if (failedCount > 0) {
             setDeleteModal({ isOpen: false, id: null, name: '', type: 'single', status: 'idle', resultMessage: null });
+            setDependencyModal({
+              isOpen: true,
+              errorPayload: manifest,
+              parentId: ids.join(', '),
+              parentName: deleteModal.type === 'bulk' ? `${ids.length} selected categories` : deleteModal.name
+            });
           } else {
-            setDeleteModal(prev => ({ ...prev, status: 'error', resultMessage: res.error?.message || res.message || 'Failed to delete category.' }));
+            executePhysicalDelete(ids);
           }
-        },
-        onError: (err) => {
-          setDeleteModal(prev => ({ ...prev, status: 'error', resultMessage: err.message || 'A server error occurred.' }));
+        } else {
+          setDeleteModal(prev => ({ ...prev, status: 'error', resultMessage: res.message || 'Verification inspection failed.' }));
         }
-      });
-    }
+      },
+      onError: (err) => {
+        setDeleteModal(prev => ({ ...prev, status: 'error', resultMessage: err.message || 'Validation check failed.' }));
+      }
+    });
   };
 
   const allTypeIds = useMemo(() => courseTypes.map(t => t.segment_id), [courseTypes]);
@@ -341,20 +355,26 @@ const CourseTypes = () => {
               </p>
             </div>
 
-            <button
-              onClick={() => {
-                if (showCreateForm) {
-                  resetForm();
-                }
-                setShowCreateForm(prev => !prev);
-              }}
-              className="flex items-center justify-center gap-2 rounded-xl bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark px-6 py-2.5 text-sm font-black text-text-main dark:text-white shadow-sm hover:bg-background-light dark:hover:bg-background-dark transition-all active:scale-95 whitespace-nowrap self-start md:self-auto"
-            >
-              <span className="material-symbols-outlined text-lg">
-                {showCreateForm ? 'visibility_off' : 'add_box'}
-              </span>
-              {showCreateForm ? 'Hide Form' : 'Add Category'}
-            </button>
+            <div className="flex items-center gap-3 w-full md:w-auto self-start md:self-auto">
+              <RefreshButton
+                isFetching={isFetchingTypes}
+                onRefresh={() => queryClient.invalidateQueries({ queryKey: queryKeys.course.type.all })}
+              />
+              <button
+                onClick={() => {
+                  if (showCreateForm) {
+                    resetForm();
+                  }
+                  setShowCreateForm(prev => !prev);
+                }}
+                className="flex items-center justify-center gap-2 rounded-xl bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark px-6 py-2.5 text-sm font-black text-text-main dark:text-white shadow-sm hover:bg-background-light dark:hover:bg-background-dark transition-all active:scale-95 whitespace-nowrap"
+              >
+                <span className="material-symbols-outlined text-lg">
+                  {showCreateForm ? 'visibility_off' : 'add_box'}
+                </span>
+                {showCreateForm ? 'Hide Form' : 'Add Category'}
+              </button>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
@@ -536,6 +556,21 @@ const CourseTypes = () => {
             status={deleteModal.status}
             resultMessage={deleteModal.resultMessage}
             isProcessing={deleteModal.status === 'processing'}
+          />
+
+          <DeleteDependencyModal
+            isOpen={dependencyModal.isOpen}
+            onClose={() => setDependencyModal({ isOpen: false, errorPayload: null, parentId: null, parentName: '' })}
+            errorPayload={dependencyModal.errorPayload}
+            parentId={dependencyModal.parentId}
+            parentName={dependencyModal.parentName}
+            parentType="CourseType"
+            onResolve={(blockers, deleteSafe) => {
+              if (deleteSafe && dependencyModal.errorPayload?.deleted) {
+                executePhysicalDelete(dependencyModal.errorPayload.deleted);
+              }
+              setDependencyModal({ isOpen: false, errorPayload: null, parentId: null, parentName: '' });
+            }}
           />
 
           <SelectionActionBar

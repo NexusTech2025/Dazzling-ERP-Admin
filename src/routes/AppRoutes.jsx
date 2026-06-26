@@ -27,6 +27,7 @@ import TestButtons from '../pages/admin/TestButtons';
 import TestProfileComponents from '../pages/admin/TestProfileComponents';
 import TestPrototype from '../pages/admin/TestPrototype';
 import TestCardsCatalog from '../pages/admin/TestCardsCatalog';
+import ResolveDeleteConflictView from '../pages/admin/ResolveDeleteConflictView';
 
 // Feature Pages
 import Courses from '../features/course/Courses';
@@ -117,6 +118,7 @@ const AppRoutes = () => {
         <Route path="roles" element={<Roles />} />
         <Route path="reports" element={<Reports />} />
         <Route path="settings" element={<Settings />} />
+        <Route path="resolve-conflict" element={<ResolveDeleteConflictView />} />
         
         {/* Development Showcase Pages */}
         <Route path="test-pages">

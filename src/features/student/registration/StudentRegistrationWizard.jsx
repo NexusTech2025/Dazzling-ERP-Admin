@@ -203,7 +203,6 @@ const StudentRegistrationWizard = ({ initialData, modeToggle, crumbs }) => {
       status: 'active',
       remarks: 'Registered via student registration wizard',
       created_by: 'admin',
-      fee_plan_id: `FPL-${formData.enrollmentBasket?.[0]?.id || 'GEN'}-DEFAULT`,
       installments: (formData.installments || []).map((inst, index) => {
         let instStatus = 'pending';
         let paidAmt = 0;

@@ -46,6 +46,7 @@ export const useErpHydration = () => {
   // to their cache Query Key factories, spreadsheet category, and sheet name.
   const HYDRATION_CONFIG = {
     'Course': { query_key: queryKeys.course, category: 'Academic', sheet: 'Course' },
+    'CourseType': { query_key: queryKeys.course.type, category: 'Academic', sheet: 'CourseType' },
     'Teacher': { query_key: queryKeys.teacher, category: 'Staff', sheet: 'Teacher' },
     'Student': { query_key: queryKeys.student, category: 'Students', sheet: 'Student' },
     'Batch': { query_key: queryKeys.batch, category: 'Academic', sheet: 'Batch' },
@@ -69,7 +70,7 @@ export const useErpHydration = () => {
         },
         {
           spreadsheetId: 'Academic',
-          sheets: ['Course', 'Batch', 'Package', 'PackageItem', 'PackagePerk']
+          sheets: ['Course', 'Batch', 'Package', 'PackageItem', 'PackagePerk', 'CourseType']
         },
         {
           spreadsheetId: 'Staff',

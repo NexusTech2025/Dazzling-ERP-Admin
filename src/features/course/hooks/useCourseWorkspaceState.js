@@ -4,6 +4,7 @@ import { useCoursesQuery, useDeleteCourseMutation, useCourseTypesQuery } from '.
 import { queryKeys, EMPTY_FILTER } from '../../../lib/react-query/queryKeys';
 import useSelection from '../../../hooks/useSelection';
 import useDeleteManyMutation from '../../../hooks/useDeleteManyMutation';
+import { API_REGISTRY } from '../../../services/apiRegistry';
 
 /**
  * @file useCourseWorkspaceState.js
@@ -46,7 +47,8 @@ export const useCourseWorkspaceState = () => {
 
   const deleteManyCoursesMutation = useDeleteManyMutation(
     'Course',
-    [queryKeys.course.all]
+    [queryKeys.course.all],
+    API_REGISTRY.ACADEMIC.DELETE_MANY_COURSES
   );
 
   const selectedType = useMemo(() => {

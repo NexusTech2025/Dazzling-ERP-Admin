@@ -10,6 +10,8 @@ import CourseListView from '../components/CourseListView';
 import SelectionActionBar from '../../../components/ui/v2/SelectionActionBar';
 import ConfirmModal from '../../../components/ui/ConfirmModal';
 import { queryKeys } from '../../../lib/react-query/queryKeys';
+import DeleteDependencyModal from '../../../components/ui/DeleteDependencyModal';
+import { useState } from 'react';
 
 /**
  * CourseWorkspace - Decoupled sub-workspace component for Subject and Course curriculum management.
@@ -48,6 +50,8 @@ const CourseWorkspace = () => {
     deleteManyCoursesMutation,
     queryClient
   } = useCourseWorkspaceState();
+
+  const [dependencyModal, setDependencyModal] = useState({ isOpen: false, errorPayload: null, parentId: null, parentName: '' });
 
   const {
     selectedIds,
@@ -116,74 +120,77 @@ const CourseWorkspace = () => {
    * @function handleConfirmDelete
    * @returns {void}
    */
-  const handleConfirmDelete = () => {
+  const executePhysicalDelete = (idsToDelete) => {
     setDeleteModal(prev => ({ ...prev, status: 'processing' }));
-    
-    if (deleteModal.type === 'bulk_course') {
-      deleteManyCoursesMutation.mutate({ ids: deleteModal.id }, {
-        onSuccess: (res) => {
-          if (res.success) {
-            const manifest = res.data?.manifest || {};
-            const deleted = manifest.deleted || [];
-            const failed = manifest.failed || {};
-            const failedCount = Object.keys(failed).length;
-            
-            let msg = `Successfully archived ${deleted.length} courses.`;
-            if (failedCount > 0) {
-              msg += ` Failed to archive ${failedCount} courses due to referential constraints.`;
-            }
-            
-            setDeleteModal(prev => ({
-              ...prev,
-              status: failedCount > 0 && deleted.length === 0 ? 'error' : 'success',
-              resultMessage: msg
-            }));
-            
-            if (deleted.length > 0) {
-              setSelectedIds(prev => prev.filter(id => !deleted.includes(id)));
-            }
-          } else {
-            setDeleteModal(prev => ({
-              ...prev,
-              status: 'error',
-              resultMessage: res.message || 'Failed to archive courses.'
-            }));
+    deleteManyCoursesMutation.mutate({ ids: idsToDelete, dryRun: false }, {
+      onSuccess: (res) => {
+        if (res.success) {
+          const deleted = res.data?.manifest?.deleted || idsToDelete;
+          setDeleteModal(prev => ({
+            ...prev,
+            status: 'success',
+            resultMessage: `Successfully archived ${deleted.length} courses.`
+          }));
+          if (deleted.length > 0) {
+            setSelectedIds(prev => prev.filter(id => !deleted.includes(id)));
           }
-        },
-        onError: (err) => {
+        } else {
           setDeleteModal(prev => ({
             ...prev,
             status: 'error',
-            resultMessage: err.message || 'An unexpected error occurred.'
+            resultMessage: res.message || 'Failed to archive courses.'
           }));
         }
-      });
-    } else {
-      deleteMutation.mutate({ id: deleteModal.id }, {
-        onSuccess: (res) => {
-          if (res.success) {
-            setDeleteModal(prev => ({
-              ...prev,
-              status: 'success',
-              resultMessage: `Course "${deleteModal.name}" was successfully archived.`
-            }));
+      },
+      onError: (err) => {
+        setDeleteModal(prev => ({
+          ...prev,
+          status: 'error',
+          resultMessage: err.message || 'An unexpected error occurred.'
+        }));
+      }
+    });
+  };
+
+  const handleConfirmDelete = () => {
+    if (!deleteModal.id) return;
+    setDeleteModal(prev => ({ ...prev, status: 'processing' }));
+    const ids = Array.isArray(deleteModal.id) ? deleteModal.id : [deleteModal.id];
+
+    deleteManyCoursesMutation.mutate({ ids, dryRun: true }, {
+      onSuccess: (res) => {
+        if (res.success) {
+          const manifest = res.data?.manifest || {};
+          const failed = manifest.failed || {};
+          const failedCount = Object.keys(failed).length;
+
+          if (failedCount > 0) {
+            setDeleteModal({ isOpen: false, id: null, name: '', type: 'course', status: 'idle', resultMessage: null });
+            setDependencyModal({
+              isOpen: true,
+              errorPayload: manifest,
+              parentId: ids.join(', '),
+              parentName: deleteModal.type === 'bulk_course' ? `${ids.length} selected courses` : deleteModal.name
+            });
           } else {
-            setDeleteModal(prev => ({
-              ...prev,
-              status: 'error',
-              resultMessage: res.error?.message || `Failed to archive course: ${res.message || 'Unknown error'}`
-            }));
+            executePhysicalDelete(ids);
           }
-        },
-        onError: (err) => {
+        } else {
           setDeleteModal(prev => ({
             ...prev,
             status: 'error',
-            resultMessage: err.message || 'An unexpected server error occurred.'
+            resultMessage: res.message || 'Verification inspection failed.'
           }));
         }
-      });
-    }
+      },
+      onError: (err) => {
+        setDeleteModal(prev => ({
+          ...prev,
+          status: 'error',
+          resultMessage: err.message || 'Validation check failed.'
+        }));
+      }
+    });
   };
 
   return (
@@ -294,6 +301,21 @@ const CourseWorkspace = () => {
         title={deleteTitle}
         message={deleteMessage}
         isProcessing={isDeleteProcessing}
+      />
+
+      <DeleteDependencyModal
+        isOpen={dependencyModal.isOpen}
+        onClose={() => setDependencyModal({ isOpen: false, errorPayload: null, parentId: null, parentName: '' })}
+        errorPayload={dependencyModal.errorPayload}
+        parentId={dependencyModal.parentId}
+        parentName={dependencyModal.parentName}
+        parentType="Course"
+        onResolve={(blockers, deleteSafe) => {
+          if (deleteSafe && dependencyModal.errorPayload?.deleted) {
+            executePhysicalDelete(dependencyModal.errorPayload.deleted);
+          }
+          setDependencyModal({ isOpen: false, errorPayload: null, parentId: null, parentName: '' });
+        }}
       />
     </div>
   );

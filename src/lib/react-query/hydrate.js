@@ -143,6 +143,18 @@ export function normalizePackage(pkg) {
   };
 }
 
+/**
+ * Normalizes a raw CourseType record.
+ */
+export function normalizeCourseType(courseType) {
+  if (!courseType) return null;
+  return {
+    ...courseType,
+    id: courseType.segment_id ?? courseType.id ?? null,
+    segment_id: courseType.segment_id ?? courseType.id ?? null
+  };
+}
+
 
 // --- HYDRATORS (READ-TIME SELECTION) ---
 
@@ -230,7 +242,8 @@ export function hydratePackage(pkg, queryClient) {
 const NORMALIZERS = {
   course: normalizeCourse,
   batch: normalizeBatch,
-  package: normalizePackage
+  package: normalizePackage,
+  coursetype: normalizeCourseType
 };
 
 const HYDRATORS = {
