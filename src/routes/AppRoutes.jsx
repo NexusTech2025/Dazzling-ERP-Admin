@@ -28,6 +28,7 @@ import TestProfileComponents from '../pages/admin/TestProfileComponents';
 import TestPrototype from '../pages/admin/TestPrototype';
 import TestCardsCatalog from '../pages/admin/TestCardsCatalog';
 import ResolveDeleteConflictView from '../pages/admin/ResolveDeleteConflictView';
+import TestMoneyTransactionsMobile from '../pages/admin/TestMoneyTransactionsMobile';
 
 // Feature Pages
 import Courses from '../features/course/Courses';
@@ -127,6 +128,7 @@ const AppRoutes = () => {
           <Route path="profile-core" element={<TestProfileComponents />} />
           <Route path="prototype" element={<TestPrototype />} />
           <Route path="cards" element={<TestCardsCatalog />} />
+          <Route path="mobile-transactions" element={<TestMoneyTransactionsMobile />} />
         </Route>
       </Route>
       

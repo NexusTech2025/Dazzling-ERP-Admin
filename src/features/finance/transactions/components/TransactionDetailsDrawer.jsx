@@ -43,7 +43,7 @@ export const TransactionDetailsDrawer = ({
       <div className="absolute inset-0" onClick={onClose}></div>
       
       {/* Drawer layout container */}
-      <div className="relative w-full max-w-md h-full bg-surface-light dark:bg-surface-dark border-l border-border-light dark:border-border-dark shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
+      <div className="relative w-full max-w-full md:max-w-md h-full bg-surface-light dark:bg-surface-dark border-l border-border-light dark:border-border-dark shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
         
         {/* Header */}
         <header className="px-6 py-5 border-b border-border-light dark:border-border-dark flex justify-between items-center bg-slate-50 dark:bg-slate-900/30">
