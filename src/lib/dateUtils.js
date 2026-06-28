@@ -16,3 +16,41 @@ export const isPastLocalDate = (dateStr) => {
   
   return target.getTime() < localToday.getTime();
 };
+
+/**
+ * Formats weekly schedule days array into short initials (e.g. ["Monday", "Wednesday"] -> "M, W").
+ * @param {string[]} days - Array of days of the week.
+ * @returns {string} Mapped day initials or "TBD".
+ */
+export const formatDays = (days) => {
+  if (!days || days.length === 0) return 'TBD';
+  const shortDaysMap = {
+    'Monday': 'M',
+    'Tuesday': 'T',
+    'Wednesday': 'W',
+    'Thursday': 'Th',
+    'Friday': 'F',
+    'Saturday': 'Sa',
+    'Sunday': 'Su'
+  };
+  return days.map(d => shortDaysMap[d] || d.substring(0, 2)).join(', ');
+};
+
+/**
+ * Formats a 24-hour time string into a 12-hour formatted time (e.g. "14:30" -> "2:30 PM").
+ * @param {string} timeStr - Time string in HH:MM format.
+ * @returns {string} Formatted 12-hour time string or fallback string.
+ */
+export const formatTime = (timeStr) => {
+  if (!timeStr) return '';
+  try {
+    const [hourStr, minuteStr] = timeStr.split(':');
+    const hour = parseInt(hourStr, 10);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const formattedHour = hour % 12 || 12;
+    return `${formattedHour}:${minuteStr} ${ampm}`;
+  } catch {
+    return timeStr;
+  }
+};
+

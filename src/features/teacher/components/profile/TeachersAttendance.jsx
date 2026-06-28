@@ -2,6 +2,9 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useTeacherAttendanceQuery, useUpdateTeacherAttendanceMutation } from '../../hooks/useTeacherQueries';
 import { useAuth } from '../../../../context/AuthContextCore';
 import { isPastLocalDate } from '../../../../lib/dateUtils';
+import KpiCard from '../../../../components/ui/v2/KpiCard';
+import KpiGrid from '../../../../components/ui/v2/KpiGrid';
+import { normalizeAttendanceList, calculateMonthlyStats } from '../../utils/teacher_workspace';
 
 // Helper utilities for structured time objects
 const parseTimeToStructured = (timeStr) => {
@@ -25,68 +28,60 @@ const formatStructuredToTime = (structTime) => {
 
 const TeachersAttendance = ({ teacherId }) => {
   const { user } = useAuth();
+
   const { data: attendance = [], isLoading } = useTeacherAttendanceQuery(teacherId);
   const updateMutation = useUpdateTeacherAttendanceMutation();
-  
+
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
-  const [activeMenu, setActiveMenu] = useState(null);
+  const [editingDay, setEditingDay] = useState(null);
 
-  // Filter attendance for selected month & year
-  const monthData = useMemo(() => {
-    return attendance.filter(record => {
-      if (!record.attendance_date) return false;
-      const [year, month] = record.attendance_date.split('-');
-      return parseInt(month, 10) - 1 === currentMonth && parseInt(year, 10) === currentYear;
-    });
-  }, [attendance, currentMonth, currentYear]);
+  // Normalize attendance array to a local YYYY-MM-DD keyed map
+  const normalizedAttendance = useMemo(() => {
+    return normalizeAttendanceList(attendance);
+  }, [attendance]);
 
-  // Dynamic Metrics
+  // Dynamic Metrics using pure workspace logic
   const stats = useMemo(() => {
-    const presentDays = monthData.filter(r => r.status === 'P' || r.status === 'present').length;
-    const lateDays = monthData.filter(r => r.status === 'L' || r.status === 'Late').length;
-    const absentDays = monthData.filter(r => r.status === 'A' || r.status === 'absent').length;
-    const totalWorkingDays = presentDays + lateDays + absentDays || 22; // Default to 22 standard days
-
-    // Sum of duration hours
-    const totalHours = monthData.reduce((acc, r) => acc + (r.duration || 0), 0);
-    const avgHours = (presentDays + lateDays) > 0 ? (totalHours / (presentDays + lateDays)).toFixed(1) : '0.0';
-
-    return {
-      presentDays,
-      lateDays,
-      absentDays,
-      totalWorkingDays,
-      totalHours: totalHours.toFixed(1),
-      avgHours
-    };
-  }, [monthData]);
+    return calculateMonthlyStats(normalizedAttendance, currentYear, currentMonth);
+  }, [normalizedAttendance, currentYear, currentMonth]);
 
   // Consistency / Efficiency score (present + late / total logs)
   const efficiencyScore = useMemo(() => {
-    const logs = attendance.length;
+    const totalRecords = Object.values(normalizedAttendance);
+    const logs = totalRecords.length;
     if (logs === 0) return 100;
-    const positiveLogs = attendance.filter(r => r.status === 'P' || r.status === 'present' || r.status === 'L' || r.status === 'Late').length;
+    const positiveLogs = totalRecords.filter(r => {
+      const status = r.status?.toUpperCase();
+      return status === 'P' || status === 'PRESENT' || status === 'L' || status === 'LATE';
+    }).length;
     return Math.round((positiveLogs / logs) * 100);
-  }, [attendance]);
+  }, [normalizedAttendance]);
 
   // Extract exceptions (Late or Absent records)
   const exceptions = useMemo(() => {
-    return monthData
-      .filter(r => r.status === 'A' || r.status === 'absent' || r.status === 'L' || r.status === 'Late')
+    return Object.values(normalizedAttendance)
+      .filter(r => {
+        const recordDate = r._localDateInstance;
+        if (!recordDate) return false;
+        const isSelectedMonth = recordDate.getFullYear() === currentYear && recordDate.getMonth() === currentMonth;
+        const status = r.status?.toUpperCase();
+        const isException = status === 'A' || status === 'ABSENT' || status === 'L' || status === 'LATE';
+        return isSelectedMonth && isException;
+      })
       .map(r => ({
         id: r.attendance_id || r.attendance_date,
-        date: new Date(r.attendance_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }),
-        title: (r.status === 'A' || r.status === 'absent') ? 'Absent Register' : 'Late Arrival Exception',
+        date: r._localDateInstance.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }),
+        title: (r.status?.toUpperCase() === 'A' || r.status?.toUpperCase() === 'ABSENT') ? 'Absent Register' : 'Late Arrival Exception',
         status: r.status,
         remarks: r.remarks || 'No remarks provided.'
       }))
       .slice(0, 5); // display top 5
-  }, [monthData]);
+  }, [normalizedAttendance, currentYear, currentMonth]);
 
   const handleUpdateDay = (dateStr, updates) => {
     const finalUpdates = {};
-    
+
     // Status mapping
     if (updates.status === 'present') finalUpdates.status = 'P';
     else if (updates.status === 'absent') finalUpdates.status = 'A';
@@ -131,69 +126,76 @@ const TeachersAttendance = ({ teacherId }) => {
   let firstDay = new Date(currentYear, currentMonth, 1).getDay();
   firstDay = firstDay === 0 ? 6 : firstDay - 1; // Adjust so Monday is 0
 
+  const { daysArray, weeks } = useMemo(() => {
+    const totalGridCells = firstDay + daysInMonth;
+    const totalNeededCells = Math.ceil(totalGridCells / 7) * 7;
+    const days = [];
+    for (let i = 0; i < totalNeededCells; i++) {
+      if (i < firstDay || i >= firstDay + daysInMonth) {
+        days.push(null);
+      } else {
+        days.push(i - firstDay + 1);
+      }
+    }
+    const wks = [];
+    for (let i = 0; i < days.length; i += 7) {
+      wks.push(days.slice(i, i + 7));
+    }
+    return { daysArray: days, weeks: wks };
+  }, [firstDay, daysInMonth]);
+
   return (
     <div className="space-y-6 text-text-main dark:text-slate-100">
-      
+
       {/* Metrics Row */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-surface-light dark:bg-[#122131] border border-border-light dark:border-white/8 p-5 rounded-2xl flex flex-col justify-between backdrop-blur-md shadow-sm">
-          <div className="flex justify-between items-start">
-            <span className="text-[10px] font-black uppercase tracking-widest text-text-secondary dark:text-slate-400">Working Days</span>
-            <span className="material-symbols-outlined text-[18px] text-blue-500 dark:text-blue-400">calendar_today</span>
-          </div>
-          <div className="mt-3">
-            <p className="text-2xl font-black">{stats.presentDays + stats.lateDays} days</p>
-            <p className="text-[10px] text-text-secondary dark:text-slate-400 mt-1">out of {stats.totalWorkingDays} working days</p>
-          </div>
-        </div>
-
-        <div className="bg-surface-light dark:bg-[#122131] border border-border-light dark:border-white/8 p-5 rounded-2xl flex flex-col justify-between backdrop-blur-md shadow-sm">
-          <div className="flex justify-between items-start">
-            <span className="text-[10px] font-black uppercase tracking-widest text-text-secondary dark:text-slate-400">Late Registries</span>
-            <span className="material-symbols-outlined text-[18px] text-amber-500 dark:text-amber-400">schedule</span>
-          </div>
-          <div className="mt-3">
-            <p className="text-2xl font-black text-amber-550 dark:text-amber-400">{stats.lateDays} days</p>
-            <p className="text-[10px] text-text-secondary dark:text-slate-400 mt-1">delayed entries this month</p>
-          </div>
-        </div>
-
-        <div className="bg-surface-light dark:bg-[#122131] border border-border-light dark:border-white/8 p-5 rounded-2xl flex flex-col justify-between backdrop-blur-md shadow-sm">
-          <div className="flex justify-between items-start">
-            <span className="text-[10px] font-black uppercase tracking-widest text-text-secondary dark:text-slate-400">Absence logs</span>
-            <span className="material-symbols-outlined text-[18px] text-rose-500 dark:text-rose-400">do_not_disturb_on</span>
-          </div>
-          <div className="mt-3">
-            <p className="text-2xl font-black text-rose-500 dark:text-rose-400">{stats.absentDays} days</p>
-            <p className="text-[10px] text-text-secondary dark:text-slate-400 mt-1">unpunched / absent days</p>
-          </div>
-        </div>
-
-        <div className="bg-surface-light dark:bg-[#122131] border border-border-light dark:border-white/8 p-5 rounded-2xl flex flex-col justify-between backdrop-blur-md shadow-sm">
-          <div className="flex justify-between items-start">
-            <span className="text-[10px] font-black uppercase tracking-widest text-text-secondary dark:text-slate-400">Average Shift</span>
-            <span className="material-symbols-outlined text-[18px] text-emerald-500 dark:text-emerald-400">timer</span>
-          </div>
-          <div className="mt-3">
-            <p className="text-2xl font-black text-emerald-500 dark:text-emerald-400">{stats.avgHours} hrs</p>
-            <p className="text-[10px] text-text-secondary dark:text-slate-400 mt-1">total: {stats.totalHours} hours</p>
-          </div>
-        </div>
-      </div>
+      <KpiGrid cols={2} mdCols={4} lgCols={4} gap={4}>
+        <KpiCard
+          label="Working Days"
+          value={`${stats.presentDays + stats.lateDays} days`}
+          icon="calendar_today"
+          variant="info"
+          size="md"
+          isCount={true}
+        />
+        <KpiCard
+          label="Late Registries"
+          value={`${stats.lateDays} days`}
+          icon="schedule"
+          variant="warning"
+          size="md"
+          isCount={true}
+        />
+        <KpiCard
+          label="Absence logs"
+          value={`${stats.absentDays} days`}
+          icon="do_not_disturb_on"
+          variant="danger"
+          size="md"
+          isCount={true}
+        />
+        <KpiCard
+          label="Average Shift"
+          value={`${stats.avgHours} hrs`}
+          icon="timer"
+          variant="success"
+          size="md"
+          isCount={true}
+        />
+      </KpiGrid>
 
       {/* Main Layout Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
+
         {/* Calendar Grid Sheet */}
-        <div className="lg:col-span-2 bg-surface-light dark:bg-[#122131] border border-border-light dark:border-white/8 rounded-2xl overflow-hidden backdrop-blur-md flex flex-col justify-between shadow-sm">
+        <div className="lg:col-span-2 relative bg-surface-light dark:bg-[#122131] border border-border-light dark:border-white/8 rounded-2xl overflow-hidden backdrop-blur-md flex flex-col justify-between shadow-sm">
           <div className="p-6 border-b border-border-light dark:border-white/8 flex items-center justify-between">
             <h3 className="text-base font-bold text-text-main dark:text-white flex items-center gap-2">
               <span className="material-symbols-outlined text-indigo-500 dark:text-indigo-400">calendar_month</span>
               Monthly punches
             </h3>
-            
+
             <div className="flex items-center gap-2">
-              <button 
+              <button
                 onClick={() => {
                   if (currentMonth === 0) { setCurrentMonth(11); setCurrentYear(y => y - 1); }
                   else setCurrentMonth(m => m - 1);
@@ -205,7 +207,7 @@ const TeachersAttendance = ({ teacherId }) => {
               <span className="text-xs font-black uppercase tracking-wider px-2">
                 {new Date(currentYear, currentMonth).toLocaleString('default', { month: 'long', year: 'numeric' })}
               </span>
-              <button 
+              <button
                 onClick={() => {
                   if (currentMonth === 11) { setCurrentMonth(0); setCurrentYear(y => y + 1); }
                   else setCurrentMonth(m => m + 1);
@@ -216,45 +218,31 @@ const TeachersAttendance = ({ teacherId }) => {
               </button>
             </div>
           </div>
-          
-          <div className="p-6">
-            <div className="grid grid-cols-7 mb-3 gap-2">
-              {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => (
-                <div key={day} className="text-center text-[9px] font-black text-text-secondary dark:text-slate-500 uppercase tracking-widest">{day}</div>
-              ))}
-            </div>
-            
-            <div className="grid grid-cols-7 gap-2">
-              {/* Padding days */}
-              {[...Array(firstDay)].map((_, i) => (
-                <div key={`empty-${i}`} className="h-20 bg-slate-50 dark:bg-white/[0.01] border border-border-light dark:border-white/[0.02] rounded-xl" />
-              ))}
-              
-              {/* Day cells */}
-              {[...Array(daysInMonth)].map((_, i) => {
-                const day = i + 1;
-                const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                const record = monthData.find(r => r.attendance_date === dateStr);
-                const isOpen = activeMenu === dateStr;
-                const isPastRecordLocked = isPastLocalDate(dateStr) && user?.role !== 'superadmin';
-                
-                return (
-                  <CalendarDayCellCell 
-                    key={day} 
-                    day={day} 
-                    dateStr={dateStr}
-                    record={record} 
-                    isOpen={isOpen}
-                    onToggleMenu={() => setActiveMenu(isOpen ? null : dateStr)}
-                    onUpdate={(updates) => handleUpdateDay(dateStr, updates)}
-                    onClose={() => setActiveMenu(null)}
-                    isToday={day === new Date().getDate() && currentMonth === new Date().getMonth() && currentYear === new Date().getFullYear()}
-                    isPastRecordLocked={isPastRecordLocked}
-                  />
-                );
-              })}
-            </div>
+
+          {/* Desktop Calendar Grid */}
+          <div className="hidden md:block p-6">
+            <DesktopCalendarGrid
+              daysArray={daysArray}
+              normalizedAttendance={normalizedAttendance}
+              setEditingDay={setEditingDay}
+              currentYear={currentYear}
+              currentMonth={currentMonth}
+              user={user}
+            />
           </div>
+
+          {/* Mobile Transposed Calendar Grid */}
+          <div className="block md:hidden p-4">
+            <MobileTransposedCalendarGrid
+              weeks={weeks}
+              normalizedAttendance={normalizedAttendance}
+              setEditingDay={setEditingDay}
+              currentYear={currentYear}
+              currentMonth={currentMonth}
+              user={user}
+            />
+          </div>
+
 
           <div className="p-4 bg-slate-50 dark:bg-black/15 flex flex-wrap gap-6 border-t border-border-light dark:border-white/8 justify-center">
             <LegendItem color="bg-emerald-500" label="Present" />
@@ -263,31 +251,47 @@ const TeachersAttendance = ({ teacherId }) => {
             <LegendItem color="bg-slate-400 dark:bg-slate-500" label="Not Recorded (NR)" />
             <LegendItem color="bg-slate-355 dark:bg-slate-700" label="Unmarked" />
           </div>
+
+          {/* Centered Parent-Level Modal Overlay */}
+          {editingDay && (
+            <div className="absolute inset-0 bg-white/30 dark:bg-slate-900/40 backdrop-blur-md flex items-center justify-center z-50 rounded-2xl animate-in fade-in duration-200">
+              <PunchEditorPanel
+                day={parseInt(editingDay.split('-')[2], 10)}
+                status={normalizedAttendance[editingDay]?.status}
+                inTimeStr={normalizedAttendance[editingDay]?.entry_time ? formatStructuredToTime(normalizedAttendance[editingDay].entry_time) : ''}
+                outTimeStr={normalizedAttendance[editingDay]?.exit_time ? formatStructuredToTime(normalizedAttendance[editingDay].exit_time) : ''}
+                remarks={normalizedAttendance[editingDay]?.remarks || ''}
+                onClose={() => setEditingDay(null)}
+                onUpdate={(updates) => handleUpdateDay(editingDay, updates)}
+              />
+            </div>
+          )}
         </div>
+
 
         {/* Sidebar: Exceptions & Consistency */}
         <div className="space-y-6">
-          
+
           {/* Consistency Gauge */}
           <div className="bg-surface-light dark:bg-[#122131] border border-border-light dark:border-white/8 p-6 rounded-2xl shadow-sm backdrop-blur-md text-text-main dark:text-white relative overflow-hidden flex flex-col items-center text-center">
             <div className="flex items-center gap-2 self-start mb-6">
               <span className="material-symbols-outlined text-indigo-500 dark:text-indigo-400">stars</span>
               <h3 className="text-xs font-black uppercase tracking-widest text-text-secondary dark:text-slate-400">Consistency gauge</h3>
             </div>
-            
+
             {/* Radial SVG Gauge */}
             <div className="relative flex items-center justify-center mt-2">
               <svg className="w-28 h-28 transform -rotate-90">
                 <circle cx="56" cy="56" r="46" className="stroke-slate-100 dark:stroke-white/5" strokeWidth="8" fill="transparent" />
-                <circle 
-                  cx="56" 
-                  cy="56" 
-                  r="46" 
-                  className="stroke-indigo-500" 
-                  strokeWidth="8" 
-                  fill="transparent" 
-                  strokeDasharray={2 * Math.PI * 46} 
-                  strokeDashoffset={2 * Math.PI * 46 * (1 - efficiencyScore / 100)} 
+                <circle
+                  cx="56"
+                  cy="56"
+                  r="46"
+                  className="stroke-indigo-500"
+                  strokeWidth="8"
+                  fill="transparent"
+                  strokeDasharray={2 * Math.PI * 46}
+                  strokeDashoffset={2 * Math.PI * 46 * (1 - efficiencyScore / 100)}
                   strokeLinecap="round"
                 />
               </svg>
@@ -296,7 +300,7 @@ const TeachersAttendance = ({ teacherId }) => {
                 <span className="text-[9px] text-text-secondary dark:text-slate-400 uppercase font-black tracking-widest mt-1">Score</span>
               </div>
             </div>
-            
+
             <p className="mt-6 text-xs text-text-secondary dark:text-slate-300 px-2 leading-relaxed">
               Based on overall daily registries. Consistency target is above 92.5%.
             </p>
@@ -308,7 +312,7 @@ const TeachersAttendance = ({ teacherId }) => {
               <span className="material-symbols-outlined text-amber-500 dark:text-amber-400 text-sm">warning</span>
               Exception Log
             </h3>
-            
+
             {exceptions.length === 0 ? (
               <div className="py-8 text-center text-text-secondary dark:text-slate-500 text-xs">
                 No exceptions logged this month. Excellent consistency!
@@ -320,9 +324,8 @@ const TeachersAttendance = ({ teacherId }) => {
                     <div className="flex-1 min-w-0">
                       <div className="flex justify-between items-center">
                         <span className="text-xs font-bold text-text-main dark:text-white">{exc.title}</span>
-                        <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded ${
-                          exc.status === 'L' || exc.status === 'Late' ? 'bg-amber-500/10 text-amber-655 dark:text-amber-400' : 'bg-rose-500/10 text-rose-550 dark:text-rose-400'
-                        }`}>
+                        <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded ${exc.status === 'L' || exc.status === 'Late' ? 'bg-amber-500/10 text-amber-655 dark:text-amber-400' : 'bg-rose-500/10 text-rose-550 dark:text-rose-400'
+                          }`}>
                           {exc.status === 'L' || exc.status === 'Late' ? 'Late' : 'Absent'}
                         </span>
                       </div>
@@ -343,12 +346,12 @@ const TeachersAttendance = ({ teacherId }) => {
 };
 
 // Internal Day Cell Component
-const CalendarDayCellCell = ({ day, record, dateStr, isOpen, onToggleMenu, onUpdate, onClose, isToday, isPastRecordLocked }) => {
+const CalendarDayCellCell = ({ day, record, dateStr, onEditClick, isToday, isPastRecordLocked }) => {
   const isPresent = record?.status === 'P' || record?.status === 'present';
   const isLate = record?.status === 'L' || record?.status === 'Late';
   const isAbsent = record?.status === 'A' || record?.status === 'absent';
   const isUnmarkedPastDate = !record && isPastLocalDate(dateStr);
-  
+
   let colorClasses = "bg-slate-50/50 dark:bg-white/[0.02] border-border-light dark:border-white/5 border-l-slate-400 dark:border-l-slate-600";
   if (isPresent) {
     colorClasses = "bg-emerald-50 dark:bg-emerald-500/5 border-emerald-100 dark:border-emerald-500/20 border-l-emerald-500";
@@ -361,22 +364,6 @@ const CalendarDayCellCell = ({ day, record, dateStr, isOpen, onToggleMenu, onUpd
   const inTimeStr = record?.entry_time ? formatStructuredToTime(record.entry_time) : '';
   const outTimeStr = record?.exit_time ? formatStructuredToTime(record.exit_time) : '';
 
-  const [localStatus, setLocalStatus] = useState(record?.status || 'present');
-  const [localIn, setLocalIn] = useState(inTimeStr || '08:00');
-  const [localOut, setLocalOut] = useState(outTimeStr || '16:00');
-  const [localRemarks, setLocalRemarks] = useState(record?.remarks || '');
-
-  useEffect(() => {
-    let s = 'present';
-    if (record?.status === 'P' || record?.status === 'present') s = 'present';
-    else if (record?.status === 'A' || record?.status === 'absent') s = 'absent';
-    else if (record?.status === 'L' || record?.status === 'Late') s = 'leave';
-    setLocalStatus(s);
-    setLocalIn(inTimeStr || '08:00');
-    setLocalOut(outTimeStr || '16:00');
-    setLocalRemarks(record?.remarks || '');
-  }, [record, inTimeStr, outTimeStr]);
-
   return (
     <div className={`h-20 p-2 rounded-xl flex flex-col justify-between relative border border-l-4 transition-all duration-200 hover:bg-slate-100/50 dark:hover:bg-white/[0.04] ${colorClasses} ${isToday ? 'ring-1 ring-indigo-500 border-indigo-500' : ''}`}>
       <div className="flex justify-between items-start">
@@ -386,13 +373,13 @@ const CalendarDayCellCell = ({ day, record, dateStr, isOpen, onToggleMenu, onUpd
 
         {!isPastRecordLocked ? (
           <button
-            onClick={onToggleMenu}
+            onClick={onEditClick}
             className="p-0.5 text-text-secondary dark:text-slate-500 hover:text-text-main dark:hover:text-white rounded hover:bg-slate-200 dark:hover:bg-white/5 transition-colors cursor-pointer"
           >
             <span className="material-symbols-outlined text-[13px]">edit_note</span>
           </button>
         ) : (
-          <span className="material-symbols-outlined text-[12px] text-slate-350 dark:text-slate-600 pointer-events-none" title="Locked">
+          <span style={{ fontSize: "14px" }} className="material-symbols-outlined  text-slate-350 dark:text-slate-600 pointer-events-none" title="Locked">
             lock
           </span>
         )}
@@ -415,83 +402,129 @@ const CalendarDayCellCell = ({ day, record, dateStr, isOpen, onToggleMenu, onUpd
           <span className="text-text-secondary/50 dark:text-slate-500 italic">Unmarked</span>
         )}
       </div>
-
-      {/* Popover Editor Panel */}
-      {isOpen && !isPastRecordLocked && (
-        <div className="absolute z-50 top-7 left-1/2 -translate-x-1/2 bg-surface-light dark:bg-[#122131] border border-border-light dark:border-white/10 rounded-2xl shadow-2xl p-4 w-52 space-y-3 animate-in zoom-in-95 duration-150">
-          <div className="flex justify-between items-center border-b border-border-light dark:border-white/5 pb-1.5">
-            <span className="text-[10px] font-black uppercase text-text-secondary dark:text-slate-400">Day {day} punches</span>
-            <button onClick={onClose} className="text-text-secondary dark:text-slate-400 hover:text-text-main dark:hover:text-white text-xs">
-              <span className="material-symbols-outlined text-[14px]">close</span>
-            </button>
-          </div>
-          
-          <div className="flex flex-col gap-1">
-            <label className="text-[9px] font-black text-text-secondary dark:text-slate-400 uppercase tracking-wide">Status</label>
-            <select
-              value={localStatus}
-              onChange={(e) => setLocalStatus(e.target.value)}
-              className="w-full text-xs bg-white dark:bg-[#0a1420] border border-border-light dark:border-white/8 rounded-lg px-2.5 py-1.5 text-text-main dark:text-white outline-none focus:border-indigo-500"
-            >
-              <option value="present">Present</option>
-              <option value="leave">Late / Leave</option>
-              <option value="absent">Absent</option>
-            </select>
-          </div>
-
-          {localStatus !== 'absent' && (
-            <div className="flex gap-2">
-              <div className="flex flex-col gap-1 flex-1">
-                <label className="text-[9px] font-black text-text-secondary dark:text-slate-400 uppercase tracking-wide">In</label>
-                <input
-                  type="time"
-                  value={localIn}
-                  onChange={(e) => setLocalIn(e.target.value)}
-                  className="w-full text-xs bg-white dark:bg-[#0a1420] border border-border-light dark:border-white/8 rounded-lg px-1.5 py-1 text-text-main dark:text-white outline-none focus:border-indigo-500"
-                />
-              </div>
-              <div className="flex flex-col gap-1 flex-1">
-                <label className="text-[9px] font-black text-text-secondary dark:text-slate-400 uppercase tracking-wide">Out</label>
-                <input
-                  type="time"
-                  value={localOut}
-                  onChange={(e) => setLocalOut(e.target.value)}
-                  className="w-full text-xs bg-white dark:bg-[#0a1420] border border-border-light dark:border-white/8 rounded-lg px-1.5 py-1 text-text-main dark:text-white outline-none focus:border-indigo-500"
-                />
-              </div>
-            </div>
-          )}
-
-          <div className="flex flex-col gap-1">
-            <label className="text-[9px] font-black text-text-secondary dark:text-slate-400 uppercase tracking-wide">Remarks</label>
-            <input
-              type="text"
-              placeholder="e.g. Late due to traffic"
-              value={localRemarks}
-              onChange={(e) => setLocalRemarks(e.target.value)}
-              className="w-full text-xs bg-white dark:bg-[#0a1420] border border-border-light dark:border-white/8 rounded-lg px-2 py-1 text-text-main dark:text-white outline-none focus:border-indigo-500"
-            />
-          </div>
-
-          <button
-            onClick={() => {
-              onUpdate({
-                status: localStatus,
-                check_in_time: localIn,
-                check_out_time: localOut,
-                remarks: localRemarks
-              });
-              onClose();
-            }}
-            className="w-full py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-indigo-600/10 cursor-pointer"
-          >
-            Update Punch
-          </button>
-        </div>
-      )}
     </div>
   );
 };
+
+
+/**
+ * Localized popover form editor for daily clock-in/out records.
+ */
+const PunchEditorPanel = ({ day, status, inTimeStr, outTimeStr, remarks, onClose, onUpdate }) => {
+  const [localStatus, setLocalStatus] = useState('');
+  const [localIn, setLocalIn] = useState(inTimeStr || '08:00');
+  const [localOut, setLocalOut] = useState(outTimeStr || '16:00');
+  const [localRemarks, setLocalRemarks] = useState(remarks || '');
+
+  useEffect(() => {
+    // Keep unselected by default
+    setLocalStatus('');
+    setLocalIn(inTimeStr || '08:00');
+    setLocalOut(outTimeStr || '16:00');
+    setLocalRemarks(remarks || '');
+  }, [status, inTimeStr, outTimeStr, remarks]);
+
+  return (
+    <div className="relative z-50 bg-white/95 dark:bg-[#122131]/98 border border-slate-200 dark:border-white/10 rounded-2xl shadow-2xl p-6 w-[95%] sm:w-100 space-y-4 animate-in zoom-in-95 duration-150">
+      <div className="flex justify-between items-center border-b border-border-light dark:border-white/5 pb-1.5">
+        <span className="text-[10px] font-black uppercase text-text-secondary dark:text-slate-400">Day {day} punches</span>
+        <button onClick={onClose} className="text-text-secondary dark:text-slate-400 hover:text-text-main dark:hover:text-white text-xs">
+          <span className="material-symbols-outlined text-[14px]">close</span>
+        </button>
+      </div>
+
+      {/* P, A, L Toggling Buttons */}
+      <div className="flex flex-col gap-1.5">
+        <label className="text-[9px] font-black text-text-secondary dark:text-slate-400 uppercase tracking-wide">Status</label>
+        <div className="flex items-center justify-center gap-1.5 p-1 bg-slate-100 dark:bg-black/30 border border-border-light dark:border-white/5 rounded-xl w-full">
+          <button 
+            type="button"
+            onClick={() => setLocalStatus('present')}
+            className={`flex-1 h-10 rounded-lg text-base font-black uppercase transition-all duration-200 cursor-pointer flex items-center justify-center ${localStatus === 'present' || localStatus === 'P'
+              ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/20 scale-105'
+              : 'text-text-secondary dark:text-slate-400 hover:text-text-main dark:hover:text-white'
+              }`}
+          >
+            P
+          </button>
+          <button 
+            type="button"
+            onClick={() => setLocalStatus('absent')}
+            className={`flex-1 h-10 rounded-lg text-base font-black uppercase transition-all duration-200 cursor-pointer flex items-center justify-center ${localStatus === 'absent' || localStatus === 'A'
+              ? 'bg-rose-500 text-white shadow-md shadow-rose-500/20 scale-105'
+              : 'text-text-secondary dark:text-slate-400 hover:text-text-main dark:hover:text-white'
+              }`}
+          >
+            A
+          </button>
+          <button 
+            type="button"
+            onClick={() => setLocalStatus('leave')}
+            className={`flex-1 h-10 rounded-lg text-base font-black uppercase transition-all duration-200 cursor-pointer flex items-center justify-center ${localStatus === 'leave' || localStatus === 'L'
+              ? 'bg-amber-500 text-white shadow-md shadow-amber-550/20 scale-105'
+              : 'text-text-secondary dark:text-slate-400 hover:text-text-main dark:hover:text-white'
+              }`}
+          >
+            L
+          </button>
+        </div>
+      </div>
+
+      {localStatus !== 'absent' && (
+        <div className="flex gap-3">
+          <div className="flex flex-col gap-1.5 flex-1">
+            <label className="text-[9px] font-black text-text-secondary dark:text-slate-400 uppercase tracking-wide">In</label>
+            <input
+              type="time"
+              value={localIn}
+              onChange={(e) => setLocalIn(e.target.value)}
+              className="w-full text-sm bg-white dark:bg-[#0a1420] border border-border-light dark:border-white/8 rounded-xl px-3 py-2 text-text-main dark:text-white outline-none focus:border-indigo-500"
+            />
+          </div>
+          <div className="flex flex-col gap-1.5 flex-1">
+            <label className="text-[9px] font-black text-text-secondary dark:text-slate-400 uppercase tracking-wide">Out</label>
+            <input
+              type="time"
+              value={localOut}
+              onChange={(e) => setLocalOut(e.target.value)}
+              className="w-full text-sm bg-white dark:bg-[#0a1420] border border-border-light dark:border-white/8 rounded-xl px-3 py-2 text-text-main dark:text-white outline-none focus:border-indigo-500"
+            />
+          </div>
+        </div>
+      )}
+
+      <div className="flex flex-col gap-1.5">
+        <label className="text-[9px] font-black text-text-secondary dark:text-slate-400 uppercase tracking-wide">Remarks</label>
+        <input
+          type="text"
+          placeholder="e.g. Late due to traffic"
+          value={localRemarks}
+          onChange={(e) => setLocalRemarks(e.target.value)}
+          className="w-full text-sm bg-white dark:bg-[#0a1420] border border-border-light dark:border-white/8 rounded-xl px-3 py-2 text-text-main dark:text-white outline-none focus:border-indigo-500"
+        />
+      </div>
+
+      <button
+        onClick={() => {
+          onUpdate({
+            status: localStatus,
+            check_in_time: localIn,
+            check_out_time: localOut,
+            remarks: localRemarks
+          });
+          onClose();
+        }}
+        disabled={!localStatus}
+        className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-sm font-bold transition-all shadow-md shadow-indigo-600/10 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        Update Punch
+      </button>
+    </div>
+  );
+};
+
+
+
 
 const LegendItem = ({ color, label }) => (
   <div className="flex items-center gap-1.5">
@@ -499,5 +532,90 @@ const LegendItem = ({ color, label }) => (
     <span className="text-[9px] font-black text-text-secondary dark:text-slate-400 uppercase tracking-wider">{label}</span>
   </div>
 );
+
+/**
+ * Desktop layout: standard 7-column calendar grid
+ */
+const DesktopCalendarGrid = ({ daysArray, normalizedAttendance, setEditingDay, currentYear, currentMonth, user }) => {
+  return (
+    <>
+      <div className="grid grid-cols-7 mb-3 gap-2">
+        {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => (
+          <div key={day} className="text-center text-[9px] font-black text-text-secondary dark:text-slate-500 uppercase tracking-widest">{day}</div>
+        ))}
+      </div>
+      <div className="grid grid-cols-7 gap-2">
+        {daysArray.map((dayVal, idx) => {
+          if (dayVal === null) {
+            return <div key={`empty-${idx}`} className="h-20 bg-slate-50 dark:bg-white/[0.01] border border-border-light dark:border-white/[0.02] rounded-xl" />;
+          }
+          const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(dayVal).padStart(2, '0')}`;
+          const record = normalizedAttendance[dateStr];
+          const isPastRecordLocked = isPastLocalDate(dateStr) && user?.role !== 'superadmin';
+          return (
+            <CalendarDayCellCell
+              key={dayVal}
+              day={dayVal}
+              dateStr={dateStr}
+              record={record}
+              onEditClick={() => setEditingDay(dateStr)}
+              isToday={dayVal === new Date().getDate() && currentMonth === new Date().getMonth() && currentYear === new Date().getFullYear()}
+              isPastRecordLocked={isPastRecordLocked}
+            />
+          );
+        })}
+      </div>
+    </>
+  );
+};
+
+/**
+ * Mobile layout: transposed weekdays in vertical column (sticky left) and weeks in horizontal columns
+ */
+const MobileTransposedCalendarGrid = ({ weeks, normalizedAttendance, setEditingDay, currentYear, currentMonth, user }) => {
+  return (
+    <div className="overflow-x-auto pb-4 select-none scrollbar-thin">
+      <div className="flex gap-2 min-w-max relative">
+        {/* Sticky Weekdays Left Column */}
+        <div className="sticky left-0 z-20 bg-surface-light dark:bg-[#122131] pr-2 border-r border-border-light dark:border-white/8 flex flex-col gap-2 w-12 min-w-[3rem]">
+          <div className="h-6 flex items-center justify-center text-[8px] font-black text-text-secondary dark:text-slate-500 uppercase">Day</div>
+          {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => (
+            <div key={day} className="h-20 flex items-center justify-center text-[9px] font-black text-text-secondary dark:text-slate-500 uppercase tracking-wider">{day}</div>
+          ))}
+        </div>
+
+        {/* Scrollable Week Columns */}
+        {weeks.map((weekDays, weekIdx) => (
+          <div key={weekIdx} className="flex flex-col gap-2 w-32 min-w-[8rem]">
+            <div className="h-6 flex items-center justify-center text-[9px] font-black text-indigo-500 dark:text-indigo-400 uppercase tracking-widest border-b border-border-light dark:border-white/5 pb-1">
+              Wk {weekIdx + 1}
+            </div>
+            {weekDays.map((dayVal, dayIdx) => {
+              if (dayVal === null) {
+                return (
+                  <div key={`empty-cell-${weekIdx}-${dayIdx}`} className="h-20 bg-slate-50/20 dark:bg-white/[0.005] border border-dashed border-border-light/40 dark:border-white/[0.01] rounded-xl" />
+                );
+              }
+              const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(dayVal).padStart(2, '0')}`;
+              const record = normalizedAttendance[dateStr];
+              const isPastRecordLocked = isPastLocalDate(dateStr) && user?.role !== 'superadmin';
+              return (
+                <CalendarDayCellCell
+                  key={dayVal}
+                  day={dayVal}
+                  dateStr={dateStr}
+                  record={record}
+                  onEditClick={() => setEditingDay(dateStr)}
+                  isToday={dayVal === new Date().getDate() && currentMonth === new Date().getMonth() && currentYear === new Date().getFullYear()}
+                  isPastRecordLocked={isPastRecordLocked}
+                />
+              );
+            })}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
 
 export default TeachersAttendance;

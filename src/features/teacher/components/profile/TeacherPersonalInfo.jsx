@@ -1,56 +1,63 @@
 import React from 'react';
 import Card from '../../../../components/ui/Card';
-import KeyValuePair from '../../../../components/ui/v2/KeyValuePair';
+import { formatProfileDate } from '../../utils/teacher_workspace';
 
 /**
  * TeacherPersonalInfo: Specific domain component for teacher demographics.
- * Updated to include schema-driven missing fields.
  */
 const TeacherPersonalInfo = ({ teacher }) => {
+  const infoItems = [
+    { 
+      label: 'Gender', 
+      value: teacher.gender, 
+      icon: 'wc',
+      colorClasses: 'bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400 border-blue-100/50 dark:border-blue-900/30'
+    },
+    { 
+      label: 'Birthday', 
+      value: formatProfileDate(teacher.date_of_birth), 
+      icon: 'cake',
+      colorClasses: 'bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400 border-rose-100/50 dark:border-rose-900/30'
+    },
+    { 
+      label: 'Joined', 
+      value: formatProfileDate(teacher.joining_date), 
+      icon: 'calendar_today',
+      colorClasses: 'bg-indigo-50 text-indigo-600 dark:bg-indigo-950/40 dark:text-indigo-400 border-indigo-100/50 dark:border-indigo-900/30'
+    },
+    { 
+      label: 'Type', 
+      value: teacher.teacher_type?.replace('_', ' '), 
+      icon: 'schedule',
+      colorClasses: 'bg-teal-50 text-teal-600 dark:bg-teal-950/40 dark:text-teal-400 border-teal-100/50 dark:border-teal-900/30'
+    }
+  ];
+
   return (
     <Card className="h-full">
-      <Card.Header className="flex items-center gap-2">
-        <span className="material-symbols-outlined text-text-secondary text-xl">person</span>
-        <h3 className="text-lg font-bold text-text-main dark:text-white">
-          Personal Information
-        </h3>
+      <Card.Header border={true} className="flex justify-between items-center bg-slate-50/20 dark:bg-slate-800/20">
+        <div className="flex items-center gap-2">
+          <span className="material-symbols-outlined text-text-secondary text-xl">person</span>
+          <h3 className="text-lg font-bold text-text-main dark:text-white">
+            Personal Information
+          </h3>
+        </div>
+        <button className="text-xs font-bold text-primary hover:underline">Update</button>
       </Card.Header>
       
-      <Card.Body>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-8">
-          <KeyValuePair 
-            label="Full Name" 
-            value={teacher.full_name} 
-            icon="person"
-          />
-          <KeyValuePair 
-            label="Gender" 
-            value={teacher.gender} 
-            icon="wc"
-            className="capitalize"
-          />
-          <KeyValuePair 
-            label="Date of Birth" 
-            value={teacher.date_of_birth ? new Date(teacher.date_of_birth.split('T')[0]).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }) : ''} 
-            icon="cake"
-            fallback="Not provided"
-          />
-          <KeyValuePair 
-            label="Teacher Type" 
-            value={teacher.teacher_type?.replace('_', ' ')} 
-            icon="badge"
-            className="capitalize"
-          />
-          <KeyValuePair 
-            label="Joining Date" 
-            value={teacher.joining_date ? new Date(teacher.joining_date.split('T')[0]).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }) : (teacher.created_at ? new Date(teacher.created_at).toLocaleDateString() : 'N/A')} 
-            icon="calendar_today"
-          />
-          <KeyValuePair 
-            label="Specialization" 
-            value={teacher.specialization} 
-            icon="psychology"
-          />
+      <Card.Body className="p-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {infoItems.map((item) => (
+            <div key={item.label} className="bg-slate-50 dark:bg-slate-800/40 p-4 rounded-xl flex items-center gap-4 border border-border-light/40 dark:border-border-dark/30 hover:bg-slate-100/50 dark:hover:bg-slate-800/75 transition-all">
+              <div className={`h-10 w-10 rounded-lg border flex items-center justify-center ${item.colorClasses}`}>
+                <span className="material-symbols-outlined text-lg">{item.icon}</span>
+              </div>
+              <div>
+                <p className="text-[10px] font-black tracking-widest text-text-secondary uppercase">{item.label}</p>
+                <p className="text-sm font-bold text-text-main dark:text-white capitalize">{item.value || 'Not specified'}</p>
+              </div>
+            </div>
+          ))}
         </div>
       </Card.Body>
     </Card>

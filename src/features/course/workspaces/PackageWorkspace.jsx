@@ -13,7 +13,8 @@ import SelectionActionBar from '../../../components/ui/v2/SelectionActionBar';
 import ConfirmModal from '../../../components/ui/ConfirmModal';
 import useSelectableTable from '../../../hooks/useSelectableTable';
 import DeleteDependencyModal from '../../../components/ui/DeleteDependencyModal';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { PackagesMobileView } from '../components/PackagesMobileView';
 
 /**
  * PackageWorkspace - Decoupled sub-workspace component for curriculum packages management.
@@ -54,6 +55,12 @@ const PackageWorkspace = () => {
   } = usePackageWorkspaceState();
 
   const [dependencyModal, setDependencyModal] = useState({ isOpen: false, errorPayload: null, parentId: null, parentName: '' });
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const {
     selectedIds,
@@ -222,71 +229,38 @@ const PackageWorkspace = () => {
 
   return (
     <div className="space-y-6">
-      {/* Workspace Filters (Segment selectors) */}
-      <div className="flex flex-col gap-4">
-        <div className="flex flex-wrap items-center gap-6">
-          <div className="animate-in fade-in slide-in-from-left-4 duration-300">
-            <ButtonGroupFilter
-              options={segmentOptions}
-              value={segmentFilter}
-              variant="secondary"
-              onChange={(val) => {
-                setSegmentFilter(val);
-                if (!isAcademicFilterActive) {
-                  setBoardFilter('');
-                  setClassFilter('');
-                  setLanguageFilter('');
-                }
-              }}
-            />
-          </div>
-
-          {isAcademicFilterActive && (
-            <div className="flex flex-wrap items-center gap-4 animate-in zoom-in duration-300">
-              <ButtonGroupFilter
-                label="Medium"
-                options={languageOptions}
-                value={languageFilter}
-                size="sm"
-                variant="secondary"
-                onChange={setLanguageFilter}
-              />
-
-              <ButtonGroupFilter
-                label="Board"
-                options={boardOptions}
-                value={boardFilter}
-                size="sm"
-                onChange={setBoardFilter}
-              />
-
-              <SelectGroupFilter
-                label="Class"
-                options={classOptions}
-                value={classFilter}
-                onChange={setClassFilter}
-                defaultLabel="All Classes"
-              />
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Package Search & Mode controls */}
+      {/* Course Search & Mode controls with integrated filters */}
       <CourseFilters
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         segmentFilter={segmentFilter}
         onSegmentChange={setSegmentFilter}
+        segmentOptions={segmentOptions}
         viewMode={viewMode}
         onViewModeChange={setViewMode}
-        availableSegments={[]}
-        showSegmentFilter={false}
+        isMobile={isMobile}
+        languageFilter={languageFilter}
+        onLanguageChange={setLanguageFilter}
+        languageOptions={languageOptions}
+        boardFilter={boardFilter}
+        onBoardChange={setBoardFilter}
+        boardOptions={boardOptions}
+        classFilter={classFilter}
+        onClassChange={setClassFilter}
+        classOptions={classOptions}
+        isAcademicFilterActive={isAcademicFilterActive}
       />
+
 
       {/* Main Representation Layout */}
       {isLoading ? (
         renderGridSkeletons()
+      ) : isMobile ? (
+        <PackagesMobileView
+          packages={filteredPackages}
+          selection={selection}
+          onDelete={(id, name) => handleOpenDelete(id, name, 'package')}
+        />
       ) : viewMode === 'grid' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
           {filteredPackages.map(pkg => (

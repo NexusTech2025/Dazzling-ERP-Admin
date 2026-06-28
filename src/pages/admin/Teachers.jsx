@@ -16,7 +16,7 @@ import useDeleteManyMutation from '../../hooks/useDeleteManyMutation';
 import useSelectableTable from '../../hooks/useSelectableTable';
 import SelectionActionBar from '../../components/ui/v2/SelectionActionBar';
 import { API_REGISTRY } from '../../services/apiRegistry';
-import TeacherCard from '../../features/teacher/components/TeacherCard';
+import { TeachersMobileView } from '../../features/teacher/components/TeachersMobileView';
 
 const Teachers = () => {
   const { token } = useAuth();
@@ -261,35 +261,12 @@ const Teachers = () => {
             <p className="text-sm font-bold text-text-main dark:text-white">No faculty members found matching your filters.</p>
           </div>
         ) : (
-          <div className="flex flex-col gap-4">
-            {filteredTeachers.map((teacher) => {
-              const isSelected = selectedIds.includes(teacher.teacher_id);
-              const isSelectionMode = selectedIds.length > 0;
-
-              const checkboxElement = (
-                <input
-                  type="checkbox"
-                  checked={isSelected}
-                  onChange={() => toggleSelect(teacher.teacher_id)}
-                  onClick={(e) => e.stopPropagation()}
-                  className="size-5 rounded border-border-light dark:border-border-dark text-primary focus:ring-primary/20 cursor-pointer"
-                />
-              );
-
-              return (
-                <div key={teacher.teacher_id} className="w-full">
-                  <TeacherCard
-                    teacher={teacher}
-                    density="low"
-                    icon={isSelectionMode ? checkboxElement : undefined}
-                    onClick={() => handlers.onView(teacher)}
-                    onEdit={() => handlers.onEdit(teacher)}
-                    onDelete={() => handlers.onDelete(teacher.teacher_id, teacher.full_name)}
-                  />
-                </div>
-              );
-            })}
-          </div>
+          <TeachersMobileView
+            teachers={filteredTeachers}
+            selectedIds={selectedIds}
+            onSelectRow={toggleSelect}
+            handlers={handlers}
+          />
         )}
       </div>
 

@@ -3,6 +3,7 @@ import { hasSchema, getSchema } from './schemaRegistry.js';
 import { validateRecordSchema } from './validationEngine.js';
 import { normalizeRecord } from './hydrate.js';
 import { alertStore } from './alertStore.js';
+import { CACHE_RESOLVER_STRATEGIES } from './cacheStrategies.js';
 
 
 export class CacheLayerError extends Error {
@@ -205,9 +206,12 @@ export async function resolveRecord(queryClient, entity, id, fetchFn, options = 
  * @param {QueryClient} queryClient - The active TanStack QueryClient instance.
  * @param {string} entity - Supported database entity config name (e.g. 'batch', 'course').
  * @param {object} [filter={}] - Database column filter values.
+ * @param {object} [options={}] - Cache lookup configuration options.
+ * @param {boolean} [options.strict=false] - Enforces exact match or filtered strategy lookup only.
  * @returns {Array|undefined} Cached list array or undefined.
  */
-export function getCachedList(queryClient, entity, filter = {}) {
+export function getCachedList(queryClient, entity, filter = {}, options = {}) {
+  const { strict = false } = options;
   const config = ENTITY_CONFIGS[entity];
   if (!config) {
     throw new CacheLayerError(`Unsupported entity type: ${entity}`, { entity, filter });
@@ -221,14 +225,34 @@ export function getCachedList(queryClient, entity, filter = {}) {
     return cachedList;
   }
 
-  // 2. Fallback: Scan any lists matching the prefix key
-  const listsKey = typeof config.listsKey === 'function' ? config.listsKey() : config.listsKey;
-  const listQueries = queryClient.getQueriesData({ queryKey: listsKey });
-  for (const [key, listData] of listQueries) {
-    if (Array.isArray(listData) && listData.length > 0) {
-      console.log(`[CacheHelper:ListFallback] Found alternative list in cache for ${entity} under key:`, key);
-      return listData;
+  // 2. Resolve via Strategy Callback (Strategy Pattern)
+  const strategyFn = CACHE_RESOLVER_STRATEGIES[entity];
+  if (typeof strategyFn === 'function') {
+    const listsKey = typeof config.listsKey === 'function' ? config.listsKey() : config.listsKey;
+    const listQueries = queryClient.getQueriesData({ queryKey: listsKey });
+    for (const [key, listData] of listQueries) {
+      const keyFilter = key[2]?.filter || {};
+      const isGlobalList = Object.keys(keyFilter).length === 0;
+
+      if (isGlobalList && Array.isArray(listData) && listData.length > 0) {
+        console.log(`[CacheHelper:ListStrategyFallback] Resolving cache list via strategy callback for ${entity}.`, { filter });
+        return strategyFn(listData, filter);
+      }
     }
+  }
+
+  // 3. Fallback: Scan any lists matching the prefix key (only if not strict)
+  if (!strict) {
+    const listsKey = typeof config.listsKey === 'function' ? config.listsKey() : config.listsKey;
+    const listQueries = queryClient.getQueriesData({ queryKey: listsKey });
+    for (const [key, listData] of listQueries) {
+      if (Array.isArray(listData) && listData.length > 0) {
+        console.log(`[CacheHelper:ListFallback] Found alternative list in cache for ${entity} under key:`, key);
+        return listData;
+      }
+    }
+  } else {
+    console.log(`[CacheHelper:ListStrict] Strict cache match enforced. Bypassing dirty fallback scan for ${entity}.`, { filter });
   }
 
   return undefined;
@@ -245,7 +269,7 @@ export function getCachedList(queryClient, entity, filter = {}) {
  * @param {string} entity - Supported database entity config name.
  * @param {object} [filter={}] - Database column filter values.
  * @param {Function} fetchFn - Function returning a Promise of the network request.
- * @param {object} [options={}] - Custom execution handlers (onSuccess, onFailure, forceRefetch).
+ * @param {object} [options={}] - Custom execution handlers (onSuccess, onFailure, forceRefetch, strict).
  * @returns {Promise<Array>} Resolved list promise.
  */
 export async function resolveList(queryClient, entity, filter = {}, fetchFn, options = {}) {
@@ -266,7 +290,7 @@ export async function resolveList(queryClient, entity, filter = {}, fetchFn, opt
   // 1. Check cache first (unless forceRefetch is enabled or query is marked as stale)
   if (!forceRefetch && !isStale) {
     try {
-      const cachedData = getCachedList(queryClient, entity, filter);
+      const cachedData = getCachedList(queryClient, entity, filter, options);
       if (cachedData) {
         console.log(`[CacheHelper:ListSuccess] Resolved list from Cache.`, {
           entity,

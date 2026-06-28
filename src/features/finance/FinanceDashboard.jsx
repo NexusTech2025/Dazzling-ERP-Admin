@@ -254,9 +254,9 @@ const FinanceDashboard = () => {
       width: '110px',
       cell: (row) => (
         <span className={`inline-flex px-2.5 py-1 rounded-lg text-[9px] font-extrabold border uppercase tracking-wider ${row.status === 'paid' || row.status === 'completed' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
-            row.status === 'overdue' || row.status === 'defaulted' ? 'bg-rose-50 text-rose-700 border-rose-200' :
-              row.status === 'partially_paid' ? 'bg-blue-50 text-blue-700 border-blue-200' :
-                'bg-amber-50 text-amber-700 border-amber-200/80'
+          row.status === 'overdue' || row.status === 'defaulted' ? 'bg-rose-50 text-rose-700 border-rose-200' :
+            row.status === 'partially_paid' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+              'bg-amber-50 text-amber-700 border-amber-200/80'
           }`}>
           {row.status}
         </span>
@@ -299,12 +299,11 @@ const FinanceDashboard = () => {
       align: 'center',
       width: '100px',
       cell: (row) => (
-        <span className={`inline-flex px-2 py-0.5 rounded text-[9px] font-extrabold border uppercase tracking-wider ${
-          row.status === 'paid' || row.status === 'completed' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
-          row.status === 'overdue' || row.status === 'defaulted' ? 'bg-rose-50 text-rose-700 border-rose-200' :
-          row.status === 'partially_paid' ? 'bg-blue-50 text-blue-700 border-blue-200' :
-          'bg-amber-50 text-amber-700 border-amber-200'
-        }`}>
+        <span className={`inline-flex px-2 py-0.5 rounded text-[9px] font-extrabold border uppercase tracking-wider ${row.status === 'paid' || row.status === 'completed' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+            row.status === 'overdue' || row.status === 'defaulted' ? 'bg-rose-50 text-rose-700 border-rose-200' :
+              row.status === 'partially_paid' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                'bg-amber-50 text-amber-700 border-amber-200'
+          }`}>
           {row.status}
         </span>
       )
@@ -343,8 +342,8 @@ const FinanceDashboard = () => {
       width: '96px',
       cell: (row) => (
         <span className={`inline-flex px-2 py-0.5 rounded text-[9px] font-extrabold border uppercase tracking-wider ${row.status === 'paid' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
-            row.status === 'overdue' ? 'bg-rose-50 text-rose-700 border-rose-200' :
-              'bg-amber-50 text-amber-700 border-amber-200'
+          row.status === 'overdue' ? 'bg-rose-50 text-rose-700 border-rose-200' :
+            'bg-amber-50 text-amber-700 border-amber-200'
           }`}>
           {row.status}
         </span>
@@ -416,9 +415,8 @@ const FinanceDashboard = () => {
       }}
       header={
         <div
-          className={`absolute top-0 left-0 right-0 z-50 transition-all duration-300 w-full ${
-            isSticky ? 'opacity-100 translate-y-0 shadow-md pointer-events-auto' : 'opacity-0 -translate-y-4 pointer-events-none'
-          }`}
+          className={`absolute top-0 left-0 right-0 z-50 transition-all duration-300 w-full ${isSticky ? 'opacity-100 translate-y-0 shadow-md pointer-events-auto' : 'opacity-0 -translate-y-4 pointer-events-none'
+            }`}
         >
           <div className="bg-[#f9fbff]/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 px-4 lg:px-6 py-2.5 flex items-center justify-between rounded-b-xl shadow-sm">
             <div className="flex items-center gap-2">
@@ -461,7 +459,7 @@ const FinanceDashboard = () => {
           </div>
 
           {/* KPI Cards Grid */}
-          <KpiGrid cols={1} smCols={2} lgCols={5} gap={3}>
+          <KpiGrid cols={2} smCols={2} lgCols={5} gap={3}>
             {kpis.map((kpi, idx) => {
               const variant =
                 kpi.color.includes('emerald') ? 'success' :

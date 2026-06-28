@@ -12,7 +12,7 @@ import ConfirmModal from '../../components/ui/ConfirmModal';
 import RefreshButton from '../../components/ui/btn/RefreshButton';
 import StudentDetailModal from '../../features/student/components/StudentDetailModal';
 import StudentEditModal from '../../features/student/components/StudentEditModal';
-import StudentCard from '../../features/student/components/StudentCard';
+import { StudentsMobileView } from '../../features/student/components/StudentsMobileView';
 import DeleteDependencyModal, { parseDeleteBlockers } from '../../components/ui/DeleteDependencyModal';
 import useSelection from '../../hooks/useSelection';
 import useDeleteManyMutation from '../../hooks/useDeleteManyMutation';
@@ -334,35 +334,12 @@ const Students = () => {
             <p className="text-sm font-bold text-text-main dark:text-white">No students found matching your filters.</p>
           </div>
         ) : (
-          <div className="flex flex-col gap-4">
-            {filteredStudents.map((student) => {
-              const isSelected = selectedIds.includes(student.student_id);
-              const isSelectionMode = selectedIds.length > 0;
-
-              const checkboxElement = (
-                <input
-                  type="checkbox"
-                  checked={isSelected}
-                  onChange={() => toggleSelect(student.student_id)}
-                  onClick={(e) => e.stopPropagation()}
-                  className="size-5 rounded border-border-light dark:border-border-dark text-primary focus:ring-primary/20 cursor-pointer"
-                />
-              );
-
-              return (
-                <div key={student.student_id} className="w-full">
-                  <StudentCard
-                    student={student}
-                    density="low"
-                    icon={isSelectionMode ? checkboxElement : undefined}
-                    onClick={() => handlers.onView(student)}
-                    onEdit={() => handlers.onEdit(student)}
-                    onDelete={() => handlers.onDelete(student.student_id, student.student_name)}
-                  />
-                </div>
-              );
-            })}
-          </div>
+          <StudentsMobileView
+            students={filteredStudents}
+            selectedIds={selectedIds}
+            onSelectRow={toggleSelect}
+            handlers={handlers}
+          />
         )}
       </div>
 

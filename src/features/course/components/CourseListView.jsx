@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import DataTable from '../../../components/ui/DataTable';
 import Badge from '../../../components/ui/Badge';
 import useSelectableTable from '../../../hooks/useSelectableTable';
-import CourseCardV2 from './CourseCardV2';
+import { CoursesMobileView } from './CoursesMobileView';
 
 /**
  * CourseListView Component
@@ -95,52 +95,12 @@ const CourseListView = ({ courses = [], onDelete, selection }) => {
   return (
     <>
       {/* Mobile Card-based List view */}
-      <div className="flex flex-col gap-4 md:hidden">
-        {courses.map((course) => {
-          const isSelected = selection?.selectedIds.includes(course.course_id);
-          const isSelectionMode = selection && selection.selectedIds.length > 0;
-
-          const checkboxElement = selection ? (
-            <input
-              type="checkbox"
-              checked={isSelected}
-              onChange={() => selection.toggleSelect(course.course_id)}
-              onClick={(e) => e.stopPropagation()}
-              className="size-5 rounded border-border-light dark:border-border-dark text-primary focus:ring-primary/20 cursor-pointer"
-            />
-          ) : null;
-
-          const segmentIcons = { 'SEG-CMP': 'computer', 'SEG-FND': 'star' };
-          const normalIcon = segmentIcons[course.segment_id] || 'auto_stories';
-
-          const cardIcon = isSelectionMode ? checkboxElement : (
-            <div
-              onClick={(e) => {
-                if (selection) {
-                  e.stopPropagation();
-                  selection.toggleSelect(course.course_id);
-                }
-              }}
-              className="cursor-pointer hover:opacity-80 transition-opacity flex items-center justify-center w-full h-full"
-              title="Click to select"
-            >
-              <span className="material-symbols-outlined text-lg">{normalIcon}</span>
-            </div>
-          );
-
-          return (
-            <div key={course.course_id} className="w-full">
-              <CourseCardV2
-                course={course}
-                density="low"
-                icon={cardIcon}
-                onClick={() => navigate(`/admin/courses/${course.course_id}`)}
-                onEdit={() => navigate(`/admin/courses/edit/${course.course_id}`)}
-                onDelete={onDelete ? () => onDelete(course.course_id, course.name) : undefined}
-              />
-            </div>
-          );
-        })}
+      <div className="md:hidden">
+        <CoursesMobileView
+          courses={courses}
+          selection={selection}
+          onDelete={onDelete}
+        />
       </div>
 
       {/* Desktop Tabular List view */}

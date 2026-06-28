@@ -18,6 +18,7 @@
  * - {@link useDeleteBatchMutation} - Removes batches from the database.
  */
 
+import { useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../../context/AuthContextCore';
 import { apiClient } from '../../../services/apiClient';
@@ -74,10 +75,24 @@ export const ensureBatchRelations = async (queryClient, token) => {
  * @param {object} [filter=EMPTY_FILTER] - Database column filter conditions.
  * @returns {object} React Query result containing normalized and hydrated batch records.
  */
-export const useBatchesQuery = (filter = EMPTY_FILTER) => {
+export const useBatchesQuery = (filter = EMPTY_FILTER, options = {}) => {
   const { token } = useAuth();
   const queryClient = useQueryClient();
+  const enabledParam = options.enabled ?? true;
 
+  const selectFn = useCallback(
+    (data) => hydrateRecord('batch', data, queryClient),
+    [queryClient]
+  );
+
+  console.log("querying batch with options and filters: ",
+    {
+      "filters": filter,
+      "options": options,
+      "queryKey": queryKeys.batch.list(filter),
+      "enabled": enabledParam
+    }
+  );
   return useQuery({
     queryKey: queryKeys.batch.list(filter),
     queryFn: async ({ signal }) => {
@@ -100,12 +115,13 @@ export const useBatchesQuery = (filter = EMPTY_FILTER) => {
             throw new Error(response.error?.message || response.message || 'Failed to fetch batches');
           }
           return normalizeRecord('batch', response.data?.data || []);
-        }
+        },
+        { strict: true }
       );
     },
-    enabled: !!token,
-    select: (data) => hydrateRecord('batch', data, queryClient),
-    initialData: () => getCachedList(queryClient, 'batch', filter),
+    enabled: !!token && enabledParam,
+    select: selectFn,
+    initialData: () => getCachedList(queryClient, 'batch', filter, { strict: true }),
     initialDataUpdatedAt: () => queryClient.getQueryState(queryKeys.batch.list(filter))?.dataUpdatedAt,
     staleTime: 1000 * 60 * 2.5,
     refetchOnMount: true,

@@ -33,10 +33,19 @@ const Button = ({
   const baseStyles = "inline-flex items-center justify-center gap-2 font-bold tracking-wide transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none rounded-lg active:scale-95";
 
   const sizes = {
+    xs: "h-7 px-2 text-[9px] uppercase",
     sm: "h-8 px-3 text-[10px] uppercase",
     md: "h-10 px-5 text-xs uppercase",
     lg: "h-12 px-8 text-sm uppercase",
   };
+
+  const iconSizes = {
+    xs: "!text-[14px]",
+    sm: "!text-[16px]",
+    md: "!text-[18px]",
+    lg: "!text-[20px]"
+  };
+  const currentIconSize = iconSizes[size] || "text-[18px]";
 
   const variants = {
     contained: "bg-primary text-white hover:bg-primary-dark shadow-md shadow-primary/20 focus:ring-primary/50",
@@ -59,15 +68,15 @@ const Button = ({
   const content = (
     <>
       {loading ? (
-        <span className="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
+        <span className={`material-symbols-outlined animate-spin ${currentIconSize}`}>progress_activity</span>
       ) : (
         <>
           {startIcon && (
-            <span className="material-symbols-outlined text-[18px]">{startIcon}</span>
+            <span className={`material-symbols-outlined ${currentIconSize}`}>{startIcon}</span>
           )}
           {children}
           {endIcon && (
-            <span className="material-symbols-outlined text-[18px]">{endIcon}</span>
+            <span className={`material-symbols-outlined ${currentIconSize}`}>{endIcon}</span>
           )}
         </>
       )}

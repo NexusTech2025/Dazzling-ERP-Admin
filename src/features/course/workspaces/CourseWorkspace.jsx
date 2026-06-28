@@ -11,7 +11,8 @@ import SelectionActionBar from '../../../components/ui/v2/SelectionActionBar';
 import ConfirmModal from '../../../components/ui/ConfirmModal';
 import { queryKeys } from '../../../lib/react-query/queryKeys';
 import DeleteDependencyModal from '../../../components/ui/DeleteDependencyModal';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { CoursesMobileView } from '../components/CoursesMobileView';
 
 /**
  * CourseWorkspace - Decoupled sub-workspace component for Subject and Course curriculum management.
@@ -52,6 +53,12 @@ const CourseWorkspace = () => {
   } = useCourseWorkspaceState();
 
   const [dependencyModal, setDependencyModal] = useState({ isOpen: false, errorPayload: null, parentId: null, parentName: '' });
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const {
     selectedIds,
@@ -195,71 +202,39 @@ const CourseWorkspace = () => {
 
   return (
     <div className="space-y-6">
-      {/* Workspace Filters (Dynamic Segment filters) */}
-      <div className="flex flex-col gap-4">
-        <div className="flex flex-wrap items-center gap-6">
-          <div className="animate-in fade-in slide-in-from-left-4 duration-300">
-            <ButtonGroupFilter
-              options={segmentOptions}
-              value={segmentFilter}
-              variant="secondary"
-              onChange={(val) => {
-                setSegmentFilter(val);
-                if (!isAcademicFilterActive) {
-                  setBoardFilter('');
-                  setClassFilter('');
-                  setLanguageFilter('');
-                }
-              }}
-            />
-          </div>
+      {/* Course Search & Mode controls with integrated filters */}
 
-          {isAcademicFilterActive && (
-            <div className="flex flex-wrap items-center gap-4 animate-in zoom-in duration-300">
-              <ButtonGroupFilter
-                label="Medium"
-                options={languageOptions}
-                value={languageFilter}
-                size="sm"
-                variant="secondary"
-                onChange={setLanguageFilter}
-              />
-
-              <ButtonGroupFilter
-                label="Board"
-                options={boardOptions}
-                value={boardFilter}
-                size="sm"
-                onChange={setBoardFilter}
-              />
-
-              <SelectGroupFilter
-                label="Class"
-                options={classOptions}
-                value={classFilter}
-                onChange={setClassFilter}
-                defaultLabel="All Classes"
-              />
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Course Search & Mode controls */}
       <CourseFilters
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         segmentFilter={segmentFilter}
         onSegmentChange={setSegmentFilter}
+        segmentOptions={segmentOptions}
         viewMode={viewMode}
         onViewModeChange={setViewMode}
-        availableSegments={availableSegments}
-        showSegmentFilter={false}
+        isMobile={isMobile}
+        languageFilter={languageFilter}
+        onLanguageChange={setLanguageFilter}
+        languageOptions={languageOptions}
+        boardFilter={boardFilter}
+        onBoardChange={setBoardFilter}
+        boardOptions={boardOptions}
+        classFilter={classFilter}
+        onClassChange={setClassFilter}
+        classOptions={classOptions}
+        isAcademicFilterActive={isAcademicFilterActive}
       />
+
 
       {/* Main Representation Layout */}
       {isLoading ? (
         renderGridSkeletons()
+      ) : isMobile ? (
+        <CoursesMobileView
+          courses={filteredCourses}
+          selection={selection}
+          onDelete={handleOpenDelete}
+        />
       ) : viewMode === 'grid' ? (
         <CourseGridView
           courses={filteredCourses}
