@@ -49,8 +49,21 @@ const FormField = ({
       <div className="flex-1 flex flex-col gap-1.5 w-full">
         {enhancedChild}
         
-        {/* Error or Helper text handled by child (BaseInput) or here for extra safety */}
-        {/* In the PDF pattern, FormField handles these if the child doesn't */}
+        {/* Render error text if child is a Controller, div, or custom element that does not handle its own errors */}
+        {error && (
+          !isValidElement(children) || 
+          (
+            children.type !== "input" &&
+            children.type !== "select" &&
+            children.type !== "textarea" &&
+            children.type?.displayName !== "BaseInput" &&
+            children.type?.displayName !== "TextInput" &&
+            children.type?.displayName !== "PhoneInput" &&
+            children.type?.name !== "SelectInput"
+          )
+        ) && (
+          <p id={`${fieldId}-error`} className="text-[10px] font-medium text-red-500 pl-1">{error}</p>
+        )}
       </div>
     </div>
   );

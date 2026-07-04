@@ -17,6 +17,7 @@ import TeacherProfessionalCard from '../../features/teacher/components/profile/T
 import TeacherDocumentsCard from '../../features/teacher/components/profile/TeacherDocumentsCard';
 import TeachersAttendance from '../../features/teacher/components/profile/TeachersAttendance';
 import TeacherAssignedClasses from '../../features/teacher/components/profile/TeacherAssignedClasses';
+import TeacherSalaryPayroll from '../../features/teacher/components/profile/TeacherSalaryPayroll';
 
 const TeacherProfile = () => {
   const { id } = useParams();
@@ -125,6 +126,8 @@ const TeacherProfile = () => {
         return <TeachersAttendance teacherId={teacher.teacher_id} />;
       case 'Assigned Classes':
         return <TeacherAssignedClasses teacherId={teacher.teacher_id} />;
+      case 'Salary & Payroll':
+        return <TeacherSalaryPayroll teacherId={teacher.teacher_id} />;
       default:
         return (
           <div className="py-20 text-center animate-in fade-in zoom-in-95 bg-surface-light dark:bg-surface-dark rounded-xl border border-border-light dark:border-border-dark shadow-sm">

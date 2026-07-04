@@ -51,6 +51,13 @@ export const ENTITY_CONFIGS = {
     detailKey: (id) => queryKeys.course.package.detail(id),
     listsKey: () => queryKeys.course.package.all,
     isValidDetail: (data) => data && typeof data === 'object' && 'package_fee' in data
+  },
+  teacherSalaryConfig: {
+    primaryKey: 'salary_config_id',
+    listKey: (filter) => [...queryKeys.teacher.detail(filter.teacherId), 'salaryConfigs'],
+    listsKey: () => ['teacher', 'detail'],
+    detailKey: (id) => ['teacher', 'salaryConfig', id],
+    isValidDetail: (data) => data && typeof data === 'object' && 'contract_status' in data
   }
 };
 

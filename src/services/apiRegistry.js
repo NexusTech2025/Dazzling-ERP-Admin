@@ -53,11 +53,12 @@ export const API_REGISTRY = {
     ONBOARD_TEACHER: 'staff_onboard_teacher',
     UPDATE_TEACHER: 'staff_update_teacher',
     ASSIGN_SUBJECTS: 'staff_assign_subjects',
-    MARK_ATTENDANCE: 'staff_mark_attendance',
-    MARK_ATTENDANCE_BULK: 'staff_mark_attendance_bulk',
-    QUERY_ATTENDANCE: 'staff_query_attendance',
     RECORD_PAYMENT: 'staff_record_payment',
     SET_SALARY_CONFIG: 'staff_set_salary_config',
+    GET_SALARY_CONFIGS: 'staff_get_salary_configs',
+    GET_SALARY_CONFIG: 'staff_get_salary_config',
+    UPDATE_SALARY_CONFIG: 'staff_update_salary_config',
+    DELETE_SALARY_CONFIG: 'staff_delete_salary_config',
     ADD_DOCUMENT: 'staff_add_document',
     DELETE_MANY: 'staff_delete_many_teachers'
   },
@@ -82,10 +83,28 @@ export const API_REGISTRY = {
     GET_MASTER_TIMETABLE: 'batch_get_master_timetable'
   },
   ATTENDANCE: {
-    GET_BATCH_REGISTRY: 'student_query_attendance',
-    GET_MATRIX: 'student_query_attendance',
-    MARK: 'student_mark_attendance',
-    MARK_BULK: 'student_mark_attendance_bulk',
-    GET_STUDENT_STATS: 'attendance_get_student_stats'
+    // Queries daily check-in logs for students in a specific batch on a given date.
+    STUDENT_GET_BATCH_REGISTRY: 'student_query_attendance',
+    
+    // Retrieves a grid matrix showing historical attendance status over multiple days for a batch.
+    STUDENT_GET_MATRIX: 'student_query_attendance',
+    
+    // Saves or updates a single student attendance record.
+    STUDENT_MARK: 'student_mark_attendance',
+    
+    // Commits bulk student check-in/out records for an entire batch.
+    STUDENT_MARK_BULK: 'student_mark_attendance_bulk',
+    
+    // Aggregates statistics (present count, absent count, late count) for an individual student.
+    STUDENT_GET_STATS: 'attendance_get_student_stats',
+    
+    // Records a single teacher's daily attendance entry.
+    TEACHER_MARK: 'staff_mark_attendance',
+    
+    // Commits multiple teacher attendance records simultaneously (e.g. daily register roster).
+    TEACHER_MARK_BULK: 'staff_mark_attendance_bulk',
+    
+    // Queries daily registry logs or historical profile stats for teacher attendance.
+    TEACHER_QUERY: 'staff_query_attendance'
   }
 };

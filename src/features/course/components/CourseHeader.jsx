@@ -1,10 +1,16 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useCoursesQuery } from '../hooks/useCourseQueries';
+import { usePackagesQuery } from '../hooks/usePackageQueries';
 import CreateCourseTypeModal from './CreateCourseTypeModal';
 import RefreshButton from '../../../components/ui/btn/RefreshButton';
 
-const CourseHeader = ({ activeTab, isFetching = false, onRefresh }) => {
+const CourseHeader = ({ activeTab, onRefresh }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  
+  const { isFetching: isFetchingCourses } = useCoursesQuery();
+  const { isFetching: isFetchingPackages } = usePackagesQuery();
+  const isFetching = isFetchingCourses || isFetchingPackages;
 
   return (
     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">

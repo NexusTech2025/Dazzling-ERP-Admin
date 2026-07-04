@@ -10,7 +10,9 @@ import { isPastLocalDate } from '../../../lib/dateUtils';
 import MainLayout from '../../../components/layout/MainLayout';
 import Breadcrumbs from '../../../components/ui/Breadcrumbs';
 import DataTable from '../../../components/ui/DataTable';
-import { SearchInput, SelectFilter } from '../../../components/ui/filters';
+import { SearchInput } from '../../../components/ui/filters';
+import { GenericSelectDropdown } from '../../../components/ui/v2/GenericSelectDropdown';
+import LowDensityCard from '../../../components/ui/v2/cards/LowDensityCard';
 import RefreshButton from '../../../components/ui/btn/RefreshButton';
 
 // Helper utilities for structured time objects
@@ -63,14 +65,7 @@ const TeacherAttendanceManager = () => {
     return isPastLocalDate(selectedDate) && user?.role !== 'superadmin';
   }, [selectedDate, user]);
 
-  // Options for batch dropdown
-  const batchOptions = useMemo(() => {
-    const list = batches.map(b => ({
-      value: b.batch_id,
-      label: b.batch_name || b.name || b.batch_id
-    }));
-    return [{ value: 'all', label: 'All Batches' }, ...list];
-  }, [batches]);
+
 
   // Set default batch selection
   useEffect(() => {
@@ -452,13 +447,34 @@ const TeacherAttendanceManager = () => {
             </button>
           ))}
         </div>
-        
-        <SelectFilter 
-          value={selectedBatchId}
-          onChange={setSelectedBatchId}
-          options={batchOptions}
-          defaultLabel="Select Batch"
-        />
+        <div className="w-[180px]">
+          <GenericSelectDropdown 
+            items={batches}
+            selectedId={selectedBatchId}
+            onChange={setSelectedBatchId}
+            idProp="batch_id"
+            labelProp="batch_name"
+            searchFields={["batch_name"]}
+            selectedViewMode="one-line"
+            placeholder="Select Batch"
+            dropdownWidth="w-[380px] md:w-[420px]"
+            renderItem={(item, isSelected) => {
+              const initials = item.batch_name ? item.batch_name.substring(0, 2).toUpperCase() : "BT";
+              return (
+                <LowDensityCard 
+                  variant="selection-card"
+                  title={item.batch_name}
+                  subtitle1={`Class ${item.class_level || 11}`}
+                  subtitle2={`${item.course?.metadata?.medium || 'English'} • ${item.branch_name || 'Main Campus'}`}
+                  avatarText={initials}
+                  enrolled={item.enrolled_students || 0}
+                  capacity={item.capacity || 30}
+                  isSelected={isSelected}
+                />
+              );
+            }}
+          />
+        </div>
 
         <input 
           type="date" 
@@ -595,12 +611,33 @@ const TeacherAttendanceManager = () => {
               <span className="material-symbols-outlined text-text-secondary/20 text-5xl">fact_check</span>
               <div className="flex items-center gap-4">
                 <span className="text-sm font-bold text-text-main dark:text-white">Please select a batch to view and mark attendance:</span>
-                <SelectFilter 
-                  value={selectedBatchId}
-                  onChange={setSelectedBatchId}
-                  options={batchOptions}
-                  defaultLabel="Select Batch"
-                />
+                <div className="w-[200px]">
+                  <GenericSelectDropdown 
+                    items={batches}
+                    selectedId={selectedBatchId}
+                    onChange={setSelectedBatchId}
+                    idProp="batch_id"
+                    labelProp="batch_name"
+                    searchFields={["batch_name"]}
+                    selectedViewMode="one-line"
+                    placeholder="Select Batch"
+                    renderItem={(item, isSelected) => {
+                      const initials = item.batch_name ? item.batch_name.substring(0, 2).toUpperCase() : "BT";
+                      return (
+                        <LowDensityCard 
+                          variant="selection-card"
+                          title={item.batch_name}
+                          subtitle1={`Class ${item.class_level || 11}`}
+                          subtitle2={`${item.course?.metadata?.medium || 'English'} • ${item.branch_name || 'Main Campus'}`}
+                          avatarText={initials}
+                          enrolled={item.enrolled_students || 0}
+                          capacity={item.capacity || 30}
+                          isSelected={isSelected}
+                        />
+                      );
+                    }}
+                  />
+                </div>
               </div>
             </div>
           ) : (
@@ -640,11 +677,31 @@ const TeacherAttendanceManager = () => {
                 {/* Batch & Date Selectors side-by-side */}
                 <div className="flex gap-4 items-center">
                   <div className="flex-1">
-                    <SelectFilter 
-                      value={selectedBatchId}
+                    <GenericSelectDropdown 
+                      items={batches}
+                      selectedId={selectedBatchId}
                       onChange={setSelectedBatchId}
-                      options={batchOptions}
-                      defaultLabel="Select Batch"
+                      idProp="batch_id"
+                      labelProp="batch_name"
+                      searchFields={["batch_name"]}
+                      selectedViewMode="one-line"
+                      placeholder="Select Batch"
+                      dropdownWidth="w-[340px]"
+                      renderItem={(item, isSelected) => {
+                        const initials = item.batch_name ? item.batch_name.substring(0, 2).toUpperCase() : "BT";
+                        return (
+                          <LowDensityCard 
+                            variant="selection-card"
+                            title={item.batch_name}
+                            subtitle1={`Class ${item.class_level || 11}`}
+                            subtitle2={`${item.course?.metadata?.medium || 'English'} • ${item.branch_name || 'Main Campus'}`}
+                            avatarText={initials}
+                            enrolled={item.enrolled_students || 0}
+                            capacity={item.capacity || 30}
+                            isSelected={isSelected}
+                          />
+                        );
+                      }}
                     />
                   </div>
                   <div className="relative flex items-center bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-lg px-3 py-2">

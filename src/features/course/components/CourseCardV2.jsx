@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { 
   LowDensityCard, 
   MediumDensityCard, 
@@ -7,6 +7,11 @@ import {
 import Button from '../../../components/ui/v2/Button';
 import { Tag, Badge } from '../../../components/ui/v2/indicators';
 
+/**
+ * CourseCardV2 Component: Renders low, medium, or high density representation of a course.
+ * Memoized using React.memo to prevent unnecessary re-renders.
+ * Callbacks (onClick, onEdit, onDelete) pass back the course entity object.
+ */
 const CourseCardV2 = ({
   course = {},
   density = 'medium',
@@ -73,7 +78,7 @@ const CourseCardV2 = ({
     );
 
     const actions = [
-      { label: 'Details', icon: 'analytics', priority: 'primary', onClick: (e) => { e.stopPropagation(); onClick && onClick(); } }
+      { label: 'Details', icon: 'analytics', priority: 'primary', onClick: (e) => { e.stopPropagation(); onClick && onClick(course); } }
     ];
 
     if (onEdit) {
@@ -81,7 +86,7 @@ const CourseCardV2 = ({
         label: 'Edit Course',
         icon: 'edit',
         priority: 'secondary',
-        onClick: (e) => { e.stopPropagation(); onEdit(); }
+        onClick: (e) => { e.stopPropagation(); onEdit && onEdit(course); }
       });
     }
 
@@ -92,7 +97,7 @@ const CourseCardV2 = ({
         priority: 'tertiary',
         onClick: (e) => {
           e.stopPropagation();
-          onDelete();
+          onDelete && onDelete(course);
         }
       });
     }
@@ -135,7 +140,7 @@ const CourseCardV2 = ({
         subtitle2={subtitle2}
         bodyText={bodyText}
         actions={actions}
-        onClick={onClick}
+        onClick={() => onClick && onClick(course)}
         className={className}
       />
     );
@@ -178,7 +183,7 @@ const CourseCardV2 = ({
         badgeClass={hasDiscount ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : undefined}
         tags={tags}
         metrics={metrics}
-        onClick={onClick}
+        onClick={() => onClick && onClick(course)}
         className={className}
       >
         {/* Status + Action row */}
@@ -192,7 +197,8 @@ const CourseCardV2 = ({
           <div className="flex items-center gap-2">
             {onEdit && (
               <button
-                onClick={(e) => { e.stopPropagation(); onEdit(); }}
+                type="button"
+                onClick={(e) => { e.stopPropagation(); onEdit(course); }}
                 className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-primary/10 text-primary text-xs font-bold hover:bg-primary/20 transition-colors"
               >
                 <span className="material-symbols-outlined text-[14px]">edit</span>
@@ -200,7 +206,8 @@ const CourseCardV2 = ({
               </button>
             )}
             <button
-              onClick={(e) => { e.stopPropagation(); onClick && onClick(); }}
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onClick && onClick(course); }}
               className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-border-light dark:border-border-dark bg-white dark:bg-slate-800 text-text-secondary dark:text-slate-200 text-xs font-bold hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
             >
               <span className="material-symbols-outlined text-[14px]">analytics</span>
@@ -216,8 +223,8 @@ const CourseCardV2 = ({
   // High Density
   const headerActions = (
     <>
-      <Button variant="outlined" size="sm" onClick={onAssign} className="text-xs font-bold uppercase tracking-wider py-1.5 px-3">Assign Task</Button>
-      <Button variant="contained" size="sm" onClick={onClick} className="text-xs font-bold uppercase tracking-wider py-1.5 px-3">Curriculum</Button>
+      <Button variant="outlined" size="sm" onClick={() => onAssign && onAssign(course)} className="text-xs font-bold uppercase tracking-wider py-1.5 px-3">Assign Task</Button>
+      <Button variant="contained" size="sm" onClick={() => onClick && onClick(course)} className="text-xs font-bold uppercase tracking-wider py-1.5 px-3">Curriculum</Button>
     </>
   );
 
@@ -253,4 +260,4 @@ const CourseCardV2 = ({
   );
 };
 
-export default CourseCardV2;
+export default memo(CourseCardV2);

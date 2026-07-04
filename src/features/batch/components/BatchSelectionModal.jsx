@@ -15,10 +15,13 @@ const BatchSelectionModal = ({
   onClose, 
   onSelect, 
   selectedBatchId = null, 
+  selectedBatchIds = [],
   availableBatches = [],
-  isLoading = false
+  isLoading = false,
+  multiple = false
 }) => {
   const [tempSelectedBatch, setTempSelectedBatch] = useState(null);
+  const [tempSelectedBatches, setTempSelectedBatches] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [branchFilter, setBranchFilter] = useState('');
   const [batchTypeFilter, setBatchTypeFilter] = useState('');
@@ -33,10 +36,16 @@ const BatchSelectionModal = ({
   // Sync temp state when modal opens
   useEffect(() => {
     if (isOpen) {
-      const initial = availableBatches.find(b => b.batch_id === selectedBatchId);
-      setTempSelectedBatch(initial || null);
+      if (multiple) {
+        const ids = Array.isArray(selectedBatchIds) ? selectedBatchIds : (selectedBatchId ? [selectedBatchId] : []);
+        const initialList = availableBatches.filter(b => ids.includes(b.batch_id));
+        setTempSelectedBatches(initialList);
+      } else {
+        const initial = availableBatches.find(b => b.batch_id === selectedBatchId);
+        setTempSelectedBatch(initial || null);
+      }
     }
-  }, [isOpen, selectedBatchId, availableBatches]);
+  }, [isOpen, selectedBatchId, selectedBatchIds, availableBatches, multiple]);
 
   // --- Filter Options ---
   const batchTypeOptions = [
@@ -85,8 +94,12 @@ const BatchSelectionModal = ({
   if (!isOpen) return null;
 
   const handleConfirm = () => {
-    if (tempSelectedBatch) {
-      onSelect(tempSelectedBatch);
+    if (multiple) {
+      onSelect(tempSelectedBatches);
+    } else {
+      if (tempSelectedBatch) {
+        onSelect(tempSelectedBatch);
+      }
     }
     onClose();
   };
@@ -175,13 +188,28 @@ const BatchSelectionModal = ({
             ) : filteredBatches.length > 0 ? (
               <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                 {filteredBatches.map((batch) => {
-                  const isSelected = tempSelectedBatch?.batch_id === batch.batch_id;
+                  const isSelected = multiple
+                    ? tempSelectedBatches.some(b => b.batch_id === batch.batch_id)
+                    : tempSelectedBatch?.batch_id === batch.batch_id;
                   return (
                     <BatchCard
                       key={batch.batch_id}
                       batch={batch}
                       isSelected={isSelected}
-                      onSelect={() => setTempSelectedBatch(batch)}
+                      onSelect={() => {
+                        if (multiple) {
+                          setTempSelectedBatches(prev => {
+                            const exists = prev.some(b => b.batch_id === batch.batch_id);
+                            if (exists) {
+                              return prev.filter(b => b.batch_id !== batch.batch_id);
+                            } else {
+                              return [...prev, batch];
+                            }
+                          });
+                        } else {
+                          setTempSelectedBatch(batch);
+                        }
+                      }}
                     />
                   );
                 })}
@@ -203,7 +231,32 @@ const BatchSelectionModal = ({
         {/* Modal Footer */}
         <div className="p-6 bg-slate-50 dark:bg-slate-900/80 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between z-10">
           <div className="flex items-center gap-4">
-            {tempSelectedBatch ? (
+            {multiple ? (
+              tempSelectedBatches.length > 0 ? (
+                <div className="flex items-center gap-3">
+                  <div className="size-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-black text-xs border border-primary/20 shadow-sm">
+                    {tempSelectedBatches.length}
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">
+                      Selection Confirmed
+                    </span>
+                    <p className="text-sm font-bold text-slate-900 dark:text-white">
+                      {tempSelectedBatches.length} Batches Selected
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">
+                    Selection Pending
+                  </span>
+                  <p className="text-sm font-bold text-slate-400">
+                    Please choose at least one active batch schedule
+                  </p>
+                </div>
+              )
+            ) : tempSelectedBatch ? (
               <div className="flex items-center gap-3">
                 <div className="size-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-black text-xs border border-primary/20 shadow-sm">
                   {tempSelectedBatch.batch_name?.substring(0, 2).toUpperCase() || 'B'}
@@ -234,7 +287,7 @@ const BatchSelectionModal = ({
               Cancel
             </button>
             <button 
-              disabled={!tempSelectedBatch}
+              disabled={multiple ? tempSelectedBatches.length === 0 : !tempSelectedBatch}
               onClick={handleConfirm}
               className="px-10 py-3 bg-primary text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-primary/20 hover:bg-primary-dark transition-all active:scale-95 flex items-center gap-3 disabled:opacity-50 disabled:pointer-events-none"
             >

@@ -1,13 +1,29 @@
-import React from 'react';
+import React, { useCallback, memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import CourseCardV2 from './CourseCardV2';
 
 /**
  * CourseGridView Component
  * Renders the grid list representation of courses using the MediumDensityCard via CourseCardV2.
+ * Wrapped in React.memo for high performance list rendering.
  */
 const CourseGridView = ({ courses = [], onDelete }) => {
   const navigate = useNavigate();
+
+  // Stable event handlers to avoid inline recreation on every update
+  const handleCardClick = useCallback((course) => {
+    navigate(`/admin/courses/${course.course_id}`);
+  }, [navigate]);
+
+  const handleCardEdit = useCallback((course) => {
+    navigate(`/admin/courses/edit/${course.course_id}`);
+  }, [navigate]);
+
+  const handleCardDelete = useCallback((course) => {
+    if (onDelete) {
+      onDelete(course.course_id, course.name);
+    }
+  }, [onDelete]);
 
   if (courses.length === 0) {
     return <NoDataFound />;
@@ -22,9 +38,9 @@ const CourseGridView = ({ courses = [], onDelete }) => {
             <CourseCardV2
               course={course}
               density="low"
-              onClick={() => navigate(`/admin/courses/${course.course_id}`)}
-              onEdit={() => navigate(`/admin/courses/edit/${course.course_id}`)}
-              onDelete={onDelete ? () => onDelete(course.course_id, course.name) : undefined}
+              onClick={handleCardClick}
+              onEdit={handleCardEdit}
+              onDelete={onDelete ? handleCardDelete : undefined}
             />
           </div>
 
@@ -33,17 +49,18 @@ const CourseGridView = ({ courses = [], onDelete }) => {
             <CourseCardV2
               course={course}
               density="medium"
-              onClick={() => navigate(`/admin/courses/${course.course_id}`)}
-              onEdit={() => navigate(`/admin/courses/edit/${course.course_id}`)}
+              onClick={handleCardClick}
+              onEdit={handleCardEdit}
             />
           </div>
 
           {/* Delete button (hover reveal, desktop only) */}
           {onDelete && (
             <button
+              type="button"
               onClick={(e) => {
                 e.stopPropagation();
-                onDelete(course.course_id, course.name);
+                handleCardDelete(course);
               }}
               className="absolute top-3 left-3 p-1 bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white border border-rose-500/20 rounded-lg transition-all opacity-0 group-hover:opacity-100 cursor-pointer shadow-sm hidden md:flex items-center justify-center"
               title="Archive Course"
@@ -65,4 +82,4 @@ const NoDataFound = () => (
   </div>
 );
 
-export default CourseGridView;
+export default memo(CourseGridView);

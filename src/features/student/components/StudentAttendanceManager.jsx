@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { useBatchesQuery } from '../../batch/hooks/useBatchQueries';
 import { useBatchAttendanceQuery, useMarkAttendanceMutation } from '../../batch/hooks/useAttendanceQueries';
+import { useAttendanceOrchestration } from '../../batch/hooks/useAttendanceOrchestration';
 import { queryKeys } from '../../../lib/react-query/queryKeys';
 import { useAuth } from '../../../context/AuthContextCore';
 import { isPastLocalDate } from '../../../lib/dateUtils';
@@ -10,7 +10,9 @@ import { isPastLocalDate } from '../../../lib/dateUtils';
 import MainLayout from '../../../components/layout/MainLayout';
 import Breadcrumbs from '../../../components/ui/Breadcrumbs';
 import DataTable from '../../../components/ui/DataTable';
-import { SearchInput, SelectFilter } from '../../../components/ui/filters';
+import { SearchInput } from '../../../components/ui/filters';
+import { GenericSelectDropdown } from '../../../components/ui/v2/GenericSelectDropdown';
+import LowDensityCard from '../../../components/ui/v2/cards/LowDensityCard';
 import RefreshButton from '../../../components/ui/btn/RefreshButton';
 
 // Helper utilities for structured time objects
@@ -45,8 +47,21 @@ const StudentAttendanceManager = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedCardId, setExpandedCardId] = useState(null);
 
-  // 1. Fetch available batches
-  const { data: batches = EMPTY_ARRAY, isLoading: isLoadingBatches } = useBatchesQuery();
+  // Filter States for Class Level and Macro-Segment Toggles
+  const [classFilter, setClassFilter] = useState('');
+  const [segmentFilter, setSegmentFilter] = useState('');
+
+  // 1. Consume client-side orchestrator hook for data joins and filters
+  const orchestratorParams = useMemo(() => ({
+    selectedBatchId,
+    classFilter,
+    segmentFilter
+  }), [selectedBatchId, classFilter, segmentFilter]);
+
+  const { students: orchestratedStudents, menus, isLoading: isLoadingOrchestration } = useAttendanceOrchestration(orchestratorParams);
+
+  // Extract raw batches list from the orchestration menus
+  const batches = menus.batches || EMPTY_ARRAY;
 
   // 2. Fetch daily student attendance records for selected batch & date (Fetch all batches)
   const { data: registry = EMPTY_ARRAY, isLoading: isLoadingRegistry, isFetching: isFetchingRegistry, error } = useBatchAttendanceQuery(
@@ -66,14 +81,7 @@ const StudentAttendanceManager = () => {
     return isPastLocalDate(selectedDate) && user?.role !== 'superadmin';
   }, [selectedDate, user]);
 
-  // Options for batch dropdown
-  const batchOptions = useMemo(() => {
-    const list = batches.map(b => ({
-      value: b.batch_id,
-      label: b.batch_name || b.name || b.batch_id
-    }));
-    return [{ value: 'all', label: 'All Batches' }, ...list];
-  }, [batches]);
+
 
   // Set default batch selection if not set
   useEffect(() => {
@@ -82,15 +90,18 @@ const StudentAttendanceManager = () => {
     }
   }, [batches, selectedBatchId]);
 
-  // Initialize staging state when registry is loaded (Process all rows locally)
+  // Initialize staging state when registry and orchestrated relational data are loaded
   useEffect(() => {
-    if (registry) {
+    if (registry && orchestratedStudents.length > 0) {
       const initial = {};
       const todayStr = new Date().toLocaleDateString('sv-SE');
       const isToday = selectedDate === todayStr;
       const isPastDate = isPastLocalDate(selectedDate);
 
-      registry.forEach(rec => {
+      orchestratedStudents.forEach(student => {
+        // Find existing attendance record for student in registry
+        const rec = registry.find(r => r.student_id === student.student_id && r.batch_id === student.batch_id) || {};
+
         let statusVal = 'P';
         const isUnrecorded = !rec.status && isPastDate;
         const isUnrecordedToday = !rec.status && isToday;
@@ -108,11 +119,11 @@ const StudentAttendanceManager = () => {
         const entryTimeStr = formatStructuredToTime(rec.entry_time) || '08:00';
         const exitTimeStr = formatStructuredToTime(rec.exit_time) || '13:00';
 
-        initial[rec.student_id] = {
-          student_id: rec.student_id,
-          student_name: rec.student_name,
-          roll_number: rec.roll_number,
-          batch_id: rec.batch_id,
+        initial[student.student_id] = {
+          student_id: student.student_id,
+          student_name: student.student_name,
+          roll_number: student.roll_number,
+          batch_id: student.batch_id,
           status: statusVal,
           entry_time: entryTimeStr,
           exit_time: exitTimeStr,
@@ -130,7 +141,7 @@ const StudentAttendanceManager = () => {
       setInitialSnapshot({});
       setIsDirty(false);
     }
-  }, [registry, selectedDate]);
+  }, [registry, orchestratedStudents, selectedDate]);
 
   const handleStatusChange = (studentId, status) => {
     if (isEditingDisabled) return;
@@ -193,7 +204,7 @@ const StudentAttendanceManager = () => {
     }
 
     const recordsArray = Object.values(stagedRecords);
-    const hasUnmarkedEntries = recordsArray.some(rec => 
+    const hasUnmarkedEntries = recordsArray.some(rec =>
       (selectedBatchId === 'all' || rec.batch_id === selectedBatchId) && rec.status === ''
     );
 
@@ -326,8 +337,8 @@ const StudentAttendanceManager = () => {
   const filteredStudents = useMemo(() => {
     return activeBatchRecords.filter(s => {
       const matchesStatus = statusFilter === 'ALL' || (s.status === statusFilter && !s.isUnmarkedPastDate && !s.isUnmarkedCurrentDate);
-      const matchesSearch = s.student_name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                            s.student_id?.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesSearch = s.student_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        s.student_id?.toLowerCase().includes(searchQuery.toLowerCase());
       return matchesStatus && matchesSearch;
     });
   }, [activeBatchRecords, statusFilter, searchQuery]);
@@ -377,36 +388,33 @@ const StudentAttendanceManager = () => {
       className: 'w-44',
       render: (row) => (
         <div className={`flex items-center justify-center gap-1.5 p-1 bg-slate-100 dark:bg-black/30 border border-border-light dark:border-white/5 rounded-xl w-fit mx-auto ${isEditingDisabled ? 'opacity-60 pointer-events-none' : ''}`}>
-          <button 
+          <button
             disabled={isEditingDisabled}
             onClick={() => handleStatusChange(row.student_id, 'P')}
-            className={`w-9 h-9 rounded-lg text-[24px] font-black uppercase transition-all duration-200 cursor-pointer flex items-center justify-center ${
-              row.status === 'P' && !row.isUnmarkedPastDate && !row.isUnmarkedCurrentDate
-                ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/20 scale-105' 
+            className={`w-9 h-9 rounded-lg text-[24px] font-black uppercase transition-all duration-200 cursor-pointer flex items-center justify-center ${row.status === 'P' && !row.isUnmarkedPastDate && !row.isUnmarkedCurrentDate
+                ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/20 scale-105'
                 : 'text-text-secondary dark:text-slate-400 hover:text-text-main dark:hover:text-white'
-            }`}
+              }`}
           >
             P
           </button>
-          <button 
+          <button
             disabled={isEditingDisabled}
             onClick={() => handleStatusChange(row.student_id, 'A')}
-            className={`w-9 h-9 rounded-lg text-[24px] font-black uppercase transition-all duration-200 cursor-pointer flex items-center justify-center ${
-              row.status === 'A' && !row.isUnmarkedPastDate && !row.isUnmarkedCurrentDate
-                ? 'bg-rose-500 text-white shadow-md shadow-rose-500/20 scale-105' 
+            className={`w-9 h-9 rounded-lg text-[24px] font-black uppercase transition-all duration-200 cursor-pointer flex items-center justify-center ${row.status === 'A' && !row.isUnmarkedPastDate && !row.isUnmarkedCurrentDate
+                ? 'bg-rose-500 text-white shadow-md shadow-rose-500/20 scale-105'
                 : 'text-text-secondary dark:text-slate-400 hover:text-text-main dark:hover:text-white'
-            }`}
+              }`}
           >
             A
           </button>
-          <button 
+          <button
             disabled={isEditingDisabled}
             onClick={() => handleStatusChange(row.student_id, 'L')}
-            className={`w-9 h-9 rounded-lg text-[24px] font-black uppercase transition-all duration-200 cursor-pointer flex items-center justify-center ${
-              row.status === 'L' && !row.isUnmarkedPastDate && !row.isUnmarkedCurrentDate
-                ? 'bg-emerald-500 text-white dark:bg-amber-500 shadow-md dark:shadow-amber-500/20 scale-105' 
+            className={`w-9 h-9 rounded-lg text-[24px] font-black uppercase transition-all duration-200 cursor-pointer flex items-center justify-center ${row.status === 'L' && !row.isUnmarkedPastDate && !row.isUnmarkedCurrentDate
+                ? 'bg-emerald-500 text-white dark:bg-amber-500 shadow-md dark:shadow-amber-500/20 scale-105'
                 : 'text-text-secondary dark:text-slate-400 hover:text-text-main dark:hover:text-white'
-            }`}
+              }`}
           >
             L
           </button>
@@ -420,8 +428,8 @@ const StudentAttendanceManager = () => {
       render: (row) => {
         const isAbsent = row.status === 'A';
         return (
-          <input 
-            type="time" 
+          <input
+            type="time"
             value={row.entry_time}
             disabled={isEditingDisabled || isAbsent}
             onChange={(e) => handleTimeChange(row.student_id, 'entry_time', e.target.value)}
@@ -437,8 +445,8 @@ const StudentAttendanceManager = () => {
       render: (row) => {
         const isAbsent = row.status === 'A';
         return (
-          <input 
-            type="time" 
+          <input
+            type="time"
             value={row.exit_time}
             disabled={isEditingDisabled || isAbsent}
             onChange={(e) => handleTimeChange(row.student_id, 'exit_time', e.target.value)}
@@ -451,8 +459,8 @@ const StudentAttendanceManager = () => {
       header: 'Remarks / Notes',
       accessor: 'remarks',
       render: (row) => (
-        <input 
-          type="text" 
+        <input
+          type="text"
           value={row.remarks}
           disabled={isEditingDisabled}
           placeholder={isEditingDisabled ? "Entries Locked" : "Remarks"}
@@ -469,44 +477,105 @@ const StudentAttendanceManager = () => {
     { label: 'Attendance' }
   ];
 
+
+
   const filters = (
     <>
-      <div className="md:col-span-4 relative">
-        <SearchInput 
+      <div className="md:col-span-3 relative">
+        <SearchInput
           value={searchQuery}
           onChange={setSearchQuery}
           placeholder="Search student..."
         />
       </div>
-      <div className="md:col-span-8 flex flex-wrap gap-3 items-center">
+      <div className="md:col-span-9 flex flex-wrap gap-2 items-center">
         <div className="flex items-center gap-1 bg-slate-100 dark:bg-black/20 p-1 border border-border-light dark:border-white/5 rounded-xl">
           {['ALL', 'P', 'A', 'L'].map(st => (
             <button
               key={st}
               onClick={() => setStatusFilter(st)}
-              className={`px-3 py-1.5 rounded-lg text-[10px] font-bold tracking-wider transition-all cursor-pointer ${
-                statusFilter === st 
-                  ? 'bg-white dark:bg-slate-700 text-text-main dark:text-white shadow-sm ring-1 ring-black/5' 
+              className={`px-3 py-1.5 rounded-lg text-[10px] font-bold tracking-wider transition-all cursor-pointer ${statusFilter === st
+                  ? 'bg-white dark:bg-slate-700 text-text-main dark:text-white shadow-sm ring-1 ring-black/5'
                   : 'text-text-secondary dark:text-slate-400 hover:text-text-main dark:hover:text-white'
-              }`}
+                }`}
             >
               {st === 'ALL' ? 'All' : st === 'P' ? 'Present' : st === 'A' ? 'Absent' : 'Late'}
             </button>
           ))}
         </div>
-        
-        <SelectFilter 
-          value={selectedBatchId}
-          onChange={setSelectedBatchId}
-          options={batchOptions}
-          defaultLabel="Select Batch"
-        />
 
-        <input 
-          type="date" 
+        <div className="w-[160px]">
+          <GenericSelectDropdown
+            items={menus.segments.map(seg => ({ id: seg, name: seg }))}
+            selectedId={segmentFilter}
+            onChange={setSegmentFilter}
+            idProp="id"
+            labelProp="name"
+            searchFields={["name"]}
+            selectedViewMode="one-line"
+            placeholder="All Segments"
+            renderItem={(item, isSelected) => (
+              <div className="py-2.5 px-4 text-xs font-bold text-text-main dark:text-white flex items-center justify-between">
+                <span>{item.name}</span>
+                {isSelected && <span className="material-symbols-outlined text-sm text-primary">check</span>}
+              </div>
+            )}
+          />
+        </div>
+
+        <div className="w-[140px]">
+          <GenericSelectDropdown
+            items={(menus.classes || []).map(cl => ({ id: cl, name: `Class ${cl}` }))}
+            selectedId={classFilter}
+            onChange={setClassFilter}
+            idProp="id"
+            labelProp="name"
+            searchFields={["name"]}
+            selectedViewMode="one-line"
+            placeholder="All Classes"
+            renderItem={(item, isSelected) => (
+              <div className="py-2.5 px-4 text-xs font-bold text-text-main dark:text-white flex items-center justify-between">
+                <span>{item.name}</span>
+                {isSelected && <span className="material-symbols-outlined text-sm text-primary">check</span>}
+              </div>
+            )}
+          />
+        </div>
+
+        <div className="w-[180px]">
+          <GenericSelectDropdown
+            items={batches}
+            selectedId={selectedBatchId}
+            onChange={setSelectedBatchId}
+            idProp="batch_id"
+            labelProp="batch_name"
+            searchFields={["batch_name"]}
+            selectedViewMode="one-line"
+            placeholder="Select Batch"
+            dropdownWidth="w-[380px] md:w-[420px]"
+            renderItem={(item, isSelected) => {
+              const initials = item.batch_name ? item.batch_name.substring(0, 2).toUpperCase() : "BT";
+              return (
+                <LowDensityCard
+                  variant="selection-card"
+                  title={item.batch_name}
+                  subtitle1={`Class ${item.class_level || 11}`}
+                  subtitle2={`${item.course?.metadata?.medium || 'English'} • ${item.branch_name || 'Main Campus'}`}
+                  avatarText={initials}
+                  enrolled={item.enrolled_students || 0}
+                  capacity={item.capacity || 30}
+                  isSelected={isSelected}
+                />
+              );
+            }}
+          />
+        </div>
+
+        <input
+          type="date"
           value={selectedDate}
           onChange={(e) => setSelectedDate(e.target.value)}
-          className="bg-white dark:bg-[#0a1420] border border-border-light dark:border-white/8 rounded-xl px-4 py-2 text-xs font-bold text-text-main dark:text-white outline-none focus:border-indigo-500 transition-all cursor-pointer"
+          className="bg-white dark:bg-[#0a1420] border border-border-light dark:border-white/8 rounded-xl px-4 py-2 text-xs font-bold text-text-main dark:text-white outline-none focus:border-indigo-500 transition-all cursor-pointer h-[38px]"
         />
       </div>
     </>
@@ -517,11 +586,10 @@ const StudentAttendanceManager = () => {
       onBodyScroll={handleBodyScroll}
       header={
         <div
-          className={`absolute top-0 left-0 right-0 z-50 transition-all duration-300 w-full ${
-            isSticky
+          className={`absolute top-0 left-0 right-0 z-50 transition-all duration-300 w-full ${isSticky
               ? 'opacity-100 translate-y-0 shadow-md pointer-events-auto'
               : 'opacity-0 -translate-y-4 pointer-events-none'
-          }`}
+            }`}
         >
           <div className="bg-surface-light/95 dark:bg-surface-dark/95 backdrop-blur-md border-b border-border-light dark:border-border-dark px-4 lg:px-6 py-3 flex items-center justify-between rounded-b-xl">
             <div className="flex items-center gap-2">
@@ -635,19 +703,31 @@ const StudentAttendanceManager = () => {
               <span className="material-symbols-outlined text-text-secondary/20 text-5xl">fact_check</span>
               <div className="flex items-center gap-4">
                 <span className="text-sm font-bold text-text-main dark:text-white">Please select a batch to view and mark attendance:</span>
-                <SelectFilter 
-                  value={selectedBatchId}
-                  onChange={setSelectedBatchId}
-                  options={batchOptions}
-                  defaultLabel="Select Batch"
-                />
+                <div className="w-[200px]">
+                  <GenericSelectDropdown
+                    items={batches}
+                    selectedId={selectedBatchId}
+                    onChange={setSelectedBatchId}
+                    idProp="batch_id"
+                    labelProp="batch_name"
+                    searchFields={["batch_name"]}
+                    selectedViewMode="one-line"
+                    placeholder="Select Batch"
+                    renderItem={(item, isSelected) => (
+                      <div className="py-2.5 px-4 text-xs font-bold text-text-main dark:text-white flex items-center justify-between">
+                        <span>{item.batch_name}</span>
+                        {isSelected && <span className="material-symbols-outlined text-sm text-primary">check</span>}
+                      </div>
+                    )}
+                  />
+                </div>
               </div>
             </div>
           ) : (
             <>
               {/* Desktop view */}
               <div className="hidden md:block">
-                <DataTable 
+                <DataTable
                   title="Daily Registry"
                   subtitle={isEditingDisabled ? "Viewing historical records (Read-Only Mode)" : "Staging changes before committing bulk student register updates"}
                   columns={columns}
@@ -659,11 +739,11 @@ const StudentAttendanceManager = () => {
                   filters={filters}
                   secondaryAction={
                     <>
-                      <RefreshButton 
-                        isFetching={isFetchingRegistry} 
-                        onRefresh={() => queryClient.invalidateQueries({ queryKey: queryKeys.attendance.all })} 
+                      <RefreshButton
+                        isFetching={isFetchingRegistry}
+                        onRefresh={() => queryClient.invalidateQueries({ queryKey: queryKeys.attendance.all })}
                       />
-                      <button 
+                      <button
                         onClick={handleMarkAllPresent}
                         disabled={isLoadingRegistry || studentsList.length === 0 || isEditingDisabled}
                         className="px-4 py-2 bg-slate-100 dark:bg-slate-800 border border-border-light dark:border-white/8 hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed text-[11px] font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer text-text-main dark:text-white"
@@ -680,17 +760,37 @@ const StudentAttendanceManager = () => {
                 {/* Batch & Date Selectors side-by-side */}
                 <div className="flex gap-4 items-center">
                   <div className="flex-1">
-                    <SelectFilter 
-                      value={selectedBatchId}
+                    <GenericSelectDropdown
+                      items={batches}
+                      selectedId={selectedBatchId}
                       onChange={setSelectedBatchId}
-                      options={batchOptions}
-                      defaultLabel="Select Batch"
+                      idProp="batch_id"
+                      labelProp="batch_name"
+                      searchFields={["batch_name"]}
+                      selectedViewMode="one-line"
+                      placeholder="Select Batch"
+                      dropdownWidth="w-[340px]"
+                      renderItem={(item, isSelected) => {
+                        const initials = item.batch_name ? item.batch_name.substring(0, 2).toUpperCase() : "BT";
+                        return (
+                          <LowDensityCard
+                            variant="selection-card"
+                            title={item.batch_name}
+                            subtitle1={`Class ${item.class_level || 11}`}
+                            subtitle2={`${item.course?.metadata?.medium || 'English'} • ${item.branch_name || 'Main Campus'}`}
+                            avatarText={initials}
+                            enrolled={item.enrolled_students || 0}
+                            capacity={item.capacity || 30}
+                            isSelected={isSelected}
+                          />
+                        );
+                      }}
                     />
                   </div>
                   <div className="relative flex items-center bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-lg px-3 py-2">
                     <span className="material-symbols-outlined text-text-secondary text-sm mr-2">calendar_today</span>
-                    <input 
-                      type="date" 
+                    <input
+                      type="date"
                       value={selectedDate}
                       onChange={(e) => setSelectedDate(e.target.value)}
                       className="bg-transparent text-xs font-bold text-text-main dark:text-white outline-none cursor-pointer w-24"
@@ -729,8 +829,8 @@ const StudentAttendanceManager = () => {
                       const displayBatchName = currentBatchObj?.batch_name || 'Active Batch';
                       const isExpanded = expandedCardId === row.student_id;
                       return (
-                        <div 
-                          key={row.student_id} 
+                        <div
+                          key={row.student_id}
                           className="flex flex-col p-4 rounded-xl border border-border-light dark:border-white/5 bg-slate-50/50 dark:bg-[#0a1420] shadow-sm relative overflow-visible"
                         >
                           <div className="flex items-center justify-between w-full">
@@ -784,7 +884,7 @@ const StudentAttendanceManager = () => {
                           {/* Collapsible Time & Remarks Drawer */}
                           <div className="border-t border-slate-100 dark:border-white/5 mt-3 pt-3 flex flex-col gap-1.5">
                             {/* Summary / Expand trigger button */}
-                            <button 
+                            <button
                               onClick={() => setExpandedCardId(isExpanded ? null : row.student_id)}
                               className="flex items-center justify-between w-full text-left text-[10px] font-bold text-text-secondary dark:text-slate-400 cursor-pointer"
                             >
@@ -805,8 +905,8 @@ const StudentAttendanceManager = () => {
                               <div className="grid grid-cols-2 gap-3">
                                 <div className="flex flex-col gap-1">
                                   <span className="text-[9px] font-black uppercase tracking-wider text-text-secondary dark:text-slate-400">Check-In</span>
-                                  <input 
-                                    type="time" 
+                                  <input
+                                    type="time"
                                     disabled={isEditingDisabled || row.status === 'A'}
                                     value={row.entry_time}
                                     onChange={(e) => handleTimeChange(row.student_id, 'entry_time', e.target.value)}
@@ -815,8 +915,8 @@ const StudentAttendanceManager = () => {
                                 </div>
                                 <div className="flex flex-col gap-1">
                                   <span className="text-[9px] font-black uppercase tracking-wider text-text-secondary dark:text-slate-400">Check-Out</span>
-                                  <input 
-                                    type="time" 
+                                  <input
+                                    type="time"
                                     disabled={isEditingDisabled || row.status === 'A'}
                                     value={row.exit_time}
                                     onChange={(e) => handleTimeChange(row.student_id, 'exit_time', e.target.value)}
@@ -826,8 +926,8 @@ const StudentAttendanceManager = () => {
                               </div>
                               <div className="flex flex-col gap-1 mt-3">
                                 <span className="text-[9px] font-black uppercase tracking-wider text-text-secondary dark:text-slate-400">Remarks / Notes</span>
-                                <input 
-                                  type="text" 
+                                <input
+                                  type="text"
                                   disabled={isEditingDisabled}
                                   value={row.remarks}
                                   placeholder={isEditingDisabled ? "Entries Locked" : "Remarks"}
@@ -860,7 +960,7 @@ const StudentAttendanceManager = () => {
               </div>
 
               <div className="flex items-center gap-3">
-                <button 
+                <button
                   onClick={() => {
                     setStagedRecords(JSON.parse(JSON.stringify(initialSnapshot)));
                     setIsDirty(false);
@@ -869,7 +969,7 @@ const StudentAttendanceManager = () => {
                 >
                   Reset
                 </button>
-                <button 
+                <button
                   onClick={handleSave}
                   disabled={saveStatus === 'saving'}
                   className="px-6 py-3 bg-gradient-to-r from-violet-600 to-indigo-600 hover:opacity-90 disabled:opacity-50 rounded-xl text-xs font-bold shadow-lg shadow-indigo-500/25 transition-all text-white flex items-center justify-center gap-2 cursor-pointer uppercase tracking-wider min-w-[170px]"

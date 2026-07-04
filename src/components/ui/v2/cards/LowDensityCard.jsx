@@ -1,6 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import CardContainer from './CardContainer';
 import { mergeSlotClasses } from './cardUtils';
+import Badge from '../indicators/Badge';
+import Avatar from '../Avatar';
+import RadioIndicator from '../RadioIndicator';
+import ProgressBar from '../ProgressBar';
 
 const LowDensityCard = ({
   avatar,
@@ -9,16 +13,21 @@ const LowDensityCard = ({
   title,
   subtitle1,
   subtitle2,
-  bodyText, // Right-side aligned description text/pill
-  actions = [], // Array of [{ label, icon, onClick }]
+  bodyText, 
+  actions = [], 
   onClick,
   className = '',
-  slotClasses = {}
+  slotClasses = {},
+  
+  // Capacity Variant Props
+  variant = 'default', // 'default' | 'selection-card'
+  enrolled = 0,
+  capacity = 30,
+  isSelected = false
 }) => {
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef(null);
 
-  // Close dropdown menu when clicking outside
   useEffect(() => {
     const handleOutsideClick = (e) => {
       if (menuRef.current && !menuRef.current.contains(e.target)) {
@@ -39,6 +48,83 @@ const LowDensityCard = ({
     const wB = priorityOrder[b.priority] || 99;
     return wA - wB;
   });
+
+  if (variant === 'selection-card') {
+    const totalCap = capacity || 30;
+    const isAtCapacity = enrolled >= totalCap;
+    const isNearLimit = enrolled >= totalCap * 0.8 && enrolled < totalCap;
+    
+    let statusLabel = "Active";
+    let statusColor = "success";
+    let progressColor = "success";
+    if (isAtCapacity) {
+      statusLabel = "At Capacity";
+      statusColor = "error";
+      progressColor = "danger";
+    } else if (isNearLimit) {
+      statusLabel = "Near Limit";
+      statusColor = "warning";
+      progressColor = "warning";
+    }
+
+    return (
+      <div 
+        onClick={onClick}
+        className={`w-full flex items-center justify-between p-3.5 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors border-b border-border-light/40 dark:border-border-dark/40 ${className}`}
+      >
+        <div className="flex items-center gap-3.5 min-w-0 flex-1">
+          {/* Reusable Radio Indicator Component */}
+          <RadioIndicator checked={isSelected} />
+
+          {/* Reusable Avatar Component */}
+          {(avatar || avatarText) && (
+            <Avatar 
+              src={avatar}
+              initials={avatarText}
+              size="sm"
+              variant="rounded"
+              alt={title}
+              className="shrink-0"
+            />
+          )}
+
+          {/* Details stack */}
+          <div className="min-w-0 flex-1 flex flex-col gap-0.5 font-sans">
+            <span className="font-bold text-text-main dark:text-white text-[13px] truncate">{title}</span>
+            <span className="text-[10px] text-text-secondary dark:text-slate-400 font-medium">
+              {subtitle1} {subtitle2 && `• ${subtitle2}`}
+            </span>
+            {/* Reusable Progress bar Component using stacked variant */}
+            <div className="mt-1">
+              <ProgressBar 
+                variant="stacked"
+                label="Density"
+                value={enrolled}
+                max={totalCap}
+                color={progressColor}
+                size="md"
+                percentageLabel={`${enrolled}/${totalCap} Cap`}
+                className="w-full"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Right Side: Status and Selection Check */}
+        <div className="flex flex-col items-end gap-2 shrink-0 pl-3">
+          <Badge 
+            variant="status" 
+            color={statusColor} 
+            content={statusLabel} 
+            size="sm"
+          />
+          {isSelected && (
+            <span className="material-symbols-outlined text-primary text-base font-bold">check</span>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <CardContainer 
@@ -109,6 +195,7 @@ const LowDensityCard = ({
               {sortedActions.map((action, idx) => (
                 <button
                   key={idx}
+                  type="button"
                   onClick={(e) => {
                     e.stopPropagation();
                     action.onClick(e);
@@ -124,6 +211,7 @@ const LowDensityCard = ({
             {/* Mobile: Three-dot dropdown actions menu */}
             <div className="@lg:hidden flex items-center relative">
               <button
+                type="button"
                 onClick={(e) => {
                   e.stopPropagation();
                   setShowMenu(prev => !prev);
@@ -142,6 +230,7 @@ const LowDensityCard = ({
                   {sortedActions.map((action, idx) => (
                     <button
                       key={idx}
+                      type="button"
                       onClick={(e) => {
                         e.stopPropagation();
                         setShowMenu(false);

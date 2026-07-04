@@ -72,17 +72,21 @@ const KpiGrid = ({
   lgCols = 5,
   xlCols,
   gap = 3,
+  orientation = 'row', // 'row' | 'column'
   className = ''
 }) => {
-  const baseClass = colsMap[cols] || 'grid-cols-1';
-  const smClass = smColsMap[smCols] || '';
-  const mdClass = mdCols ? (mdColsMap[mdCols] || '') : '';
-  const lgClass = lgCols ? (lgColsMap[lgCols] || '') : '';
-  const xlClass = xlCols ? (xlColsMap[xlCols] || '') : '';
+  const isColumn = orientation === 'column';
+  const displayClass = isColumn ? 'flex flex-col' : 'grid';
+  
+  const baseClass = isColumn ? '' : (colsMap[cols] || 'grid-cols-1');
+  const smClass = isColumn ? '' : (smColsMap[smCols] || '');
+  const mdClass = isColumn ? '' : (mdCols ? (mdColsMap[mdCols] || '') : '');
+  const lgClass = isColumn ? '' : (lgCols ? (lgColsMap[lgCols] || '') : '');
+  const xlClass = isColumn ? '' : (xlCols ? (xlColsMap[xlCols] || '') : '');
   const gapClass = gapMap[gap] || 'gap-3';
 
   return (
-    <div className={`grid ${baseClass} ${smClass} ${mdClass} ${lgClass} ${xlClass} ${gapClass} ${className}`}>
+    <div className={`${displayClass} ${baseClass} ${smClass} ${mdClass} ${lgClass} ${xlClass} ${gapClass} ${className}`}>
       {children}
     </div>
   );

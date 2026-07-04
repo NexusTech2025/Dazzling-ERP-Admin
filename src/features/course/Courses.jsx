@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCoursesQuery, useCourseTypesQuery } from './hooks/useCourseQueries';
 import { usePackagesQuery } from './hooks/usePackageQueries';
@@ -12,85 +12,78 @@ import CourseWorkspace from './workspaces/CourseWorkspace';
 import PackageWorkspace from './workspaces/PackageWorkspace';
 import { ErrorState } from '../../components/ui/QueryStatus';
 
+/**
+ * Isolated micro-component to ensure top-bar background sync 
+ * does not trigger a full re-render of the parent workspace container.
+ */
+const TopBarSyncBadge = () => {
+  const { isFetching: isFetchingCourses } = useCoursesQuery();
+  const { isFetching: isFetchingPackages } = usePackagesQuery();
+  const isBackgroundRefreshing = isFetchingCourses || isFetchingPackages;
+
+  if (!isBackgroundRefreshing) return null;
+
+  return (
+    <div className="ml-3 flex items-center gap-1.5 px-2 py-0.5 bg-primary/5 rounded-full border border-primary/10 animate-pulse">
+      <div className="size-2.5 border-2 border-primary/20 border-t-primary rounded-full animate-spin" />
+      <span className="text-[9px] font-black text-primary uppercase tracking-wider">Updating...</span>
+    </div>
+  );
+};
+
 const Courses = ({ defaultTab = 'courses' }) => {
   const queryClient = useQueryClient();
-  const [isSticky, setIsSticky] = useState(false);
   const [activeTab, setActiveTab] = useState(defaultTab);
 
-  const handleBodyScroll = (e) => {
-    const shouldBeSticky = e.currentTarget.scrollTop > 80;
-    setIsSticky(prev => {
-      if (prev !== shouldBeSticky) return shouldBeSticky;
-      return prev;
-    });
-  };
+  // Consolidated Invalidation Handler (DRY Principle - Issue 4)
+  const handleRefreshAllData = useCallback(() => {
+    const targets = [
+      queryKeys.course.all,
+      queryKeys.course.package.all,
+      queryKeys.course.packageItem.all,
+      queryKeys.course.packagePerk.all
+    ];
+    targets.forEach(key => queryClient.invalidateQueries({ queryKey: key }));
+  }, [queryClient]);
 
-  // Queries to trigger Hydration states at page entry level
-  const { isFetching: isFetchingCourses, error: coursesError } = useCoursesQuery();
-  const { isFetching: isFetchingPackages, error: packagesError } = usePackagesQuery();
+  // Execute queries for hydration states (isFetching is omitted to prevent top-level container re-renders - Issue 3)
+  const { error: coursesError } = useCoursesQuery();
+  const { error: packagesError } = usePackagesQuery();
   const { error: typesError } = useCourseTypesQuery();
 
-  const hasError = coursesError || packagesError || typesError;
-  if (hasError) {
+  const combinedError = coursesError || packagesError || typesError;
+
+  if (combinedError) {
     return (
       <ErrorState 
-        message={hasError.message} 
-        onRetry={() => {
-          queryClient.invalidateQueries({ queryKey: queryKeys.course.all });
-          queryClient.invalidateQueries({ queryKey: queryKeys.course.package.all });
-          queryClient.invalidateQueries({ queryKey: queryKeys.course.packageItem.all });
-          queryClient.invalidateQueries({ queryKey: queryKeys.course.packagePerk.all });
-        }} 
+        message={combinedError.message} 
+        onRetry={handleRefreshAllData} 
       />
     );
   }
 
-  const isBackgroundRefreshing = isFetchingCourses || isFetchingPackages;
-
   return (
     <MainLayout
-      onBodyScroll={handleBodyScroll}
       header={
-        <div
-          className={`absolute top-0 left-0 right-0 z-50 transition-all duration-300 w-full ${
-            isSticky
-              ? 'opacity-100 translate-y-0 shadow-md pointer-events-auto'
-              : 'opacity-0 -translate-y-4 pointer-events-none'
-          }`}
-        >
-          <div className="bg-surface-light/95 dark:bg-surface-dark/95 backdrop-blur-md border-b border-border-light dark:border-border-dark px-4 lg:px-6 py-3 flex items-center justify-between rounded-b-xl">
-            <div className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-primary text-lg">school</span>
-              <span className="text-sm font-bold text-text-main dark:text-white">
-                {activeTab === 'courses' ? 'Curriculum Library' : 'Course Packages'}
-              </span>
-
-              {/* Localized top-bar refresh badge */}
-              {isBackgroundRefreshing && (
-                <div className="ml-3 flex items-center gap-1.5 px-2 py-0.5 bg-primary/5 rounded-full border border-primary/10 animate-pulse">
-                  <div className="size-2.5 border-2 border-primary/20 border-t-primary rounded-full animate-spin"></div>
-                  <span className="text-[9px] font-black text-primary uppercase tracking-wider">Updating...</span>
-                </div>
-              )}
-            </div>
+        <div className="w-full bg-surface-light/95 dark:bg-surface-dark/95 backdrop-blur-md border-b border-border-light dark:border-border-dark px-4 lg:px-6 py-3 flex items-center justify-between rounded-b-xl shadow-sm">
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-primary text-lg">school</span>
+            <span className="text-sm font-bold text-text-main dark:text-white">
+              {activeTab === 'courses' ? 'Curriculum Library' : 'Course Packages'}
+            </span>
+            <TopBarSyncBadge />
           </div>
         </div>
       }
       body={
         <div className="px-2 sm:px-4 lg:px-0 pt-6 lg:pt-10 pb-6 space-y-6">
-          {/* Header */}
+          {/* Header Actions */}
           <CourseHeader
             activeTab={activeTab}
-            isFetching={isBackgroundRefreshing}
-            onRefresh={() => {
-              queryClient.invalidateQueries({ queryKey: queryKeys.course.all });
-              queryClient.invalidateQueries({ queryKey: queryKeys.course.package.all });
-              queryClient.invalidateQueries({ queryKey: queryKeys.course.packageItem.all });
-              queryClient.invalidateQueries({ queryKey: queryKeys.course.packagePerk.all });
-            }}
+            onRefresh={handleRefreshAllData}
           />
 
-          {/* Navigation Tab selection */}
+          {/* Navigation Controls */}
           <div className="flex flex-col gap-4">
             <div className="flex flex-wrap items-center gap-6">
               <TabGroup>
@@ -112,12 +105,13 @@ const Courses = ({ defaultTab = 'courses' }) => {
             </div>
           </div>
 
-          {/* Render Decoupled Sub-Workspace */}
-          {activeTab === 'courses' ? (
+          {/* Optimized Component Visibility: Toggles display style to preserve filter states (Issue 2) */}
+          <div className={activeTab === 'courses' ? 'block' : 'hidden'}>
             <CourseWorkspace />
-          ) : (
+          </div>
+          <div className={activeTab === 'packages' ? 'block' : 'hidden'}>
             <PackageWorkspace />
-          )}
+          </div>
         </div>
       }
     />

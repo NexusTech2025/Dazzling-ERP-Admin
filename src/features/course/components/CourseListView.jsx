@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, memo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import DataTable from '../../../components/ui/DataTable';
 import Badge from '../../../components/ui/Badge';
@@ -8,6 +8,7 @@ import { CoursesMobileView } from './CoursesMobileView';
 /**
  * CourseListView Component
  * Renders the DataTable list representation of courses.
+ * Wrapped in React.memo to prevent unnecessary column rebuilds and calculations on selection change.
  */
 const CourseListView = ({ courses = [], onDelete, selection }) => {
   const navigate = useNavigate();
@@ -67,6 +68,7 @@ const CourseListView = ({ courses = [], onDelete, selection }) => {
             <span className="material-symbols-outlined text-[20px]">edit</span>
           </Link>
           <button
+            type="button"
             onClick={() => onDelete(row.course_id, row.name)}
             className="p-1.5 text-text-secondary hover:text-red-500 transition-colors"
             title="Delete Course"
@@ -115,4 +117,4 @@ const CourseListView = ({ courses = [], onDelete, selection }) => {
   );
 };
 
-export default CourseListView;
+export default memo(CourseListView);

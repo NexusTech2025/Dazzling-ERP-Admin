@@ -112,15 +112,6 @@ const TeachersAttendance = ({ teacherId }) => {
     });
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center py-20 space-y-4">
-        <div className="w-8 h-8 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin"></div>
-        <p className="text-xs text-text-secondary dark:text-slate-400">Loading attendance profile...</p>
-      </div>
-    );
-  }
-
   // Monthly grid calendar calculations
   const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
   let firstDay = new Date(currentYear, currentMonth, 1).getDay();
@@ -143,6 +134,15 @@ const TeachersAttendance = ({ teacherId }) => {
     }
     return { daysArray: days, weeks: wks };
   }, [firstDay, daysInMonth]);
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 space-y-4">
+        <div className="w-8 h-8 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin"></div>
+        <p className="text-xs text-text-secondary dark:text-slate-400">Loading attendance profile...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 text-text-main dark:text-slate-100">
