@@ -1073,3 +1073,106 @@ A flexible, multi-variant wizard step-progression component. It tracks and highl
   variant="glass-indicator"
 />
 ```
+
+---
+
+## KpiCard
+**Location:** `src/components/ui/v2/KpiCard.jsx`
+
+### Description
+A highly-dense KPI metric display card designed for dashboard summary sections. It supports color-themed variants, Material Symbol icon indicators, three size presets, optional trend indicator nodes, and micro-animations (shadow lift on hover). When `isCount` is false (default), numeric values are automatically formatted as Indian Rupee currency (`₹`).
+
+### Usage Guidelines
+- Use to display key financial or operational metrics in dashboard headers (e.g., Total Collected, Pending Dues, Student Count).
+- Wrap multiple `KpiCard` instances inside a `KpiGrid` for responsive column layouts.
+- For the Finance Dashboard, always use `size="lg"` to maintain visual parity with the established design.
+- Use the `trend` prop to embed a small green/red label node showing percentage change.
+
+### Size Variants
+| Size | Height | Padding | Label Text | Value Text | Icon Text |
+| :--- | :----- | :------ | :--------- | :--------- | :-------- |
+| `sm` | `h-16` | `p-2` | `text-[8px]` | `text-sm` | `text-[12px]` |
+| `md` | `h-20` | `p-2.5` | `text-[9px]` | `text-base` | `text-[14px]` |
+| `lg` | `h-24` | `p-3.5` | `text-[10px]` | `text-lg` | `text-[16px]` |
+
+### Props API
+| Prop | Type | Description |
+| :--- | :--- | :--- |
+| `label` | `string` | Uppercase metric identifier displayed at the top-left (e.g. `"TOTAL COLLECTED"`). |
+| `value` | `string\|number` | The primary bold display metric. Numeric values are auto-formatted as `₹` currency unless `isCount={true}`. |
+| `icon` | `string` | Optional Material Symbol icon name displayed at the top-right. |
+| `size` | `string` | Size preset: `'sm'` (compact), `'md'` (standard), or `'lg'` (large, default). |
+| `variant` | `string` | Color theme: `'neutral'` (default), `'success'` (emerald), `'warning'` (amber), `'danger'` (rose), or `'info'` (blue). |
+| `trend` | `node` | Optional React element rendered at the bottom-right (e.g., a green/red percentage label). |
+| `isCount` | `boolean` | If `true`, renders the value as a plain number without currency formatting. Default is `false`. |
+| `className` | `string` | Optional custom CSS classes for the card container. |
+
+### Implementation Example
+```jsx
+import KpiCard from 'src/components/ui/v2/KpiCard';
+
+// Currency metric
+<KpiCard
+  label="Total Collected"
+  value={245000}
+  icon="payments"
+  variant="success"
+  size="lg"
+/>
+
+// Count metric with trend
+<KpiCard
+  label="Total Students"
+  value={148}
+  icon="group"
+  variant="info"
+  isCount={true}
+  size="lg"
+  trend={<span className="text-[9px] font-bold text-emerald-500">+12%</span>}
+/>
+```
+
+---
+
+## KpiGrid
+**Location:** `src/components/ui/v2/KpiGrid.jsx`
+
+### Description
+A responsive grid container that wraps `KpiCard` (or any grid-ready children) into configurable column layouts across breakpoints. It uses static class mapping objects internally to guarantee Tailwind CSS compiler detection of all generated utility classes, preventing purge issues in production builds.
+
+### Usage Guidelines
+- Always wrap `KpiCard` instances in `KpiGrid` rather than writing raw `grid` divs inline.
+- The `cols`, `smCols`, `mdCols`, `lgCols`, and `xlCols` props accept integer values from `1–6` (plus `12` for `cols`). Only provide breakpoints you need — unspecified breakpoints are omitted from the class string.
+- Finance Dashboard standard: `cols={1} smCols={2} lgCols={5} gap={3}`.
+
+### Props API
+| Prop | Type | Description |
+| :--- | :--- | :--- |
+| `children` | `node` | `KpiCard` components or any grid items to wrap. |
+| `cols` | `number` | Base column count (mobile-first). Supports `1–6` and `12`. Default is `1`. |
+| `smCols` | `number` | Column count on `sm` breakpoint (≥640px). Supports `1–6`. Default is `2`. |
+| `mdCols` | `number` | Optional column count on `md` breakpoint (≥768px). Supports `1–6`. Omitted if not provided. |
+| `lgCols` | `number` | Optional column count on `lg` breakpoint (≥1024px). Supports `1–6`. Default is `5`. |
+| `xlCols` | `number` | Optional column count on `xl` breakpoint (≥1280px). Supports `1–6`. Omitted if not provided. |
+| `gap` | `number` | Tailwind gap scale value. Supports `0, 1, 2, 3, 4, 5, 6, 8`. Default is `3`. |
+| `className` | `string` | Optional additional CSS classes for the grid container. |
+
+### Implementation Example
+```jsx
+import KpiGrid from 'src/components/ui/v2/KpiGrid';
+import KpiCard from 'src/components/ui/v2/KpiCard';
+
+<KpiGrid cols={1} smCols={2} lgCols={5} gap={3}>
+  {kpis.map((kpi, idx) => (
+    <KpiCard
+      key={idx}
+      label={kpi.label}
+      value={kpi.value}
+      icon={kpi.icon}
+      isCount={kpi.isCount}
+      variant={kpi.variant}
+      size="lg"
+    />
+  ))}
+</KpiGrid>
+```

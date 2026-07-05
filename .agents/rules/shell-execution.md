@@ -1,5 +1,6 @@
 ---
-trigger: always_on
+trigger: model_decision
+description: Apply this rule when only the normal command unable to perform its task or the return error/warning codes are not received.
 ---
 
 ENV: Windows

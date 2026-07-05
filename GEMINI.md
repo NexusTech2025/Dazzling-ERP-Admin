@@ -47,10 +47,12 @@ We utilize a modern, highly aesthetic dark-mode slate theme featuring glassmorph
 
 We connect to a live Google Apps Script (GAS) web app backend for production CRUD operations, paired with a TanStack Query (React Query) layer.
 
-*   **Real API vs. Mock API**:
-    - Real endpoints are maintained under `src/services/api.js` and imported in `src/features/[feature]/api/[feature].api.js`.
-    - For development/preview, mock lists are maintained under `src/features/[feature]/api/[feature].mockApi.js`.
-    - Always ensure core operations (such as lead additions or registrations) target the real `*.api.js` production methods rather than mock files when hitting production stages.
+*   **Absolute Deprecation of Mock Data**:
+    - The mock API data directory has been completely deleted. We **MUST NEVER** use or create mock files or mock data.
+    - All data fetching and mutations must interact exclusively with the live API client.
+*   **Centralized Cache & Schema Validation Layer**:
+    - All queries and cache lookups must pass through the centralized cache helpers (`src/lib/react-query/cacheHelper.js`), which run data normalization and validate payloads against the schema engine.
+    - Read-time queries must delegate relational stitching to the selector layer via `hydrateRecord` (found in `src/lib/react-query/hydrate.js`), which enforces strict validation check constraints dynamically before passing records to UI components.
 *   **Unregistered Student Lead (Prospect) Payload Structure**:
     - Unregistered student leads/prospects are decoupled from the core student registration, targeting a dedicated Leads table on the backend.
     - We utilize the centralized `apiRegistry.js` action `'STUDENT.ADD_LEAD'` which maps to `'student_add_lead'`.
@@ -72,6 +74,11 @@ We connect to a live Google Apps Script (GAS) web app backend for production CRU
       - `console.log('[Component] Submitting Request:', payload);`
       - `console.log('[Component] API Response:', response);`
       - `console.error('[Component] API Error:', err);`
+*   **Transactional Accounting (Finance Dashboard & Student Fees) Batch API Pattern**:
+    - Retrieve all student fee accounts, installments, payments, and fee adjustments in a single post request using `"sheet_get_accounting_data"`.
+    - Cache results globally via React Query under key `['finance', 'accounting-data']`.
+    - Implement a dynamic master-detail dashboard; selecting a student from the directory updates the side-by-side Installments and Payments tables instantly from cached values.
+    - Plan Reference: [Adding FeeAccounts View & Finance Dashboard](C:/Users/manis/.gemini/antigravity-ide/brain/7ea0e31d-d4e2-4e27-bc8b-6b28f6882535/implementation_plan.md)
 
 ---
 
@@ -139,3 +146,31 @@ We maintain local catalogs documenting reusable frontend components and interact
 *   **Interactive Popup Modals**: Detailed in `E:/NAST/Dazzling/ERP System/dazzling-erp-admin/.gemini/memory/models.md`.
     - *Purpose*: Documents all dialogs and modals (e.g. `ConfirmModal`, `APIErrorModal`, `BatchSelectionModal`, `CourseSelectionModal`).
     - *How to Use*: Refer to this file when you need to trigger confirmations, show errors, or implement split-pane selection wizards. Ensure you bind the state hooks and prop signatures exactly as specified in the documented examples.
+
+---
+
+## 9. Date Processing & Data Aggregation Standards
+
+*   **Date Operations**:
+    - Always use the `date-fns` library for parsing, comparing, and formatting dates. Do not use native `new Date(...)` parsing or `.toLocaleDateString(...)` for user-facing tables, to prevent timezone and consistency drift.
+    - Standard operations:
+      - Use `parseISO(dateString)` to instantiate dates from strings.
+      - Use `compareDesc(dateA, dateB)` or `compareAsc(dateA, dateB)` for sorting lists.
+      - Use `isBefore`, `isAfter`, and `isEqual` to validate active date window ranges.
+      - Use `format(parsedDate, 'MMM d, yyyy')` to display clean, user-facing dates.
+*   **Fluent Data Wrangling (`queryEngine.js`)**:
+    - For all client-side array aggregations, grouping, filtering, or pivot-like summary operations, import and use the custom query engine from `src/lib/queryEngine.js`.
+    - Always use the fluent `aq(data)` table wrapper:
+      ```javascript
+      import { aq, op } from 'src/lib/queryEngine';
+      
+      const summary = aq(transactions)
+        .filter(tx => tx.amount > 0)
+        .groupby('payment_method')
+        .rollup({
+          total: op.sum('amount'),
+          count: op.count()
+        })
+        .orderby('-total')
+        .objects();
+      ```

@@ -1,0 +1,416 @@
+{
+    "components": [
+        {
+            "id": "Button",
+            "path": "src/components/ui/v2/Button.jsx",
+            "description": "Foundational user action component that handles form submissions, standard click events, internal routing, and external hyperlinks.",
+            "useCases": [
+                "Form submissions and resetting actions.",
+                "Primary, secondary, and tertiary contextual layout call-to-actions (CTAs).",
+                "Destructive actions (e.g., delete confirmation triggers).",
+                "Seamless application navigation via React Router without rewriting logic."
+            ],
+            "props": {
+                "children": {
+                    "type": "ReactNode",
+                    "required": false,
+                    "description": "The text or nested elements rendered inside the button body."
+                },
+                "variant": {
+                    "type": "string",
+                    "default": "'contained'",
+                    "options": [
+                        "contained",
+                        "outlined",
+                        "text",
+                        "danger",
+                        "success"
+                    ],
+                    "description": "The structural aesthetic style theme of the button."
+                },
+                "size": {
+                    "type": "string",
+                    "default": "'md'",
+                    "options": [
+                        "sm",
+                        "md",
+                        "lg"
+                    ],
+                    "description": "The dimensional sizing tier affecting height, padding, and typography."
+                },
+                "startIcon": {
+                    "type": "string",
+                    "required": false,
+                    "description": "Material Symbols icon key identifier rendered before the text content."
+                },
+                "endIcon": {
+                    "type": "string",
+                    "required": false,
+                    "description": "Material Symbols icon key identifier rendered after the text content."
+                },
+                "loading": {
+                    "type": "boolean",
+                    "default": "false",
+                    "description": "Toggles an absolute interactive lock and displays a rotating loading wheel indicator."
+                },
+                "disabled": {
+                    "type": "boolean",
+                    "default": "false",
+                    "description": "Disables element pointer events and drops opacity."
+                },
+                "onClick": {
+                    "type": "function",
+                    "required": false,
+                    "description": "Callback triggered upon a clean mouse click event."
+                },
+                "navigateTo": {
+                    "type": "string",
+                    "required": false,
+                    "description": "React Router path destination string triggered on successfully clicked states."
+                },
+                "href": {
+                    "type": "string",
+                    "required": false,
+                    "description": "External target URL string; shifts the structural DOM rendering layer to an anchor <a> element."
+                },
+                "type": {
+                    "type": "string",
+                    "default": "'button'",
+                    "options": [
+                        "button",
+                        "submit",
+                        "reset"
+                    ],
+                    "description": "The default structural HTML button action behavior attribute."
+                },
+                "className": {
+                    "type": "string",
+                    "default": "''",
+                    "description": "Custom external Tailwind style overrides."
+                }
+            },
+            "variants": {
+                "contained": "High-emphasis standard background coloring with text-white matching active app core palettes.",
+                "outlined": "Low-emphasis transparent backdrop enclosed within thin border bounding limits.",
+                "text": "Zero-border layout footprint that matches text configurations, shifting colors only on active pointer hover tags.",
+                "danger": "Alert-red high visibility theme intended for data destructions and system deletions.",
+                "success": "Emerald-green aesthetic pattern for operational confirmations, saves, and wizard completion checkpoints."
+            },
+            "internalFeatures": [
+                "Polymorphic DOM Shifting: Natively intercepts the presence of an `href` attribute to swap structural tags from `<button>` to `<a>` seamlessly.",
+                "Built-in Micro-Animations: Incorporates scaling down transforms (`active:scale-95`) and layout transitions to optimize tactile interactivity.",
+                "Loading State Interception: Automatically maps the `progress_activity` spin loader to the screen layout while locking the click callbacks from firing downstream execution routines."
+            ]
+        },
+        {
+            "id": "TextInput",
+            "path": "src/components/ui/v2/TextInput.jsx",
+            "description": "A streamlined input entry field built as a modular wrapper surrounding BaseInput components following strict Separation of Concerns constraints.",
+            "useCases": [
+                "Text collection grids inside standard creation forms.",
+                "String search inputs and filtering control structures.",
+                "Sanitized data-entry fields where leading or trailing spaces could invalidate database queries."
+            ],
+            "props": {
+                "type": {
+                    "type": "string",
+                    "default": "'text'",
+                    "description": "Defines the specific functional HTML input target type variant."
+                },
+                "trim": {
+                    "type": "boolean",
+                    "default": "false",
+                    "description": "Enables automatic string whitespace trimming routines upon trigger execution."
+                },
+                "onBlur": {
+                    "type": "function",
+                    "required": false,
+                    "description": "Standard action event callback dispatched when the element loses operational focus."
+                },
+                "ref": {
+                    "type": "React.Ref",
+                    "required": false,
+                    "description": "Forwarded reference pointer allowing parents direct DOM traversal mechanisms."
+                }
+            },
+            "variants": {
+                "Standard": "Inherits full operational UI/UX traits directly from the baseline BaseInput schema registry definitions."
+            },
+            "internalFeatures": [
+                "Ref Forwarding Architecture: Employs `React.forwardRef` to pass DOM boundaries directly to underlying interactive elements without breaking lifecycle models.",
+                "Automated Value Sanitization: Implements an atomic text-trimming execution routine on blur, filtering structural spacing anomalies automatically before form data compilation hooks execute."
+            ]
+        },
+        {
+            "id": "KpiCard",
+            "path": "src/components/ui/v2/KpiCard.jsx",
+            "description": "Highly dense informational component dedicated to charting operational parameters, metrics, performance indicators, and financial trends.",
+            "useCases": [
+                "Admin control hub tracking financial margins or earnings.",
+                "Statistical breakdowns showing specific customer/student counts inside tracking lists.",
+                "Dashboard overview matrix arrays displaying operational thresholds."
+            ],
+            "props": {
+                "label": {
+                    "type": "string",
+                    "required": true,
+                    "description": "The textual title identifier of the statistic being displayed."
+                },
+                "value": {
+                    "type": "string | number",
+                    "required": true,
+                    "description": "The actual dynamic record numeric total or formatted text value string."
+                },
+                "icon": {
+                    "type": "string",
+                    "required": false,
+                    "description": "The Material Symbols name glyph shown within the right contextual quadrant."
+                },
+                "size": {
+                    "type": "string",
+                    "default": "'lg'",
+                    "options": [
+                        "sm",
+                        "md",
+                        "lg"
+                    ],
+                    "description": "Dimensional bounds dictionary controlling density scale levels."
+                },
+                "variant": {
+                    "type": "string",
+                    "default": "'neutral'",
+                    "options": [
+                        "neutral",
+                        "success",
+                        "warning",
+                        "danger",
+                        "info"
+                    ],
+                    "description": "Color palette profile defining indicators, borders, text, and asset background layouts."
+                },
+                "trend": {
+                    "type": "ReactNode",
+                    "required": false,
+                    "description": "An auxiliary micro-trend component badge nested immediately adjacent to the value metric stack."
+                },
+                "isCount": {
+                    "type": "boolean",
+                    "default": "false",
+                    "description": "Flags formatting rules; if set to false, numeric values default to localized Indian Rupee currency strings."
+                },
+                "className": {
+                    "type": "string",
+                    "default": "''",
+                    "description": "Custom layout positional overrides."
+                }
+            },
+            "variants": {
+                "neutral": "Slate color configuration optimized for structural balance across neutral metrics.",
+                "success": "Emerald hue highlighting positive performance milestones or balanced financial ledgers.",
+                "warning": "Amber theme providing high operational warning feedback metrics.",
+                "danger": "Rose red coloring mapping system failures, deficit calculations, or missing allocations.",
+                "info": "Blue aesthetic styling explicitly meant for general structural categorization flags."
+            },
+            "internalFeatures": [
+                "Context-Aware Localization: Natively interprets the value type and `isCount` parameters, implementing automatic currency conversions using `toLocaleString()` to properly prefix metrics with the `₹` symbol.",
+                "Micro-Elevations: Integrates micro-interaction vectors (`hover:-translate-y-0.5 hover:shadow-md`) to elevate spatial depth visibility in real-time.",
+                "Granular Fluid Sizing Rulesets: Maintains hardcoded dimension configurations mapping layout metrics seamlessly across specific layout viewports (ranging from micro-cards `h-14` to desktop metrics `h-24`)."
+            ]
+        },
+        {
+            "id": "Badge",
+            "path": "src/components/ui/Badge.jsx",
+            "description": "Compact uppercase status label component highlighting classifications, micro-indicators, and current record attributes.",
+            "useCases": [
+                "Data column status rows (e.g., Active, Expired, Pending logs).",
+                "Role identifiers tracking specialized application access matrices.",
+                "High-density categorization chips embedded in complex data structures."
+            ],
+            "props": {
+                "children": {
+                    "type": "ReactNode",
+                    "required": true,
+                    "description": "The text string content displayed inside the badge."
+                },
+                "variant": {
+                    "type": "string",
+                    "default": "'default'",
+                    "options": [
+                        "default",
+                        "primary",
+                        "success",
+                        "warning",
+                        "danger",
+                        "info"
+                    ],
+                    "description": "The status color palette configuration mapping text backgrounds."
+                },
+                "className": {
+                    "type": "string",
+                    "default": "''",
+                    "description": "External styling injections."
+                }
+            },
+            "variants": {
+                "default": "Subtle slate design optimized for neutral states with native dark mode support.",
+                "primary": "App standard brand theme utilizing low-opacity background tint matrices.",
+                "success": "Green configuration emphasizing confirmation states.",
+                "warning": "Amber tint displaying low-level system exceptions or warnings.",
+                "danger": "Red high-contrast indicator alerting critical actions or systemic failures.",
+                "info": "Blue layout accent applied to general category definitions."
+            },
+            "internalFeatures": [
+                "Dark Mode Synchronization: Integrates dynamic Tailwind variant tags (`dark:bg-slate-800 dark:text-slate-300`) to guarantee accessibility values scale correctly when switching operational themes.",
+                "Micro-Typography Alignment: Enforces precise layout uniformity using tracking-wide transformations, bold capitalization rules, and strict flex center positioning."
+            ]
+        },
+        {
+            "id": "Card",
+            "path": "src/components/ui/Card.jsx",
+            "description": "Structural layout utility serving as the primary content bounding container, using sub-components to segment headers, body layouts, and action footers.",
+            "useCases": [
+                "Decoupled block modules separating data visualizer layers.",
+                "Information display cards holding complex analytical configurations.",
+                "Clickable grid layout dashboards."
+            ],
+            "props": {
+                "children": {
+                    "type": "ReactNode",
+                    "required": true,
+                    "description": "Composite structural layout containing internal card structures."
+                },
+                "variant": {
+                    "type": "string",
+                    "default": "'default'",
+                    "options": [
+                        "default",
+                        "primary",
+                        "background"
+                    ],
+                    "description": "The theme profile layer determining background and border colors."
+                },
+                "onClick": {
+                    "type": "function",
+                    "required": false,
+                    "description": "Callback that converts the structural container into an active, clickable grid layout block."
+                },
+                "className": {
+                    "type": "string",
+                    "default": "''",
+                    "description": "Tailwind alignment overrides."
+                }
+            },
+            "subComponents": [
+                {
+                    "name": "Card.Header",
+                    "props": {
+                        "border": {
+                            "type": "boolean",
+                            "default": "true",
+                            "description": "Toggles the bottom structural separator line."
+                        },
+                        "className": {
+                            "type": "string",
+                            "default": "''"
+                        }
+                    },
+                    "description": "Top container segment optimized for section titles and action layout headers."
+                },
+                {
+                    "name": "Card.Body",
+                    "props": {
+                        "className": {
+                            "type": "string",
+                            "default": "''"
+                        }
+                    },
+                    "description": "Main center layout workspace padding wrapper."
+                },
+                {
+                    "name": "Card.Footer",
+                    "props": {
+                        "bg": {
+                            "type": "boolean",
+                            "default": "false",
+                            "description": "Enables an explicit low-opacity accent background shading style."
+                        },
+                        "className": {
+                            "type": "string",
+                            "default": "''"
+                        }
+                    },
+                    "description": "Bottom tray container optimized for hosting secondary action row item buttons."
+                }
+            ],
+            "variants": {
+                "default": "Standard surface coloration mapping dark mode light-to-dark backdrop transitions.",
+                "primary": "Low-opacity branded theme with a matching primary border configuration.",
+                "background": "Deep layout backdrop color matching the global application layout grid scaffolding closely."
+            },
+            "internalFeatures": [
+                "Composite Component Blueprinting: Attaches utility references (`Card.Header`, `Card.Body`, `Card.Footer`) straight to the primary export object, streamlining layout generation workflows.",
+                "Interactive State Mutator: Evaluates the presence of `onClick` execution bindings to dynamically alter pointer states (`cursor-pointer`) and inject shadow transition overrides smoothly."
+            ]
+        },
+        {
+            "id": "ExpandableLowDensityCard",
+            "path": "src/components/ui/v2/cards/ExpandableLowDensityCard.jsx",
+            "description": "A highly-customizable low density list card with a slide-down expandable detailed panel.",
+            "useCases": [
+                "Mobile listing viewports that require dense list items.",
+                "Detail grids where secondary details should hide behind an inline toggle to preserve viewport heights.",
+                "Selectable items in master-detail panels."
+            ],
+            "props": {
+                "isChecked": {
+                    "type": "boolean",
+                    "required": false,
+                    "description": "Applies selective background and border highlight classes."
+                },
+                "onSelect": {
+                    "type": "function",
+                    "required": false,
+                    "description": "Checkbox toggle click listener callback."
+                },
+                "isExpanded": {
+                    "type": "boolean",
+                    "required": true,
+                    "description": "Controls expansion visibility state of the detail panel."
+                },
+                "onToggleExpand": {
+                    "type": "function",
+                    "required": true,
+                    "description": "Toggle click listener callback assigned to the rotating chevron."
+                },
+                "leftHeader": {
+                    "type": "ReactNode",
+                    "required": true,
+                    "description": "Header elements positioned inside the left quadrant (e.g., ID link, primary badges)."
+                },
+                "rightHeader": {
+                    "type": "ReactNode",
+                    "required": true,
+                    "description": "Header elements positioned inside the right quadrant (e.g., amounts, direction arrows, date badges)."
+                },
+                "expandedContent": {
+                    "type": "ReactNode",
+                    "required": true,
+                    "description": "Detailed panel content containing metadata list grids and bottom drawer actions."
+                },
+                "onCardClick": {
+                    "type": "function",
+                    "required": false,
+                    "description": "Full card mouse click event callback."
+                }
+            },
+            "variants": {
+                "Standard": "Inherits dark-mode compatible surface light-to-dark background fills and adaptively scales borders when selected."
+            },
+            "internalFeatures": [
+                "Click Propagation Interception: Intuitively ignores click events emitted from selection checkboxes and chevrons to prevent triggers from bubbling up to general card click routines.",
+                "Adaptive Highlight: Employs active tint modifiers (bg-primary/5, border-primary) automatically when isChecked is set to true.",
+                "Smooth Expandable Transitions: Binds duration-200 animation rules on mount states to drop down detailed grids naturally."
+            ]
+        }
+    ]
+}

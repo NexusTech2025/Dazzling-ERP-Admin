@@ -133,6 +133,12 @@ This document provides a highly detailed, chronological registry of all feature 
 
 ## 5. Batch & Finance Configurations
 
+### [2026-06-26] Money Transaction Form UI and Request Payload Refinements
+* **Objective**: Update the transaction logging form (`MoneyTransactionForm.jsx`) to collect and submit all required database columns, while formatting the field labels dynamically based on flow direction.
+* **Files Modified**:
+  * `src/features/finance/transactions/components/MoneyTransactionForm.jsx` (Added User table lookup, dynamic UI labels for system handler and counterparties, and mapping of optional/audit fields)
+* **Walkthrough Validation**: Form labels display dynamically as Sender/Receiver and Received By/Sent By depending on flow direction. Payloads successfully align to the REST API specifications.
+
 ### [2026-05-28] Batch Schema Alignment & Timetable Normalization
 * **Objective**: Synchronize batch details, schedules, and weekday calendars with database structures.
 * **Files Modified**:
@@ -152,7 +158,7 @@ This document provides a highly detailed, chronological registry of all feature 
 
 ## 6. Comprehensive Implementation Reference Index
 
-Below is the list of all 43 completed implementations documented in the project history:
+Below is the list of all 44 completed implementations documented in the project history:
 
 1. **batch-error-handling.md** (Standardized error boundary mappings for batch forms)
 2. **batch-schedule-normalization.md** (Normalized weekday and duration formats in calendar schedules)
@@ -197,3 +203,4 @@ Below is the list of all 43 completed implementations documented in the project 
 41. **student-profile-re-audit.md** (Analyzed caching structures for student profile pages)
 42. **student-edit-refactoring.md** (Refactored student editor forms to use atomic V2 components)
 43. **batch-form-refactoring-and-routing.md** (Aligned batch form paths to V2 router structure)
+44. **money-transaction-form-and-payload-refinements.md** (Refined MoneyTransaction Form UI and dynamic labels)
