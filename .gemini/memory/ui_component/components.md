@@ -1176,3 +1176,1137 @@ import KpiCard from 'src/components/ui/v2/KpiCard';
   ))}
 </KpiGrid>
 ```
+
+---
+
+## HydrationGuard
+
+**Location:** `src/components/guards/HydrationGuard.jsx`
+
+### Description
+
+App initialization guard that blocks rendering of children/routes until critical ERP initialization data is hydrated and cached.
+
+### Usage Guidelines
+
+Wrap the root provider or private route stack with `HydrationGuard` to guarantee cache presence for child elements.
+
+### Props API
+
+| Prop | Type | Description |
+| :--- | :--- | :--- |
+| `children` | `node` | React children to mount after successful data hydration. |
+
+### Implementation Example
+
+```jsx
+import HydrationGuard from 'src/components/guards/HydrationGuard';
+
+<HydrationGuard>
+  <AdminLayout />
+</HydrationGuard>
+```
+
+---
+
+## AdminLayout
+
+**Location:** `src/components/layout/AdminLayout.jsx`
+
+### Description
+
+Primary structural skeleton for the administrative route section, providing header layout and sidebar navigation boundaries.
+
+### Usage Guidelines
+
+Used as the route layout component in React Router for `/admin` sub-paths.
+
+### Props API
+
+*This component has no public Props API.*
+
+### Implementation Example
+
+```jsx
+import AdminLayout from 'src/components/layout/AdminLayout';
+
+// React Router Route definition
+<Route path="/admin" element={<AdminLayout />} />
+```
+
+---
+
+## MainLayout
+
+**Location:** `src/components/layout/MainLayout.jsx`
+
+### Description
+
+A flexible three-segment vertical layout (Header, Scrollable Body, Footer) that locks viewport scroll behavior and isolates content scrolling to the body context.
+
+### Usage Guidelines
+
+Used inside dashboard feature panels to maintain sticky header/footer actions panels during scrollable list/detail navigation.
+
+### Props API
+
+| Prop | Type | Description |
+| :--- | :--- | :--- |
+| `header` | `node` | Fixed upper segment node element. |
+| `body` | `node` | Primary scrollable viewport content area. |
+| `footer` | `node` | Fixed lower segment node element (such as `SelectionActionBar`). |
+| `className` | `string` | Optional CSS utility class string for customization. |
+| `slotClasses` | `object` | Style overrides mapping for `container`, `header`, `body`, and `footer`. |
+| `onBodyScroll` | `function` | Scroll callback hook bound directly to the body segment container. |
+
+### Implementation Example
+
+```jsx
+import MainLayout from 'src/components/layout/MainLayout';
+
+<MainLayout
+  header={<HeaderSegment />}
+  body={<BodyContent />}
+  footer={<FooterSegment />}
+/>
+```
+
+---
+
+## Header
+
+**Location:** `src/components/layout/Header.jsx`
+
+### Description
+
+The standard top-bar element containing navigation triggers, branding metadata tags, instant search bar, light/dark theme switchers, and user status indicators.
+
+### Usage Guidelines
+
+Rendered globally by `AdminLayout` at the top of the viewport.
+
+### Props API
+
+| Prop | Type | Description |
+| :--- | :--- | :--- |
+| `onMenuClick` | `function` | Callback triggered when the sidebar toggle menu button is clicked (for responsive layout sizes). |
+
+### Implementation Example
+
+```jsx
+import Header from 'src/components/layout/Header';
+
+<Header onMenuClick={() => setSidebarOpen(true)} />
+```
+
+---
+
+## Sidebar
+
+**Location:** `src/components/layout/Sidebar.jsx`
+
+### Description
+
+The main navigation sidebar, supporting multi-level collapsible group menus, responsive overlay views for mobile screens, and automatic menu expansion based on active route paths.
+
+### Usage Guidelines
+
+Rendered by `AdminLayout` on the side of the main workspace.
+
+### Props API
+
+| Prop | Type | Description |
+| :--- | :--- | :--- |
+| `isOpen` | `boolean` | Sidebar drawer visibility state (on mobile devices). |
+| `onClose` | `function` | Close callback hook when clicking backdrop or close buttons. |
+
+### Implementation Example
+
+```jsx
+import Sidebar from 'src/components/layout/Sidebar';
+
+<Sidebar isOpen={isSidebarOpen} onClose={() => setSidebarOpen(false)} />
+```
+
+---
+
+## Card
+
+**Location:** `src/components/ui/Card.jsx`
+
+### Description
+
+A versatile presentation card container supporting distinct visual variants, configurable headers/footers with border separations, backgrounds, and interactive hover highlight styles.
+
+### Usage Guidelines
+
+Used as the standard bounding box/sheet container for form segments, detail dashboards, lists, and charts to preserve depth and consistent structure.
+
+### Props API
+
+#### Card Props API
+| Prop | Type | Description |
+| :--- | :--- | :--- |
+| `children` | `node` | Inner elements of the card (e.g. Card.Header, Card.Body, Card.Footer). |
+| `className` | `string` | Optional CSS custom classes. |
+| `variant` | `string` | Visual variant: `'default'` (surface bg), `'primary'` (tinted bg), or `'background'` (transparent surface bg). Default is `'default'`. |
+| `onClick` | `function` | Click trigger. If defined, turns cursor to pointer and adds hover shadow animations. |
+
+#### Card.Header Props API
+| Prop | Type | Description |
+| :--- | :--- | :--- |
+| `children` | `node` | Header titles or control panels. |
+| `className` | `string` | Optional CSS custom classes. |
+| `border` | `boolean` | If true, adds a border at the bottom segment boundary. Default is `true`. |
+
+#### Card.Body Props API
+| Prop | Type | Description |
+| :--- | :--- | :--- |
+| `children` | `node` | Core card body contents. |
+| `className` | `string` | Optional CSS custom classes. |
+
+#### Card.Footer Props API
+| Prop | Type | Description |
+| :--- | :--- | :--- |
+| `children` | `node` | Footer text or button trays. |
+| `className` | `string` | Optional CSS custom classes. |
+| `bg` | `boolean` | If true, applies a slate background overlay. Default is `false`. |
+
+### Implementation Example
+
+```jsx
+import Card from 'src/components/ui/Card';
+
+<Card variant="default">
+  <Card.Header border={true}>
+    <h3 className="text-lg font-bold">User Profile</h3>
+  </Card.Header>
+  <Card.Body>
+    <p>User details go here...</p>
+  </Card.Body>
+  <Card.Footer bg={true}>
+    <button>Save Details</button>
+  </Card.Footer>
+</Card>
+```
+
+---
+
+## Badge
+
+**Location:** `src/components/ui/Badge.jsx`
+
+### Description
+
+A static uppercase micro-badge component mapping status conditions directly to semantic status color templates.
+
+### Usage Guidelines
+
+Use for tags, table column labels, or category names where compact status highlights (e.g. "Active", "Pending") are required.
+
+### Props API
+
+| Prop | Type | Description |
+| :--- | :--- | :--- |
+| `children` | `node` | Text label/status inside the badge. |
+| `variant` | `string` | Color variant: `'default'` (slate), `'primary'` (brand), `'success'` (green), `'warning'` (amber), `'danger'` (red), `'info'` (blue). Default is `'default'`. |
+| `className` | `string` | Optional custom classes. |
+
+### Implementation Example
+
+```jsx
+import Badge from 'src/components/ui/Badge';
+
+<Badge variant="success">Active</Badge>
+```
+
+---
+
+## APIErrorModal
+
+**Location:** `src/components/ui/APIErrorModal.jsx`
+
+### Description
+
+A modal pop-up error dialog that captures backend action failures, showing structured semantic warnings with copyable diagnostics and collapsible technical/stack trace details.
+
+### Usage Guidelines
+
+Bind to global query/mutation error states to inform users of query exceptions, replacing browser alert fallbacks.
+
+### Props API
+
+| Prop | Type | Description |
+| :--- | :--- | :--- |
+| `isOpen` | `boolean` | Modal visibility state. |
+| `onClose` | `function` | Dismiss click callback to close the modal. |
+| `title` | `string` | Error header text. Default is `"API Execution Error"`. |
+| `error` | `object` | The error object containing `message`, `type`, `details`, or `stack`. |
+| `onRetry` | `function` | Optional callback to retry the failed operation. |
+| `retryText` | `string` | Button text for retry callback. Default is `"Try Again"`. |
+
+### Implementation Example
+
+```jsx
+import APIErrorModal from 'src/components/ui/APIErrorModal';
+
+<APIErrorModal
+  isOpen={hasError}
+  onClose={() => setHasError(false)}
+  error={apiError}
+  onRetry={refetchData}
+/>
+```
+
+---
+
+## ConfirmModal
+
+**Location:** `src/components/ui/ConfirmModal.jsx`
+
+### Description
+
+A deletion/action confirmation dialog supporting status overlays (idle, processing, success, error) and showing dynamic result feedback labels.
+
+### Usage Guidelines
+
+Used before executing destructive actions (e.g., delete record mutations) to confirm user intent.
+
+### Props API
+
+| Prop | Type | Description |
+| :--- | :--- | :--- |
+| `isOpen` | `boolean` | Modal visibility state. |
+| `onClose` | `function` | Cancel/dismiss callback hook. |
+| `onConfirm` | `function` | Confirm action click hook. |
+| `title` | `string` | Modal title. Default is `"Confirm Action"`. |
+| `message` | `string` | Descriptive confirmation message. Default is `"Are you sure you want to proceed?"`. |
+| `confirmText` | `string` | Bold button confirm text label. Default is `"Delete"`. |
+| `cancelText` | `string` | Dismiss action label. Default is `"Cancel"`. |
+| `isProcessing` | `boolean` | If true, disables controls and presents spinner overlay. Default is `false`. |
+| `status` | `string` | Workflow state: `'idle'`, `'processing'`, `'success'`, `'error'`. Default is `'idle'`. |
+| `resultMessage` | `string` | Supporting detail label when status resolves to success/error. |
+
+### Implementation Example
+
+```jsx
+import ConfirmModal from 'src/components/ui/ConfirmModal';
+
+<ConfirmModal
+  isOpen={isConfirming}
+  onClose={() => setIsConfirming(false)}
+  onConfirm={handleDeleteRecord}
+  title="Delete Course"
+  message="This action is irreversible. Proceed?"
+/>
+```
+
+---
+
+## DeleteDependencyModal
+
+**Location:** `src/components/ui/DeleteDependencyModal.jsx`
+
+### Description
+
+A modal window that blocks item deletion when referenced active dependencies (foreign key violations) exist. It renders parsed violations in an accordion list and redirects users to a detail/conflict resolution page.
+
+### Usage Guidelines
+
+Use in entity managers (e.g. Student Directory, Courses) when a delete request throws referential constraint violations from the backend.
+
+### Props API
+
+| Prop | Type | Description |
+| :--- | :--- | :--- |
+| `isOpen` | `boolean` | Modal visibility state. |
+| `onClose` | `function` | Close button click handler. |
+| `errorPayload` | `object` | The error payload containing the violations list from the API response. |
+| `parentId` | `string` | Unique identifier of the record that user wants to delete. |
+| `parentName` | `string` | Readable name of the entity being deleted (e.g., student name, course name). |
+| `onResolve` | `function` | Callback triggered when a dependency gets resolved or cleared. |
+| `parentType` | `string` | Entity type identifier matching mapping dict keys (e.g., `'Student'`, `'Course'`). |
+
+### Implementation Example
+
+```jsx
+import DeleteDependencyModal from 'src/components/ui/DeleteDependencyModal';
+
+<DeleteDependencyModal
+  isOpen={showBlockers}
+  onClose={() => setShowBlockers(false)}
+  errorPayload={apiErrorDetails}
+  parentId="STU-1002"
+  parentName="Jane Doe"
+  parentType="Student"
+/>
+```
+
+---
+
+## ResolveDeleteConflict
+
+**Location:** `src/components/ui/ResolveDeleteConflict.jsx`
+
+### Description
+
+An accordioned helper view that displays database referential conflicts grouped by tables, presenting custom warning notes (e.g. for finance ledgers) and exposing checklist options for single or bulk item deletion.
+
+### Usage Guidelines
+
+Used as a sub-component within `DeleteDependencyModal` or on dedicated conflict resolution full-screen pages.
+
+### Props API
+
+| Prop | Type | Description |
+| :--- | :--- | :--- |
+| `blockers` | `array` | A list of parsed blocker objects mapping `blockerTable`, `blockerId`, `foreignKey`, and `detailLabel`. |
+| `parentType` | `string` | Entity type name being inspected for deletion. |
+| `onItemDeleted` | `function` | Callback hook triggered immediately after a successful mutation deletes an inline dependent item. |
+
+### Implementation Example
+
+```jsx
+import { ResolveDeleteConflict } from 'src/components/ui/ResolveDeleteConflict';
+
+<ResolveDeleteConflict
+  blockers={parsedBlockers}
+  parentType="Course"
+  onItemDeleted={refetchDependencies}
+/>
+```
+
+---
+
+## DataTable
+
+**Location:** `src/components/ui/DataTable.jsx`
+
+### Description
+
+A structured composite template that groups table titles, primary actions buttons, dynamic filters grid bars, loading indicators, empty indicators, and the data table.
+
+### Usage Guidelines
+
+Ideal for primary resource index views (e.g., Courses Catalog, Batches Directory) to standardize lists across features.
+
+### Props API
+
+| Prop | Type | Description |
+| :--- | :--- | :--- |
+| `title` | `string` | Primary header label text. |
+| `subtitle` | `string` | Optional smaller explanation text below the title. |
+| `primaryAction` | `node` | Button element aligned to the right (e.g. "Create New"). |
+| `secondaryAction` | `node` | Optional button element placed left of primary action. |
+| `filters` | `node` | Flex or grid elements comprising the inputs/filters row. |
+| `columns` | `array` | List of column configurations: `[{ header: string, accessor: string|func, align?: string, cell?: func }]`. |
+| `data` | `array` | Data array to list. Default is `[]`. |
+| `isLoading` | `boolean` | Activates loading placeholder table rows. |
+| `error` | `object` | Activates table error fallback container. |
+| `onRetry` | `function` | Retry callback bound to error indicator button. |
+| `emptyMessage` | `string` | Text displayed when data is empty. Default is `"No records found."`. |
+| `emptyIcon` | `string` | Material Symbol icon for empty state. Default is `"person_off"`. |
+
+### Implementation Example
+
+```jsx
+import DataTable from 'src/components/ui/DataTable';
+
+<DataTable
+  title="Batches Directory"
+  columns={columnsConfig}
+  data={batches}
+  isLoading={loading}
+/>
+```
+
+---
+
+## DataTableV2
+
+**Location:** `src/components/ui/table/DataTableV2.jsx`
+
+### Description
+
+A dense, high-performance visual table component that supports sticky headers, padding density profiles (low, medium, high), fixed height limits, and interactive selected row markers.
+
+### Usage Guidelines
+
+Used for dense detail lists (e.g. installments sheets, transactions history tables) where responsive row clicks and compact sizing are required.
+
+### Props API
+
+| Prop | Type | Description |
+| :--- | :--- | :--- |
+| `data` | `array` | Plain records array to render. Default is `[]`. |
+| `columns` | `array` | Array of column config definitions. |
+| `density` | `string` | Sizing padding: `'low'`, `'medium'`, `'high'`. Default is `'medium'`. |
+| `maxHeight` | `string` | CSS max-height limit string (e.g. `"400px"`) that clips vertical bounds and makes header sticky. |
+| `stickyHeader` | `boolean` | Makes header float fixed at the top of scroll view. Default is `false`. |
+| `isLoading` | `boolean` | Shows loading spinner rows. |
+| `error` | `object` | Shows error message row. |
+| `onRetry` | `function` | Callback for retry actions in error states. |
+| `selectedRowValue` | `any` | Value of selected row identifier for highlighting active selection. |
+| `selectedRowKey` | `string` | Record property key to match against selectedRowValue. |
+| `onRowClick` | `function` | Row click handler callback: `(row, index) => {}`. |
+| `emptyMessage` | `string` | Blank state feedback string. |
+| `emptyIcon` | `string` | Material symbol icon name for blank state. |
+
+### Implementation Example
+
+```jsx
+import DataTableV2 from 'src/components/ui/table/DataTableV2';
+
+<DataTableV2
+  data={installments}
+  columns={columns}
+  density="high"
+  maxHeight="300px"
+  stickyHeader={true}
+  onRowClick={(row) => console.log('Selected:', row)}
+/>
+```
+
+---
+
+## ActionFooter
+
+**Location:** `src/components/ui/v2/ActionFooter.jsx`
+
+### Description
+
+A sticky footer action panel specifically structured to render multiple primary/secondary buttons (such as submit, cancel, dismiss) centered at the bottom of the layout viewport.
+
+### Usage Guidelines
+
+Used inside slide-over details, mobile viewports, or CRM sheets to align actionable controls persistently.
+
+### Props API
+
+| Prop | Type | Description |
+| :--- | :--- | :--- |
+| `actions` | `array` | List of action objects: `[{ label: string, onClick: func, icon?: string, variant?: string, disabled?: boolean, loading?: boolean }]`. |
+| `className` | `string` | Optional CSS custom classes. |
+
+### Implementation Example
+
+```jsx
+import ActionFooter from 'src/components/ui/v2/ActionFooter';
+
+const footerActions = [
+  { label: 'Cancel', onClick: handleClose, variant: 'outlined' },
+  { label: 'Save changes', onClick: handleSave, variant: 'contained', loading: saving }
+];
+
+<ActionFooter actions={footerActions} />
+```
+
+---
+
+## ProgressBar
+
+**Location:** `src/components/ui/v2/ProgressBar.jsx`
+
+### Description
+
+A horizontal progress visual bar indicator showing completion states, supporting inline label prefixes, computed percentage text labels, and color states.
+
+### Usage Guidelines
+
+Ideal for loading states, setup wizards, file uploads status tracking, or visual completion percentages (e.g. attendance, syllabus completion).
+
+### Props API
+
+| Prop | Type | Description |
+| :--- | :--- | :--- |
+| `value` | `number` | Completed progress quantity. Default is `0`. |
+| `max` | `number` | Max limit progress bounds. Default is `100`. |
+| `color` | `string` | Filler color theme: `'primary'` (brand), `'success'` (green), `'warning'` (amber), `'danger'` (red). Default is `'primary'`. |
+| `size` | `string` | Thickness sizing: `'sm'`, `'md'`, `'lg'`. Default is `'md'`. |
+| `variant` | `string` | Layout type: `'default'` (bare progress bar), `'inline'` (aligned on a single row with labels), `'stacked'` (top labels row stacked above bar). Default is `'default'`. |
+| `label` | `string` | Header text prefix description. |
+| `showPercentage` | `boolean` | Dynamically appends computed `%` label text when true. Default is `false`. |
+| `percentageLabel` | `string` | Custom string overriding the default percentage text. |
+| `className` | `string` | CSS class string. |
+
+### Implementation Example
+
+```jsx
+import ProgressBar from 'src/components/ui/v2/ProgressBar';
+
+<ProgressBar
+  value={4}
+  max={5}
+  variant="stacked"
+  label="Installments Paid"
+  showPercentage={true}
+  color="success"
+/>
+```
+
+---
+
+## RadioIndicator
+
+**Location:** `src/components/ui/v2/RadioIndicator.jsx`
+
+### Description
+
+A lightweight checkbox/radio mimic component representing selection indicators.
+
+### Usage Guidelines
+
+Ideal for building customizable cards or row checkbox grids where native checkboxes/radios cannot fit the style design.
+
+### Props API
+
+| Prop | Type | Description |
+| :--- | :--- | :--- |
+| `checked` | `boolean` | Checked selection indicator state. Default is `false`. |
+| `disabled` | `boolean` | Deactivates interactive trigger look. Default is `false`. |
+| `className` | `string` | CSS utility classes. |
+
+### Implementation Example
+
+```jsx
+import RadioIndicator from 'src/components/ui/v2/RadioIndicator';
+
+<RadioIndicator checked={isSelected} />
+```
+
+---
+
+## GenericSelectDropdown
+
+**Location:** `src/components/ui/v2/GenericSelectDropdown.jsx`
+
+### Description
+
+A premium searchable combobox/dropdown component supporting custom item row cards, custom selected item views, dynamic alignment boundaries (automatically adjusting alignment direction when pushed near viewport edges), and standard form name hooks.
+
+### Usage Guidelines
+
+Recommended for selections with complex records (e.g. choosing Students, Batches, Teachers, and Course packages) where standard HTML selects do not support multi-line styling or search filtering.
+
+### Props API
+
+| Prop | Type | Description |
+| :--- | :--- | :--- |
+| `items` | `array` | Selection choices data array. Default is `[]`. |
+| `selectedId` | `any` | Identifier value of the selected item. |
+| `onChange` | `function` | Selection trigger callback returning selected ID: `(id) => {}`. |
+| `idProp` | `string` | Record parameter serving as unique ID (e.g. `'batch_id'`). |
+| `labelProp` | `string` | Record parameter used for text identification (e.g. `'batch_name'`). |
+| `searchFields` | `array` | Parameters scanned by the inline filter (e.g. `['name', 'code']`). |
+| `selectedViewMode` | `string` | Presentation mode: `'one-line'`, `'card'`, `'native-fallback'`. Default is `'one-line'`. |
+| `placeholder` | `string` | Empty field label placeholder. Default is `"Select an option..."`. |
+| `disabled` | `boolean` | Lock component interaction. Default is `false`. |
+| `name` | `string` | Native form submit parameter name. |
+| `label` | `string` | Uppercase field label. |
+| `required` | `boolean` | Appends a red asterisk label indicator when true. |
+| `error` | `string` | Displays red validation error text below and wraps input border. |
+| `helperText` | `string` | Auxiliary instructional label below component. |
+| `leftIcon` | `string` | Material Symbol icon display on trigger control. |
+| `renderItem` | `function` | Polymorphic row rendering hook: `(item, isSelected) => node`. |
+| `renderSelectedCard` | `function` | Custom header trigger card rendering hook: `(item) => node`. |
+| `dropdownWidth` | `string` | Sizing width of the options menu container. Default is `"min-w-full"`. |
+
+### Implementation Example
+
+```jsx
+import { GenericSelectDropdown } from 'src/components/ui/v2/GenericSelectDropdown';
+
+<GenericSelectDropdown
+  label="Select Batch"
+  items={batches}
+  idProp="batch_id"
+  labelProp="batch_name"
+  selectedId={selectedBatchId}
+  onChange={setSelectedBatchId}
+  searchFields={['batch_name', 'code']}
+  renderItem={(item) => (
+    <div className="p-3">
+      <p className="font-bold">{item.batch_name}</p>
+      <p className="text-xs text-slate-400">{item.code}</p>
+    </div>
+  )}
+/>
+```
+
+---
+
+## CardContainer
+
+**Location:** `src/components/ui/v2/cards/CardContainer.jsx`
+
+### Description
+
+A base styling wrapper element that implements standard visual themes, border settings, shadow depths, and click scaling micro-animations for cards.
+
+### Usage Guidelines
+
+Used as the core visual container for all custom cards under `src/components/ui/v2/cards/`.
+
+### Props API
+
+| Prop | Type | Description |
+| :--- | :--- | :--- |
+| `children` | `node` | Inner content/layout of the card. |
+| `className` | `string` | Optional CSS custom classes. |
+| `onClick` | `function` | Click callback trigger. |
+| `hoverable` | `boolean` | If true, adds hover border/translate scale effects. Default is `true`. |
+| `density` | `string` | Sizing border radius profile: `'low'` (rounded-xl) or `'medium'` (rounded-2xl). Default is `'medium'`. |
+| `overflowVisible` | `boolean` | If true, overrides default `'overflow-hidden'` with `'overflow-visible'`. Default is `false`. |
+
+### Implementation Example
+
+```jsx
+import CardContainer from 'src/components/ui/v2/cards/CardContainer';
+
+<CardContainer hoverable={true} onClick={handleSelect}>
+  <p className="p-4">Card content...</p>
+</CardContainer>
+```
+
+---
+
+## ExpandableLowDensityCard
+
+**Location:** `src/components/ui/v2/cards/ExpandableLowDensityCard.jsx`
+
+### Description
+
+A responsive low-density row card with selection checkbox hooks and a collapsible details panel designed for mobile screens.
+
+### Usage Guidelines
+
+Used inside list views where items must support bulk actions (selection) and detailed metrics without full redirection.
+
+### Props API
+
+| Prop | Type | Description |
+| :--- | :--- | :--- |
+| `isChecked` | `boolean` | Checkbox state. |
+| `onSelect` | `function` | Checkbox click toggle callback. |
+| `isExpanded` | `boolean` | detailed panel toggle state. |
+| `onToggleExpand` | `function` | Chevron action toggle callback. |
+| `leftHeader` | `node` | Header metadata text elements. |
+| `rightHeader` | `node` | Status badges, metrics, or date stamps. |
+| `expandedContent` | `node` | Details pane elements mounted when expanded. |
+| `onCardClick` | `function` | Card click handler callback. |
+| `className` | `string` | Optional CSS custom classes. |
+
+### Implementation Example
+
+```jsx
+import ExpandableLowDensityCard from 'src/components/ui/v2/cards/ExpandableLowDensityCard';
+
+<ExpandableLowDensityCard
+  isChecked={selected}
+  onSelect={toggleSelected}
+  isExpanded={expanded}
+  onToggleExpand={toggleExpanded}
+  leftHeader={<div><p className="font-bold">Student Lead</p></div>}
+  rightHeader={<span className="text-xs">Hot Lead</span>}
+  expandedContent={<p>Actions & Notes...</p>}
+/>
+```
+
+---
+
+## HighDensityCard
+
+**Location:** `src/components/ui/v2/cards/HighDensityCard.jsx`
+
+### Description
+
+A feature-dense profile or card summary block supporting avatars (or initials fallbacks), title bars, multi-column metric counters, description bodies, checklists, progress bars, and trailing actions buttons.
+
+### Usage Guidelines
+
+Ideal for detailed grid views (e.g. Teacher directory grids, Branch dashboards) where cards must display complete entity overviews.
+
+### Props API
+
+| Prop | Type | Description |
+| :--- | :--- | :--- |
+| `avatar` | `string` | Profile image source URL. |
+| `avatarText` | `string` | Initials fallback text if `avatar` URL is missing. |
+| `icon` | `string\|node` | Material symbol name or custom JSX node icon fallback. |
+| `title` | `string` | Bold primary header text. |
+| `subtitle` | `string` | Supporting title text. |
+| `idText` | `string` | Monospace identifier text label. |
+| `headerActions` | `node` | Control buttons aligned to top right of header. |
+| `metrics` | `array` | Metrics list: `[{ label: string, value: any, colorClass?: string }]`. |
+| `description` | `string` | Card description body paragraph. |
+| `checklist` | `array` | Checklist configuration: `[{ label: string, checked: boolean, icon?: string }]`. |
+| `progress` | `object\|number`| Percentage number or progress object: `{ value, max, label, colorClass }`. |
+| `footerActions` | `array` | Action buttons tray: `[{ label: string, icon?: string, onClick: func }]`. |
+| `customFooter` | `node` | Custom JSX element rendering in the footer tray. |
+| `className` | `string` | Custom layout overrides. |
+| `slotClasses` | `object` | Styling classes overrides mapping for sub-elements (`container`, `header`, `avatar`, `title`, `subtitle`). |
+
+### Implementation Example
+
+```jsx
+import HighDensityCard from 'src/components/ui/v2/cards/HighDensityCard';
+
+<HighDensityCard
+  title="Jane Doe"
+  subtitle="Lead Instructor"
+  avatarText="JD"
+  metrics={[{ label: 'Active Batches', value: '4' }]}
+/>
+```
+
+---
+
+## LowDensityCard
+
+**Location:** `src/components/ui/v2/cards/LowDensityCard.jsx`
+
+### Description
+
+A low-density list view row supporting action menus, avatar/badge layouts, selection checks, progress bars, and capacity limit gauges.
+
+### Usage Guidelines
+
+Used for list directories (such as Batches lists or Course items) where rows must fit cleanly and show status overviews.
+
+### Props API
+
+| Prop | Type | Description |
+| :--- | :--- | :--- |
+| `avatar` | `string` | Profile image URL. |
+| `avatarText` | `string` | Fallback initials. |
+| `icon` | `string` | Material Symbol name fallback. |
+| `title` | `string` | Bold primary row header. |
+| `subtitle1` | `string` | Primary description text. |
+| `subtitle2` | `string` | Secondary details text. |
+| `bodyText` | `string` | Small body paragraph. |
+| `actions` | `array` | Dropdown actions: `[{ label: string, onClick: func, priority?: string }]`. |
+| `onClick` | `function` | Row selection callback trigger. |
+| `className` | `string` | Optional CSS custom classes. |
+| `slotClasses` | `object` | Overrides classes for `container`, `title`, `body`. |
+| `variant` | `string` | Row style: `'default'` or `'selection-card'`. Default is `'default'`. |
+| `enrolled` | `number` | Enrolled count (for selection-card variant). Default is `0`. |
+| `capacity` | `number` | Max capacity limit (for selection-card variant). Default is `30`. |
+| `isSelected` | `boolean` | Selected highlight state. Default is `false`. |
+
+### Implementation Example
+
+```jsx
+import LowDensityCard from 'src/components/ui/v2/cards/LowDensityCard';
+
+<LowDensityCard
+  title="Advanced Physics Section"
+  subtitle1="Class 12 • Science"
+  variant="selection-card"
+  enrolled={22}
+  capacity={25}
+/>
+```
+
+---
+
+## MediumDensityCard
+
+**Location:** `src/components/ui/v2/cards/MediumDensityCard.jsx`
+
+### Description
+
+A medium-density dashboard card showing trends (up/down/neutral), custom metric pills, metadata tags, progress indicators, and actionable triggers.
+
+### Usage Guidelines
+
+Ideal for analytics boards, KPI overviews, or course package catalog cards.
+
+### Props API
+
+| Prop | Type | Description |
+| :--- | :--- | :--- |
+| `icon` | `string` | Material symbol icon name. |
+| `avatar` | `string` | Image fallback URL. |
+| `badgeText` | `string` | Custom badge text displayed on the top right. |
+| `badgeClass` | `string` | Tailwind CSS custom badge classes override. |
+| `title` | `string` | Bold header title. |
+| `subtitle` | `string` | Smaller description text. |
+| `tags` | `array` | Tag array: `[string]` or `[{ label: string, variant: string }]`. |
+| `metrics` | `array` | Counters list: `[{ label: string, value: any, colorClass?: string }]`. |
+| `progress` | `object\|number`| Progress bar value (percentage number or progress object). |
+| `trend` | `object` | Trend parameters: `{ value: string, direction: 'up'\|'down'\|'neutral' }`. |
+| `actionText` | `string` | Custom button action text. |
+| `onAction` | `function` | Button click event handler. |
+| `onClick` | `function` | Full-card selection click callback trigger. |
+| `className` | `string` | Custom CSS container classes. |
+| `children` | `node` | Custom content elements rendered inside card body. |
+| `slotClasses` | `object` | Sub-elements class overrides. |
+
+### Implementation Example
+
+```jsx
+import MediumDensityCard from 'src/components/ui/v2/cards/MediumDensityCard';
+
+<MediumDensityCard
+  title="Chemistry Pack"
+  subtitle="5 Subjects"
+  badgeText="POPULAR"
+  trend={{ value: '14% Increase', direction: 'up' }}
+/>
+```
+
+---
+
+## BarChartTrend
+
+**Location:** `src/components/ui/v2/cards/widgets/BarChartTrend.jsx`
+
+### Description
+
+A micro chart widget displaying sequential height percentage bars representing trend statistics.
+
+### Usage Guidelines
+
+Used as visual segments inside layouts to display historical data.
+
+### Props API
+
+| Prop | Type | Description |
+| :--- | :--- | :--- |
+| `title` | `string` | Widget header title label. |
+| `trendBadge` | `string` | Custom pill text highlighting change (e.g. `"+18%"`). |
+| `data` | `array` | Bar height percentages list: `[number]`. |
+| `labels` | `array` | Axis labels array: `[startLabel, endLabel]`. |
+| `tooltips` | `array` | Row value details strings corresponding to data indices. |
+| `className` | `string` | Optional CSS custom classes. |
+
+### Implementation Example
+
+```jsx
+import BarChartTrend from 'src/components/ui/v2/cards/widgets/BarChartTrend';
+
+<BarChartTrend
+  title="Weekly Registration"
+  trendBadge="+8%"
+  data={[30, 45, 60, 80, 95]}
+  labels={['Mon', 'Fri']}
+/>
+```
+
+---
+
+## CircularProgress
+
+**Location:** `src/components/ui/v2/cards/widgets/CircularProgress.jsx`
+
+### Description
+
+A radial gauge progress widget displaying completion percentages enclosed inside a circular track.
+
+### Usage Guidelines
+
+Used inside dashboard sections to display budget metrics, enrollment statistics, or resource limits.
+
+### Props API
+
+| Prop | Type | Description |
+| :--- | :--- | :--- |
+| `title` | `string` | Header text description. |
+| `percent` | `number` | Completion percentage (0 to 100). Default is `0`. |
+| `subtitle` | `string` | Inner circular label text (e.g. `'Allocated'`). |
+| `metrics` | `array` | Details metrics array: `[{ label: string, value: any }]`. |
+| `className` | `string` | Custom CSS classes. |
+
+### Implementation Example
+
+```jsx
+import CircularProgress from 'src/components/ui/v2/cards/widgets/CircularProgress';
+
+<CircularProgress
+  title="Syllabus Progress"
+  percent={72}
+  subtitle="Completed"
+  metrics={[{ label: 'Topics Remaining', value: '4' }]}
+/>
+```
+
+---
+
+## Badge (V2 Indicator)
+
+**Location:** `src/components/ui/v2/indicators/Badge.jsx`
+
+### Description
+
+An atomic indicator component supporting status labels, achievement layouts, numeric notification badges, and small pulsating overlay dots.
+
+### Usage Guidelines
+
+Used for overlays on top of parent layout shapes (e.g., Avatars, notification bells) or for inline pills.
+
+### Props API
+
+| Prop | Type | Description |
+| :--- | :--- | :--- |
+| `children` | `node` | Element onto which the badge is anchored as an absolute overlay. |
+| `variant` | `string` | Visual variant: `'dot'`, `'count'`, `'status'`, `'achievement'`. Default is `'status'`. |
+| `color` | `string` | Theme color variables mapping: `'primary'`, `'secondary'`, `'success'`, `'warning'`, `'error'`, `'neutral'`. Default is `'neutral'`. |
+| `content` | `string\|number`| Label description/count displayed inside the pill. |
+| `pulsing` | `boolean` | Activates scale pulsing animation (valid for `'dot'` variant). Default is `false`. |
+| `size` | `string` | Sizing bounds: `'sm'`, `'md'`, `'lg'`. Default is `'sm'`. |
+| `placement` | `string` | Anchor placement: `'top-right'`, `'top-left'`, `'inline'`. Default is `'inline'`. |
+| `className` | `string` | Optional CSS custom classes. |
+
+### Implementation Example
+
+```jsx
+import Badge from 'src/components/ui/v2/indicators/Badge';
+
+<Badge variant="dot" color="success" pulsing={true} placement="top-right">
+  <Avatar initials="JD" />
+</Badge>
+```
+
+---
+
+## Chip
+
+**Location:** `src/components/ui/v2/indicators/Chip.jsx`
+
+### Description
+
+An interactive selection indicator showing choice items, containing support for leading avatars, customizable close click actions, and active/focused scale transitions.
+
+### Usage Guidelines
+
+Used for list filters, role managers, tag-selections checklist, or active query indicators.
+
+### Props API
+
+| Prop | Type | Description |
+| :--- | :--- | :--- |
+| `label` | `string` | Main descriptor label text. |
+| `variant` | `string` | Outline/Background combination format: `'filled'`, `'outlined'`, `'subtle'`. Default is `'subtle'`. |
+| `color` | `string` | HSL theme color mapping: `'primary'`, `'secondary'`, `'success'`, `'warning'`, `'error'`, `'neutral'`. Default is `'neutral'`. |
+| `active` | `boolean` | Highlights active selection borders. Default is `false`. |
+| `clickable` | `boolean` | Adds hover effects, pointer indicators, and key selectors. Default is `true`. |
+| `size` | `string` | Sizing dimensions: `'sm'`, `'md'`, `'lg'`. Default is `'sm'`. |
+| `avatar` | `string\|node` | Leading initials text, image source URL, or custom icon. |
+| `onClick` | `function` | Selection trigger callback. |
+| `onDelete` | `function` | Close callback hook. If provided, renders trailing close button icon. |
+| `className` | `string` | Custom CSS classes. |
+
+### Implementation Example
+
+```jsx
+import Chip from 'src/components/ui/v2/indicators/Chip';
+
+<Chip
+  label="Mathematics"
+  color="primary"
+  active={true}
+  onDelete={() => handleRemoveFilter('math')}
+/>
+```
+
+---
+
+## Tag (V2 Indicator)
+
+**Location:** `src/components/ui/v2/indicators/Tag.jsx`
+
+### Description
+
+A static categorization label supporting visual accents, prefix icons, and optional click listeners.
+
+### Usage Guidelines
+
+Used to tag card elements with metadata labels (e.g. course segments, grade categories) where full interactive close buttons are not needed.
+
+### Props API
+
+| Prop | Type | Description |
+| :--- | :--- | :--- |
+| `label` | `string` | Text string displayed inside the tag. |
+| `variant` | `string` | Layout combination variant: `'filled'`, `'outlined'`, `'subtle'`. Default is `'subtle'`. |
+| `color` | `string` | Theme color variables mapping: `'primary'`, `'secondary'`, `'success'`, `'warning'`, `'error'`, `'neutral'`, `'amber'`, `'emerald'`, `'rose'`. Default is `'neutral'`. |
+| `size` | `string` | Sizing scale: `'sm'`, `'md'`, `'lg'`. Default is `'sm'`. |
+| `icon` | `string\|node` | Prefix Material Symbol icon name or custom element. |
+| `onClick` | `function` | Click listener callback hook. |
+| `className` | `string` | Optional CSS custom classes. |
+
+### Implementation Example
+
+```jsx
+import Tag from 'src/components/ui/v2/indicators/Tag';
+
+<Tag
+  label="High Priority"
+  color="rose"
+  icon="priority_high"
+  variant="outlined"
+/>
+```
+
+---
+
+## Logout
+
+**Location:** `src/components/ui/btn/Logout.jsx`
+
+### Description
+
+An interactive sidebar logout control button that triggers the auth manager context logout workflow with loading spinner feedback.
+
+### Usage Guidelines
+
+Rendered at the bottom of the navigation drawer/sidebar.
+
+### Props API
+
+*This component has no public Props API.*
+
+### Implementation Example
+
+```jsx
+import Logout from 'src/components/ui/btn/Logout';
+
+<Logout />
+```
+
+---
+
+## RefreshButton
+
+**Location:** `src/components/ui/btn/RefreshButton.jsx`
+
+### Description
+
+A generic refresh control button that displays data hydration fetching/spinning states.
+
+### Usage Guidelines
+
+Used on directory index headers alongside action menus to trigger React Query manual refetches.
+
+### Props API
+
+| Prop | Type | Description |
+| :--- | :--- | :--- |
+| `isFetching` | `boolean` | Triggers spinning loading animation on the refresh icon. |
+| `onRefresh` | `function` | Click handler callback to fetch updated data. |
+
+### Implementation Example
+
+```jsx
+import RefreshButton from 'src/components/ui/btn/RefreshButton';
+
+<RefreshButton
+  isFetching={isRefetching}
+  onRefresh={refetch}
+/>
+```
+
+
+
+
+

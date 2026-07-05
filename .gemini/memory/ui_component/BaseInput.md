@@ -24,7 +24,7 @@ The foundational primitive for all input components in the ERP system. It provid
 ## Usage
 
 ```jsx
-import BaseInput from '@/components/ui/v2/BaseInput';
+import BaseInput from 'src/components/ui/v2/BaseInput';
 
 <BaseInput 
   label="Username" 
