@@ -1,21 +1,62 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
+
+// Core Layout & UI Components
+import MainLayout from '../../components/layout/MainLayout';
+import Breadcrumbs from '../../components/ui/Breadcrumbs';
+import SelectInput from '../../components/ui/v2/SelectInput';
+import { LoadingState, ErrorState } from '../../components/ui/QueryStatus';
+
+// Shared responsive layouts & footers
+import useIsMobile from '../../hooks/useIsMobile';
+import ActionFooter from '../../components/ui/v2/ActionFooter';
+
+// Data Fetching & Utilities
+import { queryKeys } from '../../lib/react-query/queryKeys';
+import { useTeachersQuery } from '../teacher/hooks/useTeacherQueries';
+import { usePackagesQuery } from './hooks/usePackageQueries';
+import { useBatchesQuery, useUpdateBatchMutation, useDeleteBatchMutation } from '../batch/hooks/useBatchQueries';
 import { 
   useCourseDetailQuery, 
   useCourseTeachersQuery, 
   useCourseAllocationsQuery, 
   useAssignCourseTeacherMutation, 
-  useUnassignCourseTeacherMutation 
+  useUnassignCourseTeacherMutation,
+  useDeleteCourseMutation
 } from './hooks/useCourseQueries';
-import { usePackagesQuery } from './hooks/usePackageQueries';
-import { useTeachersQuery } from '../teacher/hooks/useTeacherQueries';
-import { useBatchesQuery, useUpdateBatchMutation, useDeleteBatchMutation } from '../batch/hooks/useBatchQueries';
-import SelectInput from '../../components/ui/v2/SelectInput';
-import { LoadingState, ErrorState } from '../../components/ui/QueryStatus';
-import { queryKeys } from '../../lib/react-query/queryKeys';
-import Breadcrumbs from '../../components/ui/Breadcrumbs';
-import MainLayout from '../../components/layout/MainLayout';
+
+// Decoupled View Components (The Hashmap Sub-views)
+import { OverviewTab } from './tabs/OverviewTab';
+import { StudentsTab } from './tabs/StudentsTab';
+import { BatchesTab } from './tabs/BatchesTab';
+import { PackagesTab } from './tabs/PackagesTab';
+import { StructureTab } from './tabs/StructureTab';
+
+// Immutable metadata configurations declared outside render scope
+const CRUMBS = [
+  { label: 'Dashboard', path: '/admin/dashboard', icon: 'home' },
+  { label: 'Courses', path: '/admin/courses' },
+  { label: 'Details' }
+];
+
+const TABS_CONFIG = [
+  { id: 'overview', label: 'Overview', icon: 'dashboard' },
+  { id: 'students', label: 'Enrolled Students', icon: 'group' },
+  { id: 'batches', label: 'Assigned Batches', icon: 'calendar_today' },
+  { id: 'packages', label: 'Connected Packages', icon: 'inventory_2' },
+  { id: 'structure', label: 'Fee Structure', icon: 'receipt_long' },
+];
+
+const STATUS_COLORS = {
+  active: 'bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 border-green-200 dark:border-green-900/50',
+  suspended: 'bg-yellow-50 dark:bg-yellow-950/30 text-yellow-700 dark:text-yellow-400 border-yellow-200 dark:border-yellow-900/50',
+  completed: 'bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-900/50',
+  dropped: 'bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400 border-red-200 dark:border-red-900/50',
+  inactive: 'bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400 border-red-200 dark:border-red-900/50',
+  draft: 'bg-yellow-50 dark:bg-yellow-950/30 text-yellow-700 dark:text-yellow-400 border-yellow-200 dark:border-yellow-900/50',
+  cancelled: 'bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400 border-red-200 dark:border-red-900/50'
+};
 
 /**
  * Course Details & Analytics Page
@@ -25,23 +66,15 @@ const CourseDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedTeacherId, setSelectedTeacherId] = useState('');
   const [isSticky, setIsSticky] = useState(false);
 
-  const handleBodyScroll = (e) => {
+  const handleBodyScroll = useCallback((e) => {
     const shouldBeSticky = e.currentTarget.scrollTop > 80;
-    setIsSticky(prev => {
-      if (prev !== shouldBeSticky) return shouldBeSticky;
-      return prev;
-    });
-  };
-
-  const crumbs = [
-    { label: 'Dashboard', path: '/admin/dashboard', icon: 'home' },
-    { label: 'Courses', path: '/admin/courses' },
-    { label: 'Details' }
-  ];
+    setIsSticky(prev => (prev !== shouldBeSticky ? shouldBeSticky : prev));
+  }, []);
 
   const { data: course, isLoading, error } = useCourseDetailQuery(id);
   const { data: assignedTeachersRaw = [], isLoading: isAssignedLoading } = useCourseTeachersQuery(id);
@@ -54,26 +87,32 @@ const CourseDetails = () => {
   const unassignTeacherMutation = useUnassignCourseTeacherMutation();
   const updateBatchMutation = useUpdateBatchMutation();
   const deleteBatchMutation = useDeleteBatchMutation();
+  const deleteCourseMutation = useDeleteCourseMutation();
 
-  if (isLoading) return <LoadingState message="Analyzing course data..." />;
-  if (error) return <ErrorState message={error.message} onRetry={() => queryClient.invalidateQueries({ queryKey: queryKeys.course.detail(id) })} />;
-  if (!course) return <ErrorState title="Course Not Found" message="The requested course could not be located." onRetry={() => navigate('/admin/courses')} />;
+  // Memoized relational data mapping (Phase 1)
+  const { assignedTeachers, unassignedTeachers } = useMemo(() => {
+    const assigned = assignedTeachersRaw.map(assignment => {
+      const teacher = allTeachers.find(t => t.teacher_id === assignment.teacher_id);
+      return {
+        ...assignment,
+        teacher_name: teacher ? (teacher.teacher_name || teacher.full_name) : 'Unknown Teacher',
+        email: teacher?.email || 'No email',
+        avatarUrl: teacher?.avatarUrl
+      };
+    });
 
-  // Map raw assignments to full teacher details
-  const assignedTeachers = assignedTeachersRaw.map(assignment => {
-    const teacher = allTeachers.find(t => t.teacher_id === assignment.teacher_id);
-    return {
-      ...assignment,
-      teacher_name: teacher ? (teacher.teacher_name || teacher.full_name) : 'Unknown Teacher',
-      email: teacher?.email || 'No email',
-      avatarUrl: teacher?.avatarUrl
-    };
-  });
+    const assignedIds = new Set(assignedTeachersRaw.map(a => a.teacher_id));
+    const unassigned = allTeachers.filter(t => !assignedIds.has(t.teacher_id));
 
-  const assignedTeacherIds = assignedTeachersRaw.map(a => a.teacher_id);
-  const unassignedTeachers = allTeachers.filter(t => !assignedTeacherIds.includes(t.teacher_id));
+    return { assignedTeachers: assigned, unassignedTeachers: unassigned };
+  }, [assignedTeachersRaw, allTeachers]);
 
-  const handleAssignTeacher = async () => {
+  const connectedPackages = useMemo(() => {
+    return packages.filter(pkg => pkg.courses?.some(c => c.course_id === id));
+  }, [packages, id]);
+
+  // Memoized mutation callback triggers (Phase 1)
+  const handleAssignTeacher = useCallback(async () => {
     if (!selectedTeacherId) return;
     try {
       await assignTeacherMutation.mutateAsync({ teacherId: selectedTeacherId, courseId: id });
@@ -81,9 +120,9 @@ const CourseDetails = () => {
     } catch (err) {
       console.error('[CourseDetails] Failed to assign teacher:', err);
     }
-  };
+  }, [selectedTeacherId, id, assignTeacherMutation]);
 
-  const handleUnassignTeacher = async (teacherSubjectId) => {
+  const handleUnassignTeacher = useCallback(async (teacherSubjectId) => {
     if (window.confirm('Are you sure you want to unassign this teacher from this course?')) {
       try {
         await unassignTeacherMutation.mutateAsync({ teacherSubjectId, courseId: id });
@@ -91,9 +130,9 @@ const CourseDetails = () => {
         console.error('[CourseDetails] Failed to unassign teacher:', err);
       }
     }
-  };
+  }, [id, unassignTeacherMutation]);
 
-  const handleUnassignBatch = async (batchId) => {
+  const handleUnassignBatch = useCallback(async (batchId) => {
     if (window.confirm('Are you sure you want to unassign this batch from this course?')) {
       try {
         await updateBatchMutation.mutateAsync(
@@ -114,9 +153,9 @@ const CourseDetails = () => {
         console.error('[CourseDetails] Failed to unassign batch:', err);
       }
     }
-  };
+  }, [updateBatchMutation, queryClient]);
 
-  const handleDeleteBatch = async (batchId) => {
+  const handleDeleteBatch = useCallback(async (batchId) => {
     if (window.confirm('Are you sure you want to permanently delete this batch? All scheduling and records for this batch will be lost.')) {
       try {
         await deleteBatchMutation.mutateAsync(
@@ -131,18 +170,263 @@ const CourseDetails = () => {
         console.error('[CourseDetails] Failed to delete batch:', err);
       }
     }
-  };
+  }, [deleteBatchMutation, queryClient]);
 
-  const tabs = [
-    { id: 'overview', label: 'Overview', icon: 'dashboard' },
-    { id: 'students', label: 'Enrolled Students', icon: 'group' },
-    { id: 'batches', label: 'Assigned Batches', icon: 'calendar_today' },
-    { id: 'packages', label: 'Connected Packages', icon: 'inventory_2' },
-    { id: 'structure', label: 'Fee Structure', icon: 'receipt_long' },
-  ];
+  const handleDeleteCourse = useCallback(async () => {
+    if (window.confirm('Are you sure you want to permanently delete this course? All associated records will be lost.')) {
+      try {
+        await deleteCourseMutation.mutateAsync({ id });
+        navigate('/admin/courses');
+      } catch (err) {
+        console.error('[CourseDetails] Failed to delete course:', err);
+      }
+    }
+  }, [id, deleteCourseMutation, navigate]);
 
-  const connectedPackages = packages.filter(pkg => pkg.courses?.some(c => c.course_id === id));
+  const handleInvalidateDetails = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: queryKeys.course.detail(id) });
+  }, [queryClient, id]);
 
+  const handleNavigateToCourses = useCallback(() => navigate('/admin/courses'), [navigate]);
+
+  // Tab Component Hashmap Registry (Phase 2)
+  const tabRegistry = useMemo(() => {
+    if (!course) return {};
+
+    return {
+      overview: (
+        <OverviewTab
+          baseFee={Number(course.base_fee) || 0}
+          allocationsLength={allocations.length}
+          installmentCount={course.default_installment_count || 1}
+          isAllocationsLoading={isAllocationsLoading}
+          course={course}
+          isMobile={isMobile}
+        />
+      ),
+      students: (
+        <StudentsTab
+          allocations={allocations}
+          isAllocationsLoading={isAllocationsLoading}
+          isMobile={isMobile}
+        />
+      ),
+      batches: (
+        <BatchesTab
+          batches={batches}
+          isBatchesLoading={isBatchesLoading}
+          statusColors={STATUS_COLORS}
+          onUnassignBatch={handleUnassignBatch}
+          onDeleteBatch={handleDeleteBatch}
+          isUpdatePending={updateBatchMutation.isPending}
+          isDeletePending={deleteBatchMutation.isPending}
+          isMobile={isMobile}
+        />
+      ),
+      packages: (
+        <PackagesTab
+          connectedPackages={connectedPackages}
+          isPackagesLoading={isPackagesLoading}
+          isMobile={isMobile}
+        />
+      ),
+      structure: (
+        <StructureTab
+          course={course}
+          isMobile={isMobile}
+        />
+      )
+    };
+  }, [
+    course,
+    allocations,
+    isAllocationsLoading,
+    batches,
+    isBatchesLoading,
+    connectedPackages,
+    isPackagesLoading,
+    handleUnassignBatch,
+    handleDeleteBatch,
+    updateBatchMutation.isPending,
+    deleteBatchMutation.isPending,
+    isMobile
+  ]);
+
+  // Memoized actions array for abstract mobile ActionFooter (WCAG compliant)
+  const mobileActions = useMemo(() => [
+    { 
+      label: 'Edit', 
+      icon: 'edit', 
+      onClick: () => navigate(`/admin/courses/edit/${id}`), 
+      variant: 'outlined' 
+    },
+    { 
+      label: 'Add', 
+      icon: 'add', 
+      onClick: () => navigate(`/admin/students/register?course_id=${id}`), 
+      variant: 'contained' 
+    },
+    { 
+      label: 'Delete', 
+      icon: 'delete', 
+      onClick: handleDeleteCourse, 
+      variant: 'danger',
+      loading: deleteCourseMutation.isPending 
+    }
+  ], [id, navigate, handleDeleteCourse, deleteCourseMutation.isPending]);
+
+  if (isLoading) return <LoadingState message="Analyzing course data..." />;
+  if (error) return <ErrorState message={error.message} onRetry={handleInvalidateDetails} />;
+  if (!course) return <ErrorState title="Course Not Found" message="The requested course could not be located." onRetry={handleNavigateToCourses} />;
+
+  // Mobile layout branch (JS-based conditional rendering)
+  if (isMobile) {
+    const baseFee = Number(course.base_fee || 0);
+    const installmentCount = course.default_installment_count || 1;
+    const estimatedInstallment = baseFee / installmentCount;
+
+    return (
+      <MainLayout
+        onBodyScroll={handleBodyScroll}
+        header={
+          <div className={`absolute top-0 left-0 right-0 z-50 transition-all duration-300 w-full ${isSticky ? 'opacity-100 translate-y-0 shadow-md' : 'opacity-0 -translate-y-4 pointer-events-none'}`}>
+            <div className="bg-surface-light/95 dark:bg-surface-dark/95 backdrop-blur-md border-b border-border-light dark:border-border-dark px-4 py-3 flex items-center justify-between rounded-b-xl">
+              <div className="flex items-center gap-2">
+                <button type="button" onClick={() => navigate('/admin/courses')} className="p-1 -ml-1 text-text-main dark:text-white">
+                  <span className="material-symbols-outlined text-xl">arrow_back</span>
+                </button>
+                <span className="text-sm font-bold text-text-main dark:text-white truncate">{course.name}</span>
+              </div>
+            </div>
+          </div>
+        }
+        body={
+          <div className="px-4 pt-4 pb-16 space-y-4 w-full text-text-main dark:text-white">
+            {/* Header Title Block */}
+            <div className="space-y-3">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-center gap-2">
+                  <button type="button" onClick={() => navigate('/admin/courses')} className="p-1 -ml-2 text-text-main dark:text-white active:scale-95 transition-transform">
+                    <span className="material-symbols-outlined text-xl">arrow_back</span>
+                  </button>
+                  <div>
+                    <h1 className="text-lg font-black tracking-tight leading-tight">{course.name}</h1>
+                    <p className="text-[10px] font-mono text-text-secondary mt-0.5">{course.course_id}</p>
+                  </div>
+                </div>
+                <span className="text-[9px] font-black tracking-wider px-2.5 py-0.5 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200/50 rounded-full uppercase shrink-0">
+                  {course.is_active ? 'ACTIVE' : 'INACTIVE'}
+                </span>
+              </div>
+            </div>
+
+            {/* Course Price Gradient Card with Inline vector graphics illustration */}
+            <div className="bg-gradient-to-br from-blue-50/60 to-indigo-50/40 dark:from-blue-950/20 dark:to-indigo-950/15 p-5 rounded-2xl border border-blue-100 dark:border-blue-900/40 shadow-sm flex items-center justify-between overflow-hidden relative min-h-[120px]">
+              <div className="space-y-1">
+                <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Course Price</p>
+                <h2 className="text-3xl font-black text-slate-900 dark:text-white leading-none">
+                  ₹{baseFee.toLocaleString()}
+                </h2>
+                <div className="flex flex-col text-[10px] text-text-secondary mt-1 font-semibold">
+                  <span>₹{estimatedInstallment.toFixed(2).toLocaleString()} / month</span>
+                  <span>{installmentCount} Installments</span>
+                </div>
+              </div>
+              
+              {/* Books & Graduation Cap Vector SVG Illustration */}
+              <div className="w-28 h-20 flex items-center justify-center shrink-0">
+                <svg viewBox="0 0 100 80" className="w-full h-full text-primary select-none" fill="currentColor">
+                  {/* Stacked Book 1 (Blue) */}
+                  <path d="M10,60 L90,60 L80,68 L20,68 Z" fill="#3b82f6" opacity="0.9" />
+                  <rect x="20" y="68" width="60" height="4" fill="#1d4ed8" />
+                  {/* Stacked Book 2 (Red) */}
+                  <path d="M15,48 L85,48 L75,56 L25,56 Z" fill="#ef4444" opacity="0.9" />
+                  <rect x="25" y="56" width="50" height="4" fill="#b91c1c" />
+                  {/* Graduation Cap Box */}
+                  <path d="M50,20 L80,30 L50,40 L20,30 Z" fill="#1e293b" />
+                  <polygon points="50,30 50,48 53,48 53,30" fill="#1e293b" />
+                  {/* Tassel */}
+                  <path d="M50,30 L25,35 L24,45 L26,45 Z" fill="#eab308" />
+                </svg>
+              </div>
+            </div>
+
+            {/* $2x2 Stat Chips Grid */}
+            <div className="grid grid-cols-2 gap-2">
+              <div className="p-3 bg-white dark:bg-slate-900 border border-border-light dark:border-border-dark rounded-2xl flex items-center gap-3 shadow-sm">
+                <div className="p-2 bg-blue-50 dark:bg-blue-950/40 text-blue-600 rounded-xl">
+                  <span className="material-symbols-outlined text-lg">group</span>
+                </div>
+                <div>
+                  <p className="text-sm font-black">{isAllocationsLoading ? '...' : allocations.length}</p>
+                  <p className="text-[9px] font-bold text-text-secondary uppercase tracking-wide">Students</p>
+                </div>
+              </div>
+              <div className="p-3 bg-white dark:bg-slate-900 border border-border-light dark:border-border-dark rounded-2xl flex items-center gap-3 shadow-sm">
+                <div className="p-2 bg-purple-50 dark:bg-purple-950/40 text-purple-600 rounded-xl">
+                  <span className="material-symbols-outlined text-lg">calendar_today</span>
+                </div>
+                <div>
+                  <p className="text-sm font-black">{isBatchesLoading ? '...' : batches.length}</p>
+                  <p className="text-[9px] font-bold text-text-secondary uppercase tracking-wide">Batches</p>
+                </div>
+              </div>
+              <div className="p-3 bg-white dark:bg-slate-900 border border-border-light dark:border-border-dark rounded-2xl flex items-center gap-3 shadow-sm">
+                <div className="p-2 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 rounded-xl">
+                  <span className="material-symbols-outlined text-lg">school</span>
+                </div>
+                <div>
+                  <p className="text-sm font-black">{isAssignedLoading ? '...' : assignedTeachers.length}</p>
+                  <p className="text-[9px] font-bold text-text-secondary uppercase tracking-wide">Faculty</p>
+                </div>
+              </div>
+              <div className="p-3 bg-white dark:bg-slate-900 border border-border-light dark:border-border-dark rounded-2xl flex items-center gap-3 shadow-sm">
+                <div className="p-2 bg-amber-50 dark:bg-amber-950/40 text-amber-600 rounded-xl">
+                  <span className="material-symbols-outlined text-lg">event_repeat</span>
+                </div>
+                <div>
+                  <p className="text-sm font-black">{course.default_installment_count || 1}</p>
+                  <p className="text-[9px] font-bold text-text-secondary uppercase tracking-wide">Cycles</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Navigation Tabs Header */}
+            <div className="sticky top-0 z-40 bg-surface-light/80 dark:bg-surface-dark/80 backdrop-blur-md border-b border-border-light dark:border-border-dark -mx-4 px-4 overflow-x-auto no-scrollbar">
+              <nav className="flex space-x-6 py-1">
+                {TABS_CONFIG.map(tab => (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`py-3 px-0.5 border-b-2 font-black text-xs flex items-center gap-1.5 transition-all whitespace-nowrap focus:outline-none ${activeTab === tab.id ? 'border-primary text-primary' : 'border-transparent text-text-secondary'}`}
+                  >
+                    <span className="material-symbols-outlined text-base">{tab.icon}</span>
+                    {tab.label}
+                  </button>
+                ))}
+              </nav>
+            </div>
+
+            {/* Tab Views Persistent Viewport */}
+            <div className="pt-2">
+              {Object.entries(tabRegistry).map(([tabId, componentInstance]) => (
+                <div 
+                  key={tabId} 
+                  className={activeTab === tabId ? "block animate-in fade-in duration-200" : "hidden"}
+                >
+                  {componentInstance}
+                </div>
+              ))}
+            </div>
+          </div>
+        }
+        footer={<ActionFooter actions={mobileActions} />}
+      />
+    );
+  }
+
+  // Standard Desktop Layout View
   return (
     <MainLayout
       onBodyScroll={handleBodyScroll}
@@ -173,18 +457,23 @@ const CourseDetails = () => {
           {/* Header & Actions */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex flex-col gap-1">
-              <Breadcrumbs items={crumbs} className="mb-1" />
+              <Breadcrumbs items={CRUMBS} className="mb-1" />
               <h1 className="text-3xl font-bold text-text-main dark:text-white tracking-tight">{course.name}</h1>
               <p className="text-text-secondary text-sm">
                 ID: {course.course_id} • Status: {course.is_active ? 'Active' : 'Inactive'}
               </p>
             </div>
             <div className="flex items-center gap-3">
-              <button onClick={() => navigate(`/admin/courses/edit/${course.course_id}`)} className="px-4 py-2 bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-xl text-text-main dark:text-white text-sm font-bold hover:bg-gray-50 dark:hover:bg-gray-800 transition-all flex items-center gap-2">
+              <button 
+                type="button"
+                onClick={() => navigate(`/admin/courses/edit/${course.course_id}`)} 
+                className="px-4 py-2 bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-xl text-text-main dark:text-white text-sm font-bold hover:bg-gray-50 dark:hover:bg-gray-800 transition-all flex items-center gap-2"
+              >
                 <span className="material-symbols-outlined text-[18px]">edit</span>
                 Edit Course
               </button>
               <button 
+                type="button"
                 onClick={() => navigate(`/admin/students/register?course_id=${course.course_id}`)}
                 className="px-4 py-2 bg-primary text-white rounded-xl text-sm font-bold hover:bg-primary-dark shadow-lg shadow-primary/20 transition-all flex items-center gap-2 active:scale-95"
               >
@@ -197,14 +486,15 @@ const CourseDetails = () => {
           {/* Main Grid Layout */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8">
             
-            {/* Left Column (Main Tab Areas) */}
+            {/* Left Column (Main Tab Areas - Decoupled with Visual Toggle Render - Phase 2) */}
             <div className="lg:col-span-8 space-y-6">
               {/* Tabs */}
               <div className="border-b border-border-light dark:border-border-dark">
                 <nav className="-mb-px flex space-x-8 overflow-x-auto">
-                  {tabs.map(tab => (
+                  {TABS_CONFIG.map(tab => (
                     <button
                       key={tab.id}
+                      type="button"
                       onClick={() => setActiveTab(tab.id)}
                       className={`
                         whitespace-nowrap py-4 px-1 border-b-2 font-bold text-sm flex items-center gap-2 transition-all
@@ -220,338 +510,17 @@ const CourseDetails = () => {
                 </nav>
               </div>
 
-              {/* Overview Tab */}
-              {activeTab === 'overview' && (
-                <div className="space-y-6 animate-in fade-in duration-300">
-                  {/* KPI Cards */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="bg-surface-light dark:bg-surface-dark p-5 rounded-2xl border border-border-light dark:border-border-dark shadow-sm">
-                      <div className="flex items-center gap-3 mb-2">
-                        <div className="p-2 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400">
-                          <span className="material-symbols-outlined">payments</span>
-                        </div>
-                        <span className="text-sm font-semibold text-text-secondary">Base Fee</span>
-                      </div>
-                      <p className="text-2xl font-black text-text-main dark:text-white">₹{Number(course.base_fee).toLocaleString()}</p>
-                    </div>
-                    
-                    <div className="bg-surface-light dark:bg-surface-dark p-5 rounded-2xl border border-border-light dark:border-border-dark shadow-sm">
-                      <div className="flex items-center gap-3 mb-2">
-                        <div className="p-2 rounded-lg bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400">
-                          <span className="material-symbols-outlined">group</span>
-                        </div>
-                        <span className="text-sm font-semibold text-text-secondary">Enrollment</span>
-                      </div>
-                      <p className="text-2xl font-black text-text-main dark:text-white">
-                        {isAllocationsLoading ? (
-                          <span className="inline-block w-8 h-6 bg-background-light dark:bg-background-dark animate-pulse rounded"></span>
-                        ) : (
-                          `${allocations.length} Students`
-                        )}
-                      </p>
-                    </div>
-
-                    <div className="bg-surface-light dark:bg-surface-dark p-5 rounded-2xl border border-border-light dark:border-border-dark shadow-sm">
-                      <div className="flex items-center gap-3 mb-2">
-                        <div className="p-2 rounded-lg bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400">
-                          <span className="material-symbols-outlined">event_repeat</span>
-                        </div>
-                        <span className="text-sm font-semibold text-text-secondary">Installments</span>
-                      </div>
-                      <p className="text-2xl font-black text-text-main dark:text-white">{course.default_installment_count || 1} Cycles</p>
-                    </div>
+              {/* Render all tabs in parallel to maintain DOM states using CSS visibility toggles */}
+              <div className="tabs-content-wrapper">
+                {Object.entries(tabRegistry).map(([tabId, componentInstance]) => (
+                  <div
+                    key={tabId}
+                    className={activeTab === tabId ? 'block' : 'hidden'}
+                  >
+                    {componentInstance}
                   </div>
-
-                  {/* Performance Analytics Placeholder */}
-                  <div className="bg-surface-light dark:bg-surface-dark p-6 rounded-2xl border border-border-light dark:border-border-dark shadow-sm min-h-[300px] flex flex-col items-center justify-center text-center">
-                    <span className="material-symbols-outlined text-5xl text-text-secondary/20 mb-4">analytics</span>
-                    <h3 className="text-lg font-bold text-text-main dark:text-white mb-2">Performance Analytics</h3>
-                    <p className="text-text-secondary text-sm max-w-sm">Detailed revenue and enrollment charts will be visualized here using historical course data.</p>
-                  </div>
-                </div>
-              )}
-
-              {/* Enrolled Students Tab */}
-              {activeTab === 'students' && (
-                <div className="space-y-6 animate-in fade-in duration-300">
-                  {isAllocationsLoading ? (
-                    <div className="flex justify-center items-center min-h-[200px]">
-                      <span className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></span>
-                    </div>
-                  ) : allocations.length === 0 ? (
-                    <div className="bg-surface-light dark:bg-surface-dark p-12 rounded-2xl border border-border-light dark:border-border-dark shadow-sm text-center flex flex-col items-center justify-center">
-                      <span className="material-symbols-outlined text-4xl text-text-secondary/30 mb-3">group</span>
-                      <p className="text-text-secondary font-medium text-sm">No students enrolled in this course yet.</p>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {allocations.map(alloc => {
-                        const student = alloc.student || {};
-                        const batch = alloc.batch || {};
-                        const initials = (student.student_name || 'N A')
-                          .split(' ')
-                          .map(n => n[0])
-                          .slice(0, 2)
-                          .join('')
-                          .toUpperCase();
-
-                        const statusColors = {
-                          active: 'bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 border-green-200 dark:border-green-900/50',
-                          suspended: 'bg-yellow-50 dark:bg-yellow-950/30 text-yellow-700 dark:text-yellow-400 border-yellow-200 dark:border-yellow-900/50',
-                          completed: 'bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-900/50',
-                          dropped: 'bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400 border-red-200 dark:border-red-900/50'
-                        };
-
-                        const statusStyle = statusColors[alloc.status?.toLowerCase()] || 'bg-gray-50 dark:bg-gray-800 text-text-secondary border-border-light dark:border-border-dark';
-
-                        return (
-                          <div 
-                            key={alloc.allocation_id} 
-                            className="bg-surface-light dark:bg-surface-dark p-5 rounded-2xl border border-border-light dark:border-border-dark hover:border-primary/20 transition-all duration-300 shadow-sm flex flex-col justify-between"
-                          >
-                            <div className="flex items-start gap-4">
-                              {student.avatarUrl ? (
-                                <img src={student.avatarUrl} alt={student.student_name} className="w-12 h-12 rounded-full object-cover border border-border-light dark:border-border-dark" />
-                              ) : (
-                                <div className="w-12 h-12 rounded-full bg-primary/5 text-primary text-sm font-black flex items-center justify-center border border-primary/10">
-                                  {initials}
-                                </div>
-                              )}
-                              <div className="min-w-0 flex-1">
-                                <h4 className="font-bold text-text-main dark:text-white truncate">{student.student_name || 'N/A'}</h4>
-                                <p className="text-xs text-text-secondary truncate mt-0.5">{student.email || 'No email'}</p>
-                                <p className="text-xs text-text-secondary mt-0.5">{student.phone || 'No phone'}</p>
-                              </div>
-                              <span className={`text-[10px] uppercase font-black px-2 py-0.5 rounded-full border ${statusStyle}`}>
-                                {alloc.status || 'Active'}
-                              </span>
-                            </div>
-                            
-                            <div className="mt-4 pt-4 border-t border-border-light dark:border-border-dark grid grid-cols-2 gap-2 text-xs">
-                              <div>
-                                <p className="text-[10px] font-bold text-text-secondary uppercase tracking-wider">Assigned Batch</p>
-                                <p className="font-bold text-text-main dark:text-white truncate mt-0.5">{batch.batch_name || 'No Batch'}</p>
-                              </div>
-                              <div>
-                                <p className="text-[10px] font-bold text-text-secondary uppercase tracking-wider">Enrolled On</p>
-                                <p className="font-bold text-text-main dark:text-white mt-0.5">
-                                  {alloc.assigned_at ? new Date(alloc.assigned_at).toLocaleDateString() : 'N/A'}
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Assigned Batches Tab */}
-              {activeTab === 'batches' && (
-                <div className="space-y-6 animate-in fade-in duration-300">
-                  {isBatchesLoading ? (
-                    <div className="flex justify-center items-center min-h-[200px]">
-                      <span className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></span>
-                    </div>
-                  ) : batches.length === 0 ? (
-                    <div className="bg-surface-light dark:bg-surface-dark p-12 rounded-2xl border border-border-light dark:border-border-dark shadow-sm text-center flex flex-col items-center justify-center">
-                      <span className="material-symbols-outlined text-4xl text-text-secondary/30 mb-3">calendar_today</span>
-                      <p className="text-text-secondary font-medium text-sm">No batches assigned to this course yet.</p>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {batches.map(batch => {
-                        const statusColors = {
-                          active: 'bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 border-green-200 dark:border-green-900/50',
-                          completed: 'bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-900/50',
-                          cancelled: 'bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400 border-red-200 dark:border-red-900/50'
-                        };
-                        const statusStyle = statusColors[batch.status?.toLowerCase()] || 'bg-gray-50 dark:bg-gray-800 text-text-secondary border-border-light dark:border-border-dark';
-
-                        return (
-                          <div 
-                            key={batch.batch_id} 
-                            className="bg-surface-light dark:bg-surface-dark p-5 rounded-2xl border border-border-light dark:border-border-dark hover:border-primary/20 transition-all duration-300 shadow-sm flex flex-col justify-between"
-                          >
-                            <div>
-                              <div className="flex justify-between items-start gap-4 mb-2">
-                                <h4 className="font-bold text-text-main dark:text-white text-base truncate">{batch.batch_name}</h4>
-                                <span className={`text-[10px] uppercase font-black px-2 py-0.5 rounded-full border ${statusStyle}`}>
-                                  {batch.status}
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-2 text-xs text-text-secondary mb-4">
-                                <span className="px-2 py-0.5 bg-background-light dark:bg-background-dark rounded border border-border-light dark:border-border-dark text-[10px] font-bold uppercase">
-                                  {batch.batch_type}
-                                </span>
-                                <span>•</span>
-                                <span className="truncate">Instructor: {batch.instructor_name || 'N/A'}</span>
-                              </div>
-                            </div>
-
-                            <div className="grid grid-cols-3 gap-2 pt-4 border-t border-border-light dark:border-border-dark text-xs mb-4">
-                              <div>
-                                <p className="text-[10px] font-bold text-text-secondary uppercase tracking-wider">Capacity</p>
-                                <p className="font-bold text-text-main dark:text-white mt-0.5">{batch.capacity} Students</p>
-                              </div>
-                              <div>
-                                <p className="text-[10px] font-bold text-text-secondary uppercase tracking-wider">Start Date</p>
-                                <p className="font-bold text-text-main dark:text-white mt-0.5">
-                                  {batch.start_date ? new Date(batch.start_date).toLocaleDateString() : 'N/A'}
-                                </p>
-                              </div>
-                              <div>
-                                <p className="text-[10px] font-bold text-text-secondary uppercase tracking-wider">End Date</p>
-                                <p className="font-bold text-text-main dark:text-white mt-0.5">
-                                  {batch.end_date ? new Date(batch.end_date).toLocaleDateString() : 'N/A'}
-                                </p>
-                              </div>
-                            </div>
-
-                            {/* Action Buttons */}
-                            <div className="flex items-center justify-end gap-2 pt-3 border-t border-dashed border-border-light dark:border-border-dark">
-                              <button
-                                onClick={() => handleUnassignBatch(batch.batch_id)}
-                                disabled={updateBatchMutation.isPending}
-                                className="px-3 py-1.5 bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark hover:border-primary/30 rounded-lg text-xs font-bold text-text-secondary hover:text-primary transition-all duration-200 flex items-center gap-1.5 disabled:opacity-50"
-                                title="Remove connection between batch and this course without deleting the batch"
-                              >
-                                <span className="material-symbols-outlined text-[15px]">link_off</span>
-                                Unassign
-                              </button>
-                              <button
-                                onClick={() => handleDeleteBatch(batch.batch_id)}
-                                disabled={deleteBatchMutation.isPending}
-                                className="px-3 py-1.5 bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/50 hover:bg-red-100 dark:hover:bg-red-950/30 rounded-lg text-xs font-bold text-red-700 dark:text-red-400 transition-all duration-200 flex items-center gap-1.5 disabled:opacity-50"
-                                title="Permanently delete this batch"
-                              >
-                                <span className="material-symbols-outlined text-[15px]">delete</span>
-                                Delete
-                              </button>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Connected Packages Tab */}
-              {activeTab === 'packages' && (
-                <div className="space-y-6 animate-in fade-in duration-300">
-                  {isPackagesLoading ? (
-                    <div className="flex justify-center items-center min-h-[200px]">
-                      <span className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></span>
-                    </div>
-                  ) : connectedPackages.length === 0 ? (
-                    <div className="bg-surface-light dark:bg-surface-dark p-12 rounded-2xl border border-border-light dark:border-border-dark shadow-sm text-center flex flex-col items-center justify-center">
-                      <span className="material-symbols-outlined text-4xl text-text-secondary/30 mb-3">inventory_2</span>
-                      <p className="text-text-secondary font-medium text-sm">No connected packages found for this course.</p>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {connectedPackages.map(pkg => {
-                        const statusColors = {
-                          active: 'bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 border-green-200 dark:border-green-900/50',
-                          inactive: 'bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400 border-red-200 dark:border-red-900/50',
-                          draft: 'bg-yellow-50 dark:bg-yellow-950/30 text-yellow-700 dark:text-yellow-400 border-yellow-200 dark:border-yellow-900/50'
-                        };
-                        const statusStyle = statusColors[pkg.status?.toLowerCase()] || 'bg-gray-50 dark:bg-gray-800 text-text-secondary border-border-light dark:border-border-dark';
-
-                        return (
-                          <div 
-                            key={pkg.package_id} 
-                            className="bg-surface-light dark:bg-surface-dark p-5 rounded-2xl border border-border-light dark:border-border-dark hover:border-primary/20 transition-all duration-300 shadow-sm flex flex-col justify-between"
-                          >
-                            <div>
-                              <div className="flex justify-between items-start gap-4 mb-2">
-                                <h4 className="font-bold text-text-main dark:text-white text-base truncate">{pkg.name}</h4>
-                                <span className={`text-[10px] uppercase font-black px-2 py-0.5 rounded-full border ${statusStyle}`}>
-                                  {pkg.status}
-                                </span>
-                              </div>
-                              <p className="text-xs text-text-secondary line-clamp-2 mb-4">{pkg.description || 'No description provided.'}</p>
-                            </div>
-
-                            <div className="grid grid-cols-3 gap-2 pt-4 border-t border-border-light dark:border-border-dark text-xs">
-                              <div>
-                                <p className="text-[10px] font-bold text-text-secondary uppercase tracking-wider">Target Class</p>
-                                <p className="font-bold text-text-main dark:text-white mt-0.5 truncate">{pkg.target_class || 'N/A'}</p>
-                              </div>
-                              <div>
-                                <p className="text-[10px] font-bold text-text-secondary uppercase tracking-wider">Duration</p>
-                                <p className="font-bold text-text-main dark:text-white mt-0.5">{pkg.month} Months</p>
-                              </div>
-                              <div>
-                                <p className="text-[10px] font-bold text-text-secondary uppercase tracking-wider">Package Fee</p>
-                                <p className="font-bold text-primary mt-0.5">₹{Number(pkg.package_fee).toLocaleString()}</p>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Fee Structure Tab */}
-              {activeTab === 'structure' && (
-                <div className="bg-surface-light dark:bg-surface-dark p-6 rounded-2xl border border-border-light dark:border-border-dark shadow-sm space-y-6 animate-in fade-in duration-300">
-                  <div className="border-b border-border-light dark:border-border-dark pb-4">
-                    <h3 className="font-bold text-text-main dark:text-white text-lg">Fee Breakdown & Configurations</h3>
-                    <p className="text-xs text-text-secondary mt-1">Below are the billing parameters configured for this course.</p>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <div className="p-4 bg-background-light dark:bg-background-dark rounded-xl border border-border-light dark:border-border-dark">
-                      <p className="text-[10px] font-black text-text-secondary uppercase tracking-wider">Base Fee</p>
-                      <p className="text-2xl font-black text-text-main dark:text-white mt-1">₹{Number(course.base_fee).toLocaleString()}</p>
-                      <p className="text-[10px] text-text-secondary mt-2">One-time / standard enrollment fee for this course.</p>
-                    </div>
-
-                    <div className="p-4 bg-background-light dark:bg-background-dark rounded-xl border border-border-light dark:border-border-dark">
-                      <p className="text-[10px] font-black text-text-secondary uppercase tracking-wider">Installments Allowed</p>
-                      <p className="text-2xl font-black text-text-main dark:text-white mt-1">{course.default_installment_count || 1} Cycles</p>
-                      <p className="text-[10px] text-text-secondary mt-2">Default splits offered for student payments.</p>
-                    </div>
-
-                    <div className="p-4 bg-background-light dark:bg-background-dark rounded-xl border border-border-light dark:border-border-dark">
-                      <p className="text-[10px] font-black text-text-secondary uppercase tracking-wider">Installment Amount</p>
-                      <p className="text-2xl font-black text-text-main dark:text-white mt-1">
-                        ₹{Number(course.base_fee / (course.default_installment_count || 1)).toFixed(2).toLocaleString()}
-                      </p>
-                      <p className="text-[10px] text-text-secondary mt-2">Estimated base installment per cycle.</p>
-                    </div>
-                  </div>
-
-                  <div className="pt-4 border-t border-border-light dark:border-border-dark">
-                    <h4 className="text-xs font-bold text-text-main dark:text-white mb-3 uppercase tracking-wider">Additional Parameters</h4>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
-                      <div className="p-3 bg-background-light dark:bg-background-dark rounded-lg border border-border-light dark:border-border-dark">
-                        <p className="text-[10px] text-text-secondary font-bold uppercase">Medium</p>
-                        <p className="font-bold text-text-main dark:text-white mt-0.5">{course.language_medium || 'English'}</p>
-                      </div>
-                      <div className="p-3 bg-background-light dark:bg-background-dark rounded-lg border border-border-light dark:border-border-dark">
-                        <p className="text-[10px] text-text-secondary font-bold uppercase">Duration</p>
-                        <p className="font-bold text-text-main dark:text-white mt-0.5">
-                          {course.duration_value} {course.duration_unit || 'months'}
-                        </p>
-                      </div>
-                      <div className="p-3 bg-background-light dark:bg-background-dark rounded-lg border border-border-light dark:border-border-dark">
-                        <p className="text-[10px] text-text-secondary font-bold uppercase">Entity Type</p>
-                        <p className="font-bold text-text-main dark:text-white mt-0.5 capitalize">{course.entity_type || 'course'}</p>
-                      </div>
-                      <div className="p-3 bg-background-light dark:bg-background-dark rounded-lg border border-border-light dark:border-border-dark">
-                        <p className="text-[10px] text-text-secondary font-bold uppercase">Short Code</p>
-                        <p className="font-bold text-text-main dark:text-white mt-0.5">{course.short_code || 'N/A'}</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
+                ))}
+              </div>
             </div>
 
             {/* Right Column (Sidebar Widgets) */}
@@ -607,6 +576,7 @@ const CourseDetails = () => {
                               </div>
                             </div>
                             <button
+                              type="button"
                               onClick={() => handleUnassignTeacher(assignment.teacher_subject_id)}
                               disabled={unassignTeacherMutation.isPending}
                               className="p-1.5 rounded-lg text-text-secondary hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all duration-200 disabled:opacity-50"
@@ -641,6 +611,7 @@ const CourseDetails = () => {
                           variant="filled"
                         />
                         <button
+                          type="button"
                           onClick={handleAssignTeacher}
                           disabled={!selectedTeacherId || assignTeacherMutation.isPending}
                           className="w-full py-2 bg-primary text-white rounded-xl text-xs font-bold hover:bg-primary-dark shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
