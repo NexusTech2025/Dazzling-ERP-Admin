@@ -11,6 +11,7 @@ import { LoadingState, ErrorState } from '../../components/ui/QueryStatus';
 // Shared responsive layouts & footers
 import useIsMobile from '../../hooks/useIsMobile';
 import ActionFooter from '../../components/ui/v2/ActionFooter';
+import StatusButton from '../../components/ui/v2/StatusButton';
 
 // Data Fetching & Utilities
 import { queryKeys } from '../../lib/react-query/queryKeys';
@@ -23,7 +24,8 @@ import {
   useCourseAllocationsQuery, 
   useAssignCourseTeacherMutation, 
   useUnassignCourseTeacherMutation,
-  useDeleteCourseMutation
+  useDeleteCourseMutation,
+  useUpdateCourseMutation
 } from './hooks/useCourseQueries';
 
 // Decoupled View Components (The Hashmap Sub-views)
@@ -88,6 +90,14 @@ const CourseDetails = () => {
   const updateBatchMutation = useUpdateBatchMutation();
   const deleteBatchMutation = useDeleteBatchMutation();
   const deleteCourseMutation = useDeleteCourseMutation();
+  const updateCourseMutation = useUpdateCourseMutation();
+
+  const handleStatusToggle = useCallback(async (nextStatus) => {
+    return await updateCourseMutation.mutateAsync({
+      id,
+      data: { status: nextStatus }
+    });
+  }, [id, updateCourseMutation]);
 
   // Memoized relational data mapping (Phase 1)
   const { assignedTeachers, unassignedTeachers } = useMemo(() => {
@@ -314,9 +324,12 @@ const CourseDetails = () => {
                     <p className="text-[10px] font-mono text-text-secondary mt-0.5">{course.course_id}</p>
                   </div>
                 </div>
-                <span className="text-[9px] font-black tracking-wider px-2.5 py-0.5 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200/50 rounded-full uppercase shrink-0">
-                  {course.is_active ? 'ACTIVE' : 'INACTIVE'}
-                </span>
+                <StatusButton
+                  currentStatus={course.is_active ? 'active' : 'inactive'}
+                  entityName="Course"
+                  onStatusToggle={handleStatusToggle}
+                  isLoading={updateCourseMutation.isPending}
+                />
               </div>
             </div>
 
@@ -464,6 +477,12 @@ const CourseDetails = () => {
               </p>
             </div>
             <div className="flex items-center gap-3">
+              <StatusButton
+                currentStatus={course.is_active ? 'active' : 'inactive'}
+                entityName="Course"
+                onStatusToggle={handleStatusToggle}
+                isLoading={updateCourseMutation.isPending}
+              />
               <button 
                 type="button"
                 onClick={() => navigate(`/admin/courses/edit/${course.course_id}`)} 

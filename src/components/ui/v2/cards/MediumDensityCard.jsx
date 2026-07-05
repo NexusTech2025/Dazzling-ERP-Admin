@@ -1,6 +1,7 @@
 import React from 'react';
 import CardContainer from './CardContainer';
 import Button from '../Button';
+import HorizontalStatMetrics from './HorizontalStatMetrics';
 import { mergeSlotClasses } from './cardUtils';
 
 const getPillClass = (variant) => {
@@ -23,8 +24,10 @@ const MediumDensityCard = ({
   subtitle,
   tags = [], // Can be strings or [{ label, variant }]
   metrics = [], // [{ label, value, colorClass }]
+  metricsLayout = 'grid', // 'grid' | 'row'
   progress, // { value, max, label } or percentage number
   trend, // { value, direction: 'up' | 'down' | 'neutral' }
+  headerAction,
   actionText,
   onAction,
   onClick,
@@ -95,6 +98,11 @@ const MediumDensityCard = ({
               {badgeText}
             </span>
           )}
+          {headerAction && (
+            <div className="flex-shrink-0">
+              {headerAction}
+            </div>
+          )}
         </div>
       </div>
 
@@ -123,20 +131,26 @@ const MediumDensityCard = ({
             </div>
           )}
 
-          {/* Metrics Grid */}
+          {/* Metrics Grid or Row */}
           {metrics.length > 0 && (
-            <div className="grid grid-cols-2 gap-x-4 gap-y-2 py-2 border-t border-b border-border-light/20 dark:border-border-dark/20 my-3 w-full shrink-0">
-              {metrics.map((metric, idx) => (
-                <div key={idx} className="min-w-0">
-                  <p className="text-[9px] font-black text-text-secondary dark:text-slate-400 uppercase tracking-wider">
-                    {metric.label}
-                  </p>
-                  <p className={`text-xs font-bold truncate mt-0.5 ${metric.colorClass || 'text-text-main dark:text-white'}`}>
-                    {metric.value}
-                  </p>
-                </div>
-              ))}
-            </div>
+            metricsLayout === 'row' ? (
+              <div className="py-2 border-t border-b border-border-light/20 dark:border-border-dark/20 my-1 w-full shrink-0">
+                <HorizontalStatMetrics items={metrics} columns={metrics.length} allowWrap={true} />
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-x-4 gap-y-2 py-2 border-t border-b border-border-light/20 dark:border-border-dark/20 my-1 w-full shrink-0">
+                {metrics.map((metric, idx) => (
+                  <div key={idx} className="min-w-0">
+                    <p className="text-[9px] font-black text-text-secondary dark:text-slate-400 uppercase tracking-wider">
+                      {metric.label}
+                    </p>
+                    <p className={`text-xs font-bold truncate mt-0.5 ${metric.colorClass || 'text-text-main dark:text-white'}`}>
+                      {metric.value}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )
           )}
 
           {/* Progress Bar */}

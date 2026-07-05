@@ -25,39 +25,56 @@ const CourseHeader = ({ activeTab, onRefresh }) => {
         </p>
       </div>
 
-      <div className="flex items-center gap-3 w-full md:w-auto">
+      <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
         <RefreshButton isFetching={isFetching} onRefresh={onRefresh} />
+        
+        <button
+          type="button"
+          className="flex-1 md:flex-none flex items-center justify-center gap-2 rounded-xl bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark px-4 py-2.5 text-sm font-bold text-text-main dark:text-white shadow-sm hover:bg-background-light dark:hover:bg-background-dark transition-all active:scale-95 cursor-pointer"
+        >
+          <span className="material-symbols-outlined text-lg">publish</span>
+          Import
+        </button>
+        
+        <button
+          type="button"
+          className="flex-1 md:flex-none flex items-center justify-center gap-2 rounded-xl bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark px-4 py-2.5 text-sm font-bold text-text-main dark:text-white shadow-sm hover:bg-background-light dark:hover:bg-background-dark transition-all active:scale-95 cursor-pointer"
+        >
+          <span className="material-symbols-outlined text-lg">download</span>
+          Export
+        </button>
+
         {activeTab === 'courses' ? (
           <>
             <button
               onClick={() => setIsModalOpen(true)}
-              className="flex-1 md:flex-none flex items-center justify-center gap-2 rounded-xl bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark px-6 py-2.5 text-sm font-black text-text-main dark:text-white shadow-sm hover:bg-background-light dark:hover:bg-background-dark transition-all active:scale-95"
+              className="flex-1 md:flex-none flex items-center justify-center gap-2 rounded-xl bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark px-4 py-2.5 text-sm font-bold text-text-main dark:text-white shadow-sm hover:bg-background-light dark:hover:bg-background-dark transition-all active:scale-95 cursor-pointer"
             >
               <span className="material-symbols-outlined text-lg">category</span>
               Create Type
             </button>
             <Link
               to="/admin/courses/add"
-              className="flex-1 md:flex-none flex items-center justify-center gap-2 rounded-xl bg-primary px-6 py-2.5 text-sm font-black text-white shadow-lg shadow-primary/20 hover:bg-primary-dark transition-all active:scale-95"
+              className="flex-1 md:flex-none flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-primary/20 hover:bg-primary-dark transition-all active:scale-95"
             >
-              <span className="material-symbols-outlined text-lg">add_circle</span>
+              <span className="material-symbols-outlined text-lg">add</span>
               Create New Course
             </Link>
           </>
         ) : (
-          <div className="flex gap-2 w-full md:w-auto">
+          <div className="flex gap-2 w-full md:w-auto flex-1 md:flex-none">
             <Link
               to="/admin/packages/quick-add"
-              className="flex-1 md:flex-none flex items-center justify-center gap-2 rounded-xl bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark px-6 py-2.5 text-sm font-black text-text-main dark:text-white shadow-sm hover:bg-background-light dark:hover:bg-background-dark transition-all active:scale-95"
+              className="flex-1 md:flex-none flex items-center justify-center gap-2 rounded-xl bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark px-4 py-2.5 text-sm font-bold text-text-main dark:text-white shadow-sm hover:bg-background-light dark:hover:bg-background-dark transition-all active:scale-95"
             >
               <span className="material-symbols-outlined text-lg">bolt</span>
-              Quick Build Package
+              Quick Build
             </Link>
             <Link
               to="/admin/packages/add"
-              className="flex-1 md:flex-none flex items-center justify-center gap-2 rounded-xl bg-primary px-6 py-2.5 text-sm font-black text-white shadow-lg shadow-primary/20 hover:bg-primary-dark transition-all active:scale-95"
+              className="flex-1 md:flex-none flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-primary/20 hover:bg-primary-dark transition-all active:scale-95"
             >
-              <span className="material-symbols-outlined text-lg">inventory_2</span>
+              <span className="material-symbols-outlined text-lg">add</span>
               Create Package
             </Link>
           </div>

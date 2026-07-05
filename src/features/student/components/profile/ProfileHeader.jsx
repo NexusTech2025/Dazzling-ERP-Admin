@@ -10,11 +10,19 @@ const ProfileHeader = ({ student, activeTab, onTabChange, onEdit }) => {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="flex items-center gap-6">
             <div className="size-24 md:size-32 rounded-full bg-primary/10 flex items-center justify-center text-primary font-black text-4xl border-4 border-white dark:border-slate-800 shadow-md overflow-hidden shrink-0">
-              {student.avatarUrl ? (
-                <img src={student.avatarUrl} alt={student.student_name} className="h-full w-full object-cover" />
-              ) : (
-                student.student_name?.substring(0, 2).toUpperCase()
-              )}
+              <img 
+                src={(() => {
+                  const url = student.avatarUrl;
+                  if (!url || url === 'null' || url === 'undefined' || url === '') {
+                    return student.gender?.toLowerCase() === 'female' || student.gender?.toLowerCase() === 'f'
+                      ? 'https://img.icons8.com/color/150/girl.png'
+                      : 'https://img.icons8.com/color/150/boy.png';
+                  }
+                  return url;
+                })()} 
+                alt={student.student_name} 
+                className="h-full w-full object-cover" 
+              />
             </div>
             <div className="space-y-1">
               <h1 className="text-2xl md:text-3xl font-bold text-text-main dark:text-white leading-tight">

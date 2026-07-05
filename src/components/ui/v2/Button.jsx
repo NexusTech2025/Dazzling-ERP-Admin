@@ -30,7 +30,7 @@ const Button = ({
 }) => {
   const navigate = useNavigate();
 
-  const baseStyles = "inline-flex items-center justify-center gap-2 font-bold tracking-wide transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none rounded-lg active:scale-95";
+  const baseStyles = "inline-flex items-center justify-center gap-2 tracking-wide transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none rounded-lg active:scale-95";
 
   const sizes = {
     xs: "h-7 px-2 text-[9px] uppercase",

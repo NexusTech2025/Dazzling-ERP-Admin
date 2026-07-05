@@ -22,10 +22,12 @@ import { CoursesMobileView } from '../components/CoursesMobileView';
  * @category Components
  * @returns {React.ReactElement} The rendered Course management workspace sheet.
  */
-const CourseWorkspace = () => {
+const CourseWorkspace = ({ viewMode: propViewMode, setViewMode: propSetViewMode }) => {
+  const workspaceState = useCourseWorkspaceState();
+  const viewMode = propViewMode !== undefined ? propViewMode : workspaceState.viewMode;
+  const setViewMode = propSetViewMode !== undefined ? propSetViewMode : workspaceState.setViewMode;
+
   const {
-    viewMode,
-    setViewMode,
     searchQuery,
     setSearchQuery,
     segmentFilter,
@@ -50,7 +52,7 @@ const CourseWorkspace = () => {
     deleteMutation,
     deleteManyCoursesMutation,
     queryClient
-  } = useCourseWorkspaceState();
+  } = workspaceState;
 
   const [dependencyModal, setDependencyModal] = useState({ isOpen: false, errorPayload: null, parentId: null, parentName: '' });
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
@@ -115,8 +117,8 @@ const CourseWorkspace = () => {
   }, [deleteModal.type]);
 
   const isDeleteProcessing = useMemo(() => {
-    return deleteModal.type === 'bulk_course' 
-      ? deleteManyCoursesMutation.isPending 
+    return deleteModal.type === 'bulk_course'
+      ? deleteManyCoursesMutation.isPending
       : deleteMutation.isPending;
   }, [deleteModal.type, deleteManyCoursesMutation.isPending, deleteMutation.isPending]);
 
@@ -267,7 +269,7 @@ const CourseWorkspace = () => {
       )}
 
       {/* Deletion confirmation modal */}
-      <ConfirmModal
+      {deleteModal.isOpen && <ConfirmModal
         isOpen={deleteModal.isOpen}
         status={deleteModal.status}
         resultMessage={deleteModal.resultMessage}
@@ -276,9 +278,9 @@ const CourseWorkspace = () => {
         title={deleteTitle}
         message={deleteMessage}
         isProcessing={isDeleteProcessing}
-      />
+      />}
 
-      <DeleteDependencyModal
+      {dependencyModal.isOpen && <DeleteDependencyModal
         isOpen={dependencyModal.isOpen}
         onClose={() => setDependencyModal({ isOpen: false, errorPayload: null, parentId: null, parentName: '' })}
         errorPayload={dependencyModal.errorPayload}
@@ -291,7 +293,7 @@ const CourseWorkspace = () => {
           }
           setDependencyModal({ isOpen: false, errorPayload: null, parentId: null, parentName: '' });
         }}
-      />
+      />}
     </div>
   );
 };

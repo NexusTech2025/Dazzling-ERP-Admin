@@ -199,47 +199,54 @@ const CourseFilters = ({
 
   // Desktop View
   return (
-    <div className="space-y-4">
-      {/* Segment & Academic Filters Row */}
-      <div className="flex flex-wrap items-center gap-6">
+    <div className="w-full flex flex-col md:flex-row items-center gap-2 bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-2xl p-2 shadow-sm min-h-[46px]">
+      {/* Search Input Box */}
+      <div className="w-full md:w-[280px] shrink-0">
+        <SearchInput 
+          value={searchQuery}
+          onChange={onSearchChange}
+          placeholder="Search courses, codes..."
+        />
+      </div>
+
+      {/* Inline Select Group Filters */}
+      <div className="flex flex-wrap items-center gap-2 flex-1">
         {segmentOptions.length > 0 && (
-          <div className="animate-in fade-in slide-in-from-left-4 duration-300">
-            <ButtonGroupFilter
-              options={segmentOptions}
-              value={segmentFilter}
-              variant="secondary"
-              onChange={(val) => {
-                onSegmentChange(val);
-                if (val === '' && onLanguageChange && onBoardChange && onClassChange) {
-                  onLanguageChange('');
-                  onBoardChange('');
-                  onClassChange('');
-                }
-              }}
-            />
-          </div>
+          <SelectGroupFilter
+            label="Segment"
+            options={segmentOptions}
+            value={segmentFilter}
+            onChange={(val) => {
+              onSegmentChange(val);
+              if (val === '' && onLanguageChange && onBoardChange && onClassChange) {
+                onLanguageChange('');
+                onBoardChange('');
+                onClassChange('');
+              }
+            }}
+            defaultLabel="All Segments"
+          />
         )}
 
         {isAcademicFilterActive && (
-          <div className="flex flex-wrap items-center gap-4 animate-in zoom-in duration-300">
+          <>
             {languageOptions.length > 0 && (
-              <ButtonGroupFilter
+              <SelectGroupFilter
                 label="Medium"
                 options={languageOptions}
                 value={languageFilter}
-                size="sm"
-                variant="secondary"
                 onChange={onLanguageChange}
+                defaultLabel="All Mediums"
               />
             )}
 
             {boardOptions.length > 0 && (
-              <ButtonGroupFilter
+              <SelectGroupFilter
                 label="Board"
                 options={boardOptions}
                 value={boardFilter}
-                size="sm"
                 onChange={onBoardChange}
+                defaultLabel="All Boards"
               />
             )}
 
@@ -252,54 +259,31 @@ const CourseFilters = ({
                 defaultLabel="All Classes"
               />
             )}
-          </div>
+          </>
         )}
       </div>
 
-      {/* Search Input & View Toggles Row */}
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-4 rounded-xl border border-border-light dark:border-border-dark bg-surface-light dark:bg-surface-dark p-4 shadow-sm">
-        {/* Search Input */}
-        <div className="md:col-span-5 lg:col-span-4 relative">
-          <SearchInput 
-            value={searchQuery}
-            onChange={onSearchChange}
-            placeholder="Search courses, codes..."
-          />
-        </div>
-
-        {/* View Mode Toggles & Advanced Settings */}
-        <div className="md:col-span-7 lg:col-span-8 flex flex-wrap gap-3 items-center justify-end">
-          {/* View Mode Toggles */}
-          <div className="flex items-center gap-2 bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-xl p-1 shadow-inner">
-            <button 
-              onClick={() => onViewModeChange('grid')}
-              className={`p-1.5 rounded-lg transition-all ${
-                viewMode === 'grid' 
-                  ? 'bg-white dark:bg-slate-700 text-primary shadow-sm' 
-                  : 'text-text-secondary hover:text-text-main'
-              }`}
-              title="Grid View"
-            >
-              <span className="material-symbols-outlined text-[20px]">grid_view</span>
-            </button>
-            <button 
-              onClick={() => onViewModeChange('list')}
-              className={`p-1.5 rounded-lg transition-all ${
-                viewMode === 'list' 
-                  ? 'bg-white dark:bg-slate-700 text-primary shadow-sm' 
-                  : 'text-text-secondary hover:text-text-main'
-              }`}
-              title="List View"
-            >
-              <span className="material-symbols-outlined text-[20px]">view_list</span>
-            </button>
-          </div>
-
-          <button className="flex items-center gap-2 rounded-lg text-xs font-bold text-primary hover:underline px-2">
-            <span className="material-symbols-outlined text-[18px]">filter_list</span>
-            Advanced
+      {/* Action Tray */}
+      <div className="flex items-center gap-2 shrink-0 self-end md:self-auto">
+        {(segmentFilter || languageFilter || boardFilter || classFilter) && (
+          <button
+            type="button"
+            onClick={() => {
+              onSegmentChange('');
+              if (onLanguageChange) onLanguageChange('');
+              if (onBoardChange) onBoardChange('');
+              if (onClassChange) onClassChange('');
+            }}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-rose-200 dark:border-rose-800 text-xs font-bold text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-all cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-sm">restart_alt</span>
+            Reset
           </button>
-        </div>
+        )}
+        <button className="flex items-center gap-2 rounded-lg text-xs font-bold text-primary hover:underline px-2 cursor-pointer">
+          <span className="material-symbols-outlined text-[18px]">filter_list</span>
+          Advanced
+        </button>
       </div>
     </div>
   );

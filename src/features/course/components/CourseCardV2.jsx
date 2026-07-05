@@ -1,8 +1,9 @@
 import React, { memo } from 'react';
-import { 
-  LowDensityCard, 
-  MediumDensityCard, 
-  HighDensityCard 
+import {
+  LowDensityCard,
+  MediumDensityCard,
+  HighDensityCard,
+  HorizontalStatMetrics
 } from '../../../components/ui/v2/cards';
 import Button from '../../../components/ui/v2/Button';
 import { Tag, Badge } from '../../../components/ui/v2/indicators';
@@ -23,6 +24,20 @@ const CourseCardV2 = ({
   icon,
   className = ''
 }) => {
+  const [showMenu, setShowMenu] = React.useState(false);
+  const menuRef = React.useRef(null);
+
+  React.useEffect(() => {
+    if (!showMenu) return;
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setShowMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showMenu]);
+
   const name = course.name || '';
   const id = course.course_id || course.id || '';
   const priceLabel = course.base_fee ? `₹${course.base_fee.toLocaleString()}` : '—';
@@ -108,11 +123,10 @@ const CourseCardV2 = ({
 
     const subtitle1 = (
       <span className="inline-flex flex-wrap items-center gap-1 text-[10px] font-bold text-text-secondary uppercase tracking-wider">
-        <span className={`px-1.5 py-0.5 rounded text-[8px] font-black tracking-widest ${
-          course.entity_type === 'subject'
-            ? 'bg-blue-500/10 text-blue-500 border border-blue-500/15'
-            : 'bg-purple-500/10 text-purple-500 border border-purple-500/15'
-        }`}>
+        <span className={`px-1.5 py-0.5 rounded text-[8px] font-black tracking-widest ${course.entity_type === 'subject'
+          ? 'bg-blue-500/10 text-blue-500 border border-blue-500/15'
+          : 'bg-purple-500/10 text-purple-500 border border-purple-500/15'
+          }`}>
           {entityType}
         </span>
         {segmentName && (
@@ -159,60 +173,147 @@ const CourseCardV2 = ({
 
     // Tags: only from real schema fields
     const tags = [
-      course.language_medium ? { label: course.language_medium, variant: 'neutral' } : null,
-      course.metadata?.class ? { label: `Class ${course.metadata.class}`, variant: 'primary' } : null,
+      course.language_medium ? { label: course.language_medium, variant: 'primary' } : null,
+      course.metadata?.class ? { label: `Class ${course.metadata.class}`, variant: 'success' } : null,
       course.metadata?.board ? { label: course.metadata.board, variant: 'warning' } : null
     ].filter(Boolean);
 
+    // Grid details explicitly tailored for tight spacing layout matching the image
     const metrics = [
-      { label: 'Base Fee', value: priceLabel, colorClass: hasDiscount ? 'line-through opacity-60 text-text-secondary' : 'text-secondary' },
-      hasDiscount ? { label: 'Offer Price', value: offerPriceLabel, colorClass: 'text-emerald-500 font-bold' } : null,
-      { label: 'Duration', value: course.duration_value ? `${course.duration_value} ${course.duration_unit || 'months'}` : '—' },
-      { label: 'Installments', value: course.default_installment_count ? `${course.default_installment_count} steps` : '—' }
-    ].filter(Boolean);
+      {
+        label: hasDiscount ? 'Offer Price' : 'Fee',
+        value: hasDiscount ? offerPriceLabel : priceLabel,
+        icon: 'payments'
+      },
+      {
+        label: 'Duration',
+        value: course.duration_value ? `${course.duration_value} ${course.duration_unit || 'months'}` : '12 months',
+        icon: 'schedule'
+      },
+      {
+        label: 'Chapters',
+        value: course.chapters_count || 12,
+        icon: 'import_contacts'
+      }
+    ];
 
     // Status color mapping
     const statusColor = course.status === 'active' ? 'success' : 'error';
+
+    // Connected metrics mapping properties from sandbox script
+    const horizontalMetricsData = [
+      { icon: "layers", value: course.batches_count || 0, label: "Batches" },
+      { icon: "inventory_2", value: course.packages_count || 0, label: "Packages" },
+      { icon: "group", value: course.total_students || 0, label: "Students" }
+    ];
+
+    const headerAction = (
+      <div className="flex items-center gap-1.5 relative">
+        <Badge
+          variant="status"
+          color={statusColor}
+          content={course.status || 'active'}
+          size="sm"
+        />
+        {onDelete && (
+          <div className="relative">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowMenu(prev => !prev);
+              }}
+              className="p-1 rounded-full text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center justify-center cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-base leading-none">
+                more_vert
+              </span>
+            </button>
+            {showMenu && (
+              <div
+                ref={menuRef}
+                className="absolute right-0 top-full mt-1 bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-xl shadow-lg z-[100] py-1.5 min-w-[130px] animate-in fade-in slide-in-from-top-1 duration-150"
+              >
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowMenu(false);
+                    onDelete(course);
+                  }}
+                  className="w-full px-4 py-2.5 text-left text-xs font-bold hover:bg-rose-50 dark:hover:bg-rose-950/20 text-rose-600 dark:text-rose-400 flex items-center gap-2.5 transition-colors cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-sm">delete</span>
+                  Delete Course
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
 
     return (
       <MediumDensityCard
         icon={iconName}
         title={name}
-        subtitle={course.segment_name || course.entity_type || ''}
-        badgeText={hasDiscount ? `${discount}% OFF` : (course.short_code || id)}
+        subtitle={course.segment_name || course.entity_type || 'Subject'}
+        badgeText={hasDiscount ? `${discount}% OFF` : undefined}
         badgeClass={hasDiscount ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : undefined}
+        headerAction={headerAction}
         tags={tags}
         metrics={metrics}
+        metricsLayout="row"
         onClick={() => onClick && onClick(course)}
         className={className}
+        slotClasses={{
+          title: "text-sm font-black tracking-tight text-text-main dark:text-white",
+          subtitle: "text-xs text-text-secondary dark:text-slate-400 mt-0.5",
+          body: "mt-3 pt-1 flex flex-col gap-2",
+          footer: "mt-3.5 pt-3 border-t border-border-light dark:border-border-dark w-full"
+        }}
       >
-        {/* Status + Action row */}
-        <div className="flex items-center justify-between gap-3 pt-3 mt-1 border-t border-border-light/40 dark:border-border-dark/40">
-          <Badge
-            variant="status"
-            color={statusColor}
-            content={course.status || 'active'}
-            size="sm"
-          />
-          <div className="flex items-center gap-2">
+        <div className="flex flex-col gap-2.5 w-full">
+          {/* Connected Metrics Section */}
+          <div className="w-full">
+            <HorizontalStatMetrics
+              items={horizontalMetricsData}
+              columns={3}
+              allowWrap={true}
+            />
+          </div>
+
+          {/* Operational Tray */}
+          <div className="flex items-center justify-end gap-1.5 w-full mt-3">
             {onEdit && (
-              <button
-                type="button"
+              <Button
+                variant="outlined"
+                size="sm"
                 onClick={(e) => { e.stopPropagation(); onEdit(course); }}
-                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-primary/10 text-primary text-xs font-bold hover:bg-primary/20 transition-colors"
+                startIcon="edit"
+                className="!text-[10px] !py-1 !px-2 !min-h-0 h-auto cursor-pointer"
               >
-                <span className="material-symbols-outlined text-[14px]">edit</span>
                 Edit
-              </button>
+              </Button>
             )}
-            <button
-              type="button"
+            <Button
+              variant="outlined"
+              size="sm"
               onClick={(e) => { e.stopPropagation(); onClick && onClick(course); }}
-              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-border-light dark:border-border-dark bg-white dark:bg-slate-800 text-text-secondary dark:text-slate-200 text-xs font-bold hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+              startIcon="analytics"
+              className="!text-[10px] !py-1 !px-2 !min-h-0 h-auto cursor-pointer"
             >
-              <span className="material-symbols-outlined text-[14px]">analytics</span>
+              Analytics
+            </Button>
+            <Button
+              variant="outlined"
+              size="sm"
+              onClick={(e) => { e.stopPropagation(); onClick && onClick(course); }}
+              startIcon="visibility"
+              className="!text-[10px] !py-1 !px-2 !min-h-0 h-auto cursor-pointer"
+            >
               Details
-            </button>
+            </Button>
           </div>
         </div>
       </MediumDensityCard>

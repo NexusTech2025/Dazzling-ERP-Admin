@@ -10,6 +10,7 @@ import { LoadingState, ErrorState } from '../../components/ui/QueryStatus';
 // Responsive hook & shared footer
 import useIsMobile from '../../hooks/useIsMobile';
 import ActionFooter from '../../components/ui/v2/ActionFooter';
+import StatusButton from '../../components/ui/v2/StatusButton';
 
 // Data queries
 import { queryKeys } from '../../lib/react-query/queryKeys';
@@ -17,7 +18,8 @@ import {
   usePackageDetailQuery, 
   usePackageEnrollmentsQuery, 
   usePackageFeeAccountsQuery,
-  useDeletePackageMutation
+  useDeletePackageMutation,
+  useUpdatePackageMutation
 } from './hooks/usePackageQueries';
 
 // Decoupled sub-tab components
@@ -61,6 +63,14 @@ const PackageDetails = () => {
   const { data: enrollments = [], isLoading: isEnrollmentsLoading } = usePackageEnrollmentsQuery(id);
   const { data: feeAccounts = [], isLoading: isFeeLoading } = usePackageFeeAccountsQuery(id);
   const deletePackageMutation = useDeletePackageMutation();
+  const updatePackageMutation = useUpdatePackageMutation();
+
+  const handleStatusToggle = useCallback(async (nextStatus) => {
+    return await updatePackageMutation.mutateAsync({
+      id,
+      data: { status: nextStatus }
+    });
+  }, [id, updatePackageMutation]);
 
   // Memoized relational reductions
   const aggregateValue = useMemo(() => {
@@ -220,9 +230,12 @@ const PackageDetails = () => {
                     <p className="text-[10px] font-mono text-text-secondary mt-0.5">{pkg.package_id}</p>
                   </div>
                 </div>
-                <span className="text-[9px] font-black tracking-wider px-2.5 py-0.5 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200/50 rounded-full uppercase shrink-0">
-                  {pkg.status || 'Active'}
-                </span>
+                <StatusButton
+                  currentStatus={pkg.status || 'active'}
+                  entityName="Package"
+                  onStatusToggle={handleStatusToggle}
+                  isLoading={updatePackageMutation.isPending}
+                />
               </div>
             </div>
 
@@ -376,6 +389,12 @@ const PackageDetails = () => {
               </div>
 
               <div className="flex flex-wrap items-center gap-3">
+                <StatusButton
+                  currentStatus={pkg.status || 'active'}
+                  entityName="Package"
+                  onStatusToggle={handleStatusToggle}
+                  isLoading={updatePackageMutation.isPending}
+                />
                 <Link
                   to={`/admin/packages/edit/${pkg.package_id}`}
                   className="flex items-center gap-2 px-4 py-2 bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-xl text-text-secondary font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-sm active:scale-95 animate-in fade-in"

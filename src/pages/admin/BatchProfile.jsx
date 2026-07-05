@@ -1,9 +1,10 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { useBatchDetailQuery, useBatchStudentsQuery } from '../../features/batch/hooks/useBatchQueries';
+import { useBatchDetailQuery, useBatchStudentsQuery, useUpdateBatchMutation } from '../../features/batch/hooks/useBatchQueries';
 import { useCourseDetailQuery } from '../../features/course/hooks/useCourseQueries';
 import { useTeacherDetailQuery } from '../../features/teacher/hooks/useTeacherQueries';
 import { useBranchesQuery } from '../../features/core/hooks/useBranchQueries';
+import StatusButton from '../../components/ui/v2/StatusButton';
 
 // Sub-components
 import BatchProfileHeader from '../../features/batch/components/profile/BatchProfileHeader';
@@ -21,6 +22,15 @@ const BatchProfile = () => {
 
   const { data: rawBatch, isLoading: isBatchLoading, error: batchError } = useBatchDetailQuery(id);
   const { data: students = [], isLoading: isStudentsLoading } = useBatchStudentsQuery(id);
+  const updateBatchMutation = useUpdateBatchMutation();
+
+  const handleStatusToggle = useCallback(async (nextStatus) => {
+    const statusValue = nextStatus === 'inactive' ? 'cancelled' : 'active';
+    return await updateBatchMutation.mutateAsync({
+      id,
+      data: { status: statusValue }
+    });
+  }, [id, updateBatchMutation]);
 
   // Independent related data hooks (Cache-First)
   const { data: course } = useCourseDetailQuery(rawBatch?.course_id);
@@ -117,6 +127,8 @@ const BatchProfile = () => {
         batch={batch}
         activeTab={activeTab}
         onTabChange={setActiveTab}
+        onStatusToggle={handleStatusToggle}
+        isStatusLoading={updateBatchMutation.isPending}
       />
 
       <BatchKPICards batch={batch} studentsCount={students.length} />

@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useQueryClient, useIsFetching } from '@tanstack/react-query';
 import { useTeacherDetailQuery, useTeacherSalaryConfigQuery, useTeacherAttendanceQuery } from '../../features/teacher/hooks/useTeacherQueries';
 import { useBatchesQuery } from '../../features/batch/hooks/useBatchQueries';
@@ -15,6 +15,7 @@ import KpiGrid from '../../components/ui/v2/KpiGrid';
 import RefreshButton from '../../components/ui/btn/RefreshButton';
 import Avatar from '../../components/ui/v2/Avatar';
 import Badge from '../../components/ui/Badge';
+import { Timeline } from '../../components/ui/v2/Timeline';
 
 // Mobile Design Primitives
 import ProfileHero from '../../components/ui/v2/ProfileHero';
@@ -40,7 +41,20 @@ const TeacherProfile = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
-  const [activeTab, setActiveTab] = useState('Overview');
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const activeTab = useMemo(() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam) {
+      const matched = VALID_PROFILE_TABS.find(t => t.toLowerCase() === tabParam.toLowerCase());
+      if (matched) return matched;
+    }
+    return 'Overview';
+  }, [searchParams]);
+
+  const handleTabChange = (tab) => {
+    setSearchParams({ tab: tab.toLowerCase() });
+  };
 
   const queryClient = useQueryClient();
   const isFetching = useIsFetching({ queryKey: queryKeys.teacher.detail(id) }) > 0;
@@ -111,14 +125,69 @@ const TeacherProfile = () => {
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 flex flex-col gap-6">
-              <TeacherPersonalInfo teacher={teacher} />
+              {/* Personal Information */}
+              <DescriptionSection title="Personal Information" icon="person">
+                <KeyValuePair label="Gender" value={teacher.gender} />
+                <KeyValuePair label="Date of Birth" value={teacher.date_of_birth ? new Date(teacher.date_of_birth).toLocaleDateString() : 'N/A'} />
+                <KeyValuePair label="Joined Date" value={teacher.joining_date ? new Date(teacher.joining_date).toLocaleDateString() : 'N/A'} />
+                <KeyValuePair label="Teacher Type" value={teacher.teacher_type?.replace('_', ' ')} />
+              </DescriptionSection>
+
+              {/* Contact Information */}
+              <DescriptionSection title="Contact Information" icon="contact_phone">
+                <KeyValuePair label="Email Address" value={teacher.email} />
+                <KeyValuePair label="Phone Number" value={teacher.mobile_number} />
+                <KeyValuePair label="Address" value={teacher.address} className="col-span-2" />
+                <KeyValuePair label="Emergency Contact" value={teacher.emergency_contact || 'N/A'} />
+              </DescriptionSection>
+
               <TeacherProfessionalCard teacher={teacher} />
-              <TeacherContactDetails teacher={teacher} />
               <TeacherDocumentsCard documents={teacher.documents} />
             </div>
+            
             <div className="lg:col-span-1 flex flex-col gap-6">
               <TeacherSalarySnapshot salaryConfig={salaryConfig} />
-              <TeacherProfessionalLog />
+              
+              {/* Recent Activity Timeline Widget */}
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-base font-bold text-slate-800 dark:text-slate-200">Recent Activity</h3>
+                  <button type="button" className="text-sm font-semibold text-primary hover:underline">View All</button>
+                </div>
+                <Timeline
+                  items={[
+                    {
+                      time: 'Today, 11:30 AM',
+                      title: 'Assignment Posted',
+                      description: 'Mathematics class assignment uploaded',
+                      color: 'bg-primary',
+                    },
+                    {
+                      time: 'Yesterday, 9:00 AM',
+                      title: 'Attendance Marked',
+                      description: 'Attendance recorded for Class 11 Algebra',
+                      color: 'bg-emerald-500',
+                    },
+                    {
+                      time: '3 Days Ago',
+                      title: 'Leave Approved',
+                      description: 'Medical leave request approved',
+                      color: 'bg-amber-500',
+                    },
+                  ]}
+                />
+              </div>
+
+              {/* Tags Card Widget */}
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-4">
+                <h3 className="text-base font-bold text-slate-800 dark:text-slate-200">Tags</h3>
+                <div className="flex flex-wrap gap-2 items-center">
+                  <Badge variant="primary">Senior Faculty</Badge>
+                  <Badge variant="success">Verified</Badge>
+                  <Badge variant="info">Mathematics</Badge>
+                  <Button size="sm" variant="outlined" startIcon="add">Add Tag</Button>
+                </div>
+              </div>
 
               {/* Enhanced Quick Actions Panel using native button specs */}
               <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-sm space-y-4">
@@ -207,7 +276,15 @@ const TeacherProfile = () => {
         <ProfileHero
           avatar={
             <Avatar
-              src={teacher.profile_photo_url || ''}
+              src={(() => {
+                const url = teacher.profile_photo_url;
+                if (!url || url === 'null' || url === 'undefined' || url === '') {
+                  return teacher.gender?.toLowerCase() === 'female' || teacher.gender?.toLowerCase() === 'f'
+                    ? 'https://img.icons8.com/color/150/administrator-female.png'
+                    : 'https://img.icons8.com/color/150/administrator-male.png';
+                }
+                return url;
+              })()}
               initials={teacher.full_name}
               size="xl"
             />
@@ -243,7 +320,7 @@ const TeacherProfile = () => {
             <button
               key={tab}
               type="button"
-              onClick={() => setActiveTab(tab)}
+              onClick={() => handleTabChange(tab)}
               className={`flex items-center gap-1.5 pb-2.5 border-b-[3px] font-bold text-sm whitespace-nowrap transition-colors ${
                 activeTab === tab
                   ? 'border-primary text-primary'
@@ -272,6 +349,7 @@ const TeacherProfile = () => {
                 <KeyValuePair label="Email Address" value={teacher.email} />
                 <KeyValuePair label="Phone Number" value={teacher.mobile_number} />
                 <KeyValuePair label="Address" value={teacher.address} className="col-span-2" />
+                <KeyValuePair label="Emergency Contact" value={teacher.emergency_contact || 'N/A'} />
               </DescriptionSection>
 
               {/* Professional details */}
@@ -354,7 +432,7 @@ const TeacherProfile = () => {
       <TeacherProfileHeader
         teacher={teacher}
         activeTab={activeTab}
-        onTabChange={setActiveTab}
+        onTabChange={handleTabChange}
       />
 
       <div className="min-h-[400px]">

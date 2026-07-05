@@ -175,7 +175,15 @@ const StudentProfile = () => {
         <ProfileHero
           avatar={
             <Avatar
-              src={student.avatarUrl || ''}
+              src={(() => {
+                const url = student.avatarUrl;
+                if (!url || url === 'null' || url === 'undefined' || url === '') {
+                  return student.gender?.toLowerCase() === 'female' || student.gender?.toLowerCase() === 'f'
+                    ? 'https://img.icons8.com/color/150/girl.png'
+                    : 'https://img.icons8.com/color/150/boy.png';
+                }
+                return url;
+              })()}
               initials={student.student_name?.substring(0, 2).toUpperCase()}
               status="online"
               size="xl"

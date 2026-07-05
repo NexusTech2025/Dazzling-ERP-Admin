@@ -1,5 +1,5 @@
 ---
-Date: 2026-07-05T18:29:00+05:30
+Date: 2026-07-05T18:49:00+05:30
 Status: Verified
 ---
 
@@ -31,7 +31,11 @@ We have optimized the detailed views for Students and Teachers, successfully red
   * Male: `https://avatar.iran.liara.run/public/30` (Man avatar)
 
 ### 4. Reusable StatusButton Component
-* **`StatusButton.jsx`** in [StatusButton.jsx](file:///e:/NAST/Dazzling/ERP%20System/dazzling-erp-admin/src/components/ui/v2/StatusButton.jsx): Reusable component mapping enums to V2 button variants (`success` when active, `danger` when inactive). Integrates user prompt gates inside an encapsulated `<ConfirmModal>` component.
+* **`StatusButton.jsx`** in [StatusButton.jsx](file:///e:/NAST/Dazzling/ERP%20System/dazzling-erp-admin/src/components/ui/v2/StatusButton.jsx): Reusable component mapping enums to V2 button variants (`success` when active, `danger` when inactive). Integrates user prompt gates inside an encapsulated `<ConfirmModal>` component. Updated to handle and map backend success/failure envelopes (`success`, `data._presentation.toast_message`, `error.message`) to transition through `processing`, `success`, and `error` states in the modal UI.
+* **Integrated status toggles:**
+  * **Course details:** Integrated `useUpdateCourseMutation` and `<StatusButton />` in [CourseDetails.jsx](file:///e:/NAST/Dazzling/ERP%20System/dazzling-erp-admin/src/features/course/CourseDetails.jsx) returning the mutation promise.
+  * **Package details:** Integrated `useUpdatePackageMutation` and `<StatusButton />` in [PackageDetails.jsx](file:///e:/NAST/Dazzling/ERP%20System/dazzling-erp-admin/src/features/course/PackageDetails.jsx) returning the mutation promise.
+  * **Batch details:** Integrated `useUpdateBatchMutation` and `<StatusButton />` in [BatchProfile.jsx](file:///e:/NAST/Dazzling/ERP%20System/dazzling-erp-admin/src/pages/admin/BatchProfile.jsx) and [BatchProfileHeader.jsx](file:///e:/NAST/Dazzling/ERP%20System/dazzling-erp-admin/src/features/batch/components/profile/BatchProfileHeader.jsx) returning the mutation promise.
 
 ## Verification Results
 * Fixed a `TypeError: aq.from is not a function` in [TeacherProfile.jsx](file:///e:/NAST/Dazzling/ERP%20System/dazzling-erp-admin/src/pages/admin/TeacherProfile.jsx#L70) by invoking `aq` as a function (`aq(attendance)`) directly.
@@ -39,3 +43,5 @@ We have optimized the detailed views for Students and Teachers, successfully red
 * Verified that copy buttons work and place the correct text in the system clipboard.
 * Verified that removing avatars falls back to boy/girl/man/woman placeholder images dynamically based on gender values.
 * Verified that `StatusButton` renders size="sm" success/danger states based on active status flags and intercepts confirmation flows securely.
+* Verified Course, Package, and Batch detail views react correctly to status toggle confirmations and refresh data dynamically on mutation completion.
+* Verified that when a toggle mutation completes, the modal displays the human-readable toast message or error messages returned from the standardized envelope.

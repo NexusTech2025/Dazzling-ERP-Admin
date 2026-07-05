@@ -25,10 +25,12 @@ import { PackagesMobileView } from '../components/PackagesMobileView';
  * @category Components
  * @returns {React.ReactElement} The rendered Package management workspace sheet.
  */
-const PackageWorkspace = () => {
+const PackageWorkspace = ({ viewMode: propViewMode, setViewMode: propSetViewMode }) => {
+  const workspaceState = usePackageWorkspaceState();
+  const viewMode = propViewMode !== undefined ? propViewMode : workspaceState.viewMode;
+  const setViewMode = propSetViewMode !== undefined ? propSetViewMode : workspaceState.setViewMode;
+
   const {
-    viewMode,
-    setViewMode,
     searchQuery,
     setSearchQuery,
     segmentFilter,
@@ -52,7 +54,7 @@ const PackageWorkspace = () => {
     deletePackageMutation,
     deleteManyPackagesMutation,
     queryClient
-  } = usePackageWorkspaceState();
+  } = workspaceState;
 
   const [dependencyModal, setDependencyModal] = useState({ isOpen: false, errorPayload: null, parentId: null, parentName: '' });
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);

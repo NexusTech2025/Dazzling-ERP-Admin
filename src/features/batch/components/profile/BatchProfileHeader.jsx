@@ -1,8 +1,8 @@
 import React from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import Badge from '../../../../components/ui/Badge';
+import StatusButton from '../../../../components/ui/v2/StatusButton';
 
-const BatchProfileHeader = ({ batch, activeTab, onTabChange }) => {
+const BatchProfileHeader = ({ batch, activeTab, onTabChange, onStatusToggle, isStatusLoading }) => {
   const navigate = useNavigate();
   const tabs = ['Overview', 'Students', 'Schedule', 'Attendance', 'Tests'];
 
@@ -14,9 +14,12 @@ const BatchProfileHeader = ({ batch, activeTab, onTabChange }) => {
             <h1 className="text-3xl font-bold leading-tight text-text-main dark:text-white">
               Batch: {batch.batch_name}
             </h1>
-            <Badge variant={batch.is_active ? 'primary' : 'default'} className="uppercase tracking-wider">
-              {batch.status}
-            </Badge>
+            <StatusButton
+              currentStatus={batch.is_active ? 'active' : 'inactive'}
+              entityName="Batch"
+              onStatusToggle={onStatusToggle}
+              isLoading={isStatusLoading}
+            />
           </div>
           <p className="text-text-secondary text-sm font-medium">
             {batch.course_name} • {batch.schedule.days_of_week.join(', ')} ({batch.schedule.start_time} - {batch.schedule.end_time})
