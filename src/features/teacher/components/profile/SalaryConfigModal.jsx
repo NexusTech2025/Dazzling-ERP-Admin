@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { parseISO, format } from 'date-fns';
+import { parseISO, format, addMonths, addYears, subDays, differenceInDays } from 'date-fns';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import FormField from '../../../../components/ui/v2/FormField';
 import TextInput from '../../../../components/ui/v2/TextInput';
 import SelectInput from '../../../../components/ui/v2/SelectInput';
 import Button from '../../../../components/ui/v2/Button';
+import IconButton from '../../../../components/ui/v2/IconButton';
 import { salaryConfigSchema } from '../../utils/salaryConfigValidation';
 import { useBatchesQuery } from '../../../batch/hooks/useBatchQueries';
 import BatchSelectionModal from '../../../batch/components/BatchSelectionModal';
@@ -43,30 +44,40 @@ export const calculateBaseValue = (totalContractVal) => {
 };
 
 /**
- * Decoupled helper to calculate expiration date given a commencement date and month offset.
- * @param {string} effectiveFrom - The starting ISO/string date YYYY-MM-DD.
- * @param {number|string} durationMonths - The offset in months.
- * @returns {string} The computed expiration date YYYY-MM-DD.
+ * Timezone-safe helper to calculate contract expiration.
+ * @param {string} effectiveFrom - The starting YYYY-MM-DD date.
+ * @param {number|string} durationMonths - The duration in months.
+ * @returns {string} The computed expiration date in YYYY-MM-DD.
  */
 export const calculateEffectiveTo = (effectiveFrom, durationMonths) => {
   if (!effectiveFrom || !durationMonths) return '';
-  const fromDate = new Date(effectiveFrom);
-  fromDate.setMonth(fromDate.getMonth() + Number(durationMonths));
-  fromDate.setDate(fromDate.getDate() - 1);
-  return fromDate.toISOString().split('T')[0];
+  try {
+    const fromDate = parseISO(effectiveFrom);
+    if (isNaN(fromDate.getTime())) return '';
+    const targetDate = subDays(addMonths(fromDate, Number(durationMonths)), 1);
+    return format(targetDate, 'yyyy-MM-dd');
+  } catch (e) {
+    console.error('[SalaryConfigModal] Precision date calculation crash:', e);
+    return '';
+  }
 };
 
 /**
- * Decoupled helper to calculate expiration date for exactly one year contract.
- * @param {string} effectiveFrom - The starting ISO/string date YYYY-MM-DD.
- * @returns {string} The computed expiration date YYYY-MM-DD.
+ * Timezone-safe helper to calculate yearly contract expiration.
+ * @param {string} effectiveFrom - The starting YYYY-MM-DD date.
+ * @returns {string} The computed expiration date in YYYY-MM-DD.
  */
 export const calculateYearlyEffectiveTo = (effectiveFrom) => {
   if (!effectiveFrom) return '';
-  const fromDate = new Date(effectiveFrom);
-  fromDate.setFullYear(fromDate.getFullYear() + 1);
-  fromDate.setDate(fromDate.getDate() - 1);
-  return fromDate.toISOString().split('T')[0];
+  try {
+    const fromDate = parseISO(effectiveFrom);
+    if (isNaN(fromDate.getTime())) return '';
+    const targetDate = subDays(addYears(fromDate, 1), 1);
+    return format(targetDate, 'yyyy-MM-dd');
+  } catch (e) {
+    console.error('[SalaryConfigModal] Yearly date calculation crash:', e);
+    return '';
+  }
 };
 
 /**
@@ -131,7 +142,19 @@ const RateTypeStrategies = {
   }
 };
 
-const SalaryConfigModal = ({ isOpen, onClose, teacherId, config }) => {
+/**
+ * SalaryConfigModal: Used in two modes:
+ *  - Profile Edit Mode: No onSubmitLocal prop. Fires useSetTeacherSalaryConfigMutation directly.
+ *  - Onboarding Registration Mode: Receives onSubmitLocal callback. Returns camelCase payload to parent, never fires mutations.
+ *
+ * @param {boolean} isOpen - Controls modal visibility.
+ * @param {function} onClose - Called to dismiss the modal.
+ * @param {string} [teacherId] - Required in Profile Edit Mode.
+ * @param {Object} [config] - Existing config for edit operations.
+ * @param {function} [onSubmitLocal] - If provided, disables mutation mode. Called with camelCase payload on submit.
+ * @throws {Error} If both onSubmitLocal and the legacy onSubmit are provided simultaneously.
+ */
+const SalaryConfigModal = ({ isOpen, onClose, teacherId, config, onSubmitLocal }) => {
   const setConfigMutation = useSetTeacherSalaryConfigMutation();
   const updateConfigMutation = useUpdateTeacherSalaryConfigMutation();
 
@@ -181,7 +204,8 @@ const SalaryConfigModal = ({ isOpen, onClose, teacherId, config }) => {
     reset
   } = useForm({
     resolver: yupResolver(salaryConfigSchema),
-    defaultValues: initialFormState
+    defaultValues: initialFormState,
+    mode: 'onBlur'
   });
 
   const salaryConfigType = watch('salaryConfigType');
@@ -196,21 +220,6 @@ const SalaryConfigModal = ({ isOpen, onClose, teacherId, config }) => {
   const strategy = useMemo(() => {
     return RateTypeStrategies[rateType] || RateTypeStrategies.monthly;
   }, [rateType]);
-
-  // Reactive strategy-based value automations
-  useEffect(() => {
-    const computedBase = strategy.calculateBaseValue(totalContractValue);
-    if (computedBase !== undefined) {
-      setValue('baseValue', computedBase, { shouldValidate: true });
-    }
-  }, [totalContractValue, strategy, setValue]);
-
-  useEffect(() => {
-    const computedTo = strategy.calculateEffectiveTo(effectiveFrom, durationMonths);
-    if (computedTo !== undefined) {
-      setValue('effectiveTo', computedTo, { shouldValidate: true });
-    }
-  }, [effectiveFrom, durationMonths, strategy, setValue]);
 
   // Sync state when modal opens or config changes
   useEffect(() => {
@@ -232,16 +241,15 @@ const SalaryConfigModal = ({ isOpen, onClose, teacherId, config }) => {
         const fromDate = formatForDateInput(config.effective_from);
         const toDate = formatForDateInput(config.effective_to);
 
-        // Dynamically compute duration in months when editing
+        // Dynamically compute duration in months when editing using differenceInDays from date-fns
         let initialDuration = '';
         if (config.effective_from && config.effective_to) {
           try {
             const parsedFrom = parseISO(config.effective_from.replace(' ', 'T'));
             const parsedTo = parseISO(config.effective_to.replace(' ', 'T'));
             if (!isNaN(parsedFrom.getTime()) && !isNaN(parsedTo.getTime())) {
-              // Add a slight adjustment (+1 day) to handle standard end-of-month boundaries correctly
-              const adjustedTo = new Date(parsedTo.getTime() + 24 * 60 * 60 * 1000);
-              const months = Math.round((adjustedTo - parsedFrom) / (1000 * 60 * 60 * 24 * 30.4375));
+              const days = differenceInDays(parsedTo, parsedFrom) + 1;
+              const months = Math.round(days / 30.4375);
               initialDuration = months > 0 ? String(months) : '';
             }
           } catch (e) {
@@ -287,7 +295,7 @@ const SalaryConfigModal = ({ isOpen, onClose, teacherId, config }) => {
       } else {
         reset({
           ...initialFormState,
-          effectiveFrom: new Date().toISOString().split('T')[0]
+          effectiveFrom: format(new Date(), 'yyyy-MM-dd')
         });
         setAllocatedWeights({});
       }
@@ -356,9 +364,26 @@ const SalaryConfigModal = ({ isOpen, onClose, teacherId, config }) => {
     setValue('scopeId', Object.keys(reallocated).length > 0 ? JSON.stringify(reallocated) : '', { shouldValidate: true });
   };
 
+  /**
+   * Validates and processes the salary configuration form submission.
+   * Routes to onSubmitLocal callback in registration mode, or fires API mutations in profile edit mode.
+   *
+   * @param {Object} data - Validated form values from react-hook-form.
+   * @returns {void}
+   * @throws {Error} If onSubmitLocal is provided alongside a direct API mutation context simultaneously.
+   */
   const onSubmitForm = (data) => {
+    // Mutual exclusivity guard: onSubmitLocal and direct mutation mode cannot coexist
+    if (onSubmitLocal && teacherId) {
+      throw new Error(
+        'SalaryConfigModal: onSubmitLocal and teacherId are mutually exclusive. ' +
+        'Use onSubmitLocal for onboarding registration mode (no teacherId needed). ' +
+        'Use teacherId alone for profile edit mode.'
+      );
+    }
+
+    // Build camelCase payload (used for both local accumulation and mutation dispatch)
     const payload = {
-      teacherId,
       salaryConfigType: data.salaryConfigType,
       rateType: data.rateType,
       baseValue: Number(data.baseValue),
@@ -373,6 +398,14 @@ const SalaryConfigModal = ({ isOpen, onClose, teacherId, config }) => {
       settlementState: data.settlementState
     };
 
+    // Registration mode: delegate to parent, skip mutations entirely
+    if (onSubmitLocal) {
+      onSubmitLocal(payload);
+      onClose();
+      return;
+    }
+
+    // Profile edit mode: dispatch to query client mutation engine
     const options = {
       onSuccess: (res) => {
         if (res.success) {
@@ -404,10 +437,10 @@ const SalaryConfigModal = ({ isOpen, onClose, teacherId, config }) => {
       updateConfigMutation.mutate({
         teacherId,
         salaryConfigId: config.salary_config_id,
-        data: payload
+        data: { teacherId, ...payload }
       }, options);
     } else {
-      setConfigMutation.mutate(payload, options);
+      setConfigMutation.mutate({ teacherId, ...payload }, options);
     }
   };
 
@@ -423,26 +456,23 @@ const SalaryConfigModal = ({ isOpen, onClose, teacherId, config }) => {
             <h3 className="text-lg font-bold text-text-main dark:text-white leading-none">
               {config ? 'Update Salary Configuration' : 'Create Salary Configuration'}
             </h3>
-            <button
-              type="button"
+            <IconButton
+              icon="info"
               onClick={() => setShowHelp(!showHelp)}
-              className={`size-6 rounded-full flex items-center justify-center border transition-all ${showHelp ? 'bg-primary/20 border-primary text-primary' : 'border-border-light dark:border-border-dark text-text-secondary hover:text-text-main dark:hover:text-white'}`}
+              className={`size-6 border transition-all ${showHelp ? 'bg-primary/20 border-primary text-primary' : 'border-border-light dark:border-border-dark'}`}
               title="Toggle Description Help"
-            >
-              <span className="material-symbols-outlined text-[15px] font-bold">info</span>
-            </button>
+            />
           </div>
-          <button
+          <IconButton
+            icon="close"
             onClick={onClose}
-            className="text-text-secondary hover:text-text-main dark:hover:text-white transition-colors"
-          >
-            <span className="material-symbols-outlined">close</span>
-          </button>
+            aria-label="Close configuration modal"
+          />
         </div>
 
         {/* Form Body */}
         <form onSubmit={handleSubmit(onSubmitForm)}>
-          <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-800 scrollbar-track-transparent">
+          <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-800 scrollbar-track-transparent scroll-smooth [transform:translateZ(0)] will-change-scroll">
 
             <div className="grid grid-cols-2 gap-4">
               <FormField label="Salary Config Type" required error={errors.salaryConfigType?.message}>
@@ -475,7 +505,22 @@ const SalaryConfigModal = ({ isOpen, onClose, teacherId, config }) => {
                   render={({ field }) => (
                     <SelectInput
                       value={field.value}
-                      onChange={field.onChange}
+                      onChange={(val) => {
+                        field.onChange(val);
+                        const nextStrategy = RateTypeStrategies[val] || RateTypeStrategies.monthly;
+                        
+                        // Recalculate base value if needed
+                        const computedBase = nextStrategy.calculateBaseValue(totalContractValue);
+                        if (computedBase !== undefined) {
+                          setValue('baseValue', computedBase, { shouldValidate: true });
+                        }
+                        
+                        // Recalculate effectiveTo
+                        const computedTo = nextStrategy.calculateEffectiveTo(effectiveFrom, durationMonths);
+                        if (computedTo !== undefined) {
+                          setValue('effectiveTo', computedTo, { shouldValidate: true });
+                        }
+                      }}
                       error={errors.rateType?.message}
                       options={[
                         { value: 'monthly', label: 'Monthly' },
@@ -608,7 +653,13 @@ const SalaryConfigModal = ({ isOpen, onClose, teacherId, config }) => {
                       type="number"
                       value={field.value}
                       placeholder="e.g. 300000"
-                      onChange={field.onChange}
+                      onChange={(e) => {
+                        field.onChange(e);
+                        const computedBase = strategy.calculateBaseValue(e.target.value);
+                        if (computedBase !== undefined) {
+                          setValue('baseValue', computedBase, { shouldValidate: true });
+                        }
+                      }}
                       error={errors.totalContractValue?.message}
                     />
                   )}
@@ -674,13 +725,11 @@ const SalaryConfigModal = ({ isOpen, onClose, teacherId, config }) => {
                             <span className="text-[10px] text-text-secondary w-8 font-mono">
                               ({Math.round((allocatedWeights[b.batch_id] || 0) * 100)}%)
                             </span>
-                            <button
-                              type="button"
+                            <IconButton
+                              icon="delete"
                               onClick={() => handleRemoveBatchFromGroup(b.batch_id)}
-                              className="text-text-secondary hover:text-rose-500 transition-colors p-1"
-                            >
-                              <span className="material-symbols-outlined text-sm leading-none">delete</span>
-                            </button>
+                              className="text-text-secondary hover:text-rose-500 transition-colors"
+                            />
                           </div>
                         </div>
                       ))}
@@ -713,7 +762,13 @@ const SalaryConfigModal = ({ isOpen, onClose, teacherId, config }) => {
                         <TextInput
                           type="date"
                           value={field.value}
-                          onChange={field.onChange}
+                          onChange={(e) => {
+                            field.onChange(e);
+                            const computedTo = strategy.calculateEffectiveTo(e.target.value, durationMonths);
+                            if (computedTo !== undefined) {
+                              setValue('effectiveTo', computedTo, { shouldValidate: true });
+                            }
+                          }}
                           error={errors.effectiveFrom?.message}
                         />
                       )}
@@ -759,7 +814,13 @@ const SalaryConfigModal = ({ isOpen, onClose, teacherId, config }) => {
                           type="number"
                           value={field.value || ''}
                           placeholder="Months"
-                          onChange={field.onChange}
+                          onChange={(e) => {
+                            field.onChange(e);
+                            const computedTo = strategy.calculateEffectiveTo(effectiveFrom, e.target.value);
+                            if (computedTo !== undefined) {
+                              setValue('effectiveTo', computedTo, { shouldValidate: true });
+                            }
+                          }}
                           error={errors.durationMonths?.message}
                         />
                       )}
@@ -782,7 +843,13 @@ const SalaryConfigModal = ({ isOpen, onClose, teacherId, config }) => {
                       <TextInput
                         type="date"
                         value={field.value}
-                        onChange={field.onChange}
+                        onChange={(e) => {
+                          field.onChange(e);
+                          const computedTo = strategy.calculateEffectiveTo(e.target.value, durationMonths);
+                          if (computedTo !== undefined) {
+                            setValue('effectiveTo', computedTo, { shouldValidate: true });
+                          }
+                        }}
                         error={errors.effectiveFrom?.message}
                       />
                     )}
@@ -895,22 +962,26 @@ const SalaryConfigModal = ({ isOpen, onClose, teacherId, config }) => {
       />
 
       {/* Success Modal */}
-      <ConfirmModal
-        isOpen={modalState.isOpen && modalState.status === 'success'}
-        onClose={handleDismissModals}
-        onConfirm={handleDismissModals}
-        status="success"
-        title="Configuration Saved Successfully"
-        resultMessage={modalState.resultMessage}
-      />
+      {modalState.isOpen && modalState.status === 'success' && (
+        <ConfirmModal
+          isOpen={true}
+          onClose={handleDismissModals}
+          onConfirm={handleDismissModals}
+          status="success"
+          title="Configuration Saved Successfully"
+          resultMessage={modalState.resultMessage}
+        />
+      )}
 
       {/* Error Modal */}
-      <APIErrorModal
-        isOpen={modalState.isOpen && modalState.status === 'error'}
-        onClose={handleDismissModals}
-        title="Salary Configuration Error"
-        error={modalState.error}
-      />
+      {modalState.isOpen && modalState.status === 'error' && (
+        <APIErrorModal
+          isOpen={true}
+          onClose={handleDismissModals}
+          title="Salary Configuration Error"
+          error={modalState.error}
+        />
+      )}
 
     </div>
   );
