@@ -85,25 +85,25 @@ export const API_REGISTRY = {
   ATTENDANCE: {
     // Queries daily check-in logs for students in a specific batch on a given date.
     STUDENT_GET_BATCH_REGISTRY: 'student_query_attendance',
-    
+
     // Retrieves a grid matrix showing historical attendance status over multiple days for a batch.
-    STUDENT_GET_MATRIX: 'student_query_attendance',
-    
+    STUDENT_GET_ATTENDANCE: 'student_query_attendance',
+
     // Saves or updates a single student attendance record.
     STUDENT_MARK: 'student_mark_attendance',
-    
+
     // Commits bulk student check-in/out records for an entire batch.
     STUDENT_MARK_BULK: 'student_mark_attendance_bulk',
-    
+
     // Aggregates statistics (present count, absent count, late count) for an individual student.
     STUDENT_GET_STATS: 'attendance_get_student_stats',
-    
+
     // Records a single teacher's daily attendance entry.
     TEACHER_MARK: 'staff_mark_attendance',
-    
+
     // Commits multiple teacher attendance records simultaneously (e.g. daily register roster).
     TEACHER_MARK_BULK: 'staff_mark_attendance_bulk',
-    
+
     // Queries daily registry logs or historical profile stats for teacher attendance.
     TEACHER_QUERY: 'staff_query_attendance'
   }

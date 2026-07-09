@@ -31,7 +31,7 @@ export const useBatchAttendanceMatrixQuery = (batchId, days = 15) => {
     queryKey: queryKeys.attendance.matrix(batchId, days),
     queryFn: async ({ signal }) => {
       const response = await apiClient.executeAction(
-        API_REGISTRY.ATTENDANCE.STUDENT_GET_MATRIX,
+        API_REGISTRY.ATTENDANCE.STUDENT_GET_ATTENDANCE,
         { where: { batch_id: batchId } },
         token,
         { signal }
@@ -56,7 +56,7 @@ export const useMarkAttendanceMutation = () => {
         queryClient.invalidateQueries({ queryKey: queryKeys.attendance.batch(batchId, date) });
       }
       queryClient.invalidateQueries({ queryKey: ['attendance', 'matrix'] });
-      
+
       if (variables.records) {
         variables.records.forEach(rec => {
           queryClient.invalidateQueries({ queryKey: queryKeys.attendance.student(rec.student_id) });

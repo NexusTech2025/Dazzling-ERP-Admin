@@ -58,14 +58,16 @@ export const ENTITY_CONFIGS = {
     listsKey: () => ['teacher', 'detail'],
     detailKey: (id) => ['teacher', 'salaryConfig', id],
     isValidDetail: (data) => data && typeof data === 'object' && 'contract_status' in data
+  },
+  courseType: {
+    primaryKey: 'course_type_id',
+    listKey: () => queryKeys.course.type.list(),
+    listsKey: () => ['course-type'],
+    detailKey: (id) => ['course-type', 'detail', id],
+    isValidDetail: (data) => data && typeof data === 'object' && 'type_name' in data
   }
 };
 
-
-/**
- * Synchronous lookup of a record in the cache.
- * Checks the detail cache first, then scans all queries matching the lists key prefix.
- */
 export function getCachedRecord(queryClient, entity, id) {
   if (!id) return undefined;
   const config = ENTITY_CONFIGS[entity];
