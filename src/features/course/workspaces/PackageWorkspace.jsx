@@ -25,8 +25,9 @@ import { PackagesMobileView } from '../components/PackagesMobileView';
  * @category Components
  * @returns {React.ReactElement} The rendered Package management workspace sheet.
  */
-const PackageWorkspace = ({ viewMode: propViewMode, setViewMode: propSetViewMode }) => {
-  const workspaceState = usePackageWorkspaceState();
+const PackageWorkspace = ({ workspaceState: propWorkspaceState, viewMode: propViewMode, setViewMode: propSetViewMode }) => {
+  const localWorkspaceState = usePackageWorkspaceState();
+  const workspaceState = propWorkspaceState || localWorkspaceState;
   const viewMode = propViewMode !== undefined ? propViewMode : workspaceState.viewMode;
   const setViewMode = propSetViewMode !== undefined ? propSetViewMode : workspaceState.setViewMode;
 

@@ -4,12 +4,16 @@ import { useCoursesQuery, useCourseTypesQuery } from './hooks/useCourseQueries';
 import { usePackagesQuery } from './hooks/usePackageQueries';
 import { queryKeys } from '../../lib/react-query/queryKeys';
 import { TabGroup, TabButton } from '../../components/ui/v2/Tabs';
+import useIsMobile from '../../hooks/useIsMobile';
+import { useCourseWorkspaceState } from './hooks/useCourseWorkspaceState';
+import { usePackageWorkspaceState } from './hooks/usePackageWorkspaceState';
 
 // Layout & Custom workspaces
 import MainLayout from '../../components/layout/MainLayout';
 import CourseHeader from './components/CourseHeader';
 import CourseWorkspace from './workspaces/CourseWorkspace';
 import PackageWorkspace from './workspaces/PackageWorkspace';
+import MobileCourseListView from './components/MobileCourseListView';
 import KpiCard from '../../components/ui/v2/KpiCard';
 import { ErrorState } from '../../components/ui/QueryStatus';
 
@@ -36,6 +40,10 @@ const Courses = ({ defaultTab = 'courses' }) => {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState(defaultTab);
   const [viewMode, setViewMode] = useState('grid');
+  const isMobile = useIsMobile(768);
+
+  const courseWorkspaceState = useCourseWorkspaceState();
+  const packageWorkspaceState = usePackageWorkspaceState();
 
   // Consolidated Invalidation Handler (DRY Principle - Issue 4)
   const handleRefreshAllData = useCallback(() => {
@@ -48,7 +56,7 @@ const Courses = ({ defaultTab = 'courses' }) => {
     targets.forEach(key => queryClient.invalidateQueries({ queryKey: key }));
   }, [queryClient]);
 
-  // Execute queries for hydration states (isFetching is omitted to prevent top-level container re-renders - Issue 3)
+  // Execute queries for hydration states
   const { data: courses = [], error: coursesError } = useCoursesQuery();
   const { data: packages = [], error: packagesError } = usePackagesQuery();
   const { error: typesError } = useCourseTypesQuery();
@@ -66,11 +74,34 @@ const Courses = ({ defaultTab = 'courses' }) => {
   const t1 = performance.now();
   console.log(`[Courses] KPI Metrics Aggregations completed in ${(t1 - t0).toFixed(2)}ms`);
 
+  const stats = useMemo(() => ({
+    totalCourses,
+    activeCourses,
+    inactiveCourses,
+    totalPackages,
+    totalStudents,
+    totalRevenue
+  }), [totalCourses, activeCourses, inactiveCourses, totalPackages, totalStudents, totalRevenue]);
+
   if (combinedError) {
     return (
       <ErrorState 
         message={combinedError.message} 
         onRetry={handleRefreshAllData} 
+      />
+    );
+  }
+
+  // JS-Conditional Viewport branching
+  if (isMobile) {
+    return (
+      <MobileCourseListView
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        courseWorkspaceState={courseWorkspaceState}
+        packageWorkspaceState={packageWorkspaceState}
+        handleRefreshAllData={handleRefreshAllData}
+        stats={stats}
       />
     );
   }
@@ -198,10 +229,18 @@ const Courses = ({ defaultTab = 'courses' }) => {
 
           {/* Optimized Component Visibility: Toggles display style to preserve filter states (Issue 2) */}
           <div className={activeTab === 'courses' ? 'block' : 'hidden'}>
-            <CourseWorkspace viewMode={viewMode} setViewMode={setViewMode} />
+            <CourseWorkspace 
+              workspaceState={courseWorkspaceState}
+              viewMode={viewMode} 
+              setViewMode={setViewMode} 
+            />
           </div>
           <div className={activeTab === 'packages' ? 'block' : 'hidden'}>
-            <PackageWorkspace viewMode={viewMode} setViewMode={setViewMode} />
+            <PackageWorkspace 
+              workspaceState={packageWorkspaceState}
+              viewMode={viewMode} 
+              setViewMode={setViewMode} 
+            />
           </div>
         </div>
       }

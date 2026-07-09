@@ -2,9 +2,9 @@ import React from 'react';
 import PropTypes from 'prop-types';
 
 // --- Shared Design System CSS Token Variables ---
-const SHARED_ICON_CLASSES = "material-symbols-outlined text-slate-400 dark:text-slate-500 leading-none select-none";
-const SHARED_VALUE_CLASSES = "font-semibold text-slate-900 dark:text-white tracking-tight truncate";
-const SHARED_LABEL_CLASSES = "font-extrabold tracking-tight text-slate-400 dark:text-slate-500 uppercase select-none";
+const SHARED_ICON_CLASSES = "material-symbols-outlined text-text-secondary leading-none select-none";
+const SHARED_VALUE_CLASSES = "font-semibold text-text-main dark:text-white truncate";
+const SHARED_LABEL_CLASSES = "font-bold tracking-wider text-text-secondary uppercase select-none";
 
 /**
  * Sub-Component: KeyValuePairIcon
@@ -70,6 +70,8 @@ const KeyValuePair = ({
   fallback = "—",
   layout = "vertical",
   sizeProp = "14px",
+  minWidth,
+  maxWidth,
   className = ""
 }) => {
   const isHorizontal = layout === 'horizontal';
@@ -91,8 +93,13 @@ const KeyValuePair = ({
     ? `flex items-center text-left gap-2 w-full min-w-0`
     : `flex flex-col items-center justify-center text-center gap-0.5 w-full min-w-0`;
 
+  // Inline styles for min/max width control
+  const inlineStyles = {};
+  if (minWidth) inlineStyles.minWidth = minWidth;
+  if (maxWidth) inlineStyles.maxWidth = maxWidth;
+
   return (
-    <div className={`${layoutClasses} ${className}`}>
+    <div className={`${layoutClasses} ${className}`} style={inlineStyles}>
       <KeyValuePairIcon
         icon={icon}
         size={computedIconSize}
@@ -117,7 +124,10 @@ KeyValuePair.propTypes = {
   fallback: PropTypes.string,
   layout: PropTypes.oneOf(['horizontal', 'vertical']),
   sizeProp: PropTypes.string,
+  minWidth: PropTypes.string,
+  maxWidth: PropTypes.string,
   className: PropTypes.string,
 };
 
 export default KeyValuePair;
+
