@@ -60,3 +60,36 @@ This document outlines key performance design patterns that must be followed dur
     Avoid using `useEffect` to synchronize props or other state values back into a local React state variable (e.g., staging registry options from an API query or filtering parameters). This creates a laggy UI, duplicate render cycles, and introduces high risk of infinite recursive loops ("Maximum update depth exceeded") when the dependency reference changes on every render.
     
     *   **The Remediation**: Compute values dynamically during the render phase or use `useMemo` to derive values from upstream variables/props. If state must be cloned or initialized from props (such as form edit worksheets), initialize it directly in `useState` (e.g., `useState(() => initialVal)`) or track modifications differentially based on user interactions instead of listening to upstream updates in `useEffect`.
+
+---
+
+## 4. Mobile Layout Slotted Composition (`MobileBaseLayout`)
+
+*   **Rule**: When building or refactoring list/detail views on mobile screens (< 768px), always use `<MobileBaseLayout>` compound slots instead of custom nested layouts.
+*   **Layout Structure**:
+    ```jsx
+    <MobileBaseLayout>
+      <MobileBaseLayout.Header title="Title" renderLeft={...} renderRight={...} />
+      <MobileBaseLayout.FilterSlot>...</MobileBaseLayout.FilterSlot>
+      <MobileBaseLayout.ListSlot isEmpty={...} renderEmptyState={...}>...</MobileBaseLayout.ListSlot>
+      <MobileBaseLayout.FloatingActionSlot>...</MobileBaseLayout.FloatingActionSlot>
+    </MobileBaseLayout>
+    ```
+
+---
+
+## 5. Dynamic Time & Class Filter Normalization
+
+*   **Rule**: Standardize schedule filters on list screens to use these computed ranges:
+    - `Early Morning`: Before 08:00
+    - `Morning`: 08:00 – 12:00
+    - `Noon`: 12:00 – 14:00
+    - `Afternoon`: 14:00 – 16:00
+    - `Evening`: 16:00 onwards
+*   **Academic Class Filters**: When `CourseType === 'Academic'`, extract the class grade dynamically from the entity name (e.g. using regex `match(/Class\s*(\d+)/i)`) and display the target class selector dropdown.
+
+---
+
+## 6. Robust Single-Pass Block Editing
+
+*   **Rule**: When performing source code edits using file replacing tools, avoid tiny edits that can corrupt surrounding tags. Read a broad block of context (approx. 100 lines) and replace the entire logical node (block, statement, or function) in one single pass.

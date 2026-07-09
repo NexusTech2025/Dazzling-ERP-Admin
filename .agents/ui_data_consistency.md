@@ -30,6 +30,12 @@ This document establishes UI rendering, layout alignment, and database persisten
 *   **Zero-Component Waste & Abstract Layout Patterns**:
     Always reuse predefined UI modules (like `<Button>` and `<MainLayout>`) and consolidate actions on mobile using a sticky `<ActionFooter>` mapped with clean config objects. For illustration graphics, use direct inline SVG elements to avoid network resource lag and ensure dark-mode styling compatibility.
 
+*   **Mobile State Architecture & Component Composition**:
+    *   **State Lifting**: Lift custom workspace hooks to page orchestrator levels whenever layout structures require rendering states across multiple viewport layouts (desktop vs mobile slots).
+    *   **Prop Injection Fallback**: Workspace modules MUST accept `workspaceState` as an optional prop and fallback to local hook instantiation.
+    *   **Conditional Mounting**: Prefer JSX conditional mounting over CSS display toggles (`hidden` / `block`) when states are lifted to parent orchestrators.
+    *   **Decoupled Mobile Layouts**: Each sub-workspace is independently responsible for managing its own viewport rendering via its respective `Mobile*ListView` component (or `Mobile*ListView` wrapper). Do not combine multiple domains into monolithic mobile lists.
+
 ---
 
 ## 2. Database ID Persistence Policy

@@ -897,39 +897,47 @@ A Callout/Key Indicator box used to highlight core metrics, snapshots, or status
 **Location:** `src/components/ui/v2/KeyValuePair.jsx`
 
 ### Description
-A layout component designed for clean display of read-only attributes, info details, or profile parameters. It features vertical and horizontal stack behaviors, size presets (sm, md, lg), automatic fallback handling for empty or nullish values, and optional Material Symbols icon integration.
+A foundational primitive for displaying read-only metadata structures. It composes two internal sub-components — `KeyValuePairIcon` (Material Symbol icon scaled relative to `sizeProp`) and `LabelValue` (the stacked label/value text block). Typography scales are derived dynamically from a single `sizeProp` anchor: the label renders at `0.85×` the base size, and the icon renders at `2×`. Supports both vertical (centered, stacked) and horizontal (left-aligned, icon-inline) layouts.
 
 ### Usage Guidelines
-- Ideal for student detail tabs, CRM sidebars, or read-only summary sheets.
-- Use `layout="horizontal"` when aligning key-value rows in narrow settings like list items or sidebar widgets. Use `layout="vertical"` inside multi-column profile layouts.
+- Use for all read-only attribute displays: profile detail sheets, batch info tiles, CRM sidebars.
+- **Horizontal layout** (`layout="horizontal"`): icon + label/value rendered left-aligned in a single row. Ideal for narrow sidebar widgets or list items.
+- **Vertical layout** (`layout="vertical"`, default): icon above, label + value stacked, all center-aligned. Ideal for multi-column stat grids.
+- **Typography alignment rule**: Always use `<KeyValuePair>` instead of raw inline `<span>` label/value combos to guarantee consistent tracking, weight, and color tokens across all metadata displays.
 
 ### Props API
 | Prop | Type | Description |
 | :--- | :--- | :--- |
-| `label` | `string` | The title/key representing the attribute (e.g. `"Email"`). Displays in uppercase tracking style. |
-| `value` | `node` | The value/content of the attribute. If empty or null, renders the `fallback` value instead. |
-| `icon` | `string` | Optional Material Symbol icon name to display on the left of the label. |
-| `fallback` | `string` | Text to display if `value` is nullish or empty. Default is `"N/A"`. |
-| `layout` | `string` | Visual stack direction: `'vertical'` (stacked) or `'horizontal'` (side-by-side). Default is `'vertical'`. |
-| `size` | `string` | Text sizing: `'sm'`, `'md'` (default), or `'lg'`. |
-| `className` | `string` | Optional custom CSS classes for custom spacing/margins. |
+| `label` | `string` | The key/attribute title. Renders uppercase with `tracking-tight`, `font-extrabold`, and `text-slate-400`. |
+| `value` | `string \| number` | The attribute value. Renders `font-semibold`, `tracking-tight`, `text-slate-900 dark:text-white`. |
+| `icon` | `string` | Optional Material Symbol icon name. Icon size auto-scales to `2× sizeProp`. |
+| `fallback` | `string` | Text to display when `value` is nullish or empty. Default is `"—"`. |
+| `layout` | `string` | Layout direction: `'vertical'` (default, centered) or `'horizontal'` (left-aligned inline). |
+
+| Token | Computed value (default 14px base) |
+| :--- | :--- |
+| Value text | `14px` — `font-semibold text-text-main dark:text-white` |
+| Label text | `12px` — `font-bold text-text-secondary uppercase tracking-wider` |
+| Icon | `28px` — `text-text-secondary leading-none` |
 
 ### Implementation Example
 ```jsx
-// Vertical stack with fallback
+// Vertical layout (default) — centered icon + stacked label/value
 <KeyValuePair
-  label="Father's Name"
-  value={profile.fatherName}
+  label="Primary Instructor"
+  value={batch.teacher_name}
   icon="person"
-  fallback="Not Specified"
+  fallback="Unassigned"
+  sizeProp="13px"
 />
 
-// Horizontal row with small size
+// Horizontal layout — left-aligned inline icon + label/value
 <KeyValuePair
-  label="Status"
-  value="Active"
+  label="Location"
+  value={batch.branch_name}
+  icon="location_on"
   layout="horizontal"
-  size="sm"
+  sizeProp="12px"
 />
 ```
 
