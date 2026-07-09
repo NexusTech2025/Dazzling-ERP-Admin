@@ -1,4 +1,5 @@
 import React from 'react';
+import KeyValuePair from '../../../components/ui/v2/KeyValuePair';
 
 /**
  * BatchCard: A reusable premium card component for presenting and selecting dynamic batch details.
@@ -49,14 +50,20 @@ const BatchCard = ({ batch, isSelected, onSelect }) => {
 
       {/* Footer Info: Assigned Teacher, Branch & Schedule Time */}
       <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-100 dark:border-slate-800">
-        <div className="flex flex-col gap-1">
-          <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Teacher</span>
-          <span className="text-xs font-bold text-slate-700 dark:text-slate-300 truncate">{teacherName}</span>
-        </div>
-        <div className="flex flex-col gap-1 text-right">
-          <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Location</span>
-          <span className="text-xs font-bold text-slate-700 dark:text-slate-300 truncate">{branchName}</span>
-        </div>
+        <KeyValuePair
+          label="Teacher"
+          value={teacherName}
+          icon="person"
+          layout="horizontal"
+          sizeProp="12px"
+        />
+        <KeyValuePair
+          label="Location"
+          value={branchName}
+          icon="location_on"
+          layout="horizontal"
+          sizeProp="12px"
+        />
       </div>
 
       <div className="mt-3 flex justify-between items-center text-[10px] text-slate-500 dark:text-slate-400">
