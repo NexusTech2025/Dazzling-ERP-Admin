@@ -52,11 +52,10 @@ function DropdownTrigger({
       aria-expanded={isOpen}
       aria-controls={listboxId}
       onClick={onClick}
-      className={`w-full flex items-center justify-between text-left border bg-surface-light dark:bg-surface-dark border-border-light dark:border-border-dark rounded-lg transition-all duration-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/10 ${
-        isOpen 
-          ? "border-primary ring-2 ring-primary/10" 
+      className={`w-full flex items-center justify-between text-left border bg-surface-light dark:bg-surface-dark border-border-light dark:border-border-dark rounded-lg transition-all duration-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/10 ${isOpen
+          ? "border-primary ring-2 ring-primary/10"
           : "hover:border-slate-300 dark:hover:border-slate-700"
-      } ${disabled ? "opacity-60 cursor-not-allowed" : "cursor-pointer"} p-2 ${heightStyles} ${className}`}
+        } ${disabled ? "opacity-60 cursor-not-allowed" : "cursor-pointer"} p-2 ${heightStyles} ${className}`}
     >
       <div className="flex-1 min-w-0 flex items-center gap-2">
         {leftIcon && (
@@ -78,7 +77,7 @@ function DropdownTrigger({
           </div>
         )}
       </div>
-      
+
       <div className="px-2 border-l border-border-light dark:border-border-dark/80 text-text-secondary shrink-0">
         <span className={`material-symbols-outlined text-lg transform transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}>
           expand_more
@@ -101,11 +100,9 @@ function OptionListItem({ item, index, selectedId, activeIndex, idProp, renderIt
       aria-selected={isSelected}
       onMouseEnter={onMouseEnter}
       onClick={onSelect}
-      className={`cursor-pointer transition-colors ${
-        isSelected ? "bg-primary/10" : ""
-      } ${
-        isKeyboardActive ? "bg-background-light dark:bg-background-dark text-primary" : ""
-      }`}
+      className={`cursor-pointer transition-colors ${isSelected ? "bg-primary/10" : ""
+        } ${isKeyboardActive ? "bg-background-light dark:bg-background-dark text-primary" : ""
+        }`}
     >
       {renderItem(item, isSelected)}
     </li>
@@ -135,17 +132,17 @@ export function GenericSelectDropdown({
   containerClassName = "",
   renderItem,
   renderSelectedCard,
-  
+
   // Sizing and alignment configs
   dropdownWidth = "min-w-full"
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeIndex, setActiveIndex] = useState(-1);
-  
+
   const [horizontalAlign, setHorizontalAlign] = useState("left"); // "left" | "right"
   const [verticalAlign, setVerticalAlign] = useState("bottom"); // "bottom" | "top"
-  
+
   const containerRef = useRef(null);
   const searchInputRef = useRef(null);
   const listboxId = useMemo(() => `dropdown-listbox-${Math.random().toString(36).substring(2, 9)}`, []);
@@ -157,8 +154,8 @@ export function GenericSelectDropdown({
   const filteredItems = useMemo(() => {
     if (!searchTerm.trim()) return items;
     const cleanTerm = searchTerm.toLowerCase().trim();
-    
-    return items.filter(item => 
+
+    return items.filter(item =>
       searchFields.some(field => {
         const val = item[field];
         if (val === null || val === undefined) return false;
@@ -173,17 +170,17 @@ export function GenericSelectDropdown({
       const rect = containerRef.current.getBoundingClientRect();
       const viewportWidth = window.innerWidth;
       const viewportHeight = window.innerHeight;
-      
+
       // Horizontal placement: Check if dropdown goes beyond right viewport boundary
-      const thresholdWidth = 380; 
+      const thresholdWidth = 380;
       if (rect.left + thresholdWidth > viewportWidth) {
         setHorizontalAlign("right");
       } else {
         setHorizontalAlign("left");
       }
-      
+
       // Vertical placement: Check if dropdown goes beyond bottom viewport boundary
-      const thresholdHeight = 320; 
+      const thresholdHeight = 320;
       if (rect.bottom + thresholdHeight > viewportHeight && rect.top > thresholdHeight) {
         setVerticalAlign("top");
       } else {
@@ -208,7 +205,11 @@ export function GenericSelectDropdown({
 
   useEffect(() => {
     if (isOpen && selectedViewMode !== 'native-fallback' && searchInputRef.current) {
-      searchInputRef.current.focus();
+      // Prevent keyboard popups on mobile devices by checking media pointers and width
+      const isMobileDevice = window.matchMedia("(pointer: coarse)").matches || window.innerWidth < 768;
+      if (!isMobileDevice) {
+        searchInputRef.current.focus();
+      }
     }
   }, [isOpen, selectedViewMode]);
 
@@ -265,12 +266,12 @@ export function GenericSelectDropdown({
   const originClass = `${verticalAlign === "top" ? "origin-bottom" : "origin-top"} ${horizontalAlign === "right" ? "origin-right" : "origin-left"}`;
 
   const triggerContent = (
-    <div 
-      ref={containerRef} 
+    <div
+      ref={containerRef}
       className={`relative w-full text-text-main dark:text-white font-sans ${containerClassName}`}
       onKeyDown={handleKeyDown}
     >
-      <HiddenNativeSelect 
+      <HiddenNativeSelect
         name={name}
         value={selectedId}
         onChange={onChange}
@@ -302,7 +303,7 @@ export function GenericSelectDropdown({
         </div>
       ) : (
         <>
-          <DropdownTrigger 
+          <DropdownTrigger
             disabled={disabled}
             isOpen={isOpen}
             listboxId={listboxId}
@@ -319,7 +320,7 @@ export function GenericSelectDropdown({
           />
 
           {isOpen && (
-            <div 
+            <div
               id={listboxId}
               role="listbox"
               className={`absolute z-50 bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-lg shadow-xl overflow-hidden animate-in fade-in-40 zoom-in-95 duration-100 ${dropdownWidth} ${verticalClass} ${horizontalClass} ${originClass}`}
@@ -335,8 +336,8 @@ export function GenericSelectDropdown({
                   className="w-full bg-transparent border-0 p-0 text-xs focus:ring-0 focus:outline-none text-text-main dark:text-white placeholder-text-secondary/50"
                 />
                 {searchTerm && (
-                  <button 
-                    type="button" 
+                  <button
+                    type="button"
                     onClick={() => setSearchTerm("")}
                     className="p-1 rounded text-text-secondary hover:text-text-main dark:hover:text-white"
                   >
@@ -345,10 +346,10 @@ export function GenericSelectDropdown({
                 )}
               </div>
 
-              <ul className="max-h-64 overflow-y-auto divide-y divide-border-light dark:divide-border-dark/40">
+              <ul className="max-h-160 overflow-y-auto divide-y divide-border-light dark:divide-border-dark/40">
                 {filteredItems.length > 0 ? (
                   filteredItems.map((item, index) => (
-                    <OptionListItem 
+                    <OptionListItem
                       key={String(item[idProp])}
                       item={item}
                       index={index}

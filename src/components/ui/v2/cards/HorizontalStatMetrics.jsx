@@ -25,7 +25,7 @@ const HorizontalStatMetrics = ({
           <div
             className={`flex flex-col items-center justify-center text-center shrink-0 ${allowWrap ? "flex-1 px-1.5" : ""}`}
             style={{
-              minWidth: item.minWidth || (allowWrap ? undefined : "140px"),
+              minWidth: item.minWidth || (allowWrap ? undefined : "100px"),
               maxWidth: item.maxWidth
             }}
           >

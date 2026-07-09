@@ -13,6 +13,7 @@ import { queryKeys } from '../../../lib/react-query/queryKeys';
 import DeleteDependencyModal from '../../../components/ui/DeleteDependencyModal';
 import { useState, useEffect } from 'react';
 import { CoursesMobileView } from '../components/CoursesMobileView';
+import MobileCourseListView from '../components/MobileCourseListView';
 
 /**
  * CourseWorkspace - Decoupled sub-workspace component for Subject and Course curriculum management.
@@ -22,8 +23,17 @@ import { CoursesMobileView } from '../components/CoursesMobileView';
  * @category Components
  * @returns {React.ReactElement} The rendered Course management workspace sheet.
  */
-const CourseWorkspace = ({ viewMode: propViewMode, setViewMode: propSetViewMode }) => {
-  const workspaceState = useCourseWorkspaceState();
+const CourseWorkspace = ({ 
+  workspaceState: propWorkspaceState, 
+  viewMode: propViewMode, 
+  setViewMode: propSetViewMode,
+  activeTab,
+  setActiveTab,
+  handleRefreshAllData,
+  stats
+}) => {
+  const localWorkspaceState = useCourseWorkspaceState();
+  const workspaceState = propWorkspaceState || localWorkspaceState;
   const viewMode = propViewMode !== undefined ? propViewMode : workspaceState.viewMode;
   const setViewMode = propSetViewMode !== undefined ? propSetViewMode : workspaceState.setViewMode;
 
@@ -201,6 +211,18 @@ const CourseWorkspace = ({ viewMode: propViewMode, setViewMode: propSetViewMode 
       }
     });
   };
+
+  if (isMobile) {
+    return (
+      <MobileCourseListView
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        courseWorkspaceState={workspaceState}
+        stats={stats}
+        handleRefreshAllData={handleRefreshAllData}
+      />
+    );
+  }
 
   return (
     <div className="space-y-6">

@@ -68,6 +68,12 @@ export const queryKeys = {
     schedule: (id) => [...queryKeys.batch.detail(id), 'schedule'],
     master: (day) => [...queryKeys.batch.all, 'master-timetable', day],
   },
+  batch_allocation: {
+    all: ['batch_allocation'],
+    lists: () => [...queryKeys.batch_allocation.all, 'list'],
+    list: (filter = EMPTY_FILTER) => [...queryKeys.batch_allocation.lists(), { filter }],
+    detail: (id) => [...queryKeys.batch_allocation.all, 'detail', id],
+  },
   attendance: {
     all: ['attendance'],
     batch: (batchId, date) => [...queryKeys.attendance.all, 'batch', batchId, date],

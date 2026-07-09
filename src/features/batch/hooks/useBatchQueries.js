@@ -8,6 +8,7 @@
  * - {@link useBatchesQuery} - Fetches filtered list of batches with cache fallbacks.
  * - {@link useBatchDetailQuery} - Retrieves details for a single batch, utilizing cache scanning.
  * - {@link useBatchStudentsQuery} - Retrieves student enrollment records associated with a batch.
+ * - {@link useBatchAllocationsQuery} - Fetches all BatchAllocation records with cache-helper pipeline.
  * - {@link useWeeklyScheduleQuery} - Fetches weekly timetables.
  * - {@link useMasterTimetableQuery} - Retrieves global day-wise timetable schedules.
  * 
@@ -85,7 +86,7 @@ export const useBatchesQuery = (filter = EMPTY_FILTER, options = {}) => {
     [queryClient]
   );
 
-  console.log("querying batch with options and filters: ",
+  console.debug("querying batch with options and filters: ",
     {
       "filters": filter,
       "options": options,
@@ -279,6 +280,56 @@ export const useBatchStudentsQuery = (id, searchQuery = '', options = {}) => {
       );
     },
     ...options
+  });
+};
+
+/**
+ * Hook for fetching the full BatchAllocation list with optional column-level filtering.
+ * Delegates all caching, deduplication, detail-seeding, and schema validation to
+ * the centralized `resolveList` helper from `cacheHelper.js`.
+ *
+ * Uses the canonical key `queryKeys.batch_allocation.list(filter)` so that all consumers
+ * (Attendance, Finance, Profile) read from and invalidate the same cache slot.
+ *
+ * @function useBatchAllocationsQuery
+ * @param {Object} [filter=EMPTY_FILTER] - Optional column-level filter, e.g. `{ batch_id: 'BAT-001' }`.
+ * @param {Object} [options={}] - Optional React Query overrides, e.g. `{ enabled: false }`.
+ * @returns {import('@tanstack/react-query').UseQueryResult<Array<Object>>}
+ *   React Query result containing a flat array of BatchAllocation records.
+ * @throws {CacheLayerError} When `resolveList` encounters a missing entity config or network failure.
+ */
+export const useBatchAllocationsQuery = (filter = EMPTY_FILTER, options = {}) => {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+  const enabledParam = options.enabled ?? true;
+
+  return useQuery({
+    queryKey: queryKeys.batch_allocation.list(filter),
+    queryFn: async ({ signal }) => {
+      return resolveList(
+        queryClient,
+        'batchAllocation',
+        filter,
+        async () => {
+          const res = await apiClient.executeAction(
+            API_REGISTRY.DATA.QUERY,
+            { target: 'BatchAllocation', where: filter },
+            token,
+            { signal }
+          );
+          if (!res.success) throw new Error(res.message || 'Failed to fetch batch allocations');
+          return res.data?.data || [];
+        },
+        { strict: true }
+      );
+    },
+    enabled: !!token && enabledParam,
+    initialData: () => getCachedList(queryClient, 'batchAllocation', filter, { strict: true }),
+    initialDataUpdatedAt: () =>
+      queryClient.getQueryState(queryKeys.batch_allocation.list(filter))?.dataUpdatedAt,
+    staleTime: 1000 * 60 * 5,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 };
 

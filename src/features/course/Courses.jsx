@@ -8,12 +8,10 @@ import useIsMobile from '../../hooks/useIsMobile';
 import { useCourseWorkspaceState } from './hooks/useCourseWorkspaceState';
 import { usePackageWorkspaceState } from './hooks/usePackageWorkspaceState';
 
-// Layout & Custom workspaces
 import MainLayout from '../../components/layout/MainLayout';
 import CourseHeader from './components/CourseHeader';
 import CourseWorkspace from './workspaces/CourseWorkspace';
 import PackageWorkspace from './workspaces/PackageWorkspace';
-import MobileCourseListView from './components/MobileCourseListView';
 import KpiCard from '../../components/ui/v2/KpiCard';
 import { ErrorState } from '../../components/ui/QueryStatus';
 
@@ -94,12 +92,19 @@ const Courses = ({ defaultTab = 'courses' }) => {
 
   // JS-Conditional Viewport branching
   if (isMobile) {
-    return (
-      <MobileCourseListView
+    return activeTab === 'courses' ? (
+      <CourseWorkspace
+        workspaceState={courseWorkspaceState}
         activeTab={activeTab}
         setActiveTab={setActiveTab}
-        courseWorkspaceState={courseWorkspaceState}
-        packageWorkspaceState={packageWorkspaceState}
+        handleRefreshAllData={handleRefreshAllData}
+        stats={stats}
+      />
+    ) : (
+      <PackageWorkspace
+        workspaceState={packageWorkspaceState}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
         handleRefreshAllData={handleRefreshAllData}
         stats={stats}
       />
@@ -227,21 +232,28 @@ const Courses = ({ defaultTab = 'courses' }) => {
             </div>
           </div>
 
-          {/* Optimized Component Visibility: Toggles display style to preserve filter states (Issue 2) */}
-          <div className={activeTab === 'courses' ? 'block' : 'hidden'}>
+          {/* Conditionally mount only the active workspace context to avoid inactive render cycles */}
+          {activeTab === 'courses' ? (
             <CourseWorkspace 
               workspaceState={courseWorkspaceState}
               viewMode={viewMode} 
               setViewMode={setViewMode} 
+              activeTab={activeTab}
+              setActiveTab={setActiveTab}
+              handleRefreshAllData={handleRefreshAllData}
+              stats={stats}
             />
-          </div>
-          <div className={activeTab === 'packages' ? 'block' : 'hidden'}>
+          ) : (
             <PackageWorkspace 
               workspaceState={packageWorkspaceState}
               viewMode={viewMode} 
               setViewMode={setViewMode} 
+              activeTab={activeTab}
+              setActiveTab={setActiveTab}
+              handleRefreshAllData={handleRefreshAllData}
+              stats={stats}
             />
-          </div>
+          )}
         </div>
       }
     />

@@ -15,6 +15,7 @@ import useSelectableTable from '../../../hooks/useSelectableTable';
 import DeleteDependencyModal from '../../../components/ui/DeleteDependencyModal';
 import { useState, useEffect } from 'react';
 import { PackagesMobileView } from '../components/PackagesMobileView';
+import MobilePackageListView from '../components/MobilePackageListView';
 
 /**
  * PackageWorkspace - Decoupled sub-workspace component for curriculum packages management.
@@ -25,7 +26,15 @@ import { PackagesMobileView } from '../components/PackagesMobileView';
  * @category Components
  * @returns {React.ReactElement} The rendered Package management workspace sheet.
  */
-const PackageWorkspace = ({ workspaceState: propWorkspaceState, viewMode: propViewMode, setViewMode: propSetViewMode }) => {
+const PackageWorkspace = ({ 
+  workspaceState: propWorkspaceState, 
+  viewMode: propViewMode, 
+  setViewMode: propSetViewMode,
+  activeTab,
+  setActiveTab,
+  handleRefreshAllData,
+  stats
+}) => {
   const localWorkspaceState = usePackageWorkspaceState();
   const workspaceState = propWorkspaceState || localWorkspaceState;
   const viewMode = propViewMode !== undefined ? propViewMode : workspaceState.viewMode;
@@ -229,6 +238,18 @@ const PackageWorkspace = ({ workspaceState: propWorkspaceState, viewMode: propVi
       }
     });
   };
+
+  if (isMobile) {
+    return (
+      <MobilePackageListView
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        packageWorkspaceState={workspaceState}
+        stats={stats}
+        handleRefreshAllData={handleRefreshAllData}
+      />
+    );
+  }
 
   return (
     <div className="space-y-6">

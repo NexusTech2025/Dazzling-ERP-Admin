@@ -65,6 +65,14 @@ export const ENTITY_CONFIGS = {
     listsKey: () => ['course-type'],
     detailKey: (id) => ['course-type', 'detail', id],
     isValidDetail: (data) => data && typeof data === 'object' && 'type_name' in data
+  },
+  batchAllocation: {
+    primaryKey: 'allocation_id',
+    listKey: (filter) => queryKeys.batch_allocation.list(filter),
+    listsKey: () => queryKeys.batch_allocation.all,
+    detailKey: (id) => queryKeys.batch_allocation.detail(id),
+    isValidDetail: (data) =>
+      data && typeof data === 'object' && 'allocation_id' in data && 'student_id' in data
   }
 };
 

@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import MobileBaseLayout from '../../../components/layout/MobileBaseLayout';
 import { TabButton } from '../../../components/ui/v2/Tabs';
-import { CoursesMobileView } from './CoursesMobileView';
+import { PackagesMobileView } from './PackagesMobileView';
 import Button from '../../../components/ui/v2/Button';
 import HorizontalStatMetrics from '../../../components/ui/v2/cards/HorizontalStatMetrics';
 import ConfirmModal from '../../../components/ui/ConfirmModal';
@@ -10,77 +10,71 @@ import DeleteDependencyModal from '../../../components/ui/DeleteDependencyModal'
 import SelectionActionBar from '../../../components/ui/v2/SelectionActionBar';
 
 /**
- * MobileCourseListView: MobileBaseLayout wrapper showing only Courses.
+ * MobilePackageListView: MobileBaseLayout wrapper showing only Packages.
  * 
  * @param {Object} props - Component properties.
  * @param {string} props.activeTab - Currently active tab ('courses' | 'packages').
  * @param {Function} props.setActiveTab - Callback to toggle tabs.
- * @param {Object} props.courseWorkspaceState - State package from useCourseWorkspaceState.
+ * @param {Object} props.packageWorkspaceState - State package from usePackageWorkspaceState.
  * @param {Object} props.stats - Aggregated stats numeric properties.
  * @param {Function} props.handleRefreshAllData - Data refetch invalidation handler.
  */
-export const MobileCourseListView = ({
+export const MobilePackageListView = ({
   activeTab,
   setActiveTab,
-  courseWorkspaceState,
+  packageWorkspaceState,
   stats,
   handleRefreshAllData
 }) => {
   const navigate = useNavigate();
   const [dependencyModal, setDependencyModal] = useState({ isOpen: false, errorPayload: null, parentId: null, parentName: '' });
 
-  // Course-specific metrics
+  // Package-specific metrics
   const statsItems = useMemo(() => [
     { 
-      icon: 'school', 
-      label: 'Courses', 
-      value: String(stats.totalCourses), 
-      className: '[&_span.material-symbols-outlined]:bg-blue-500/10 [&_span.material-symbols-outlined]:text-blue-500 [&_span.material-symbols-outlined]:p-2 [&_span.material-symbols-outlined]:rounded-full' 
-    },
-    { 
-      icon: 'check_circle', 
-      label: 'Active', 
-      value: String(stats.activeCourses), 
-      className: '[&_span.material-symbols-outlined]:bg-emerald-500/10 [&_span.material-symbols-outlined]:text-emerald-500 [&_span.material-symbols-outlined]:p-2 [&_span.material-symbols-outlined]:rounded-full' 
-    },
-    { 
-      icon: 'cancel', 
-      label: 'Inactive', 
-      value: String(stats.inactiveCourses), 
-      className: '[&_span.material-symbols-outlined]:bg-rose-500/10 [&_span.material-symbols-outlined]:text-rose-500 [&_span.material-symbols-outlined]:p-2 [&_span.material-symbols-outlined]:rounded-full' 
+      icon: 'inventory_2', 
+      label: 'Packages', 
+      value: String(stats.totalPackages), 
+      className: '[&_span.material-symbols-outlined]:bg-indigo-500/10 [&_span.material-symbols-outlined]:text-indigo-500 [&_span.material-symbols-outlined]:p-2 [&_span.material-symbols-outlined]:rounded-full' 
     },
     { 
       icon: 'group', 
       label: 'Students', 
       value: String(stats.totalStudents), 
       className: '[&_span.material-symbols-outlined]:bg-cyan-500/10 [&_span.material-symbols-outlined]:text-cyan-500 [&_span.material-symbols-outlined]:p-2 [&_span.material-symbols-outlined]:rounded-full' 
+    },
+    { 
+      icon: 'payments', 
+      label: 'Revenue', 
+      value: String(stats.totalRevenue), 
+      className: '[&_span.material-symbols-outlined]:bg-amber-500/10 [&_span.material-symbols-outlined]:text-amber-500 [&_span.material-symbols-outlined]:p-2 [&_span.material-symbols-outlined]:rounded-full' 
     }
   ], [stats]);
 
-  const executeCoursePhysicalDelete = (idsToDelete) => {
-    courseWorkspaceState.setDeleteModal(prev => ({ ...prev, status: 'processing' }));
-    courseWorkspaceState.deleteManyCoursesMutation.mutate({ ids: idsToDelete, dryRun: false }, {
+  const executePackagePhysicalDelete = (idsToDelete) => {
+    packageWorkspaceState.setDeleteModal(prev => ({ ...prev, status: 'processing' }));
+    packageWorkspaceState.deleteManyPackagesMutation.mutate({ ids: idsToDelete, dryRun: false }, {
       onSuccess: (res) => {
         if (res.success) {
           const deleted = res.data?.manifest?.deleted || idsToDelete;
-          courseWorkspaceState.setDeleteModal(prev => ({
+          packageWorkspaceState.setDeleteModal(prev => ({
             ...prev,
             status: 'success',
-            resultMessage: `Successfully archived ${deleted.length} courses.`
+            resultMessage: `Successfully deleted ${deleted.length} packages.`
           }));
           if (deleted.length > 0) {
-            courseWorkspaceState.selection.setSelectedIds(prev => prev.filter(id => !deleted.includes(id)));
+            packageWorkspaceState.selection.setSelectedIds(prev => prev.filter(id => !deleted.includes(id)));
           }
         } else {
-          courseWorkspaceState.setDeleteModal(prev => ({
+          packageWorkspaceState.setDeleteModal(prev => ({
             ...prev,
             status: 'error',
-            resultMessage: res.message || 'Failed to archive courses.'
+            resultMessage: res.message || 'Failed to delete packages.'
           }));
         }
       },
       onError: (err) => {
-        courseWorkspaceState.setDeleteModal(prev => ({
+        packageWorkspaceState.setDeleteModal(prev => ({
           ...prev,
           status: 'error',
           resultMessage: err.message || 'An unexpected error occurred.'
@@ -89,13 +83,13 @@ export const MobileCourseListView = ({
     });
   };
 
-  const handleConfirmCourseDelete = () => {
-    const deleteModal = courseWorkspaceState.deleteModal;
+  const handleConfirmPackageDelete = () => {
+    const deleteModal = packageWorkspaceState.deleteModal;
     if (!deleteModal.id) return;
-    courseWorkspaceState.setDeleteModal(prev => ({ ...prev, status: 'processing' }));
+    packageWorkspaceState.setDeleteModal(prev => ({ ...prev, status: 'processing' }));
     const ids = Array.isArray(deleteModal.id) ? deleteModal.id : [deleteModal.id];
 
-    courseWorkspaceState.deleteManyCoursesMutation.mutate({ ids, dryRun: true }, {
+    packageWorkspaceState.deleteManyPackagesMutation.mutate({ ids, dryRun: true }, {
       onSuccess: (res) => {
         if (res.success) {
           const manifest = res.data?.manifest || {};
@@ -103,18 +97,18 @@ export const MobileCourseListView = ({
           const failedCount = Object.keys(failed).length;
 
           if (failedCount > 0) {
-            courseWorkspaceState.handleCloseDelete();
+            packageWorkspaceState.handleCloseDelete();
             setDependencyModal({
               isOpen: true,
               errorPayload: manifest,
               parentId: ids.join(', '),
-              parentName: deleteModal.type === 'bulk_course' ? `${ids.length} selected courses` : deleteModal.name
+              parentName: deleteModal.type === 'bulk_package' ? `${ids.length} selected packages` : deleteModal.name
             });
           } else {
-            executeCoursePhysicalDelete(ids);
+            executePackagePhysicalDelete(ids);
           }
         } else {
-          courseWorkspaceState.setDeleteModal(prev => ({
+          packageWorkspaceState.setDeleteModal(prev => ({
             ...prev,
             status: 'error',
             resultMessage: res.message || 'Verification inspection failed.'
@@ -122,7 +116,7 @@ export const MobileCourseListView = ({
         }
       },
       onError: (err) => {
-        courseWorkspaceState.setDeleteModal(prev => ({
+        packageWorkspaceState.setDeleteModal(prev => ({
           ...prev,
           status: 'error',
           resultMessage: err.message || 'Validation check failed.'
@@ -131,13 +125,13 @@ export const MobileCourseListView = ({
     });
   };
 
-  const currentSelectionCount = courseWorkspaceState.selection.selectedIds.length;
+  const currentSelectionCount = packageWorkspaceState.selection.selectedIds.length;
 
   return (
     <MobileBaseLayout>
       {/* Header Slot */}
       <MobileBaseLayout.Header
-        title="Curriculum Library"
+        title="Course Packages"
         renderLeft={
           <Button
             variant="text"
@@ -152,10 +146,10 @@ export const MobileCourseListView = ({
           <Button
             variant="contained"
             size="sm"
-            onClick={() => navigate('/admin/courses/add')}
+            onClick={() => navigate('/admin/packages/add')}
             startIcon="add"
           >
-            Course
+            Package
           </Button>
         }
       />
@@ -198,9 +192,9 @@ export const MobileCourseListView = ({
               <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-text-secondary text-[20px]">search</span>
               <input
                 type="text"
-                value={courseWorkspaceState.searchQuery}
-                onChange={(e) => courseWorkspaceState.setSearchQuery(e.target.value)}
-                placeholder="Search courses, codes..."
+                value={packageWorkspaceState.searchQuery}
+                onChange={(e) => packageWorkspaceState.setSearchQuery(e.target.value)}
+                placeholder="Search packages..."
                 className="w-full bg-slate-50 dark:bg-black/20 border border-border-light dark:border-white/8 rounded-2xl pl-11 pr-4 py-3 text-xs font-bold text-text-main dark:text-white outline-none focus:border-primary focus:bg-white dark:focus:bg-black/40 transition-all placeholder-slate-400 dark:placeholder-slate-500"
               />
             </div>
@@ -219,35 +213,22 @@ export const MobileCourseListView = ({
           <div className="flex overflow-x-auto gap-2 pb-1.5 scrollbar-hide -mx-4 px-4 w-[calc(100%+2rem)]">
             <div className="relative shrink-0">
               <select
-                value={courseWorkspaceState.segmentFilter}
-                onChange={(e) => courseWorkspaceState.setSegmentFilter(e.target.value)}
+                value={packageWorkspaceState.segmentFilter}
+                onChange={(e) => packageWorkspaceState.setSegmentFilter(e.target.value)}
                 className="appearance-none pr-8 pl-4 py-2 rounded-full border border-border-light dark:border-white/8 bg-white dark:bg-black/20 text-[11px] font-bold text-text-main dark:text-white outline-none cursor-pointer focus:border-primary transition-all"
               >
-                {courseWorkspaceState.segmentOptions.map(opt => (
+                {packageWorkspaceState.segmentOptions.map(opt => (
                   <option key={opt.value} value={opt.value}>{opt.label}</option>
                 ))}
               </select>
               <span className="material-symbols-outlined absolute right-2.5 top-1/2 -translate-y-1/2 text-[16px] pointer-events-none text-text-secondary">keyboard_arrow_down</span>
             </div>
 
-            <div className="relative shrink-0">
-              <select
-                value={courseWorkspaceState.languageFilter}
-                onChange={(e) => courseWorkspaceState.setLanguageFilter(e.target.value)}
-                className="appearance-none pr-8 pl-4 py-2 rounded-full border border-border-light dark:border-white/8 bg-white dark:bg-black/20 text-[11px] font-bold text-text-main dark:text-white outline-none cursor-pointer focus:border-primary transition-all"
-              >
-                <option value="">Language: All</option>
-                <option value="Hindi">Hindi</option>
-                <option value="English">English</option>
-              </select>
-              <span className="material-symbols-outlined absolute right-2.5 top-1/2 -translate-y-1/2 text-[16px] pointer-events-none text-text-secondary">keyboard_arrow_down</span>
-            </div>
-
-            {courseWorkspaceState.isAcademicFilterActive && (
+            {packageWorkspaceState.isAcademicFilterActive && (
               <div className="relative shrink-0">
                 <select
-                  value={courseWorkspaceState.boardFilter}
-                  onChange={(e) => courseWorkspaceState.setBoardFilter(e.target.value)}
+                  value={packageWorkspaceState.boardFilter}
+                  onChange={(e) => packageWorkspaceState.setBoardFilter(e.target.value)}
                   className="appearance-none pr-8 pl-4 py-2 rounded-full border border-border-light dark:border-white/8 bg-white dark:bg-black/20 text-[11px] font-bold text-text-main dark:text-white outline-none cursor-pointer focus:border-primary transition-all"
                 >
                   <option value="">Board: All</option>
@@ -260,11 +241,11 @@ export const MobileCourseListView = ({
               </div>
             )}
 
-            {courseWorkspaceState.isAcademicFilterActive && (
+            {packageWorkspaceState.isAcademicFilterActive && (
               <div className="relative shrink-0">
                 <select
-                  value={courseWorkspaceState.classFilter}
-                  onChange={(e) => courseWorkspaceState.setClassFilter(e.target.value)}
+                  value={packageWorkspaceState.classFilter}
+                  onChange={(e) => packageWorkspaceState.setClassFilter(e.target.value)}
                   className="appearance-none pr-8 pl-4 py-2 rounded-full border border-border-light dark:border-white/8 bg-white dark:bg-black/20 text-[11px] font-bold text-text-main dark:text-white outline-none cursor-pointer focus:border-primary transition-all"
                 >
                   <option value="">Class: All</option>
@@ -281,23 +262,23 @@ export const MobileCourseListView = ({
 
       {/* List Slot */}
       <MobileBaseLayout.ListSlot
-        isEmpty={courseWorkspaceState.filteredCourses.length === 0}
+        isEmpty={packageWorkspaceState.filteredPackages.length === 0}
         renderEmptyState={
           <div className="flex flex-col items-center justify-center py-10 border border-dashed border-border-light dark:border-border-dark rounded-xl bg-surface-light dark:bg-surface-dark">
             <span className="material-symbols-outlined text-4xl text-text-secondary mb-2">search_off</span>
-            <p className="text-sm font-semibold text-text-main dark:text-white">No courses match filters</p>
+            <p className="text-sm font-semibold text-text-main dark:text-white">No packages match filters</p>
           </div>
         }
       >
         <div className="flex flex-col gap-3.5 pb-20">
           <div className="flex items-center justify-between text-xs font-semibold text-text-secondary px-0.5">
-            <span>Showing {courseWorkspaceState.filteredCourses.length} records</span>
+            <span>Showing {packageWorkspaceState.filteredPackages.length} records</span>
           </div>
 
-          <CoursesMobileView
-            courses={courseWorkspaceState.filteredCourses}
-            selection={courseWorkspaceState.selection}
-            onDelete={courseWorkspaceState.handleOpenDelete}
+          <PackagesMobileView
+            packages={packageWorkspaceState.filteredPackages}
+            selection={packageWorkspaceState.selection}
+            onDelete={packageWorkspaceState.handleOpenDelete}
           />
         </div>
       </MobileBaseLayout.ListSlot>
@@ -307,41 +288,41 @@ export const MobileCourseListView = ({
         <MobileBaseLayout.ActionBarSlot>
           <SelectionActionBar
             selectedCount={currentSelectionCount}
-            itemName="course"
-            onClear={courseWorkspaceState.selection.clearSelection}
+            itemName="package"
+            onClear={packageWorkspaceState.selection.clearSelection}
             onDeleteSelected={() => {
-              courseWorkspaceState.handleOpenDelete(
-                courseWorkspaceState.selection.selectedIds,
-                `${currentSelectionCount} selected courses`,
-                'bulk_course'
+              packageWorkspaceState.handleOpenDelete(
+                packageWorkspaceState.selection.selectedIds,
+                `${currentSelectionCount} selected packages`,
+                'bulk_package'
               );
             }}
             onDeleteAll={() => {
-              const allIds = courseWorkspaceState.filteredCourses.map(c => c.course_id);
-              courseWorkspaceState.handleOpenDelete(allIds, `all ${allIds.length} courses matching filters`, 'bulk_course');
+              const allIds = packageWorkspaceState.filteredPackages.map(p => p.package_id);
+              packageWorkspaceState.handleOpenDelete(allIds, `all ${allIds.length} packages matching filters`, 'bulk_package');
             }}
           />
         </MobileBaseLayout.ActionBarSlot>
       )}
 
       {/* Confirmation Modals */}
-      {courseWorkspaceState.deleteModal.isOpen && (
+      {packageWorkspaceState.deleteModal.isOpen && (
         <ConfirmModal
-          isOpen={courseWorkspaceState.deleteModal.isOpen}
-          status={courseWorkspaceState.deleteModal.status}
-          resultMessage={courseWorkspaceState.deleteModal.resultMessage}
-          onClose={courseWorkspaceState.handleCloseDelete}
-          onConfirm={handleConfirmCourseDelete}
-          title={courseWorkspaceState.deleteModal.type === 'bulk_course' ? 'Archive Multiple Courses' : 'Archive Course'}
+          isOpen={packageWorkspaceState.deleteModal.isOpen}
+          status={packageWorkspaceState.deleteModal.status}
+          resultMessage={packageWorkspaceState.deleteModal.resultMessage}
+          onClose={packageWorkspaceState.handleCloseDelete}
+          onConfirm={handleConfirmPackageDelete}
+          title={packageWorkspaceState.deleteModal.type === 'bulk_package' ? 'Delete Multiple Packages' : 'Delete Package'}
           message={
-            courseWorkspaceState.deleteModal.type === 'bulk_course'
-              ? `Are you sure you want to archive ${courseWorkspaceState.deleteModal.name}? They will no longer be available for new enrollments.`
-              : `Are you sure you want to archive "${courseWorkspaceState.deleteModal.name}"? It will no longer be available for new enrollments.`
+            packageWorkspaceState.deleteModal.type === 'bulk_package'
+              ? `Are you sure you want to delete ${packageWorkspaceState.deleteModal.name}? This will cascadingly delete associated perks and course links.`
+              : `Are you sure you want to delete "${packageWorkspaceState.deleteModal.name}"? This will cascadingly delete associated perks and course links.`
           }
           isProcessing={
-            courseWorkspaceState.deleteModal.type === 'bulk_course'
-              ? courseWorkspaceState.deleteManyCoursesMutation.isPending
-              : courseWorkspaceState.deleteMutation.isPending
+            packageWorkspaceState.deleteModal.type === 'bulk_package'
+              ? packageWorkspaceState.deleteManyPackagesMutation.isPending
+              : packageWorkspaceState.deletePackageMutation.isPending
           }
         />
       )}
@@ -353,10 +334,10 @@ export const MobileCourseListView = ({
           errorPayload={dependencyModal.errorPayload}
           parentId={dependencyModal.parentId}
           parentName={dependencyModal.parentName}
-          parentType="Course"
+          parentType="Package"
           onResolve={(blockers, deleteSafe) => {
             if (deleteSafe && dependencyModal.errorPayload?.deleted) {
-              executeCoursePhysicalDelete(dependencyModal.errorPayload.deleted);
+              executePackagePhysicalDelete(dependencyModal.errorPayload.deleted);
             }
             setDependencyModal({ isOpen: false, errorPayload: null, parentId: null, parentName: '' });
           }}
@@ -366,4 +347,4 @@ export const MobileCourseListView = ({
   );
 };
 
-export default MobileCourseListView;
+export default MobilePackageListView;
