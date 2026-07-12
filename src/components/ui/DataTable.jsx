@@ -31,7 +31,7 @@ const DataTable = ({
 
       {/* Filters Section */}
       {filters && (
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 rounded-xl border border-border-light dark:border-border-dark bg-surface-light dark:bg-surface-dark p-4 shadow-sm">
+        <div className="grid grid-cols-12 md:grid-cols-12 gap-4 rounded-xl border border-border-light dark:border-border-dark bg-surface-light dark:bg-surface-dark p-4 shadow-sm">
           {filters}
         </div>
       )}

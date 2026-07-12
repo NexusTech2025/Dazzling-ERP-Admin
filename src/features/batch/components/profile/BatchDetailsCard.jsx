@@ -1,23 +1,10 @@
 import React from 'react';
 import Card from '../../../../components/ui/Card';
+import { DateDisplay } from '../../../../components/ui/presets/DateDisplay';
+import { DateRange } from '../../../../components/ui/presets/DateRange';
+import TimeRange from '../../../../components/ui/presets/TimeRange';
 
 const BatchDetailsCard = ({ batch }) => {
-  const formatDate = (dateStr) => {
-    console.log("formatting dateStr: ", dateStr)
-    if (!dateStr) return '';
-    try {
-      const dateOnly = dateStr.split('T')[0];
-      const [year, month, day] = dateOnly.split('-');
-      return new Date(year, month - 1, day).toLocaleDateString(undefined, {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric'
-      });
-    } catch (e) {
-      return dateStr;
-    }
-  };
-
   console.log("batch data: ", batch)
 
   return (
@@ -40,7 +27,7 @@ const BatchDetailsCard = ({ batch }) => {
           label="Timings"
           value={
             batch.schedule?.start_time && batch.schedule?.end_time
-              ? `${batch.schedule.start_time} - ${batch.schedule.end_time}`
+              ? <TimeRange start={batch.schedule.start_time} end={batch.schedule.end_time} useBadge={true} badgeVariant="info" />
               : 'TBD'
           }
           subValue={batch.schedule?.days_of_week?.join(', ') || 'No days configured'}
@@ -49,9 +36,11 @@ const BatchDetailsCard = ({ batch }) => {
           icon="calendar_month"
           label="Timeline"
           value={
-            batch.start_date && batch.end_date
-              ? `${formatDate(batch.start_date)} - ${formatDate(batch.end_date)}`
-              : 'No dates configured'
+            batch.start_date ? (
+              <DateRange start={batch.start_date} end={batch.end_date} fallback="ongoing" />
+            ) : (
+              'No dates configured'
+            )
           }
         />
         <DetailItem
@@ -70,7 +59,15 @@ const BatchDetailsCard = ({ batch }) => {
           icon="menu_book"
           label="Current Course"
           value={batch.course_name}
-          subValue={batch.end_date ? `Est. completion: ${formatDate(batch.end_date)}` : 'No end date'}
+          subValue={
+            batch.end_date ? (
+              <>
+                Est. completion: <DateDisplay value={batch.end_date} className="font-normal" />
+              </>
+            ) : (
+              'No end date'
+            )
+          }
         />
       </div>
     </Card>

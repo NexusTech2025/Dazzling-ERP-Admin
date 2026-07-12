@@ -1,6 +1,11 @@
 import React from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import StatusButton from '../../../../components/ui/v2/StatusButton';
+import { DateDisplay } from '../../../../components/ui/presets/DateDisplay';
+import { TimeRange } from '../../../../components/ui/presets/TimeRange';
+import Badge from '../../../../components/ui/Badge';
+
+import { TabGroup, TabButton } from '../../../../components/ui/v2/Tabs';
 
 const BatchProfileHeader = ({ batch, activeTab, onTabChange, onStatusToggle, isStatusLoading }) => {
   const navigate = useNavigate();
@@ -22,7 +27,10 @@ const BatchProfileHeader = ({ batch, activeTab, onTabChange, onStatusToggle, isS
             />
           </div>
           <p className="text-text-secondary text-sm font-medium">
-            {batch.course_name} • {batch.schedule.days_of_week.join(', ')} ({batch.schedule.start_time} - {batch.schedule.end_time})
+            {batch.course_name} • {batch.schedule.days_of_week.join(', ')}
+            <br />
+            <Badge variant='info'>{batch.batch_id}</Badge> | &nbsp;
+            <TimeRange start={batch.schedule.start_time} end={batch.schedule.end_time} useBadge badgeVariant="success" />
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -30,7 +38,7 @@ const BatchProfileHeader = ({ batch, activeTab, onTabChange, onStatusToggle, isS
             <span className="material-symbols-outlined text-[20px]">more_horiz</span>
             <span>Options</span>
           </button>
-          <Link 
+          <Link
             to={`/admin/batches/edit/${batch.id}`}
             className="flex items-center justify-center gap-2 rounded-lg h-10 px-5 bg-primary text-white hover:bg-primary-dark transition-all text-sm font-bold shadow-sm active:scale-95"
           >
@@ -40,25 +48,19 @@ const BatchProfileHeader = ({ batch, activeTab, onTabChange, onStatusToggle, isS
         </div>
       </div>
 
-      <div className="border-b border-border-light dark:border-border-dark mt-2">
-        <div className="flex gap-8 overflow-x-auto scrollbar-hide">
+      <div className="mt-2 px-4">
+        <TabGroup>
           {tabs.map(tab => (
-            <button
+            <TabButton
               key={tab}
+              active={activeTab === tab}
               onClick={() => onTabChange(tab)}
-              className={`flex items-center gap-2 border-b-[3px] pb-3 pt-2 transition-all ${
-                activeTab === tab 
-                  ? 'border-primary text-primary' 
-                  : 'border-transparent text-text-secondary hover:text-text-main dark:hover:text-white'
-              }`}
+              icon={tab === 'Overview' ? 'dashboard' : tab === 'Students' ? 'group' : tab === 'Schedule' ? 'calendar_month' : tab === 'Attendance' ? 'co_present' : 'quiz'}
             >
-              <span className="material-symbols-outlined text-[20px]">
-                {tab === 'Overview' ? 'dashboard' : tab === 'Students' ? 'group' : tab === 'Schedule' ? 'calendar_month' : tab === 'Attendance' ? 'co_present' : 'quiz'}
-              </span>
-              <span className="text-sm font-bold tracking-wide">{tab}</span>
-            </button>
+              {tab}
+            </TabButton>
           ))}
-        </div>
+        </TabGroup>
       </div>
     </div>
   );

@@ -1,10 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { useForm, Controller, useWatch } from 'react-hook-form';
-import { yupResolver } from '@hookform/resolvers/yup';
-import * as yup from 'yup';
-import { useCoursesQuery } from '../../course/hooks/useCourseQueries';
-import { useTeachersQuery } from '../../teacher/hooks/useTeacherQueries';
-import { useBranchesQuery } from '../../core/hooks/useBranchQueries';
+import React from 'react';
+import { Controller } from 'react-hook-form';
+import useBatchForm from '../hooks/useBatchForm';
+
+// Design System Core UI imports
 import CourseSelectionModal from '../../course/components/CourseSelectionModal';
 import TeacherSelectionModal from '../../teacher/components/TeacherSelectionModal';
 import ButtonGroupFilter from '../../../components/ui/filters/ButtonGroupFilter';
@@ -19,165 +17,45 @@ import { Tag } from '../../../components/ui/v2/indicators';
 import Breadcrumbs from '../../../components/ui/Breadcrumbs';
 import MainLayout from '../../../components/layout/MainLayout';
 
-const DEFAULT_FORM_DATA = {
-  batch_name: '',
-  branch_id: '', 
-  course_id: '',
-  teacher_id: '',
-  batch_type: 'Academy',
-  status: 'active',
-  capacity: 30,
-  start_date: '',
-  end_date: '',
-  schedule: {
-    days_of_week: ['Mon', 'Wed', 'Fri'],
-    start_time: '09:00',
-    end_time: '11:00'
-  }
-};
-
-const formatToInputDate = (dateStr) => {
-  if (!dateStr) return '';
-  return dateStr.split('T')[0];
-};
-
-// Yup Schema Validation Contract
-const batchFormSchema = yup.object().shape({
-  batch_name: yup.string().trim().required("Batch name is required.").max(255, "Batch name cannot exceed 255 characters."),
-  branch_id: yup.string().required("Branch selection is required."),
-  course_id: yup.string().required("Course selection is required."),
-  teacher_id: yup.string().nullable(),
-  batch_type: yup.string().required(),
-  status: yup.string().required(),
-  capacity: yup.number().typeError("Capacity must be a number").min(1, "Capacity must be at least 1").required("Capacity is required."),
-  start_date: yup.string().required("Start date is required."),
-  end_date: yup.string().required("End date is required.")
-    .test('date-compare', 'Start date cannot be after end date.', function(end_date) {
-      const { start_date } = this.parent;
-      if (!start_date || !end_date) return true;
-      return new Date(start_date) <= new Date(end_date);
-    }),
-  schedule: yup.object().shape({
-    days_of_week: yup.array().of(yup.string()).min(1, "Please select at least one day for the batch schedule."),
-    start_time: yup.string().required("Start time is required."),
-    end_time: yup.string().required("End time is required.")
-  })
-});
+const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 // Isolated sub-component to prevent parent re-renders on every batch name keystroke
 const HeaderBatchName = ({ control }) => {
-  const batchName = useWatch({
-    control,
-    name: 'batch_name',
-    defaultValue: ''
-  });
-  if (!batchName) return null;
-  return (
-    <>
-      <span className="text-slate-300 dark:text-slate-700">•</span>
-      <span className="text-xs text-text-secondary dark:text-slate-400 font-semibold truncate max-w-[200px]">
-        {batchName}
-      </span>
-    </>
-  );
+  const { watch } = useBatchForm({ initialData: null, onSubmit: () => {} });
+  // Just use a simple watch from standard react-hook-form if we want, or pass watch from hook
+  return null; 
 };
 
-const BatchForm = ({ 
-  initialData = null, 
-  onSubmit, 
-  onCancel, 
-  isSubmitting = false, 
-  error = null 
-}) => {
-  // Fetch lists from cache
-  const { data: allCourses = [] } = useCoursesQuery();
-  const { data: allTeachers = [] } = useTeachersQuery();
-  const { data: branches = [] } = useBranchesQuery();
-
-  // Initialize React Hook Form with Yup resolver
+const BatchForm = ({ initialData = null, onSubmit, onCancel, isSubmitting = false, error = null }) => {
+  // Bind form state and logic to the headless hook
   const {
-    control,
-    register,
-    handleSubmit: handleFormSubmit,
-    setValue,
-    watch,
-    reset,
-    formState: { errors }
-  } = useForm({
-    resolver: yupResolver(batchFormSchema),
-    defaultValues: DEFAULT_FORM_DATA,
-    mode: 'onTouched'
-  });
+    formInstance,
+    allCourses,
+    allTeachers,
+    branchOptions,
+    selectedCourse,
+    selectedTeacher,
+    isCourseModalOpen,
+    setIsCourseModalOpen,
+    isTeacherModalOpen,
+    setIsTeacherModalOpen,
+    isSticky,
+    handleBodyScroll,
+    handleCourseSelection,
+    handleTeacherSelection,
+    onSubmitForm,
+    isEditMode
+  } = useBatchForm({ initialData, onSubmit });
 
-  // Watch selection variables to dynamically render low density cards when selected
-  const watchedCourseId = watch('course_id');
-  const watchedTeacherId = watch('teacher_id');
+  const { register, control, watch, formState: { errors } } = formInstance;
 
-  // Optimized memoized transformations
-  const branchOptions = React.useMemo(() => {
-    return branches
-      .filter(b => b.status === 'active')
-      .map(b => ({
-        label: b.branch_name,
-        value: b.branch_id
-      }));
-  }, [branches]);
-
-  const [isCourseModalOpen, setIsCourseModalOpen] = useState(false);
-  const [isTeacherModalOpen, setIsTeacherModalOpen] = useState(false);
-  const [isSticky, setIsSticky] = useState(false);
-
-  const isEditMode = !!initialData;
-
-  const handleBodyScroll = (e) => {
-    const shouldBeSticky = e.currentTarget.scrollTop > 80;
-    setIsSticky(prev => (prev !== shouldBeSticky ? shouldBeSticky : prev));
-  };
+  const watchedBatchName = watch('batch_name');
 
   const crumbs = React.useMemo(() => [
     { label: 'Dashboard', path: '/admin/dashboard', icon: 'home' },
     { label: 'Batches', path: '/admin/batches' },
     { label: isEditMode ? 'Edit Batch' : 'New Batch' }
   ], [isEditMode]);
-
-  // Synchronize and initialize form data on initialData changes
-  useEffect(() => {
-    if (initialData) {
-      reset({
-        batch_name: initialData.batch_name || '',
-        branch_id: initialData.branch_id || '',
-        course_id: initialData.course_id || '',
-        teacher_id: initialData.teacher_id || '',
-        batch_type: initialData.batch_type || 'Academy',
-        status: initialData.status || 'active',
-        capacity: initialData.capacity || 30,
-        start_date: formatToInputDate(initialData.start_date),
-        end_date: formatToInputDate(initialData.end_date),
-        schedule: {
-          days_of_week: Array.isArray(initialData.schedule?.days_of_week) 
-            ? initialData.schedule.days_of_week 
-            : ['Mon', 'Wed', 'Fri'],
-          start_time: initialData.schedule?.start_time || '09:00',
-          end_time: initialData.schedule?.end_time || '11:00'
-        }
-      });
-    } else {
-      reset(DEFAULT_FORM_DATA);
-    }
-  }, [initialData, reset]);
-
-  // Resolve selection data mappings
-  const selectedCourse = React.useMemo(() => 
-    allCourses.find(c => c.course_id === watchedCourseId), 
-    [allCourses, watchedCourseId]
-  );
-
-  const selectedTeacher = React.useMemo(() => 
-    allTeachers.find(t => t.teacher_id === watchedTeacherId), 
-    [allTeachers, watchedTeacherId]
-  );
-
-  const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
   return (
     <MainLayout
@@ -188,7 +66,14 @@ const BatchForm = ({
             <div className="flex items-center gap-2">
               <span className="material-symbols-outlined text-primary text-lg">calendar_month</span>
               <span className="text-sm font-bold text-text-main dark:text-white">{isEditMode ? 'Update Batch' : 'Create Batch'}</span>
-              <HeaderBatchName control={control} />
+              {watchedBatchName && (
+                <>
+                  <span className="text-slate-300 dark:text-slate-700">•</span>
+                  <span className="text-xs text-text-secondary dark:text-slate-400 font-semibold truncate max-w-[200px]">
+                    {watchedBatchName}
+                  </span>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -209,7 +94,7 @@ const BatchForm = ({
             </div>
           )}
 
-          <form onSubmit={handleFormSubmit(onSubmit)} className="bg-surface-light dark:bg-surface-dark rounded-xl shadow-sm border border-border-light dark:border-border-dark">
+          <form onSubmit={onSubmitForm} className="bg-surface-light dark:bg-surface-dark rounded-xl shadow-sm border border-border-light dark:border-border-dark">
             <div className="p-6 md:p-8 grid grid-cols-12 gap-6 lg:gap-8 items-start">
               
               {/* Basic Details */}
@@ -287,7 +172,7 @@ const BatchForm = ({
                     icon={selectedTeacher ? undefined : 'person'}
                     avatarText={selectedTeacher ? (selectedTeacher.full_name || selectedTeacher.teacher_name || selectedTeacher.name)?.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase() : undefined}
                     title={selectedTeacher ? (selectedTeacher.full_name || selectedTeacher.teacher_name || selectedTeacher.name) : 'Assign Primary Instructor'}
-                    subtitle1={selectedTeacher ? (selectedTeacher.experience_years ? `${selectedTeacher.experience_years} yrs experience` : 'General Faculty') : 'No teacher selected \u2014 click Change to browse'}
+                    subtitle1={selectedTeacher ? (selectedTeacher.experience_years ? `${selectedTeacher.experience_years} yrs experience` : 'General Faculty') : 'No teacher selected — click Change to browse'}
                     subtitle2={selectedTeacher ? (selectedTeacher.qualification || undefined) : undefined}
                     bodyText={selectedTeacher && (selectedTeacher.specialization || selectedTeacher.qualification) ? (
                       <div className="flex flex-wrap gap-1">
@@ -402,10 +287,7 @@ const BatchForm = ({
               onClose={() => setIsCourseModalOpen(false)}
               availableCourses={allCourses}
               selectedCourses={selectedCourse ? [selectedCourse] : []}
-              onSelect={(course) => {
-                setValue('course_id', course?.course_id || '', { shouldValidate: true });
-                setIsCourseModalOpen(false);
-              }}
+              onSelect={handleCourseSelection}
               singleSelect={true}
             />
           )}
@@ -416,10 +298,7 @@ const BatchForm = ({
               onClose={() => setIsTeacherModalOpen(false)}
               availableTeachers={allTeachers}
               selectedTeacher={selectedTeacher}
-              onSelect={(teacher) => {
-                setValue('teacher_id', teacher?.teacher_id || '', { shouldValidate: true });
-                setIsTeacherModalOpen(false);
-              }}
+              onSelect={handleTeacherSelection}
               singleSelect={true}
             />
           )}
@@ -431,7 +310,7 @@ const BatchForm = ({
             <button type="button" onClick={onCancel} className="px-5 py-2.5 rounded-lg border border-border-light dark:border-border-dark text-text-secondary font-medium hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-sm">Cancel</button>
           </div>
           <div className="flex justify-end w-1/2 md:w-auto ml-auto">
-            <button type="submit" disabled={isSubmitting} onClick={handleFormSubmit(onSubmit)} className="px-5 py-2.5 rounded-lg bg-primary text-white font-medium hover:bg-primary-dark transition-colors shadow-sm flex items-center gap-2 disabled:opacity-50">
+            <button type="submit" disabled={isSubmitting} onClick={onSubmitForm} className="px-5 py-2.5 rounded-lg bg-primary text-white font-medium hover:bg-primary-dark transition-colors shadow-sm flex items-center gap-2 disabled:opacity-50">
               {isSubmitting ? <span className="size-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span> : <span className="material-symbols-outlined text-sm">save</span>}
               Save Batch
             </button>

@@ -1,3 +1,5 @@
+import { parse, parseISO, format, isValid, getUnixTime, getTime } from 'date-fns';
+
 /**
  * Checks if a target date (in YYYY-MM-DD format) is in the past compared to local system date.
  * Timezone-safe by parsing date components directly to local midnight boundary.
@@ -54,3 +56,143 @@ export const formatTime = (timeStr) => {
   }
 };
 
+/**
+ * Parses a "HH:MM" 24-hour string into a structured time metadata object.
+ * @param {string} timeStr - The raw string representation of time (e.g., "14:30")
+ * @returns {Object|null} Structured time or null
+ */
+export const parseTimeToStructured = (timeStr) => {
+  if (!timeStr) return null;
+  const [hourStr, minStr] = timeStr.split(':');
+  let hour = parseInt(hourStr, 10);
+  const minute = parseInt(minStr, 10);
+  const period = hour >= 12 ? 'PM' : 'AM';
+  
+  if (hour > 12) hour -= 12;
+  if (hour === 0) hour = 12;
+  
+  return { hour, minute, period };
+};
+
+/**
+ * Formats a structured time metadata object back into a "HH:MM" 24-hour string.
+ * @param {Object} structTime - Object containing { hour, minute, period }
+ * @returns {string} 24-hour formatted string (e.g., "16:00")
+ */
+export const formatStructuredToTime = (structTime) => {
+  if (!structTime || typeof structTime !== 'object') return '';
+  let { hour, minute, period } = structTime;
+  
+  if (period === 'PM' && hour < 12) hour += 12;
+  if (period === 'AM' && hour === 12) hour = 0;
+  
+  return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+};
+
+// -------------------------------------------------------------
+// HEADLESS DATE/DATETIME SYSTEM PARSING STRATEGY PATTERN
+// -------------------------------------------------------------
+
+const PARSING_STRATEGIES = [
+  {
+    name: 'dateObject',
+    match: (val) => val instanceof Date,
+    parse: (val) => new Date(val.getTime())
+  },
+  {
+    name: 'customFormat',
+    match: (val, options) => typeof val === 'string' && !!options?.inputFormat,
+    parse: (val, options) => parse(val.trim(), options.inputFormat, new Date(), { locale: options?.locale })
+  },
+  {
+    name: 'isoString',
+    match: (val) => typeof val === 'string' && (val.includes('T') || /^\d{4}-\d{2}-\d{2}/.test(val)),
+    parse: (val) => parseISO(val.trim())
+  },
+  {
+    name: 'numericString',
+    match: (val) => typeof val === 'string' && /^\d+$/.test(val.trim()),
+    parse: (val) => new Date(Number(val.trim()))
+  },
+  {
+    name: 'numericTimestamp',
+    match: (val) => typeof val === 'number',
+    parse: (val) => new Date(val)
+  },
+  {
+    name: 'stringFallback',
+    match: (val) => typeof val === 'string',
+    parse: (val) => new Date(val.trim())
+  }
+];
+
+/**
+ * Normalizes, validates, and formats date payloads using the Strategy Pattern.
+ * Pure Javascript function (non-React) for absolute portability.
+ * @param {unknown} value - Raw incoming date representation (String, Number, Date, null).
+ * @param {Object} options - Formatting and parsing options.
+ * @param {string} [options.inputFormat] - Optional explicit pattern to parse tokenized strings.
+ * @param {string} options.outputFormat - The target pattern applied during string serialization.
+ * @param {string} [options.fallback='--'] - Character sequence returned when values are empty or invalid.
+ * @param {Object} [options.locale] - Date-fns compatible language locale descriptor object.
+ * @returns {Object} Structured client-side representation envelope of the parsed date state.
+ */
+export const formatDateState = (value, { inputFormat, outputFormat, fallback = '--', locale } = {}) => {
+  const state = {
+    rawValue: value,
+    date: null,
+    formatted: fallback,
+    isValid: false,
+    isEmpty: false,
+    error: null,
+    timestamp: null,
+    unix: null,
+    iso: null
+  };
+
+  if (value === null || value === undefined || value === '') {
+    state.isEmpty = true;
+    return state;
+  }
+
+  if (typeof value === 'string' && value.trim() === '') {
+    state.isEmpty = true;
+    return state;
+  }
+
+  try {
+    const strategy = PARSING_STRATEGIES.find(s => s.match(value, { inputFormat, locale }));
+    if (!strategy) {
+      state.error = 'Unsupported variable data type specification';
+      return state;
+    }
+
+    const parsedDate = strategy.parse(value, { inputFormat, locale });
+
+    if (!parsedDate || !isValid(parsedDate)) {
+      state.error = 'Invalid date computation bounds reached';
+      return state;
+    }
+
+    state.date = parsedDate;
+    state.isValid = true;
+    state.timestamp = getTime(parsedDate);
+    state.unix = getUnixTime(parsedDate);
+    
+    try {
+      state.iso = parsedDate.toISOString();
+    } catch {
+      state.iso = null;
+    }
+
+    state.formatted = format(parsedDate, outputFormat, { locale });
+
+  } catch (err) {
+    state.isValid = false;
+    state.date = null;
+    state.formatted = fallback;
+    state.error = err instanceof Error ? err.message : String(err);
+  }
+
+  return state;
+};

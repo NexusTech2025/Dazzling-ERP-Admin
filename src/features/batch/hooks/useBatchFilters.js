@@ -72,7 +72,7 @@ export function useBatchFilters({ students = [], batches = [], batchAllocations 
       });
     });
 
-    console.log("batchAllocations", allocationsByBatch);
+    // console.log("batchAllocations", allocationsByBatch);
 
     // 3. Filter to batches with active enrollment count > 1
     console.log("all batches: ", batches)
@@ -84,7 +84,7 @@ export function useBatchFilters({ students = [], batches = [], batchAllocations 
       console.log({ is_active: b.status, batch_name: b.batch_name, length: allocationsByBatch.get(b.batch_id)?.length || 0 })
     })
 
-    console.log("active batch menu: ", activeBatchesMenu)
+    // console.log("active batch menu: ", activeBatchesMenu)
 
     // 4. Extract distinct class levels and board values from course metadata
     const activeCourseIds = new Set(activeBatchesMenu.map(b => b.course_id));
@@ -94,7 +94,7 @@ export function useBatchFilters({ students = [], batches = [], batchAllocations 
       new Set(activeCourses.map(c => c.metadata?.class).filter(Boolean))
     ).sort((a, b) => Number(b) - Number(a));
 
-    console.log("Active Classes: ", classFilterMenu)
+    // console.log("Active Classes: ", classFilterMenu)
 
     const boardFilterMenu = Array.from(
       new Set(activeCourses.map(c => c.metadata?.board).filter(Boolean))

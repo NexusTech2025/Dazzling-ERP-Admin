@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { parseISO, format } from 'date-fns';
+import { DateDisplay } from '../../../../components/ui/presets/DateDisplay';
 import Card from '../../../../components/ui/Card';
 import Badge from '../../../../components/ui/Badge';
 import TextInput from '../../../../components/ui/v2/TextInput';
@@ -54,14 +54,7 @@ const AttendanceHistoryMatrix = ({ batchId }) => {
     }
   };
 
-  const formatLogDate = (dateStr) => {
-    if (!dateStr) return '—';
-    try {
-      return format(parseISO(dateStr), 'MMM d, yyyy');
-    } catch {
-      return '—';
-    }
-  };
+
 
   const formatLogTime = (timeObj) => {
     if (!timeObj || typeof timeObj !== 'object') return '—';
@@ -114,7 +107,7 @@ const AttendanceHistoryMatrix = ({ batchId }) => {
                   return (
                     <tr key={log.attendance_id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
                       <td className="p-4 font-bold text-text-main dark:text-white">
-                        {formatLogDate(log.attendance_date)}
+                        <DateDisplay value={log.attendance_date} className="font-normal" />
                       </td>
                       <td className="p-4">
                         <div className="flex flex-col">

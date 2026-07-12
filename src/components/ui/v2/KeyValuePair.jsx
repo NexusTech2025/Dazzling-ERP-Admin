@@ -10,12 +10,13 @@ const SHARED_LABEL_CLASSES = "font-bold tracking-wider text-text-secondary upper
  * Sub-Component: KeyValuePairIcon
  * Renders the Material Icon with calculated relative bounds.
  */
-const KeyValuePairIcon = ({ icon, size, className = "" }) => {
+export const KeyValuePairIcon = ({ icon, size, className = "" }) => {
   if (!icon) return null;
+  const hasColor = className.includes('text-');
   return (
     <div className={`flex items-center justify-center shrink-0 ${className}`}>
       <span
-        className={SHARED_ICON_CLASSES}
+        className={`material-symbols-outlined leading-none select-none ${hasColor ? "" : "text-text-secondary"}`}
         style={{ fontSize: size }}
       >
         {icon}

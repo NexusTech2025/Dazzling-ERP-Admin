@@ -18,8 +18,9 @@ import Badge from '../../components/ui/Badge';
 import { Timeline } from '../../components/ui/v2/Timeline';
 
 // Mobile Design Primitives
-import ProfileHero from '../../components/ui/v2/ProfileHero';
+import ProfileHero from '../../components/domain/ProfileHero';
 import ScrollableRibbon from '../../components/ui/v2/ScrollableRibbon';
+import { KeyValuePairIcon } from '../../components/ui/v2/KeyValuePair';
 import DescriptionSection from '../../components/ui/v2/DescriptionSection';
 import KeyValuePair from '../../components/ui/v2/KeyValuePair';
 
@@ -273,36 +274,77 @@ const TeacherProfile = () => {
         </div>
 
         {/* Profile Hero Section */}
-        <ProfileHero
-          avatar={
-            <Avatar
-              src={(() => {
-                const url = teacher.profile_photo_url;
-                if (!url || url === 'null' || url === 'undefined' || url === '') {
-                  return teacher.gender?.toLowerCase() === 'female' || teacher.gender?.toLowerCase() === 'f'
-                    ? 'https://img.icons8.com/color/150/administrator-female.png'
-                    : 'https://img.icons8.com/color/150/administrator-male.png';
-                }
-                return url;
-              })()}
-              initials={teacher.full_name}
-              size="xl"
-            />
-          }
-          title={teacher.full_name}
-          badge={<Badge variant={teacher.status === 'active' ? 'success' : 'default'}>{teacher.status?.toUpperCase() || 'ACTIVE'}</Badge>}
-          idText={`ID: ${teacher.teacher_id}`}
-          metaLines={[
-            { text: teacher.specialization || 'Department Faculty', icon: 'menu_book' },
-            { text: `Joined ${teacher.joining_date ? new Date(teacher.joining_date).toLocaleDateString() : 'N/A'} • Branch: ${teacher.branch_name || teacher.branch_id || 'Main Branch'}` }
-          ]}
-          actions={
-            <div className="flex flex-row md:flex-col gap-2 w-full">
-              <Button size="sm" variant="outlined" startIcon="edit" onClick={() => navigate(`/admin/teachers/edit/${teacher.teacher_id}`)} className="flex-1">Edit</Button>
-              <Button size="sm" variant="outlined" startIcon="chat" className="flex-1">Message</Button>
+        <ProfileHero>
+          {/* Header Row (Top Tier) */}
+          <ProfileHero.Header>
+            <div className="flex items-center gap-3.5 min-w-0 flex-1">
+              <Avatar
+                src={(() => {
+                  const url = teacher.profile_photo_url;
+                  if (!url || url === 'null' || url === 'undefined' || url === '') {
+                    return teacher.gender?.toLowerCase() === 'female' || teacher.gender?.toLowerCase() === 'f'
+                      ? 'https://img.icons8.com/color/150/administrator-female.png'
+                      : 'https://img.icons8.com/color/150/administrator-male.png';
+                  }
+                  return url;
+                })()}
+                initials={teacher.full_name}
+                size="xl"
+              />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2.5 flex-wrap">
+                  <ProfileHero.Title className="text-xl md:text-2xl font-extrabold">{teacher.full_name}</ProfileHero.Title>
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-600 dark:bg-emerald-950/20 dark:text-emerald-400 border border-emerald-500/20 leading-none">
+                    <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                    {teacher.status?.toUpperCase() || 'ACTIVE'}
+                  </span>
+                </div>
+                <div className="mt-1">
+                  <ProfileHero.Identity idText={`Teacher ID: ${teacher.teacher_id}`} />
+                </div>
+              </div>
             </div>
-          }
-        />
+          </ProfileHero.Header>
+
+          {/* Divider Line */}
+          <hr className="-mx-5 border-slate-100 dark:border-slate-800/60" />
+
+          {/* Logistics Grid (Middle Tier) */}
+          <div className="flex flex-col gap-4 py-1">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="flex items-center gap-3">
+                <KeyValuePairIcon
+                  icon="menu_book"
+                  size="20px"
+                  className="size-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0"
+                />
+                <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+                  {teacher.specialization || 'Department Faculty'}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <KeyValuePairIcon
+                  icon="calendar_today"
+                  size="20px"
+                  className="size-10 rounded-xl bg-blue-50 dark:bg-blue-950/20 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0"
+                />
+                <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+                  Joined: {teacher.joining_date ? new Date(teacher.joining_date).toLocaleDateString() : 'N/A'} • Branch: {teacher.branch_name || teacher.branch_id || 'Main Branch'}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Divider Line */}
+          <hr className="-mx-5 border-slate-100 dark:border-slate-800/60" />
+
+          {/* Action Footer (Bottom Tier) */}
+          <ProfileHero.Actions className="border-t-0 mt-0 pt-0 flex flex-row gap-3 w-full">
+            <Button size="sm" variant="outlined" startIcon="edit" onClick={() => navigate(`/admin/teachers/edit/${teacher.teacher_id}`)} className="flex-1 rounded-xl h-11 border-primary text-primary hover:bg-primary/5">Edit</Button>
+            <Button size="sm" variant="outlined" startIcon="chat" className="flex-1 rounded-xl h-11 border-primary text-primary hover:bg-primary/5">Message</Button>
+          </ProfileHero.Actions>
+        </ProfileHero>
 
         {/* Metric Ribbon */}
         <ScrollableRibbon>

@@ -13,8 +13,9 @@ import Badge from '../../components/ui/Badge';
 import StudentEditModal from '../../features/student/components/StudentEditModal';
 
 // Mobile Design Primitives
-import ProfileHero from '../../components/ui/v2/ProfileHero';
+import ProfileHero from '../../components/domain/ProfileHero';
 import ScrollableRibbon from '../../components/ui/v2/ScrollableRibbon';
+import { KeyValuePairIcon } from '../../components/ui/v2/KeyValuePair';
 import DescriptionSection from '../../components/ui/v2/DescriptionSection';
 import SlottedEntityCard from '../../components/ui/v2/cards/SlottedEntityCard';
 import KeyValuePair from '../../components/ui/v2/KeyValuePair';
@@ -172,37 +173,78 @@ const StudentProfile = () => {
         </div>
 
         {/* Profile Hero Section */}
-        <ProfileHero
-          avatar={
-            <Avatar
-              src={(() => {
-                const url = student.avatarUrl;
-                if (!url || url === 'null' || url === 'undefined' || url === '') {
-                  return student.gender?.toLowerCase() === 'female' || student.gender?.toLowerCase() === 'f'
-                    ? 'https://img.icons8.com/color/150/girl.png'
-                    : 'https://img.icons8.com/color/150/boy.png';
-                }
-                return url;
-              })()}
-              initials={student.student_name?.substring(0, 2).toUpperCase()}
-              status="online"
-              size="xl"
-            />
-          }
-          title={student.student_name}
-          badge={<Badge variant={student.status === 'active' ? 'success' : 'default'}>{student.status?.toUpperCase() || 'ACTIVE'}</Badge>}
-          idText={`ID: ${student.student_id}`}
-          metaLines={[
-            { text: 'Class 11 Science (CBSE)', icon: 'menu_book' },
-            { text: `Enrollment: Active • Joined: ${student.admission_date ? new Date(student.admission_date).toLocaleDateString() : 'N/A'}` }
-          ]}
-          actions={
-            <div className="flex flex-row md:flex-col gap-2 w-full">
-              <Button size="sm" variant="outlined" startIcon="edit" onClick={() => setIsEditModalOpen(true)} className="flex-1">Edit</Button>
-              <Button size="sm" variant="outlined" startIcon="chat" className="flex-1">Message</Button>
+        <ProfileHero>
+          {/* Header Row (Top Tier) */}
+          <ProfileHero.Header>
+            <div className="flex items-center gap-3.5 min-w-0 flex-1">
+              <Avatar
+                src={(() => {
+                  const url = student.avatarUrl;
+                  if (!url || url === 'null' || url === 'undefined' || url === '') {
+                    return student.gender?.toLowerCase() === 'female' || student.gender?.toLowerCase() === 'f'
+                      ? 'https://img.icons8.com/color/150/girl.png'
+                      : 'https://img.icons8.com/color/150/boy.png';
+                  }
+                  return url;
+                })()}
+                initials={student.student_name?.substring(0, 2).toUpperCase()}
+                status="online"
+                size="xl"
+              />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2.5 flex-wrap">
+                  <ProfileHero.Title className="text-xl md:text-2xl font-extrabold">{student.student_name}</ProfileHero.Title>
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-600 dark:bg-emerald-950/20 dark:text-emerald-400 border border-emerald-500/20 leading-none">
+                    <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                    {student.status?.toUpperCase() || 'ACTIVE'}
+                  </span>
+                </div>
+                <div className="mt-1">
+                  <ProfileHero.Identity idText={`Student ID: ${student.student_id}`} />
+                </div>
+              </div>
             </div>
-          }
-        />
+          </ProfileHero.Header>
+
+          {/* Divider Line */}
+          <hr className="-mx-5 border-slate-100 dark:border-slate-800/60" />
+
+          {/* Logistics Grid (Middle Tier) */}
+          <div className="flex flex-col gap-4 py-1">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="flex items-center gap-3">
+                <KeyValuePairIcon
+                  icon="menu_book"
+                  size="20px"
+                  className="size-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0"
+                />
+                <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+                  Class 11 Science (CBSE)
+                </span>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <KeyValuePairIcon
+                  icon="calendar_today"
+                  size="20px"
+                  className="size-10 rounded-xl bg-blue-50 dark:bg-blue-950/20 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0"
+                />
+                <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+                  Joined: {student.admission_date ? new Date(student.admission_date).toLocaleDateString() : 'N/A'}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Divider Line */}
+          <hr className="-mx-5 border-slate-100 dark:border-slate-800/60" />
+
+          {/* Action Footer (Bottom Tier) */}
+          <ProfileHero.Actions className="border-t-0 mt-0 pt-0 flex flex-row gap-3 w-full">
+            <Button size="sm" variant="outlined" startIcon="edit" onClick={() => setIsEditModalOpen(true)} className="flex-1 rounded-xl h-11 border-primary text-primary hover:bg-primary/5">Edit</Button>
+            <Button size="sm" variant="outlined" startIcon="chat" className="flex-1 rounded-xl h-11 border-primary text-primary hover:bg-primary/5">Message</Button>
+          </ProfileHero.Actions>
+        </ProfileHero>
 
         {/* Metric Ribbon */}
         <ScrollableRibbon>

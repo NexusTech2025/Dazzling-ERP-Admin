@@ -1,5 +1,6 @@
 import React from 'react';
 import { BadgeCell, ActionCell } from '../../../components/ui/table/cells';
+import TimePill from '../../../components/ui/v2/TimePill';
 
 /**
  * Creates the column schema for the Batch table.
@@ -34,10 +35,14 @@ export const createBatchColumns = ({ onView, onEdit, onDelete, isDeleting } = {}
       header: 'Timing',
       render: (batch) => {
         const hasTime = batch.schedule?.start_time && batch.schedule?.end_time;
+        if (!hasTime) {
+          return <span className="text-slate-600 dark:text-slate-400">TBD</span>;
+        }
         return (
-          <span className="text-slate-600 dark:text-slate-400">
-            {hasTime ? `${batch.schedule.start_time} - ${batch.schedule.end_time}` : 'TBD'}
-          </span>
+          <div className="flex flex-col gap-2 w-fit-content min-w-[100px]">
+            <TimePill value={batch.schedule.start_time} format="12h" variant="success" label="Start" />
+            <TimePill value={batch.schedule.end_time} format="12h" variant="info" label="End" />
+          </div>
         );
       }
     },

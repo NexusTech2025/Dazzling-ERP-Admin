@@ -1,5 +1,6 @@
 import React from 'react';
 import Badge from '../../../components/ui/Badge';
+import { TimeRange } from '../../../components/ui/presets/TimeRange';
 
 /**
  * MobileBatchCard: Renders a specialized list card for mobile viewports
@@ -22,7 +23,7 @@ export const MobileBatchCard = ({
   const endTime = batch.schedule?.end_time || '13:00';
   const capacity = batch.capacity || 30;
   const enrollments = batch.enrollment_count || 0;
-  
+
   const hasDays = batch.schedule?.days_of_week?.length > 0;
   const days = hasDays ? batch.schedule.days_of_week : [];
 
@@ -41,15 +42,14 @@ export const MobileBatchCard = ({
   const initials = name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
 
   return (
-    <div className={`bg-surface-light dark:bg-[#122131] border ${
-      isSelected ? 'border-primary shadow-sm bg-primary/[0.02]' : 'border-border-light dark:border-white/8'
-    } rounded-2xl overflow-hidden shadow-sm flex flex-col transition-all duration-200`}>
-      
+    <div className={`bg-surface-light dark:bg-[#122131] border ${isSelected ? 'border-primary shadow-sm bg-primary/[0.02]' : 'border-border-light dark:border-white/8'
+      } rounded-2xl overflow-hidden shadow-sm flex flex-col transition-all duration-200`}>
+
       {/* Upper Main Body Roster info */}
       <div className="p-4 flex gap-3.5 items-start">
-        
+
         {/* Selection Switch / Avatar */}
-        <div 
+        <div
           onClick={(e) => {
             e.stopPropagation();
             onSelectToggle && onSelectToggle();
@@ -70,9 +70,9 @@ export const MobileBatchCard = ({
             <Badge variant={getStatusVariant(batch.status)}>
               {batch.status}
             </Badge>
-            
+
             {/* Delete shortcut action */}
-            <button 
+            <button
               onClick={(e) => {
                 e.stopPropagation();
                 onDelete && onDelete();
@@ -106,9 +106,8 @@ export const MobileBatchCard = ({
               <span>{room}</span>
             </div>
             <span className="text-slate-300 dark:text-slate-700">•</span>
-            <div className="flex items-center gap-1">
-              <span className="material-symbols-outlined text-[14px] text-text-secondary dark:text-slate-500">schedule</span>
-              <span>{`${startTime} - ${endTime}`}</span>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <TimeRange start={startTime} end={endTime} useBadge badgeVariant="success" />
             </div>
             <span className="text-slate-300 dark:text-slate-700">•</span>
             <div className="flex items-center gap-1">
@@ -121,8 +120,8 @@ export const MobileBatchCard = ({
           {days.length > 0 && (
             <div className="flex flex-wrap gap-1 pt-0.5">
               {days.map((day, idx) => (
-                <span 
-                  key={idx} 
+                <span
+                  key={idx}
                   className="px-2 py-0.5 text-[8px] font-black bg-primary/5 text-primary rounded border border-primary/10 uppercase tracking-widest"
                 >
                   {day.substring(0, 3)}
@@ -135,7 +134,7 @@ export const MobileBatchCard = ({
 
       {/* 3-Column Action Grid Footer */}
       <div className="grid grid-cols-3 border-t border-border-light dark:border-white/8 divide-x divide-border-light dark:divide-white/8 bg-slate-50/50 dark:bg-black/10">
-        
+
         {/* VIEW */}
         <button
           onClick={(e) => {

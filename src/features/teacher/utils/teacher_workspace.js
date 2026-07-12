@@ -3,6 +3,8 @@
  * Pure domain service for tracking and processing teacher attendance matrices.
  */
 
+import { isPastLocalDate, formatStructuredToTime } from '../../../lib/dateUtils';
+
 /**
  * Formats full dates to standard text display.
  * @param {string} dateString - ISO date string from server payload.
@@ -131,4 +133,90 @@ export const calculateMonthlyStats = (indexedData, currentYear, currentMonth) =>
     totalHours: totalHours.toFixed(1),
     avgHours
   };
+};
+
+/**
+ * Builds the initial client-side staged attendance map using zero-refetch filtering.
+ * @param {Array} teachers - List of all faculty profiles
+ * @param {Array} dailyLogs - Network attendance logs for the target date
+ * @param {Array} batches - Active academic cohorts
+ * @param {string} selectedDate - The currently selected register date string (YYYY-MM-DD)
+ * @returns {Object} Constant-time O(1) staged record lookup map
+ */
+export const initializeStagedRecords = (teachers, dailyLogs, batches, selectedDate) => {
+  const staged = {};
+  const todayStr = new Date().toLocaleDateString('sv-SE');
+  const isToday = selectedDate === todayStr;
+  const isPastDate = isPastLocalDate(selectedDate);
+
+  teachers.forEach(teacher => {
+    const teacherBatches = batches.filter(b => b.teacher_id === teacher.teacher_id);
+    
+    teacherBatches.forEach(batch => {
+      const matchingLog = dailyLogs.find(log => 
+        log.teacher_id === teacher.teacher_id && 
+        (log.batch_id === batch.batch_id || !log.batch_id)
+      );
+
+      // Retrieve default check-in and check-out times from batch schedule, falling back to 08:00/16:00
+      const defaultIn = batch.schedule?.start_time || '08:00';
+      const defaultOut = batch.schedule?.end_time || '16:00';
+
+      let statusVal = 'P';
+      let entryTimeStr = defaultIn;
+      let exitTimeStr = defaultOut;
+      let remarksStr = '';
+      const isUnrecordedPast = !matchingLog && isPastDate;
+      const isUnrecordedToday = !matchingLog && isToday;
+
+      if (matchingLog) {
+        if (matchingLog.status === 'Absent' || matchingLog.status === 'A') statusVal = 'A';
+        else if (matchingLog.status === 'Late' || matchingLog.status === 'L') statusVal = 'L';
+        else statusVal = 'P';
+
+        entryTimeStr = formatStructuredToTime(matchingLog.entry_time) || defaultIn;
+        exitTimeStr = formatStructuredToTime(matchingLog.exit_time) || defaultOut;
+        remarksStr = matchingLog.remarks || '';
+      } else if (isToday) {
+        statusVal = ''; 
+      }
+
+      const compositeKey = `${teacher.teacher_id}_${batch.batch_id}`;
+      staged[compositeKey] = {
+        id: compositeKey,
+        teacher_id: teacher.teacher_id,
+        batch_id: batch.batch_id,
+        batch_name: batch.batch_name || batch.name || batch.batch_id,
+        full_name: teacher.full_name,
+        phone: teacher.mobile_number,
+        status: statusVal,
+        entry_time: entryTimeStr,
+        exit_time: exitTimeStr,
+        remarks: remarksStr,
+        isUnmarkedPastDate: isUnrecordedPast,
+        isUnmarkedCurrentDate: isUnrecordedToday
+      };
+    });
+  });
+
+  return staged;
+};
+
+/**
+ * Computes live operational dashboard metrics from the active active records list.
+ * @param {Array} records - The active array subset of attendance objects
+ * @returns {Object} Aggregated stats counters
+ */
+export const calculateAttendanceMetrics = (records) => {
+  const total = records.length;
+  const present = records.filter(t => t.status === 'P' && !t.isUnmarkedPastDate && !t.isUnmarkedCurrentDate).length;
+  const absent = records.filter(t => t.status === 'A' && !t.isUnmarkedPastDate && !t.isUnmarkedCurrentDate).length;
+  const late = records.filter(t => t.status === 'L' && !t.isUnmarkedPastDate && !t.isUnmarkedCurrentDate).length;
+  const unrecorded = records.filter(t => t.isUnmarkedPastDate || t.isUnmarkedCurrentDate).length;
+  
+  const attendanceRate = total > 0 
+    ? Math.round(((present + late) / (total - unrecorded || 1)) * 100) 
+    : 0;
+
+  return { total, present, absent, late, unrecorded, attendanceRate };
 };
