@@ -7,7 +7,7 @@ const TimeFieldContext = createContext(null);
 /**
  * Main Orchestrator Provider Component
  */
-export const TimeField = ({ 
+export const TimeField = ({
   children,
   value,
   onChange,
@@ -28,18 +28,18 @@ export const TimeField = ({
   });
 
   // JS-Conditional device tracking to alter interactive behavior
-  const isMobile = useIsMobile(768); 
+  const isMobile = useIsMobile(768);
 
   return (
-    <TimeFieldContext.Provider value={{ 
-      ...headlessEngine, 
+    <TimeFieldContext.Provider value={{
+      ...headlessEngine,
       value,
       onChange,
-      disabled, 
-      readOnly, 
-      error, 
+      disabled,
+      readOnly,
+      error,
       required,
-      isMobile 
+      isMobile
     }}>
       <div className="flex flex-col space-y-1 w-full">
         {children}
@@ -67,16 +67,15 @@ const Label = ({ children }) => {
 const Input = ({ children }) => {
   const { error, disabled, readOnly, isMobile, value, onChange } = useContext(TimeFieldContext);
   const nativeInputRef = useRef(null);
-  
+
   return (
-    <div className={`flex items-center bg-white dark:bg-[#0a1420] border rounded-lg px-3 py-1.5 transition-all duration-200 relative focus-within:ring-2 focus-within:ring-indigo-500/20 ${
-      error 
-        ? 'border-rose-500 focus-within:border-rose-500' 
+    <div className={`flex items-center bg-white dark:bg-[#0a1420] border rounded-lg px-3 py-1.5 transition-all duration-200 relative focus-within:ring-2 focus-within:ring-indigo-500/20 ${error
+        ? 'border-rose-500 focus-within:border-rose-500'
         : 'border-border-light dark:border-white/8 focus-within:border-indigo-500'
-    } ${disabled ? 'opacity-50 bg-slate-50 pointer-events-none' : ''}`}>
-      
+      } ${disabled ? 'opacity-50 bg-slate-50 pointer-events-none' : ''}`}>
+
       <span className="material-symbols-outlined text-text-secondary text-xs mr-2 select-none">schedule</span>
-      
+
       {/* Visual Formatted Segment Layer */}
       <div className="flex items-center select-none font-mono text-xs font-bold text-text-main dark:text-white z-10">
         {children}
@@ -92,7 +91,7 @@ const Input = ({ children }) => {
           type="time"
           value={value || ''}
           onChange={(e) => onChange(e.target.value)}
-          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20 text-base" 
+          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20 text-base"
           style={{ fontSize: '16px' }} // Forces iOS Safari to block unwanted viewport auto-zooming
         />
       )}
@@ -107,17 +106,17 @@ const Segment = ({ type }) => {
   const context = useContext(TimeFieldContext);
   if (!context) return null;
 
-  const { 
-    segments, 
-    segmentRefs, 
-    setActiveSegmentIndex, 
-    increment, 
-    decrement, 
-    focusNext, 
-    focusPrevious, 
-    handleKeyPress, 
+  const {
+    segments,
+    segmentRefs,
+    setActiveSegmentIndex,
+    increment,
+    decrement,
+    focusNext,
+    focusPrevious,
+    handleKeyPress,
     clearSegment,
-    isMobile 
+    isMobile
   } = context;
 
   const segmentIndex = segments.findIndex(s => s.type === type);
@@ -127,7 +126,7 @@ const Segment = ({ type }) => {
 
   const handleKeyDown = (e) => {
     if (!segmentData.editable) return;
-    
+
     switch (e.key) {
       case 'ArrowUp':
         e.preventDefault();
@@ -174,9 +173,8 @@ const Segment = ({ type }) => {
       aria-valuetext={segmentData.text}
       onFocus={() => !isMobile && setActiveSegmentIndex(segmentIndex)}
       onKeyDown={handleKeyDown}
-      className={`px-0.5 rounded outline-none select-none transition-colors tabular-nums min-w-[14px] text-center focus:bg-indigo-500 focus:text-white ${
-        segmentData.editable && !isMobile ? 'cursor-text focus:z-30' : 'cursor-default text-text-secondary'
-      }`}
+      className={`px-0.5 rounded outline-none select-none transition-colors tabular-nums min-w-[14px] text-center focus:bg-indigo-500 focus:text-white ${segmentData.editable && !isMobile ? 'cursor-text focus:z-30' : 'cursor-default text-text-secondary'
+        }`}
     >
       {segmentData.text}
     </div>

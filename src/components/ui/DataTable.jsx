@@ -1,5 +1,41 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import { TableContainer, TableHeader, TableBody, TableRow, TableHead, TableCell, TableLoading, TableError, TableEmpty } from './table';
+
+// Decouple the row mapping into a memoized component to optimize keystroke rendering latency
+const DataTableRow = React.memo(({ row, columns }) => {
+  return (
+    <TableRow>
+      {columns.map((col, colIndex) => (
+        <TableCell key={colIndex} align={col.align} className={col.className}>
+          {col.cell 
+            ? col.cell(row) 
+            : col.render 
+            ? col.render(row) 
+            : (typeof col.accessor === 'function' ? col.accessor(row) : row[col.accessor] || '')
+          }
+        </TableCell>
+      ))}
+    </TableRow>
+  );
+}, (prevProps, nextProps) => {
+  // Deep-check row status, times, remarks, and dirty state to prevent leaks on column reference shifts
+  return (
+    prevProps.row.student_id === nextProps.row.student_id &&
+    prevProps.row.status === nextProps.row.status &&
+    prevProps.row.entry_time === nextProps.row.entry_time &&
+    prevProps.row.exit_time === nextProps.row.exit_time &&
+    prevProps.row.remarks === nextProps.row.remarks &&
+    prevProps.row.isRowDirty === nextProps.row.isRowDirty
+  );
+});
+
+DataTableRow.propTypes = {
+  row: PropTypes.object.isRequired,
+  columns: PropTypes.arrayOf(PropTypes.object).isRequired
+};
+
+DataTableRow.displayName = 'DataTableRow';
 
 const DataTable = ({
   title,
@@ -62,13 +98,11 @@ const DataTable = ({
                 </TableRow>
               ) : (
                 data.map((row, rowIndex) => (
-                  <TableRow key={row.id || rowIndex}>
-                    {columns.map((col, colIndex) => (
-                      <TableCell key={colIndex} align={col.align} className={col.className}>
-                        {col.cell ? col.cell(row) : col.render ? col.render(row) : (typeof col.accessor === 'function' ? col.accessor(row) : row[col.accessor] || '')}
-                      </TableCell>
-                    ))}
-                  </TableRow>
+                  <DataTableRow 
+                    key={row.id || rowIndex} 
+                    row={row} 
+                    columns={columns} 
+                  />
                 ))
               )}
             </TableBody>

@@ -80,6 +80,13 @@ export const ENTITY_CONFIGS = {
     detailKey: (id) => queryKeys.batch_allocation.detail(id),
     isValidDetail: (data) =>
       data && typeof data === 'object' && 'allocation_id' in data && 'student_id' in data
+  },
+  batchAttendance: {
+    primaryKey: 'attendance_id',
+    listKey: (filter) => queryKeys.attendance.batch(filter.batchId, filter.date || 'all'),
+    listsKey: () => queryKeys.attendance.all,
+    detailKey: (id) => [...queryKeys.attendance.all, 'detail', id],
+    isValidDetail: (data) => data && typeof data === 'object' && 'attendance_id' in data
   }
 };
 

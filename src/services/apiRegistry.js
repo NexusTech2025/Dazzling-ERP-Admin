@@ -84,7 +84,7 @@ export const API_REGISTRY = {
   },
   ATTENDANCE: {
     // Queries daily check-in logs for students in a specific batch on a given date.
-    STUDENT_GET_BATCH_REGISTRY: 'student_query_attendance',
+    STUDENT_GET_BATCH_ATTENDANCE: 'student_query_attendance',
 
     // Retrieves a grid matrix showing historical attendance status over multiple days for a batch.
     STUDENT_GET_ATTENDANCE: 'student_query_attendance',
