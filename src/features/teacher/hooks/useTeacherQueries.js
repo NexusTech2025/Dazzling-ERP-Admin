@@ -504,3 +504,81 @@ export const useDeleteTeacherSalaryConfigMutation = () => {
     }
   });
 };
+
+/**
+ * Hook for querying payment transactions for a given teacher.
+ * Resolves cached records automatically or fetches fresh logs via the generic data query action.
+ * @param {string} teacherId - The target faculty member's system identifier.
+ * @param {Object} [options={}] - Standard TanStack Query parameter overrides.
+ */
+export const useTeacherPaymentTransactionsQuery = (teacherId, options = {}) => {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useQuery({
+    queryKey: [...queryKeys.teacher.detail(teacherId), 'paymentTransactions'],
+    queryFn: async ({ signal }) => {
+      const startTime = performance.now();
+      const result = await resolveList(
+        queryClient,
+        'teacherPaymentTransaction',
+        { teacherId },
+        async () => {
+          const response = await apiClient.executeAction(
+            API_REGISTRY.DATA.QUERY,
+            { target: 'TeacherPaymentTransaction', where: { teacher_id: teacherId } },
+            token,
+            { signal }
+          );
+          if (!response.success) {
+            throw new Error(response.message || 'Failed to fetch payment transactions');
+          }
+          return response.data?.data || [];
+        },
+        options
+      );
+      console.log(`[useTeacherPaymentTransactionsQuery] Resolution completed in ${(performance.now() - startTime).toFixed(2)}ms`);
+      return result;
+    },
+    enabled: !!token && !!teacherId,
+    staleTime: 1000 * 60 * 10,
+    initialData: () => {
+      return getCachedList(queryClient, 'teacherPaymentTransaction', { teacherId });
+    },
+    ...options
+  });
+};
+
+/**
+ * Mutation hook for recording a new payment transaction entry to the ledger.
+ * Invalidates the payments lists queries upon successful commitment to sheets.
+ * @returns {MutationResult} React Query mutation trigger function.
+ */
+export const useRecordTeacherPaymentMutation = () => {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ teacherId, paymentType, amount, paymentMethod, transactionDate, referenceNumber, salaryMonth, notes, options }) =>
+      apiClient.executeAction(
+        API_REGISTRY.STAFF.RECORD_PAYMENT,
+        {
+          teacher_id: teacherId,
+          payment_type: paymentType,
+          amount: Number(amount),
+          payment_method: paymentMethod,
+          transaction_date: transactionDate,
+          reference_number: referenceNumber || null,
+          salary_month: salaryMonth,
+          notes: notes || null
+        },
+        token,
+        options
+      ),
+    onSuccess: (response, { teacherId }) => {
+      if (response.success) {
+        queryClient.invalidateQueries({ queryKey: [...queryKeys.teacher.detail(teacherId), 'paymentTransactions'] });
+      }
+    }
+  });
+};
