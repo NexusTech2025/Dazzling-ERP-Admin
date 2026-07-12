@@ -93,7 +93,7 @@ export const StudentAttendanceTable = ({
               ) : (
                 students.map((student) => (
                   <StudentTableRow
-                    key={student.student_id}
+                    key={student.id}
                     student={student}
                     isEditingDisabled={isEditingDisabled}
                     onStatusChange={onStatusChange}

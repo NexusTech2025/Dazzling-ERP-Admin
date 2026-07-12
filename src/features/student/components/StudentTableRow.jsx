@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { TableRow, TableCell } from '../../../components/ui/table';
+import TimePill from '../../../components/ui/v2/TimePill';
 
 /**
  * StudentTableRow: Isolated row component rendering daily attendance controls for a student.
@@ -29,7 +30,7 @@ export const StudentTableRow = React.memo(({
 
   const handleRemarksBlur = () => {
     if (localRemarks !== student.remarks) {
-      onRemarksChange(student.student_id, localRemarks);
+      onRemarksChange(student.id, localRemarks);
     }
   };
 
@@ -72,7 +73,7 @@ export const StudentTableRow = React.memo(({
           <button
             type="button"
             disabled={isEditingDisabled}
-            onClick={() => onStatusChange(student.student_id, 'P')}
+            onClick={() => onStatusChange(student.id, 'P')}
             className={`w-9 h-9 rounded-lg text-[24px] font-black uppercase transition-all duration-200 cursor-pointer flex items-center justify-center ${student.status === 'P' && !student.isUnmarkedPastDate && !student.isUnmarkedCurrentDate
                 ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/20 scale-105'
                 : 'text-text-secondary dark:text-slate-400 hover:text-text-main dark:hover:text-white'
@@ -83,7 +84,7 @@ export const StudentTableRow = React.memo(({
           <button
             type="button"
             disabled={isEditingDisabled}
-            onClick={() => onStatusChange(student.student_id, 'A')}
+            onClick={() => onStatusChange(student.id, 'A')}
             className={`w-9 h-9 rounded-lg text-[24px] font-black uppercase transition-all duration-200 cursor-pointer flex items-center justify-center ${student.status === 'A' && !student.isUnmarkedPastDate && !student.isUnmarkedCurrentDate
                 ? 'bg-rose-500 text-white shadow-md shadow-rose-500/20 scale-105'
                 : 'text-text-secondary dark:text-slate-400 hover:text-text-main dark:hover:text-white'
@@ -94,7 +95,7 @@ export const StudentTableRow = React.memo(({
           <button
             type="button"
             disabled={isEditingDisabled}
-            onClick={() => onStatusChange(student.student_id, 'L')}
+            onClick={() => onStatusChange(student.id, 'L')}
             className={`w-9 h-9 rounded-lg text-[24px] font-black uppercase transition-all duration-200 cursor-pointer flex items-center justify-center ${student.status === 'L' && !student.isUnmarkedPastDate && !student.isUnmarkedCurrentDate
                 ? 'bg-emerald-500 text-white dark:bg-amber-500 shadow-md dark:shadow-amber-500/20 scale-105'
                 : 'text-text-secondary dark:text-slate-400 hover:text-text-main dark:hover:text-white'
@@ -107,24 +108,36 @@ export const StudentTableRow = React.memo(({
 
       {/* Entry Time / Check-In Column */}
       <TableCell className="w-44">
-        <input
-          type="time"
-          value={student.entry_time}
-          disabled={isEditingDisabled || isAbsent}
-          onChange={(e) => onTimeChange(student.student_id, 'entry_time', e.target.value)}
-          className="w-full bg-white dark:bg-[#0a1420] border border-border-light dark:border-white/8 rounded-lg px-3 py-1.5 text-xs font-bold text-text-main dark:text-white outline-none focus:border-indigo-500 transition-all disabled:opacity-50 disabled:bg-slate-100 dark:disabled:bg-slate-900"
-        />
+        {isEditingDisabled || isAbsent ? (
+          <div className="flex justify-center">
+            <TimePill value={student.entry_time} format="12h" variant="success" label="In" />
+          </div>
+        ) : (
+          <input
+            type="time"
+            value={student.entry_time}
+            disabled={isEditingDisabled || isAbsent}
+            onChange={(e) => onTimeChange(student.id, 'entry_time', e.target.value)}
+            className="w-full bg-white dark:bg-[#0a1420] border border-border-light dark:border-white/8 rounded-lg px-3 py-1.5 text-xs font-bold text-text-main dark:text-white outline-none focus:border-indigo-500 transition-all disabled:opacity-50 disabled:bg-slate-100 dark:disabled:bg-slate-900"
+          />
+        )}
       </TableCell>
 
       {/* Exit Time / Check-Out Column */}
       <TableCell className="w-44">
-        <input
-          type="time"
-          value={student.exit_time}
-          disabled={isEditingDisabled || isAbsent}
-          onChange={(e) => onTimeChange(student.student_id, 'exit_time', e.target.value)}
-          className="w-full bg-white dark:bg-[#0a1420] border border-border-light dark:border-white/8 rounded-lg px-3 py-1.5 text-xs font-bold text-text-main dark:text-white outline-none focus:border-indigo-500 transition-all disabled:opacity-50 disabled:bg-slate-100 dark:disabled:bg-slate-900"
-        />
+        {isEditingDisabled || isAbsent ? (
+          <div className="flex justify-center">
+            <TimePill value={student.exit_time} format="12h" variant="info" label="Out" />
+          </div>
+        ) : (
+          <input
+            type="time"
+            value={student.exit_time}
+            disabled={isEditingDisabled || isAbsent}
+            onChange={(e) => onTimeChange(student.id, 'exit_time', e.target.value)}
+            className="w-full bg-white dark:bg-[#0a1420] border border-border-light dark:border-white/8 rounded-lg px-3 py-1.5 text-xs font-bold text-text-main dark:text-white outline-none focus:border-indigo-500 transition-all disabled:opacity-50 disabled:bg-slate-100 dark:disabled:bg-slate-900"
+          />
+        )}
       </TableCell>
 
       {/* Remarks Column */}

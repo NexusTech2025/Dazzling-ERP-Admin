@@ -10,9 +10,14 @@ import useIsMobile from '../../../hooks/useIsMobile';
 // Layout & UI Components
 import MainLayout from '../../../components/layout/MainLayout';
 import Breadcrumbs from '../../../components/ui/Breadcrumbs';
-import { SearchInput } from '../../../components/ui/filters';
-import { GenericSelectDropdown } from '../../../components/ui/v2/GenericSelectDropdown';
-import LowDensityCard from '../../../components/ui/v2/cards/LowDensityCard';
+import {
+  SearchFilter,
+  AttendanceStatusFilter,
+  SegmentFilter,
+  ClassFilter,
+  BoardFilter,
+  BatchFilter
+} from '../../batch/components/BatchFilters';
 import RefreshButton from '../../../components/ui/btn/RefreshButton';
 import KpiGrid from '../../../components/ui/v2/KpiGrid';
 import KpiCard from '../../../components/ui/v2/KpiCard';
@@ -126,10 +131,29 @@ export const StudentAttendanceManager = () => {
         }
       }
 
-      const entryTimeStr = formatStructuredToTime(rec.entry_time) || '08:00';
-      const exitTimeStr = formatStructuredToTime(rec.exit_time) || '13:00';
+      // Resolve default entry/exit times dynamically from batch schedule
+      const studentBatch = batches.find(b => b.batch_id === student.batch_id);
+      let defaultIn = '08:00';
+      let defaultOut = '13:00';
+      if (studentBatch) {
+        let scheduleObj = studentBatch.schedule;
+        if (typeof scheduleObj === 'string') {
+          try {
+            scheduleObj = JSON.parse(scheduleObj);
+          } catch (e) {}
+        }
+        if (scheduleObj) {
+          defaultIn = scheduleObj.start_time || defaultIn;
+          defaultOut = scheduleObj.end_time || defaultOut;
+        }
+      }
 
-      initial[student.student_id] = {
+      const entryTimeStr = formatStructuredToTime(rec.entry_time) || defaultIn;
+      const exitTimeStr = formatStructuredToTime(rec.exit_time) || defaultOut;
+      const compositeId = `${student.student_id}-${student.batch_id}`;
+
+      initial[compositeId] = {
+        id: compositeId,
         student_id: student.student_id,
         student_name: student.student_name,
         roll_number: student.roll_number,
@@ -144,7 +168,7 @@ export const StudentAttendanceManager = () => {
     });
 
     return initial;
-  }, [registry, orchestratedStudents, selectedDate]);
+  }, [registry, orchestratedStudents, selectedDate, batches]);
 
   // Merge baseline with modifications
   const stagedRecords = useMemo(() => {
@@ -348,121 +372,36 @@ export const StudentAttendanceManager = () => {
   // Filters slot content
   const filters = (
     <>
-      <div className="md:col-span-3 relative">
-        <SearchInput
-          value={searchQuery}
-          onChange={setSearchQuery}
-          placeholder="Search student..."
-        />
-      </div>
+      <SearchFilter
+        value={searchQuery}
+        onChange={setSearchQuery}
+        placeholder="Search student..."
+      />
       <div className="md:col-span-9 flex flex-wrap gap-2 items-center">
-
-        {/* Attendance Status Filters */}
-        <div className="flex items-center gap-1 bg-slate-100 dark:bg-black/20 p-1 border border-border-light dark:border-white/5 rounded-xl">
-          {['ALL', 'P', 'A', 'L'].map(st => (
-            <button
-              key={st}
-              onClick={() => setStatusFilter(st)}
-              className={`px-3 py-1.5 rounded-lg text-[10px] font-bold tracking-wider transition-all cursor-pointer ${statusFilter === st
-                ? 'bg-white dark:bg-slate-700 text-text-main dark:text-white shadow-sm ring-1 ring-black/5'
-                : 'text-text-secondary dark:text-slate-400 hover:text-text-main dark:hover:text-white'
-                }`}
-            >
-              {st === 'ALL' ? 'All' : st === 'P' ? 'Present' : st === 'A' ? 'Absent' : 'Late'}
-            </button>
-          ))}
-        </div>
-
-        {/* Course Type Segement filter */}
-        <div className="w-[160px]">
-          <GenericSelectDropdown
-            items={menus.segments.map(seg => ({ id: seg, name: seg }))}
-            selectedId={segmentFilter}
-            onChange={setSegmentFilter}
-            idProp="id"
-            labelProp="name"
-            searchFields={["name"]}
-            selectedViewMode="one-line"
-            placeholder="All Segments"
-            renderItem={(item, isSelected) => (
-              <div className="py-2.5 px-4 text-xs font-bold text-text-main dark:text-white flex items-center justify-between">
-                <span>{item.name}</span>
-                {isSelected && <span className="material-symbols-outlined text-sm text-primary">check</span>}
-              </div>
-            )}
-          />
-        </div>
-
-        {/* Class Filter */}
-        <div className="w-[140px]">
-          <GenericSelectDropdown
-            items={(menus.classes || []).map(cl => ({ id: cl, name: `Class ${cl}` }))}
-            selectedId={classFilter}
-            onChange={setClassFilter}
-            idProp="id"
-            labelProp="name"
-            searchFields={["name"]}
-            selectedViewMode="one-line"
-            placeholder="All Classes"
-            renderItem={(item, isSelected) => (
-              <div className="py-2.5 px-4 text-xs font-bold text-text-main dark:text-white flex items-center justify-between">
-                <span>{item.name}</span>
-                {isSelected && <span className="material-symbols-outlined text-sm text-primary">check</span>}
-              </div>
-            )}
-          />
-        </div>
-
-        {/* Board Filter */}
-        <div className="w-[140px]">
-          <GenericSelectDropdown
-            items={(menus.boards || []).map(b => ({ id: b, name: b }))}
-            selectedId={boardFilter}
-            onChange={setBoardFilter}
-            idProp="id"
-            labelProp="name"
-            searchFields={["name"]}
-            selectedViewMode="one-line"
-            placeholder="All Boards"
-            renderItem={(item, isSelected) => (
-              <div className="py-2.5 px-4 text-xs font-bold text-text-main dark:text-white flex items-center justify-between">
-                <span>{item.name}</span>
-                {isSelected && <span className="material-symbols-outlined text-sm text-primary">check</span>}
-              </div>
-            )}
-          />
-        </div>
-
-        {/* Batches Filters */}
-        <div className="w-[180px]">
-          <GenericSelectDropdown
-            items={batches}
-            selectedId={selectedBatchId}
-            onChange={setSelectedBatchId}
-            idProp="batch_id"
-            labelProp="batch_name"
-            searchFields={["batch_name"]}
-            selectedViewMode="one-line"
-            placeholder="Select Batch"
-            dropdownWidth="w-[380px] md:w-[420px]"
-            renderItem={(item, isSelected) => {
-              const initials = item.batch_name ? item.batch_name.substring(0, 2).toUpperCase() : "BT";
-              return (
-                <LowDensityCard
-                  variant="selection-card"
-                  title={item.batch_name}
-                  subtitle1={`Class ${item.class_level || 11}`}
-                  subtitle2={`${item.course?.metadata?.medium || 'English'} • ${item.branch_name || 'Main Campus'}`}
-                  avatarText={initials}
-                  enrolled={item.enrolled_students || 0}
-                  capacity={item.capacity || 30}
-                  isSelected={isSelected}
-                />
-              );
-            }}
-          />
-        </div>
-
+        <AttendanceStatusFilter
+          value={statusFilter}
+          onChange={setStatusFilter}
+        />
+        <SegmentFilter
+          value={segmentFilter}
+          onChange={setSegmentFilter}
+          segments={menus.segments}
+        />
+        <ClassFilter
+          value={classFilter}
+          onChange={setClassFilter}
+          classes={menus.classes}
+        />
+        <BoardFilter
+          value={boardFilter}
+          onChange={setBoardFilter}
+          boards={menus.boards}
+        />
+        <BatchFilter
+          value={selectedBatchId}
+          onChange={setSelectedBatchId}
+          batches={batches}
+        />
         <input
           type="date"
           value={selectedDate}
@@ -583,21 +522,11 @@ export const StudentAttendanceManager = () => {
               <div className="flex items-center gap-4">
                 <span className="text-sm font-bold text-text-main dark:text-white">Please select a batch to view and mark attendance:</span>
                 <div className="w-[200px]">
-                  <GenericSelectDropdown
-                    items={batches}
-                    selectedId={selectedBatchId}
+                  <BatchFilter
+                    value={selectedBatchId}
                     onChange={setSelectedBatchId}
-                    idProp="batch_id"
-                    labelProp="batch_name"
-                    searchFields={["batch_name"]}
-                    selectedViewMode="one-line"
-                    placeholder="Select Batch"
-                    renderItem={(item, isSelected) => (
-                      <div className="py-2.5 px-4 text-xs font-bold text-text-main dark:text-white flex items-center justify-between">
-                        <span>{item.batch_name}</span>
-                        {isSelected && <span className="material-symbols-outlined text-sm text-primary">check</span>}
-                      </div>
-                    )}
+                    batches={batches}
+                    dropdownWidth="w-[280px]"
                   />
                 </div>
               </div>

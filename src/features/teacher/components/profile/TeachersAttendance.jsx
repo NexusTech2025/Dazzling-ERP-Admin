@@ -1,30 +1,11 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useTeacherAttendanceQuery, useUpdateTeacherAttendanceMutation } from '../../hooks/useTeacherQueries';
 import { useAuth } from '../../../../context/AuthContextCore';
-import { isPastLocalDate } from '../../../../lib/dateUtils';
+import { isPastLocalDate, parseTimeToStructured, formatStructuredToTime } from '../../../../lib/dateUtils';
 import KpiCard from '../../../../components/ui/v2/KpiCard';
 import KpiGrid from '../../../../components/ui/v2/KpiGrid';
 import { normalizeAttendanceList, calculateMonthlyStats } from '../../utils/teacher_workspace';
-
-// Helper utilities for structured time objects
-const parseTimeToStructured = (timeStr) => {
-  if (!timeStr) return null;
-  const [hourStr, minStr] = timeStr.split(':');
-  let hour = parseInt(hourStr, 10);
-  const minute = parseInt(minStr, 10);
-  const period = hour >= 12 ? 'PM' : 'AM';
-  if (hour > 12) hour = hour - 12;
-  if (hour === 0) hour = 12;
-  return { hour, minute, period };
-};
-
-const formatStructuredToTime = (structTime) => {
-  if (!structTime || typeof structTime !== 'object') return '';
-  let { hour, minute, period } = structTime;
-  if (period === 'PM' && hour < 12) hour += 12;
-  if (period === 'AM' && hour === 12) hour = 0;
-  return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
-};
+import TimeFieldInput from '../../../batch/components/FormField/TimeFieldInput';
 
 const TeachersAttendance = ({ teacherId }) => {
   const { user } = useAuth();
@@ -473,21 +454,19 @@ const PunchEditorPanel = ({ day, status, inTimeStr, outTimeStr, remarks, onClose
       {localStatus !== 'absent' && (
         <div className="flex gap-3">
           <div className="flex flex-col gap-1.5 flex-1">
-            <label className="text-[9px] font-black text-text-secondary dark:text-slate-400 uppercase tracking-wide">In</label>
-            <input
-              type="time"
+            <TimeFieldInput
+              label="In"
               value={localIn}
-              onChange={(e) => setLocalIn(e.target.value)}
-              className="w-full text-sm bg-white dark:bg-[#0a1420] border border-border-light dark:border-white/8 rounded-xl px-3 py-2 text-text-main dark:text-white outline-none focus:border-indigo-500"
+              onChange={setLocalIn}
+              is24Hour={false}
             />
           </div>
           <div className="flex flex-col gap-1.5 flex-1">
-            <label className="text-[9px] font-black text-text-secondary dark:text-slate-400 uppercase tracking-wide">Out</label>
-            <input
-              type="time"
+            <TimeFieldInput
+              label="Out"
               value={localOut}
-              onChange={(e) => setLocalOut(e.target.value)}
-              className="w-full text-sm bg-white dark:bg-[#0a1420] border border-border-light dark:border-white/8 rounded-xl px-3 py-2 text-text-main dark:text-white outline-none focus:border-indigo-500"
+              onChange={setLocalOut}
+              is24Hour={false}
             />
           </div>
         </div>
