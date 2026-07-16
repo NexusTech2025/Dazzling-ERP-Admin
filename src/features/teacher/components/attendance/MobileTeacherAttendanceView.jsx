@@ -1,11 +1,11 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import MobileBaseLayout from '../../../../components/layout/MobileBaseLayout';
 import { AttendanceStatsGrid } from './AttendanceStatsGrid';
-import { AttendanceStatusButtons } from './AttendanceStatusButtons';
 import { MobilePunchEditorDrawer } from '../../../../components/domain/MobilePunchEditorDrawer';
-import { AttendanceActionFooter } from './AttendanceActionFooter';
 import Button from '../../../../components/ui/v2/Button';
 import TimePill from '../../../../components/ui/v2/TimePill';
+import { AttendanceStatusButtons } from './AttendanceStatusButtons';
 
 export const MobileTeacherAttendanceView = ({
   filteredTeachers,
@@ -92,12 +92,17 @@ export const MobileTeacherAttendanceView = ({
       {/* Sticky Bottom Actions Bar Slot */}
       {isDirty && (
         <MobileBaseLayout.ActionBarSlot>
-          <AttendanceActionFooter
-            isDirty={isDirty}
-            isSaving={saveStatus === 'saving'}
-            onReset={actions.handleReset}
-            onSave={actions.handleSave}
-          />
+          <div className="p-4 bg-surface-light dark:bg-[#122131] border-t border-border-light dark:border-white/10 flex items-center justify-between gap-4 w-full">
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-amber-500 animate-pulse text-lg">warning</span>
+              <span className="text-xs font-bold text-text-main dark:text-white">Unsaved Staged Entries Active</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="outlined" size="sm" onClick={actions.handleReset} className="font-bold text-[10px]">Reset</Button>
+              <Button variant="success" size="sm" onClick={actions.commitDeltaChanges} disabled={saveStatus === 'saving'} className="font-bold text-[10px]">Save (Delta)</Button>
+              <Button variant="contained" size="sm" className="bg-slate-800 hover:bg-slate-900 text-white font-bold text-[10px]" onClick={actions.commitFullRosterSnapshot} disabled={saveStatus === 'saving'}>Force Full</Button>
+            </div>
+          </div>
         </MobileBaseLayout.ActionBarSlot>
       )}
 
@@ -113,6 +118,20 @@ export const MobileTeacherAttendanceView = ({
       )}
     </MobileBaseLayout>
   );
+};
+
+MobileTeacherAttendanceView.propTypes = {
+  filteredTeachers: PropTypes.array.isRequired,
+  isLoading: PropTypes.bool.isRequired,
+  isEditingDisabled: PropTypes.bool.isRequired,
+  actions: PropTypes.object.isRequired,
+  activeMobileEditingRowId: PropTypes.string,
+  setActiveMobileEditingRowId: PropTypes.func.isRequired,
+  activeMobileEditingRow: PropTypes.object,
+  metrics: PropTypes.object.isRequired,
+  filters: PropTypes.node.isRequired,
+  isDirty: PropTypes.bool.isRequired,
+  saveStatus: PropTypes.string
 };
 
 export default MobileTeacherAttendanceView;

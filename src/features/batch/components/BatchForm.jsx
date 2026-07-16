@@ -1,5 +1,5 @@
 import React from 'react';
-import { Controller } from 'react-hook-form';
+import { Controller, useWatch } from 'react-hook-form';
 import useBatchForm from '../hooks/useBatchForm';
 
 // Design System Core UI imports
@@ -13,7 +13,7 @@ import TextInput from '../../../components/ui/v2/TextInput';
 import DateInput from '../../../components/ui/v2/DateInput';
 import BaseInput from '../../../components/ui/v2/BaseInput';
 import { LowDensityCard } from '../../../components/ui/v2/cards';
-import { Tag } from '../../../components/ui/v2/indicators';
+import { Tag, Chip } from '../../../components/ui/v2/indicators';
 import Breadcrumbs from '../../../components/ui/Breadcrumbs';
 import MainLayout from '../../../components/layout/MainLayout';
 
@@ -21,9 +21,16 @@ const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 // Isolated sub-component to prevent parent re-renders on every batch name keystroke
 const HeaderBatchName = ({ control }) => {
-  const { watch } = useBatchForm({ initialData: null, onSubmit: () => {} });
-  // Just use a simple watch from standard react-hook-form if we want, or pass watch from hook
-  return null; 
+  const batchName = useWatch({ control, name: 'batch_name', defaultValue: '' });
+  if (!batchName) return null;
+  return (
+    <>
+      <span className="text-slate-300 dark:text-slate-700">•</span>
+      <span className="text-xs text-text-secondary dark:text-slate-400 font-semibold truncate max-w-[200px]">
+        {batchName}
+      </span>
+    </>
+  );
 };
 
 const BatchForm = ({ initialData = null, onSubmit, onCancel, isSubmitting = false, error = null }) => {
@@ -47,15 +54,25 @@ const BatchForm = ({ initialData = null, onSubmit, onCancel, isSubmitting = fals
     isEditMode
   } = useBatchForm({ initialData, onSubmit });
 
-  const { register, control, watch, formState: { errors } } = formInstance;
-
-  const watchedBatchName = watch('batch_name');
+  const { register, control, formState: { errors } } = formInstance;
 
   const crumbs = React.useMemo(() => [
     { label: 'Dashboard', path: '/admin/dashboard', icon: 'home' },
     { label: 'Batches', path: '/admin/batches' },
     { label: isEditMode ? 'Edit Batch' : 'New Batch' }
   ], [isEditMode]);
+
+  // Extract flat collection of validation error strings for the diagnostic banner
+  const validationErrorMessages = React.useMemo(() => {
+    const list = [];
+    const extract = (obj) => {
+      if (!obj || typeof obj !== 'object') return;
+      if (obj.message) list.push(obj.message);
+      Object.values(obj).forEach(extract);
+    };
+    extract(errors);
+    return list;
+  }, [errors]);
 
   return (
     <MainLayout
@@ -66,14 +83,7 @@ const BatchForm = ({ initialData = null, onSubmit, onCancel, isSubmitting = fals
             <div className="flex items-center gap-2">
               <span className="material-symbols-outlined text-primary text-lg">calendar_month</span>
               <span className="text-sm font-bold text-text-main dark:text-white">{isEditMode ? 'Update Batch' : 'Create Batch'}</span>
-              {watchedBatchName && (
-                <>
-                  <span className="text-slate-300 dark:text-slate-700">•</span>
-                  <span className="text-xs text-text-secondary dark:text-slate-400 font-semibold truncate max-w-[200px]">
-                    {watchedBatchName}
-                  </span>
-                </>
-              )}
+              <HeaderBatchName control={control} />
             </div>
           </div>
         </div>
@@ -87,10 +97,18 @@ const BatchForm = ({ initialData = null, onSubmit, onCancel, isSubmitting = fals
             <p className="text-text-secondary text-base">{isEditMode ? 'Configure existing batch details and scheduling parameters.' : 'Configure a new batch for your institute, assign branches, faculty and define scheduling.'}</p>
           </div>
 
-          {error && (
-            <div className="mb-6 bg-red-50 dark:bg-red-900/20 text-red-600 p-4 rounded-lg border border-red-100 dark:border-red-800 flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
-              <span className="material-symbols-outlined">error</span>
-              <span className="text-sm font-bold">{error}</span>
+          {/* Combined Server-Side Error & Client Validation Diagnostics Banner */}
+          {(error || validationErrorMessages.length > 0) && (
+            <div className="mb-6 bg-red-50 dark:bg-red-900/20 text-red-600 p-4 rounded-lg border border-red-100 dark:border-red-800 flex flex-col gap-2 animate-in fade-in slide-in-from-top-2">
+              <div className="flex items-center gap-3">
+                <span className="material-symbols-outlined font-bold">error</span>
+                <span className="text-sm font-bold">{error || "Please clear validation errors before saving updates:"}</span>
+              </div>
+              {validationErrorMessages.length > 0 && (
+                <ul className="list-disc pl-9 text-xs font-semibold flex flex-col gap-1">
+                  {validationErrorMessages.map((msg, i) => <li key={i}>{msg}</li>)}
+                </ul>
+              )}
             </div>
           )}
 
@@ -236,27 +254,26 @@ const BatchForm = ({ initialData = null, onSubmit, onCancel, isSubmitting = fals
                   control={control}
                   render={({ field }) => (
                     <FormField label="Batch Schedule (Days)" className="md:col-span-2" error={errors.schedule?.days_of_week?.message}>
-                      <div className="flex flex-wrap gap-3">
+                      <div className="flex flex-wrap gap-2 pt-1">
                         {daysOfWeek.map(day => {
-                          const isSelected = field.value?.includes(day);
+                          const currentDays = field.value || [];
+                          const isSelected = currentDays.includes(day);
                           return (
-                            <label key={day} className="cursor-pointer">
-                              <input 
-                                type="checkbox" 
-                                className="sr-only" 
-                                checked={isSelected}
-                                onChange={() => {
-                                  const currentDays = field.value || [];
-                                  const nextDays = isSelected 
-                                    ? currentDays.filter(d => d !== day) 
-                                    : [...currentDays, day];
-                                  field.onChange(nextDays);
-                                }}
-                              />
-                              <div className={`px-4 py-2 rounded-full border text-sm font-medium transition-all shadow-sm ${isSelected ? 'bg-primary/10 text-primary border-primary' : 'border-border-light dark:border-border-dark bg-surface-light dark:bg-surface-dark text-text-secondary hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
-                                {day}
-                              </div>
-                            </label>
+                            <Chip
+                              key={day}
+                              label={day}
+                              variant={isSelected ? 'filled' : 'outlined'}
+                              color={isSelected ? 'primary' : 'neutral'}
+                              active={isSelected}
+                              clickable={true}
+                              size="md"
+                              onClick={() => {
+                                const nextDays = isSelected 
+                                  ? currentDays.filter(d => d !== day) 
+                                  : [...currentDays, day];
+                                field.onChange(nextDays);
+                              }}
+                            />
                           );
                         })}
                       </div>

@@ -4,6 +4,7 @@ import { queryKeys, EMPTY_FILTER } from '../../../lib/react-query/queryKeys';
 import { apiClient } from '../../../services/apiClient';
 import { API_REGISTRY } from '../../../services/apiRegistry';
 import { getCachedRecord, resolveRecord, resolveList, getCachedList } from '../../../lib/react-query/cacheHelper';
+import { toLocalDate, formatToKey } from '../../../lib/dateUtils';
 
 /**
  * Hook for fetching all teachers
@@ -80,7 +81,18 @@ export const useTeacherAttendanceQuery = (teacherId) => {
         token,
         { signal }
       );
-      return Array.isArray(response.data) ? response.data : (response.data?.data || []);
+      const rawData = Array.isArray(response.data) ? response.data : (response.data?.data || []);
+      return rawData.map(item => {
+        if (item.attendance_date) {
+          const localDate = toLocalDate(item.attendance_date);
+          const dateKey = formatToKey(localDate);
+          return {
+            ...item,
+            attendance_date: dateKey
+          };
+        }
+        return item;
+      });
     },
     enabled: !!token && !!teacherId,
     staleTime: 1000 * 60 * 5, // 5 minutes
@@ -103,7 +115,18 @@ export const useTeacherAttendanceListQuery = (date) => {
         token,
         { signal }
       );
-      return Array.isArray(response.data) ? response.data : (response.data?.data || []);
+      const rawData = Array.isArray(response.data) ? response.data : (response.data?.data || []);
+      return rawData.map(item => {
+        if (item.attendance_date) {
+          const localDate = toLocalDate(item.attendance_date);
+          const dateKey = formatToKey(localDate);
+          return {
+            ...item,
+            attendance_date: dateKey
+          };
+        }
+        return item;
+      });
     },
     enabled: !!token && !!date,
     staleTime: 1000 * 60 * 2, // 2 minutes

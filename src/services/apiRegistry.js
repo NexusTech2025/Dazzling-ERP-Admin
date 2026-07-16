@@ -9,6 +9,11 @@ export const API_REGISTRY = {
     REGISTER: 'user_register',
     LOGOUT: 'user_logout'
   },
+  USER: {
+    QUERY: 'user_query',
+    UPDATE: 'user_update',
+    DELETE: 'user_delete'
+  },
   STUDENT: {
     REGISTER: 'student_register',
     ADD_LEAD: 'student_add_lead',

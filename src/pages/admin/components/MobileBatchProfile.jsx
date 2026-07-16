@@ -1,15 +1,17 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import ScrollableTabSegment from '../../../features/batch/components/profile/ScrollableTabSegment';
 import BatchOverviewTab from '../../../features/batch/components/profile/BatchOverviewTab';
 import BatchStudentRoster from '../../../features/batch/components/profile/BatchStudentRoster';
 import AttendanceMatrix from '../../../features/batch/components/profile/AttendanceMatrix';
 import ProfileHero from '../../../components/domain/ProfileHero';
-import HorizontalStatMetrics from '../../../components/ui/v2/cards/HorizontalStatMetrics';
-import CardContainer from '../../../components/ui/v2/cards/CardContainer';
+import NavHeader from '../../../components/domain/NavHeader';
 import { DateRange } from '../../../components/ui/presets/DateRange';
 import { TimeRange } from '../../../components/ui/presets/TimeRange';
 import { KeyValuePairIcon } from '../../../components/ui/v2/KeyValuePair';
+
+import Badge from '../../../components/ui/Badge';
+import Action from '../../../components/ui/v2/Action';
 
 const MOBILE_TABS = [
   { key: 'Overview', label: 'Overview', icon: 'dashboard' },
@@ -33,47 +35,27 @@ const MobileBatchProfile = React.memo(({
   navigate
 }) => {
 
+  const handleScheduleActionClick = useCallback(() => {
+    navigate(`/admin/batches/schedule/${id}`);
+  }, [navigate, id]);
+
+  const handleStudentsActionClick = useCallback(() => {
+    handleMobileTabNavigation('Students');
+  }, [handleMobileTabNavigation]);
+
   const avatarNode = useMemo(() => (
     <div className="w-14 h-14 rounded-full bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center text-primary border border-primary/20 shrink-0">
       <span className="material-symbols-outlined text-[32px]">menu_book</span>
     </div>
   ), []);
 
-  const statusBadge = useMemo(() => (
-    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-600 dark:bg-emerald-950/20 dark:text-emerald-400 border border-emerald-500/20 leading-none">
-      <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-      ACTIVE
-    </span>
-  ), []);
-
-  const heroActions = useMemo(() => (
-    <div className="flex flex-row gap-3 w-full">
-      <Link
-        to={`/admin/batches/edit/${id}`}
-        className="flex-1 flex items-center justify-center gap-2 rounded-xl h-11 border border-primary text-primary hover:bg-primary/5 transition-all text-xs font-black uppercase tracking-wider shadow-sm"
-      >
-        <span className="material-symbols-outlined text-[18px]">edit</span>
-        <span>Edit</span>
-      </Link>
-      <button
-        type="button"
-        onClick={() => navigate(`/admin/batches/schedule/${id}`)}
-        className="flex-1 flex items-center justify-center gap-2 rounded-xl h-11 border border-primary text-primary hover:bg-primary/5 transition-all text-xs font-black uppercase tracking-wider shadow-sm"
-      >
-        <span className="material-symbols-outlined text-[18px]">calendar_today</span>
-        <span>Schedule</span>
-      </button>
-      <button
-        type="button"
-        onClick={() => handleMobileTabNavigation('Students')}
-        className="flex-1 flex items-center justify-center gap-2 rounded-xl h-11 border border-primary text-primary hover:bg-primary/5 transition-all text-xs font-black uppercase tracking-wider shadow-sm"
-      >
-        <span className="material-symbols-outlined text-[18px]">group</span>
-        <span>Students</span>
-      </button>
-
-    </div>
-  ), [id, navigate, handleMobileTabNavigation]);
+  const statusBadge = useMemo(() => {
+    const status = batch.status?.toLowerCase();
+    const variant = status === 'active' ? 'success' : status === 'inactive' ? 'warning' : 'danger';
+    return (
+      <Badge variant={variant}>{batch.status || 'UNKNOWN'}</Badge>
+    );
+  }, [batch.status]);
 
   const mobileMetaLines = useMemo(() => {
     if (!batch) return [];
@@ -127,6 +109,7 @@ const MobileBatchProfile = React.memo(({
         activityItems={mobileActivityItems}
         attendanceStats={mobileAttendanceStats}
         academicStats={mobileAcademicStats}
+        statsItems={mobileStatsItems}
         onViewAttendance={handleViewAttendanceLink}
         onViewPerformance={handleViewPerformanceLink}
       />
@@ -141,17 +124,11 @@ const MobileBatchProfile = React.memo(({
         <AttendanceMatrix batchId={id} />
       </div>
     )
-  }), [batch, id, mobileScheduleItems, mobileActivityItems, mobileAttendanceStats, mobileAcademicStats, handleViewAttendanceLink, handleViewPerformanceLink]);
+  }), [batch, id, mobileScheduleItems, mobileActivityItems, mobileAttendanceStats, mobileAcademicStats, mobileStatsItems, handleViewAttendanceLink, handleViewPerformanceLink]);
 
   return (
     <div className="flex flex-col gap-4 pb-10 w-full min-h-screen">
-      <nav className="flex items-center gap-2 text-sm font-medium text-text-secondary px-4 pt-4 shrink-0">
-        <Link to="/admin/dashboard" className="hover:text-primary transition-colors">Home</Link>
-        <span className="material-symbols-outlined text-[16px]">chevron_right</span>
-        <Link to="/admin/batches" className="hover:text-primary transition-colors">Batches</Link>
-        <span className="material-symbols-outlined text-[16px]">chevron_right</span>
-        <span className="text-text-main dark:text-white">Batch Details</span>
-      </nav>
+      <NavHeader title={batch.batch_name} subtitle="Batch Details" statusBadge={statusBadge} backPath="/admin/batches" />
 
       <div className="px-4 shrink-0">
         <ProfileHero>
@@ -160,31 +137,35 @@ const MobileBatchProfile = React.memo(({
             <div className="flex items-center gap-3.5 min-w-0 flex-1">
               {avatarNode}
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2.5 flex-wrap">
-                  <ProfileHero.Title className="text-xl md:text-2xl font-extrabold">{batch.batch_name}</ProfileHero.Title>
-                  {statusBadge}
-                </div>
-                <div className="mt-1">
+                <div className="flex items-center flex-wrap">
+                  <ProfileHero.Title className="text-xl md:text-2xl font-extrabold !mb-0 ">{batch.batch_name}
+                    &nbsp; {statusBadge}
+                  </ProfileHero.Title>
                   <ProfileHero.Identity idText={`Batch ID: ${batch.batch_id || id}`} />
                 </div>
               </div>
             </div>
             {/* Overflow Action Button */}
-            <button
-              type="button"
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors shrink-0"
-            >
-              <span className="material-symbols-outlined text-[20px]">more_vert</span>
-            </button>
+            <ProfileHero.HeaderActions>
+              <Action to={`/admin/batches/edit/${id}`} icon="edit">
+                Edit Batch
+              </Action>
+              <Action onClick={handleScheduleActionClick} icon="calendar_today">
+                Schedule
+              </Action>
+              <Action onClick={handleStudentsActionClick} icon="group">
+                Students
+              </Action>
+            </ProfileHero.HeaderActions>
           </ProfileHero.Header>
 
           {/* Divider Line */}
           <hr className="-mx-5 border-slate-100 dark:border-slate-800/60" />
 
           {/* Logistics Grid (Middle Tier) */}
-          <div className="flex flex-col gap-4 py-1">
+          <div className="flex flex-col gap-x-4 py-1">
             {/* Row 1: Start/End Date and Timings */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-2 gap-4">
               <div className="flex items-center gap-3">
                 <KeyValuePairIcon
                   icon="calendar_today"
@@ -192,7 +173,7 @@ const MobileBatchProfile = React.memo(({
                   className="size-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0"
                 />
                 <div className="text-sm font-semibold text-slate-700 dark:text-slate-200 flex items-center gap-1.5">
-                  <DateRange start={batch.start_date} end={batch.end_date} dateClassName="font-semibold" />
+                  <DateRange start={batch.start_date} end={batch.end_date} dateClassName="font-semibold" layout='vertical' />
                 </div>
               </div>
 
@@ -256,25 +237,7 @@ const MobileBatchProfile = React.memo(({
               </div>
             )}
           </div>
-
-          {/* Divider Line */}
-          <hr className="-mx-5 border-slate-100 dark:border-slate-800/60" />
-
-          {/* Action Footer (Bottom Tier) */}
-          <ProfileHero.Actions className="border-t-0 mt-0 pt-0">
-            {heroActions}
-          </ProfileHero.Actions>
         </ProfileHero>
-      </div>
-
-      <div className="px-4 shrink-0">
-        <CardContainer hoverable={false} className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
-          <HorizontalStatMetrics
-            items={mobileStatsItems}
-            allowWrap={false}
-            className="[&_.flex-col]:flex-col-reverse [&_span.material-symbols-outlined]:bg-primary/10 dark:[&_span.material-symbols-outlined]:bg-primary/15 [&_span.material-symbols-outlined]:text-primary [&_span.material-symbols-outlined]:p-2 [&_span.material-symbols-outlined]:rounded-full [&_div.min-w-\[65px\]]:flex-1"
-          />
-        </CardContainer>
       </div>
 
       <ScrollableTabSegment

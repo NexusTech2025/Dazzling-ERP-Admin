@@ -196,3 +196,27 @@ export const formatDateState = (value, { inputFormat, outputFormat, fallback = '
 
   return state;
 };
+
+/**
+ * Safe local timezone instantiator that parses server ISO timestamps.
+ * @param {string} isoString - Server ISO date timestamp.
+ * @returns {Date|null} Browser localized Date object.
+ */
+export const toLocalDate = (isoString) => {
+  if (!isoString) return null;
+  const date = new Date(isoString);
+  return isNaN(date.getTime()) ? null : date;
+};
+
+/**
+ * Standardizes a browser date object into a YYYY-MM-DD index key.
+ * @param {Date} dateObj - The target Javascript Date object.
+ * @returns {string} YYYY-MM-DD key representation.
+ */
+export const formatToKey = (dateObj) => {
+  if (!dateObj || !(dateObj instanceof Date) || isNaN(dateObj.getTime())) return '';
+  const year = dateObj.getFullYear();
+  const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+  const day = String(dateObj.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};

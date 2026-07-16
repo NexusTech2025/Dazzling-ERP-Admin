@@ -110,6 +110,61 @@ function Actions({ children, className = '' }) {
   );
 }
 
+// 7. Responsive Header Actions Container
+function HeaderActions({ children }) {
+  const [showDropdown, setShowDropdown] = useState(false);
+
+  const desktopActions = React.Children.map(children, child => {
+    if (React.isValidElement(child)) {
+      return React.cloneElement(child, { variant: 'button' });
+    }
+    return child;
+  });
+
+  const mobileActions = React.Children.map(children, child => {
+    if (React.isValidElement(child)) {
+      const originalClick = child.props.onClick;
+      const handleActionClick = (e) => {
+        if (originalClick) originalClick(e);
+        setShowDropdown(false);
+      };
+      return React.cloneElement(child, { 
+        variant: 'menu',
+        onClick: handleActionClick
+      });
+    }
+    return child;
+  });
+
+  return (
+    <div className="shrink-0 flex items-center gap-2">
+      {/* Desktop view: Horizontal Action buttons */}
+      <div className="hidden md:flex items-center gap-2">
+        {desktopActions}
+      </div>
+
+      {/* Mobile view: 3-dot overflow dropdown */}
+      <div className="relative md:hidden">
+        <button
+          type="button"
+          onClick={() => setShowDropdown(!showDropdown)}
+          className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors shrink-0"
+        >
+          <span className="material-symbols-outlined text-[20px]">more_vert</span>
+        </button>
+        {showDropdown && (
+          <>
+            <div className="fixed inset-0 z-40" onClick={() => setShowDropdown(false)} />
+            <div className="absolute right-0 mt-1.5 w-48 rounded-xl bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-200 dark:border-slate-800 shadow-lg py-1 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+              {mobileActions}
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // Assign Sub-Component Namespaces
 ProfileHero.Header = Header;
 ProfileHero.Title = Title;
@@ -117,3 +172,4 @@ ProfileHero.Identity = Identity;
 ProfileHero.MetaGroup = MetaGroup;
 ProfileHero.MetaItem = MetaItem;
 ProfileHero.Actions = Actions;
+ProfileHero.HeaderActions = HeaderActions;

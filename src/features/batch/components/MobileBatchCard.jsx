@@ -67,9 +67,21 @@ export const MobileBatchCard = ({
         <div className="flex-1 min-w-0 space-y-1.5">
           {/* Status badge row */}
           <div className="flex items-center justify-between gap-2">
-            <Badge variant={getStatusVariant(batch.status)}>
-              {batch.status}
-            </Badge>
+
+            <div>
+              <h3 className="font-bold text-text-main dark:text-white text-sm leading-tight truncate">
+                {name} &nbsp; <Badge variant={getStatusVariant(batch.status)}>
+                  {batch.status}
+                </Badge>
+              </h3>
+
+
+              <div className="flex items-center gap-x-2 flex-wrap">
+                <p className="text-[9px] text-text-secondary dark:text-slate-400 font-mono tracking-wider uppercase mt-0.5">
+                  {id}
+                </p>
+              </div>
+            </div>
 
             {/* Delete shortcut action */}
             <button
@@ -83,33 +95,23 @@ export const MobileBatchCard = ({
             </button>
           </div>
 
-          {/* Title & Code */}
-          <div>
-            <h3 className="font-bold text-text-main dark:text-white text-sm leading-tight truncate">
-              {name}
-            </h3>
-            <p className="text-[9px] text-text-secondary dark:text-slate-400 font-mono tracking-wider uppercase mt-0.5">
-              {id}
-            </p>
+
+
+
+          {/* Timings details */}
+          <div className="flex items-center gap-1.5 text-xs text-text-secondary dark:text-slate-400 font-medium">
+            <span className="material-symbols-outlined text-[10px] text-text-secondary dark:text-slate-500">schedule</span>
+            <span>Timing:</span>
+            <TimeRange start={startTime} end={endTime} useBadge badgeVariant="success" />
           </div>
 
           {/* Teacher Info */}
-          <div className="flex items-center gap-1.5 text-xs text-text-secondary dark:text-slate-400 font-medium">
-            <span className="material-symbols-outlined text-[16px] text-text-secondary dark:text-slate-500">person</span>
-            <span>{teacher}</span>
-          </div>
-
-          {/* Timings details */}
           <div className="flex flex-wrap items-center gap-y-1 gap-x-2 text-[10px] text-text-secondary dark:text-slate-400 font-semibold">
-            <div className="flex items-center gap-1">
-              <span className="material-symbols-outlined text-[14px] text-text-secondary dark:text-slate-500">location_on</span>
-              <span>{room}</span>
-            </div>
-            <span className="text-slate-300 dark:text-slate-700">•</span>
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <TimeRange start={startTime} end={endTime} useBadge badgeVariant="success" />
-            </div>
-            <span className="text-slate-300 dark:text-slate-700">•</span>
+            <div className="flex items-center gap-1.5 text-xs text-text-secondary dark:text-slate-400 font-medium">
+              <span className="material-symbols-outlined text-[16px] text-text-secondary dark:text-slate-500">person</span>
+              <span>{teacher}</span>
+            </div        >
+
             <div className="flex items-center gap-1">
               <span className="material-symbols-outlined text-[14px] text-text-secondary dark:text-slate-500">group</span>
               <span>{`${enrollments}/${capacity} Students`}</span>
@@ -184,7 +186,7 @@ export const MobileBatchCard = ({
           </button>
         )}
       </div>
-    </div>
+    </div >
   );
 };
 

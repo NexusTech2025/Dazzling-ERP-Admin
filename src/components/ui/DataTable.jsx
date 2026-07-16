@@ -21,7 +21,7 @@ const DataTableRow = React.memo(({ row, columns }) => {
 }, (prevProps, nextProps) => {
   // Deep-check row status, times, remarks, and dirty state to prevent leaks on column reference shifts
   return (
-    prevProps.row.student_id === nextProps.row.student_id &&
+    prevProps.row.id === nextProps.row.id &&
     prevProps.row.status === nextProps.row.status &&
     prevProps.row.entry_time === nextProps.row.entry_time &&
     prevProps.row.exit_time === nextProps.row.exit_time &&

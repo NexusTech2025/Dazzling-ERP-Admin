@@ -22,6 +22,8 @@ import AddStudent from '../pages/admin/AddStudent';
 import AddTeacher from '../pages/admin/AddTeacher';
 import StudentLeads from '../pages/admin/StudentLeads';
 import StudentAttendanceManager from '../features/student/components/StudentAttendanceManager';
+import UserRegistration from '../pages/admin/UserRegistration';
+import Users from '../pages/admin/Users';
 import TestFilters from '../pages/admin/TestFilters';
 import TestButtons from '../pages/admin/TestButtons';
 import TestProfileComponents from '../pages/admin/TestProfileComponents';
@@ -55,18 +57,29 @@ const ProtectedRoute = ({ children }) => {
   );
 };
 
+const SuperadminRoute = ({ children }) => {
+
+
+  const { user, isAuthenticated } = useAuth();
+  console.log("user: ", user)
+  console.log("is Authenticated: ", isAuthenticated)
+
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  return user?.role?.toLowerCase().trim() === 'superadmin' ? children : <Navigate to="/admin/dashboard" replace />;
+};
+
 const AppRoutes = () => {
   const { isAuthenticated } = useAuth();
 
   return (
     <Routes>
-      <Route 
-        path="/login" 
-        element={isAuthenticated ? <Navigate to="/admin/dashboard" replace /> : <LoginPage />} 
+      <Route
+        path="/login"
+        element={isAuthenticated ? <Navigate to="/admin/dashboard" replace /> : <LoginPage />}
       />
-      
-      <Route 
-        path="/admin" 
+
+      <Route
+        path="/admin"
         element={
           <ProtectedRoute>
             <AdminLayout />
@@ -80,7 +93,7 @@ const AppRoutes = () => {
         <Route path="students/attendance" element={<StudentAttendanceManager />} />
         <Route path="students/leads" element={<StudentLeads />} />
         <Route path="students/:id" element={<StudentProfile />} />
-        
+
         {/* Batch Management */}
         <Route path="batches" element={<Batches />} />
         <Route path="batches/add" element={<AddBatch />} />
@@ -103,7 +116,7 @@ const AppRoutes = () => {
         <Route path="courses/add" element={<AddCourse />} />
         <Route path="courses/edit/:id" element={<AddCourse />} />
         <Route path="courses/:id" element={<CourseDetails />} />
-        
+
         {/* Package specialized routes */}
         <Route path="packages" element={<Courses defaultTab="packages" />} />
         <Route path="packages/add" element={<CoursePackagesForm />} />
@@ -117,11 +130,30 @@ const AppRoutes = () => {
         <Route path="finance/fee-plan" element={<FeePlanWizard />} />
         <Route path="finance/transactions" element={<MoneyTransactions />} />
 
+        {/* User Management Restricted to Superadmins Only */}
+        <Route
+          path="users"
+          element={
+            <SuperadminRoute>
+              <Users />
+            </SuperadminRoute>
+          }
+        />
+
+        <Route
+          path="users/add"
+          element={
+            <SuperadminRoute>
+              <UserRegistration />
+            </SuperadminRoute>
+          }
+        />
+
         <Route path="roles" element={<Roles />} />
         <Route path="reports" element={<Reports />} />
         <Route path="settings" element={<Settings />} />
         <Route path="resolve-conflict" element={<ResolveDeleteConflictView />} />
-        
+
         {/* Development Showcase Pages */}
         <Route path="test-pages">
           <Route path="filters" element={<TestFilters />} />
@@ -133,7 +165,7 @@ const AppRoutes = () => {
           <Route path="mobile-transactions" element={<TestMoneyTransactionsMobile />} />
         </Route>
       </Route>
-      
+
       <Route path="/" element={<Navigate to="/admin" replace />} />
     </Routes>
   );

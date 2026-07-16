@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
-import { parseISO, format } from 'date-fns';
+import { parseISO, format, formatDate } from 'date-fns';
 
 // Ingest and Caching Optimization Channels
 import { useCoursesQuery } from '../../course/hooks/useCourseQueries';
@@ -58,9 +58,11 @@ const batchFormSchema = yup.object().shape({
       return new Date(start_date) <= new Date(end_date);
     }),
   schedule: yup.object().shape({
-    days_of_week: yup.array().of(yup.string()).min(1, "Please select at least one day for the batch schedule."),
-    start_time: yup.string().required("Start time is required."),
-    end_time: yup.string().required("End time is required.")
+    days_of_week: yup.array().of(
+      yup.string().oneOf(default_days, "The value '${value}' is invalid. Allowed options are: ${values}.")
+    ).min(1, "Please select at least one day for the batch schedule."),
+    start_time: yup.string().matches(/^(?:[01]\d|2[0-3]):[0-5]\d$/, "Invalid start time format (HH:mm).").required("Start time is required."),
+    end_time: yup.string().matches(/^(?:[01]\d|2[0-3]):[0-5]\d$/, "Invalid end time format (HH:mm).").required("End time is required.")
   })
 });
 
@@ -154,9 +156,15 @@ export const useBatchForm = ({ initialData, onSubmit }) => {
     setIsTeacherModalOpen(false);
   };
 
-  const onSubmitForm = handleRHFSubmit((formData) => {
-    onSubmit(formData);
-  });
+  const onSubmitForm = handleRHFSubmit(
+    (formData) => {
+      onSubmit(formData)
+    },
+    (errors) => {
+
+      console.warn("Form validation tracking exceptions:", errors)
+    }
+  );
 
   return {
     formInstance,

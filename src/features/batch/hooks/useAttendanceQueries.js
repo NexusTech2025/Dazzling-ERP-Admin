@@ -5,6 +5,7 @@ import { API_REGISTRY } from '../../../services/apiRegistry';
 import { queryKeys } from '../../../lib/react-query/queryKeys';
 import { resolveList } from '../../../lib/react-query/cacheHelper';
 import { normalizeAttendanceData } from '../utils/attendanceUtils';
+import { toLocalDate, formatToKey } from '../../../lib/dateUtils';
 
 export const useBatchAttendanceQuery = (batchId, date) => {
   const { token } = useAuth();
@@ -21,7 +22,18 @@ export const useBatchAttendanceQuery = (batchId, date) => {
         token,
         { signal }
       );
-      return Array.isArray(response.data) ? response.data : (response.data?.data || []);
+      const rawData = Array.isArray(response.data) ? response.data : (response.data?.data || []);
+      return rawData.map(item => {
+        if (item.attendance_date) {
+          const localDate = toLocalDate(item.attendance_date);
+          const dateKey = formatToKey(localDate);
+          return {
+            ...item,
+            attendance_date: dateKey
+          };
+        }
+        return item;
+      });
     },
     enabled: !!token && !!batchId && !!date,
   });

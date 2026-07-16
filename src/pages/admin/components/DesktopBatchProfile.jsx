@@ -17,19 +17,24 @@ const DesktopBatchProfile = React.memo(({
   handleStatusToggle,
   isStatusLoading
 }) => {
-  
+
   // Parallel DOM Retention Map - Enforces visibility persistence to retain sub-state selections
   const tabRegistry = useMemo(() => ({
     Overview: (
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-        <div className="lg:col-span-2 flex flex-col gap-6">
-          <BatchDetailsCard batch={batch} />
-          <BatchUpcomingSchedule batch={batch} />
+      <>
+        <div className='mb-4'>
+          <BatchKPICards batch={batch} studentsCount={students.length} />
         </div>
-        <div className="lg:col-span-1">
-          <BatchActivityLog />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="lg:col-span-2 flex flex-col gap-6">
+            <BatchDetailsCard batch={batch} />
+            <BatchUpcomingSchedule batch={batch} />
+          </div>
+          <div className="lg:col-span-1">
+            <BatchActivityLog />
+          </div>
         </div>
-      </div>
+      </>
     ),
     Students: (
       <div className="animate-in fade-in slide-in-from-right-4 duration-500">
@@ -76,12 +81,12 @@ const DesktopBatchProfile = React.memo(({
         isStatusLoading={isStatusLoading}
       />
 
-      <BatchKPICards batch={batch} studentsCount={students.length} />
+
 
       <div className="min-h-[400px] px-4">
         {Object.entries(tabRegistry).map(([key, contentNode]) => (
-          <div 
-            key={key} 
+          <div
+            key={key}
             className={activeTab === key ? 'block animate-in fade-in duration-200' : 'hidden'}
           >
             {contentNode}

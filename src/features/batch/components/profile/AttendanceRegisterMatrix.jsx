@@ -1,7 +1,6 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import PropTypes from 'prop-types';
-import { useAttendanceRegistryData } from '../../hooks/useAttendanceRegistryData';
-import { useAttendanceTransactionState } from '../../hooks/useAttendanceTransactionState';
+import { useStudentAttendance } from '../../../attendance/hooks/useAttendance';
 import { useIsMobile } from '../../../../hooks/useIsMobile';
 import MobileBatchAttendanceView from './MobileBatchAttendanceView';
 import TimeFieldInput from '../FormField/TimeFieldInput';
@@ -10,8 +9,6 @@ import Button from '../../../../components/ui/v2/Button';
 import KpiGrid from '../../../../components/ui/v2/KpiGrid';
 import KpiCard from '../../../../components/ui/v2/KpiCard';
 import DataTable from '../../../../components/ui/DataTable';
-
-const EMPTY_ARRAY = Object.freeze([]);
 
 const ATTENDANCE_CONFIG = [
   { label: 'P', value: 'P', activeClass: 'bg-emerald-500 text-white shadow-emerald-500/20' },
@@ -115,11 +112,14 @@ const ActionCell = React.memo(({ row, isRowDirty, saveStatus, commitIndividualRo
     commitIndividualRow(row);
   }, [row, commitIndividualRow]);
 
+  const isLoading = saveStatus === 'saving' && isRowDirty;
+
   return (
     <Button
       size="xs"
       variant={isRowDirty ? "contained" : "outlined"}
       disabled={!isRowDirty || saveStatus === 'saving'}
+      loading={isLoading}
       onClick={handleClick}
       startIcon="save"
       className={isRowDirty ? "bg-indigo-600 hover:bg-indigo-700 text-white shadow-md shadow-indigo-600/20" : ""}
@@ -142,44 +142,36 @@ ActionCell.displayName = 'ActionCell';
 const AttendanceRegisterMatrix = ({ batchId }) => {
   const isMobile = useIsMobile(768);
   const [activeMobileEditingRowId, setActiveMobileEditingRowId] = useState(null);
+  const [selectedDate, setSelectedDate] = useState(() => new Date().toLocaleDateString('sv-SE'));
 
-  // 1. Consume the Read Domain Hook
+  // 1. Consume the Consolidated State Selector Hook
   const {
-    selectedDate,
-    setSelectedDate,
-    dailyBaselineRegistry,
-    isLoading,
-    batchStartTime,
-    batchEndTime
-  } = useAttendanceRegistryData(batchId);
-
-  // 2. Consume the Write Domain Hook
-  const {
-    stagedChanges,
-    saveStatus,
-    studentsList,
+    roster: studentsList,
+    metrics: kpiStats,
     isDirty,
-    kpiStats,
-    updateStageField,
-    handleMarkAllPresent,
-    handleReset,
-    setStagedChanges,
-    commitIndividualRow,
+    saveStatus,
+    stageUpdate: updateStageField,
+    clearWorkspaceDrafts: handleReset,
     commitDeltaChanges,
-    commitFullRosterSnapshot
-  } = useAttendanceTransactionState({
-    batchId,
-    selectedDate,
-    dailyBaselineRegistry,
-    batchStartTime,
-    batchEndTime
-  });
+    commitIndividualRow,
+    commitFullRosterSnapshot,
+    isLoading,
+    draftDeltas
+  } = useStudentAttendance({ selectedBatchId: batchId, selectedDate });
+
+  const handleMarkAllPresent = useCallback(() => {
+    studentsList.forEach(rec => {
+      if (rec.status !== 'P') {
+        updateStageField(rec.student_id, 'status', 'P');
+      }
+    });
+  }, [studentsList, updateStageField]);
 
   // Wipes staging buffer on calendar date changes
   const handleDateChange = useCallback((newDateStr) => {
-    setStagedChanges({});
+    handleReset();
     setSelectedDate(newDateStr);
-  }, [setStagedChanges, setSelectedDate]);
+  }, [handleReset, setSelectedDate]);
 
   // DataTable column configurations
   const columns = useMemo(() => [
@@ -279,7 +271,7 @@ const AttendanceRegisterMatrix = ({ batchId }) => {
         kpiStats={kpiStats}
         isDirty={isDirty}
         saveStatus={saveStatus}
-        stagedChanges={stagedChanges}
+        stagedChanges={draftDeltas}
         handleMarkAllPresent={handleMarkAllPresent}
         handleReset={handleReset}
         commitDeltaChanges={commitDeltaChanges}
@@ -299,130 +291,116 @@ const AttendanceRegisterMatrix = ({ batchId }) => {
       {/* KPI Dashboard Grid */}
       <KpiGrid cols={4} smCols={2} mdCols={4} lgCols={4} gap={4}>
         <KpiCard
-          label="Active Students"
-          value={kpiStats.totalCount}
-          icon="groups"
-          variant="neutral"
-          isCount={true}
-          size="lg"
-        />
-        <KpiCard
-          label="Present Today"
+          label="Present Students"
           value={kpiStats.presentCount}
           icon="check_circle"
           variant="success"
           isCount={true}
-          size="lg"
         />
         <KpiCard
-          label="Absent Today"
+          label="Absent logs"
           value={kpiStats.absentCount}
           icon="cancel"
           variant="danger"
           isCount={true}
-          size="lg"
+        />
+        <KpiCard
+          label="On Leave"
+          value={kpiStats.leaveCount}
+          icon="event_busy"
+          variant="warning"
+          isCount={true}
         />
         <KpiCard
           label="Attendance Rate"
-          value={`${kpiStats.attendanceRate}%`}
+          value={kpiStats.attendanceRate}
           icon="analytics"
           variant="info"
-          isCount={true}
-          size="lg"
+          isCount={false}
         />
       </KpiGrid>
 
-      {/* Main Registry Form Sheet */}
-      <div className="bg-surface-light dark:bg-[#122131] border border-border-light dark:border-white/8 rounded-2xl backdrop-blur-md overflow-hidden shadow-sm p-6">
-        <DataTable
-          title="Daily Registry"
-          subtitle="Staging changes before committing bulk register updates"
-          isLoading={isLoading}
-          data={studentsList}
-          columns={columns}
-          emptyMessage="No student records found for this batch on the selected date."
-          primaryAction={
+      {/* Main Roster Panel Sheet */}
+      <div className="bg-surface-light dark:bg-[#122131] border border-border-light dark:border-white/8 rounded-2xl shadow-sm backdrop-blur-md overflow-hidden flex flex-col justify-between min-h-[400px]">
+        
+        {/* Table Panel Header */}
+        <div className="p-6 border-b border-border-light dark:border-white/8 flex items-center justify-between flex-wrap gap-4">
+          <div className="flex items-center gap-3">
+            <span className="material-symbols-outlined text-indigo-500 dark:text-indigo-400">group</span>
+            <div>
+              <h3 className="text-base font-bold text-text-main dark:text-white">Daily register sheet</h3>
+              <p className="text-xs text-text-secondary mt-0.5">Punch entry/exit times and toggle states. Select dates to view records.</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 flex-wrap">
+            <input 
+              type="date" 
+              value={selectedDate}
+              onChange={(e) => handleDateChange(e.target.value)}
+              className="bg-white dark:bg-[#0a1420] border border-border-light dark:border-white/8 rounded-xl px-4 py-2 text-xs font-bold text-text-main dark:text-white outline-none focus:border-indigo-500 transition-all cursor-pointer"
+            />
             <Button 
               onClick={handleMarkAllPresent}
               disabled={isLoading || studentsList.length === 0}
               variant="outlined"
               size="sm"
-              className="cursor-pointer font-bold tracking-wider"
             >
               Mark All Present
             </Button>
-          }
-          secondaryAction={
-            <input 
-              type="date" 
-              value={selectedDate}
-              onChange={(e) => handleDateChange(e.target.value)}
-              className="w-full sm:w-auto bg-white dark:bg-[#0a1420] border border-border-light dark:border-white/8 rounded-xl px-4 py-2 text-xs font-bold text-text-main dark:text-white outline-none focus:border-indigo-500 transition-all cursor-pointer"
-            />
-          }
-        />
-      </div>
+          </div>
+        </div>
 
-      {/* Bottom Sticky Action Drawer (Three-Tier saving options) */}
-      {isDirty && (
-        <div className="fixed bottom-6 left-6 right-6 lg:left-72 z-50 animate-in slide-in-from-bottom-8 duration-300">
-          <div className="bg-surface-light/95 dark:bg-[#122131]/95 border border-border-light dark:border-white/10 p-4 rounded-2xl shadow-2xl backdrop-blur-lg flex items-center justify-between gap-4 max-w-5xl mx-auto">
-            <div className="flex items-center gap-3">
-              <span className="material-symbols-outlined text-amber-500 dark:text-amber-400 text-lg animate-pulse">
-                warning
+        {/* Data Table Grid */}
+        <div className="flex-1 overflow-x-auto">
+          <DataTable
+            columns={columns}
+            data={studentsList}
+            isLoading={isLoading}
+            emptyMessage="No student baseline enrollment records found."
+          />
+        </div>
+
+        {/* Sticky Action Footer Tray */}
+        {isDirty && (
+          <div className="p-4 bg-slate-50 dark:bg-black/15 border-t border-border-light dark:border-white/8 flex items-center justify-between gap-4 animate-in slide-in-from-bottom-2 duration-300">
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-amber-500 animate-pulse">warning</span>
+              <span className="text-xs text-text-secondary dark:text-slate-400 font-medium">
+                You have unsaved changes in your staging workspace.
               </span>
-              <div className="hidden sm:block">
-                <p className="text-xs font-bold text-text-main dark:text-white">Unsaved Staged Entries ({Object.keys(stagedChanges).length})</p>
-                <p className="text-[10px] text-text-secondary dark:text-slate-400">
-                  Select a commit level to update registers.
-                </p>
-              </div>
             </div>
-
+            
             <div className="flex items-center gap-3">
-              <Button 
-                onClick={handleReset}
+              <Button
                 variant="outlined"
                 size="sm"
-                className="font-bold text-slate-700 dark:text-slate-300"
+                onClick={handleReset}
               >
-                Reset
+                Reset Workspace
               </Button>
-              <Button 
-                onClick={commitDeltaChanges}
-                disabled={saveStatus === 'saving'}
+              <Button
                 variant="success"
                 size="sm"
-                className="font-bold cursor-pointer"
-              >
-                Save Changes Only ({Object.keys(stagedChanges).length})
-              </Button>
-              <Button 
-                onClick={commitFullRosterSnapshot}
+                onClick={commitDeltaChanges}
                 disabled={saveStatus === 'saving'}
+              >
+                Save Changes (Delta)
+              </Button>
+              <Button
                 variant="contained"
                 size="sm"
-                className="bg-slate-800 hover:bg-slate-900 text-white font-bold cursor-pointer"
+                onClick={commitFullRosterSnapshot}
+                disabled={saveStatus === 'saving'}
+                className="bg-slate-800 hover:bg-slate-900 text-white font-bold"
               >
-                Force Full Snapshot Re-Save
+                Overwrite Full Snapshot
               </Button>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Save Status Notification Banner */}
-      {saveStatus === 'success' && (
-        <div className="fixed top-6 right-6 z-50 animate-in fade-in slide-in-from-top-4">
-          <div className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 p-4 rounded-xl shadow-xl flex items-center gap-3 backdrop-blur-md">
-            <span className="material-symbols-outlined">check_circle</span>
-            <div>
-              <p className="text-xs font-bold">Attendance Saved</p>
-              <p className="text-[10px] opacity-80">Daily registry transaction was successfully committed.</p>
-            </div>
-          </div>
-        </div>
-      )}
+      </div>
     </div>
   );
 };

@@ -1,5 +1,6 @@
 import React from 'react';
 import CardContainer from '../../../../components/ui/v2/cards/CardContainer';
+import HorizontalStatMetrics from '../../../../components/ui/v2/cards/HorizontalStatMetrics';
 import AttendanceSummaryPanel from './AttendanceSummaryPanel';
 import AcademicProgressPanel from './AcademicProgressPanel';
 import UpcomingScheduleRow from './UpcomingScheduleRow';
@@ -17,6 +18,7 @@ import RecentActivityRow from './RecentActivityRow';
  * @param {Array}  props.activityItems - Preprocessed recent activity rows.
  * @param {Object} props.attendanceStats - Attendance indicators.
  * @param {Object} props.academicStats - Academic progress markers.
+ * @param {Array}  props.statsItems - Horizontal metric items.
  * @param {function} [props.onViewAttendance] - Stable navigation selector trigger.
  * @param {function} [props.onViewPerformance] - Stable navigation selector trigger.
  * @param {function} [props.onScheduleRowClick] - Stable schedule item selector trigger.
@@ -28,6 +30,7 @@ export default function BatchOverviewTab({
   activityItems = [],
   attendanceStats = { overallPercent: 0, lastWeekPercent: 0, presentToday: '—', totalClasses: 0 },
   academicStats = { syllabusPercent: 0, testsConducted: 0, averageScore: 0, highestScore: 0 },
+  statsItems = [],
   onViewAttendance,
   onViewPerformance,
   onScheduleRowClick,
@@ -36,6 +39,17 @@ export default function BatchOverviewTab({
 
   return (
     <div className="flex flex-col gap-4 w-full">
+      {/* 1. Horizontal Stat Metrics */}
+      {statsItems.length > 0 && (
+        <CardContainer hoverable={false} className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
+          <HorizontalStatMetrics
+            items={statsItems}
+            allowWrap={false}
+            className="[&_.flex-col]:flex-col-reverse [&_span.material-symbols-outlined]:bg-primary/10 dark:[&_span.material-symbols-outlined]:bg-primary/15 [&_span.material-symbols-outlined]:text-primary [&_span.material-symbols-outlined]:p-2 [&_span.material-symbols-outlined]:rounded-full [&_div.min-w-\[65px\]]:flex-1"
+          />
+        </CardContainer>
+      )}
+
       {/* 2. Side-by-Side Analytics Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full shrink-0">
         <AttendanceSummaryPanel

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../../../lib/react-query/queryKeys';
 import { useIsMobile } from '../../../hooks/useIsMobile';
@@ -11,14 +11,39 @@ import RefreshButton from '../../../components/ui/btn/RefreshButton';
 import Button from '../../../components/ui/v2/Button';
 import TextInput from '../../../components/ui/v2/TextInput';
 import TimeFieldInput from '../../batch/components/FormField/TimeFieldInput';
+import { AttendanceStatusButtons } from './attendance/AttendanceStatusButtons';
 
 // Custom Hooks & Sub-components
-import { useTeacherAttendance } from '../hooks/useTeacherAttendance';
+import { useTeacherAttendanceStrategy } from '../../attendance/hooks/useAttendance';
 import { AttendanceStatsGrid } from './attendance/AttendanceStatsGrid';
 import { AttendanceFilterBar } from './attendance/AttendanceFilterBar';
-import { AttendanceStatusButtons } from './attendance/AttendanceStatusButtons';
-import { AttendanceActionFooter } from './attendance/AttendanceActionFooter';
 import MobileTeacherAttendanceView from './attendance/MobileTeacherAttendanceView';
+
+/**
+ * ActionCell: Memoized cell wrapper for single row saves.
+ */
+const ActionCell = React.memo(({ row, isRowDirty, saveStatus, isEditingDisabled, commitIndividualRow }) => {
+  console.log('[ActionCell] row id:', row.id, 'isRowDirty:', isRowDirty, 'saveStatus:', saveStatus);
+  const handleClick = useCallback(() => {
+    commitIndividualRow(row);
+  }, [row, commitIndividualRow]);
+
+  const isLoading = saveStatus === 'saving' && isRowDirty;
+
+  return (
+    <Button
+      size="xs"
+      variant={isRowDirty ? "contained" : "outlined"}
+      disabled={!isRowDirty || saveStatus === 'saving' || isEditingDisabled}
+      loading={isLoading}
+      onClick={handleClick}
+      startIcon="save"
+      className={isRowDirty && !isEditingDisabled ? "bg-indigo-600 hover:bg-indigo-700 text-white shadow-md shadow-indigo-600/20" : ""}
+    />
+  );
+});
+
+ActionCell.displayName = 'ActionCell';
 
 const TeacherAttendanceManager = () => {
   const queryClient = useQueryClient();
@@ -31,19 +56,69 @@ const TeacherAttendanceManager = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeMobileEditingRowId, setActiveMobileEditingRowId] = useState(null);
 
+  // 1. Consume the Consolidated State Selector Hook
   const {
-    batches,
-    filteredTeachers,
+    roster: allTeachers,
     metrics,
     isDirty,
     saveStatus,
-    isEditingDisabled,
+    stageUpdate,
+    clearWorkspaceDrafts,
+    commitDeltaChanges,
+    commitIndividualRow,
+    commitFullRosterSnapshot,
     isLoading,
     isFetchingRegistry,
-    error,
-    actions
-  } = useTeacherAttendance(selectedDate, selectedBatchId, statusFilter, searchQuery);
+    error
+  } = useTeacherAttendanceStrategy({ selectedDate });
 
+  // Read-only Lock Verification Context
+  const isEditingDisabled = useMemo(() => {
+    return false;
+  }, [selectedDate]);
+
+  // Derived state: Apply client-side filters (batchId, status, search) to allTeachers roster
+  const filteredTeachers = useMemo(() => {
+    if (!Array.isArray(allTeachers)) return [];
+    
+    return allTeachers.filter((item) => {
+      // 1. Batch ID Filter
+      if (selectedBatchId !== 'all' && item.batch_id !== selectedBatchId) {
+        return false;
+      }
+      // 2. Status Filter
+      if (statusFilter !== 'ALL' && item.status !== statusFilter) {
+        return false;
+      }
+      // 3. Search Query Filter
+      if (searchQuery.trim() !== '') {
+        const cleanQuery = searchQuery.trim().toLowerCase();
+        const matchesName = item.full_name?.toLowerCase().includes(cleanQuery);
+        const matchesId = item.teacher_id?.toLowerCase().includes(cleanQuery);
+        if (!matchesName && !matchesId) return false;
+      }
+      return true;
+    });
+  }, [allTeachers, selectedBatchId, statusFilter, searchQuery]);
+
+  // Expose callbacks mapped to legacy workspace action interfaces
+  const actions = useMemo(() => ({
+    handleStatusChange: (id, status) => stageUpdate(id, { status }),
+    handleTimeChange: (id, field, val) => stageUpdate(id, { [field]: val }),
+    handleRemarksChange: (id, val) => stageUpdate(id, { remarks: val }),
+    handleMarkAllPresent: () => {
+      filteredTeachers.forEach(rec => {
+        if (rec.status !== 'P') {
+          stageUpdate(rec.id, { status: 'P' });
+        }
+      });
+    },
+    handleReset: clearWorkspaceDrafts,
+    commitDeltaChanges,
+    commitFullRosterSnapshot
+  }), [stageUpdate, filteredTeachers, clearWorkspaceDrafts, commitDeltaChanges, commitFullRosterSnapshot]);
+
+  // DataTable column configurations
   const columns = useMemo(() => [
     {
       header: 'Teacher Details',
@@ -81,7 +156,6 @@ const TeacherAttendanceManager = () => {
           row={row}
           isEditingDisabled={isEditingDisabled}
           onStatusChange={actions.handleStatusChange}
-          isMobile={false}
         />
       )
     },
@@ -123,8 +197,40 @@ const TeacherAttendanceManager = () => {
           trim={false}
         />
       )
+    },
+    {
+      header: 'Actions',
+      align: 'center',
+      headerClassName: 'w-24 font-bold text-[9px] uppercase tracking-widest text-text-secondary dark:text-slate-400',
+      className: 'p-4 text-center',
+      render: (row) => (
+        <ActionCell
+          row={row}
+          isRowDirty={row.isRowDirty}
+          saveStatus={saveStatus}
+          isEditingDisabled={isEditingDisabled}
+          commitIndividualRow={commitIndividualRow}
+        />
+      )
     }
-  ], [isEditingDisabled, actions]);
+  ], [isEditingDisabled, actions, saveStatus, commitIndividualRow]);
+
+  // Extract static list of batches from the roster for filtering
+  const batches = useMemo(() => {
+    if (!Array.isArray(allTeachers)) return [];
+    const uniqueBatches = [];
+    const seen = new Set();
+    allTeachers.forEach(t => {
+      if (t.batch_id && !seen.has(t.batch_id)) {
+        seen.add(t.batch_id);
+        uniqueBatches.push({
+          batch_id: t.batch_id,
+          batch_name: t.batch_name || t.batch_id
+        });
+      }
+    });
+    return uniqueBatches;
+  }, [allTeachers]);
 
   const filters = (
     <AttendanceFilterBar
@@ -207,12 +313,50 @@ const TeacherAttendanceManager = () => {
         </div>
       }
       footer={
-        <AttendanceActionFooter
-          isDirty={isDirty}
-          isSaving={saveStatus === 'saving'}
-          onReset={actions.handleReset}
-          onSave={actions.handleSave}
-        />
+        isDirty && (
+          <div className="w-full animate-in slide-in-from-bottom-8 duration-300 fixed bottom-0 left-0 right-0 z-50 px-4 pb-4">
+            <div className="bg-surface-light/95 dark:bg-[#122131]/95 border border-border-light dark:border-white/10 p-4 rounded-2xl shadow-2xl backdrop-blur-lg flex items-center justify-between gap-4 max-w-7xl mx-auto">
+              <div className="flex items-center gap-3">
+                <span className="material-symbols-outlined text-amber-500 dark:text-amber-400 text-lg animate-pulse">warning</span>
+                <div className="hidden sm:block">
+                  <p className="text-xs font-bold text-text-main dark:text-white">Unsaved Staged Entries Active</p>
+                  <p className="text-[10px] text-text-secondary dark:text-slate-400">
+                    You have modified workspace registers. Commit changes to persist calculations.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <Button 
+                  variant="outlined" 
+                  size="sm" 
+                  onClick={actions.handleReset}
+                  disabled={saveStatus === 'saving'}
+                >
+                  Reset Changes
+                </Button>
+                <Button 
+                  variant="success" 
+                  size="sm" 
+                  disabled={saveStatus === 'saving'} 
+                  onClick={commitDeltaChanges}
+                  className="min-w-[140px]"
+                >
+                  Save (Delta)
+                </Button>
+                <Button 
+                  variant="contained" 
+                  size="sm" 
+                  disabled={saveStatus === 'saving'} 
+                  onClick={commitFullRosterSnapshot}
+                  className="bg-slate-800 hover:bg-slate-900 text-white font-bold min-w-[140px]"
+                >
+                  Force Full
+                </Button>
+              </div>
+            </div>
+          </div>
+        )
       }
     />
   );

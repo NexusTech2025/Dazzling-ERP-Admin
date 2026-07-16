@@ -1,21 +1,24 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { useTeacherAttendanceQuery, useUpdateTeacherAttendanceMutation } from '../../hooks/useTeacherQueries';
+import { useSingleTeacherAttendance } from '../../../attendance/hooks/useAttendance';
 import { useAuth } from '../../../../context/AuthContextCore';
-import { isPastLocalDate, parseTimeToStructured, formatStructuredToTime } from '../../../../lib/dateUtils';
+import { isPastLocalDate, formatStructuredToTime } from '../../../../lib/dateUtils';
 import KpiCard from '../../../../components/ui/v2/KpiCard';
 import KpiGrid from '../../../../components/ui/v2/KpiGrid';
-import { normalizeAttendanceList, calculateMonthlyStats } from '../../utils/teacher_workspace';
+import { normalizeAttendanceList, calculateMonthlyStats, formatSinglePunchUpdate } from '../../../attendance/utils/attendanceUtils';
 import TimeFieldInput from '../../../batch/components/FormField/TimeFieldInput';
 
 const TeachersAttendance = ({ teacherId }) => {
   const { user } = useAuth();
 
-  const { data: attendance = [], isLoading } = useTeacherAttendanceQuery(teacherId);
-  const updateMutation = useUpdateTeacherAttendanceMutation();
-
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
   const [editingDay, setEditingDay] = useState(null);
+
+  const {
+    serverRegistry: attendance,
+    commitIndividualRow,
+    isLoading
+  } = useSingleTeacherAttendance(teacherId, { currentMonth, currentYear });
 
   // Normalize attendance array to a local YYYY-MM-DD keyed map
   const normalizedAttendance = useMemo(() => {
@@ -61,36 +64,12 @@ const TeachersAttendance = ({ teacherId }) => {
   }, [normalizedAttendance, currentYear, currentMonth]);
 
   const handleUpdateDay = (dateStr, updates) => {
-    const finalUpdates = {};
-
-    // Status mapping
-    if (updates.status === 'present') finalUpdates.status = 'P';
-    else if (updates.status === 'absent') finalUpdates.status = 'A';
-    else if (updates.status === 'leave') finalUpdates.status = 'L';
-    else finalUpdates.status = updates.status;
-
-    // Time fields parsing
-    if (updates.check_in_time) {
-      finalUpdates.entry_time = parseTimeToStructured(updates.check_in_time);
-    }
-    if (updates.check_out_time) {
-      finalUpdates.exit_time = parseTimeToStructured(updates.check_out_time);
-    }
-    if (updates.remarks !== undefined) {
-      finalUpdates.remarks = updates.remarks;
-    }
-
-    // If status is Absent, clear entry/exit times
-    if (finalUpdates.status === 'A') {
-      finalUpdates.entry_time = null;
-      finalUpdates.exit_time = null;
-    }
-
-    updateMutation.mutate({
-      teacherId,
-      date: dateStr,
-      data: finalUpdates
-    });
+    const row = {
+      id: dateStr,
+      batch_id: normalizedAttendance[dateStr]?.batch_id,
+      ...updates
+    };
+    commitIndividualRow(row);
   };
 
   // Monthly grid calendar calculations

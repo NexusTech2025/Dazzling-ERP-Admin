@@ -30,7 +30,11 @@ export const queryKeys = {
     list: (filter = EMPTY_FILTER) => [...queryKeys.teacher.lists(), { filter }],
     details: () => [...queryKeys.teacher.all, 'detail'],
     detail: (id) => [...queryKeys.teacher.details(), id],
-    attendanceDaily: (date, batchId) => [...queryKeys.teacher.all, 'attendance-daily', date, batchId],
+    attendanceDaily: (date, batchId) => {
+      const key = [...queryKeys.teacher.all, 'attendance-daily', date];
+      if (batchId !== undefined && batchId !== null) key.push(batchId);
+      return key;
+    },
     attendanceProfile: (id, yearMonth) => [...queryKeys.teacher.all, 'attendance-profile', id, yearMonth],
   },
   course: {
@@ -112,5 +116,12 @@ export const queryKeys = {
     overdue: (filter = EMPTY_FILTER) => ['finance', 'overdue', { filter }],
     payments: (filter = EMPTY_FILTER) => ['finance', 'payments', { filter }],
     accountingData: ['finance', 'accounting-data']
+  },
+  user: {
+    all: ['user'],
+    lists: () => [...queryKeys.user.all, 'list'],
+    list: (filter = EMPTY_FILTER) => [...queryKeys.user.lists(), { filter }],
+    details: () => [...queryKeys.user.all, 'detail'],
+    detail: (id) => [...queryKeys.user.details(), id]
   }
 };

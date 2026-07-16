@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContextCore';
 import Logout from '../ui/btn/Logout';
 
 const Sidebar = ({ isOpen, onClose }) => {
   const location = useLocation();
   const [expandedMenus, setExpandedMenus] = useState({});
+  const { user } = useAuth();
 
   const menuItems = [
     { name: 'Dashboard', path: '/admin/dashboard', icon: 'dashboard' },
@@ -51,6 +53,10 @@ const Sidebar = ({ isOpen, onClose }) => {
 
   const adminItems = [
     { name: 'Branches', path: '/admin/branches', icon: 'hub' },
+    ...(user?.role?.toLowerCase() === 'superadmin' ? [
+      { name: 'User Directory', path: '/admin/users', icon: 'manage_accounts' },
+      { name: 'User Registration', path: '/admin/users/add', icon: 'person_add' }
+    ] : []),
     { name: 'Roles & Permissions', path: '/admin/roles', icon: 'admin_panel_settings' },
     { name: 'Reports', path: '/admin/reports', icon: 'bar_chart' },
     { name: 'Settings', path: '/admin/settings', icon: 'settings' },
