@@ -19,7 +19,8 @@ Welcome! This file documents our established architectural patterns, UI standard
 11. **Primary Database Schema**: The local `src/Schema` directory is outdated and **MUST NOT** be followed. Refer exclusively to the decoupled, domain-grouped JSON schema files inside `E:\NAST\Dazzling\GAS\DazzlingDB\Config\Schema\` as the primary source of truth for all database tables and fields.
 12. **REST API Documentation**: Refer to `E:\NAST\Dazzling\GAS\DazzlingDB\REST-api-doc.md` for the official REST API request/response format rules during code editing, debugging, or diagnostics. If the rules for a specific REST API action are undefined or ambiguous, notify the user immediately before proceeding.
 13. **Centralized Query Keys**: Always define and reference React Query cache keys exclusively via the centralized Query Key Factory in [queryKeys.js](file:///e:/NAST/Dazzling/ERP%20System/dazzling-erp-admin/src/lib/react-query/queryKeys.js). Do not write raw query key arrays inline in hooks or mutations; use the factory methods to prevent cache collisions and guarantee invalidation consistency.
-14. **Shell Execution Rule**: Do NOT run any terminal or shell commands with the `cmd /c` prefix. Invoke commands directly (e.g. `git status` instead of `cmd /c git status`).
+14. **Shell Execution Rule**: Do NOT run any terminal or shell commands using any kind of prefix (such as `cmd /c`). The agent must always show/propose the full, direct command without prefixes so the user can review and run it.
+15. **File Copy & Move Operations**: Never copy or move files by reading the content from one location and writing it to another. Doing so consumes excessive tokens and creates redundant operations. Always execute shell/terminal commands using the `run_command` tool to perform copies (`Copy-Item`, `cp`, `copy`) or moves (`Move-Item`, `mv`, `move`) directly.
 
 ---
 
@@ -40,6 +41,13 @@ We utilize a modern, highly aesthetic dark-mode slate theme featuring glassmorph
     - Integrate collapsible drawers (`showCrmOptions`, `showPriorityOptions`) to minimize vertical scrolling.
     - Use smooth CSS transitions (`transition-all duration-300 ease-in-out overflow-hidden`) with height gates (`max-h-[500px]` vs `max-h-0`).
     - **Crucial Rule**: When accordions are collapsed, always show a dynamic, live text summary pill (e.g. `Walk-In • Hot Lead • Clear Form`) on the header to ensure parameters are visible at a glance without expanding.
+*   **Presentational Preset Components (`src/components/ui/presets/`)**:
+    - Paired value displays (date ranges, time ranges) must use the preset components: `DateRange`, `TimeRange`, `DateDisplay`, and `Time`.
+    - Presets compose atomic primitives (`DateDisplay`, `Time`, `Badge`) into standardized display patterns.
+    - Support `layout` (`horizontal` / `vertical`), `useBadge`, and `className` props for flexible placement.
+*   **Domain-Specific Shared Components (`src/components/domain/`)**:
+    - Components shared across multiple feature entities but specific to a domain pattern (e.g. `ProfileHero` used by batches, students, and teachers) are placed here.
+    - These differ from generic UI primitives by encoding domain-specific layout patterns (profile hero 3-tier layouts, entity cards, etc.).
 
 ---
 
@@ -86,6 +94,21 @@ We connect to a live Google Apps Script (GAS) web app backend for production CRU
 
 *   **Staging & Commits**: Never perform aggressive git additions (like `git add .`) or make commits unless the user explicitly asks you to.
 *   **Non-Destructive Work**: Never run physical file deletion commands like `git clean` or `git rm` that destroy untracked files or local staging states. Keep all operations stage-only and non-destructive.
+*   **Smart-Commit Skill Workflow**:
+    1. **Get Status**: Run `git status` to identify modified, untracked, and staged files. Present a brief summary of this status to the user.
+    2. **Identify Target & Get Diff**:
+       - Ask the user which specific files or directories they want to target for this commit (if not already specified).
+       - Run `git diff <targeted_directory_or_file>` to analyze the exact changes.
+    3. **Generate Commit Message**:
+       - Generate a detailed git commit message using Conventional Commits format: `<type>(<scope>): <subject>\n\n<body>`.
+       - Present the drafted commit message to the user for review.
+    4. **Confirm Staging (Add)**:
+       - Explicitly ask: "Do you want me to stage these files by running `git add <targeted_directory_or_file>`?"
+       - **WAIT** for user confirmation before executing `git add`.
+    5. **Confirm and Execute Commit**:
+       - Explicitly ask: "Do you want me to commit these changes with the drafted message?"
+       - **WAIT** for user confirmation.
+       - If approved, write the message to `.git/temp_commit_msg.txt`, execute `git commit -F .git/temp_commit_msg.txt`, and clean up by removing the temp file (`Remove-Item` on Windows, `rm` on Unix).
 
 ---
 
@@ -140,6 +163,10 @@ To ensure that both future AI agents and human developers have immediate local a
 
 We maintain local catalogs documenting reusable frontend components and interactive modals under `.gemini/memory/` for rapid context retrieval. Any developer or AI assistant working on new pages or features **MUST** consult these references to avoid duplicating code and to ensure styling consistency:
 
+*   **Component Index Catalog**: Defined in `.gemini/memory/ui_component/components.index.json`.
+    - *Purpose*: A structured JSON registry mapping every reusable UI component to its documentation line reference (in `components.md`) and source file location. Covers atomic inputs, layout shells, cards, filters, display badges, modals, domain compounds, and presentational presets.
+    - *Mandatory Workflow*: **Before** writing any new component, creating a new page view, or refactoring existing React code, the agent **MUST** read `components.index.json` first. Scan the registry to identify existing primitives that satisfy the requirement. Only create a new component if no existing match is found. During refactoring, actively suggest and utilize catalog components to replace ad-hoc inline markup.
+    - *How to Use*: Open the file, scan the `components` array for matching `title` entries, then read the detailed documentation at the corresponding `line` number in `.gemini/memory/ui_component/components.md`, and inspect the source implementation via the `location` path.
 *   **Generic & Reusable Components**: Detailed in `E:/NAST/Dazzling/ERP System/dazzling-erp-admin/.gemini/memory/components.md`.
     - *Purpose*: Documents standard V2 inputs (`TextInput`, `SelectInput`, `RadioGroup`, `PhoneInput`, `FormField`), layouts, steppers, and generic presentation blocks.
     - *How to Use*: Refer to this file whenever you need to build forms, lists, tabs, timelines, or selection actions. Use the documented props API and implementation examples directly to maintain theme compliance.

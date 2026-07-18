@@ -1,0 +1,419 @@
+{
+  "meta": {
+    "description": "Index mapping React components of Dazzling ERP Admin to their detailed documentation references and source code locations.",
+    "documentationFile": ".gemini/memory/ui_component/components.md",
+    "usage": "To read the documentation, open '.gemini/memory/ui_component/components.md' and go to the line number specified by the 'line' field. To inspect the source code implementation, open the file specified by the 'location' field.",
+    "schema": {
+      "title": "The exact header title of the component in components.md",
+      "line": "The line number in components.md where the component section starts (1-indexed)",
+      "location": "The relative path to the source file or folder containing the component implementation"
+    }
+  },
+  "components": [
+    {
+      "title": "ButtonGroupFilter",
+      "line": 3,
+      "location": "src/components/ui/filters/ButtonGroupFilter.jsx"
+    },
+    {
+      "title": "SelectGroupFilter",
+      "line": 45,
+      "location": "src/components/ui/filters/SelectGroupFilter.jsx"
+    },
+    {
+      "title": "Breadcrumbs",
+      "line": 75,
+      "location": "src/components/ui/Breadcrumbs.jsx"
+    },
+    {
+      "title": "Form UI Primitives",
+      "line": 103,
+      "location": "src/components/ui/form/"
+    },
+    {
+      "title": "ActionCardButton",
+      "line": 122,
+      "location": "src/components/ui/buttons/ActionCardButton.jsx"
+    },
+    {
+      "title": "CourseSelectionModal",
+      "line": 157,
+      "location": "src/features/course/components/CourseSelectionModal.jsx"
+    },
+    {
+      "title": "BaseInput",
+      "line": 194,
+      "location": "src/components/ui/v2/BaseInput.jsx"
+    },
+    {
+      "title": "TextInput",
+      "line": 238,
+      "location": "src/components/ui/v2/TextInput.jsx"
+    },
+    {
+      "title": "PhoneInput",
+      "line": 271,
+      "location": "src/components/ui/v2/PhoneInput.jsx"
+    },
+    {
+      "title": "FormField",
+      "line": 306,
+      "location": "src/components/ui/v2/FormField.jsx"
+    },
+    {
+      "title": "Button",
+      "line": 345,
+      "location": "src/components/ui/v2/Button.jsx"
+    },
+    {
+      "title": "SelectInput",
+      "line": 386,
+      "location": "src/components/ui/v2/SelectInput.jsx"
+    },
+    {
+      "title": "MultiSelect",
+      "line": 434,
+      "location": "src/components/ui/v2/MultiSelect.jsx"
+    },
+    {
+      "title": "RadioGroup",
+      "line": 477,
+      "location": "src/components/ui/v2/RadioGroup.jsx"
+    },
+    {
+      "title": "FormSection",
+      "line": 521,
+      "location": "src/components/ui/v2/FormSection.jsx"
+    },
+    {
+      "title": "ToggleSwitch",
+      "line": 554,
+      "location": "src/components/ui/v2/ToggleSwitch.jsx"
+    },
+    {
+      "title": "SegmentedControl",
+      "line": 587,
+      "location": "src/components/ui/v2/SegmentedControl.jsx"
+    },
+    {
+      "title": "Tabs",
+      "line": 626,
+      "location": "src/components/ui/v2/Tabs.jsx"
+    },
+    {
+      "title": "Timeline",
+      "line": 677,
+      "location": "src/components/ui/v2/Timeline.jsx"
+    },
+    {
+      "title": "SelectionActionBar",
+      "line": 718,
+      "location": "src/components/ui/v2/SelectionActionBar.jsx"
+    },
+    {
+      "title": "Avatar",
+      "line": 757,
+      "location": "src/components/ui/v2/Avatar.jsx"
+    },
+    {
+      "title": "DateInput",
+      "line": 799,
+      "location": "src/components/ui/v2/DateInput.jsx"
+    },
+    {
+      "title": "FileUpload",
+      "line": 827,
+      "location": "src/components/ui/v2/FileUpload.jsx"
+    },
+    {
+      "title": "HighlightBox",
+      "line": 861,
+      "location": "src/components/ui/v2/HighlightBox.jsx"
+    },
+    {
+      "title": "KeyValuePair",
+      "line": 896,
+      "location": "src/components/ui/v2/KeyValuePair.jsx"
+    },
+    {
+      "title": "MaskedInput",
+      "line": 946,
+      "location": "src/components/ui/v2/MaskedInput.jsx"
+    },
+    {
+      "title": "PasswordInput",
+      "line": 977,
+      "location": "src/components/ui/v2/PasswordInput.jsx"
+    },
+    {
+      "title": "SearchInput",
+      "line": 1006,
+      "location": "src/components/ui/v2/SearchInput.jsx"
+    },
+    {
+      "title": "FullScreenSplash",
+      "line": 1035,
+      "location": "src/components/ui/v2/loaders/FullScreenSplash.jsx"
+    },
+    {
+      "title": "ProgressStepper",
+      "line": 1057,
+      "location": "src/features/student/registration/components/ProgressStepper.jsx"
+    },
+    {
+      "title": "KpiCard",
+      "line": 1087,
+      "location": "src/components/ui/v2/KpiCard.jsx"
+    },
+    {
+      "title": "KpiGrid",
+      "line": 1145,
+      "location": "src/components/ui/v2/KpiGrid.jsx"
+    },
+    {
+      "title": "HydrationGuard",
+      "line": 1190,
+      "location": "src/components/guards/HydrationGuard.jsx"
+    },
+    {
+      "title": "AdminLayout",
+      "line": 1220,
+      "location": "src/components/layout/AdminLayout.jsx"
+    },
+    {
+      "title": "MainLayout",
+      "line": 1247,
+      "location": "src/components/layout/MainLayout.jsx"
+    },
+    {
+      "title": "Header",
+      "line": 1284,
+      "location": "src/components/layout/Header.jsx"
+    },
+    {
+      "title": "Sidebar",
+      "line": 1312,
+      "location": "src/components/layout/Sidebar.jsx"
+    },
+    {
+      "title": "Card",
+      "line": 1341,
+      "location": "src/components/ui/Card.jsx"
+    },
+    {
+      "title": "Badge",
+      "line": 1403,
+      "location": "src/components/ui/Badge.jsx"
+    },
+    {
+      "title": "APIErrorModal",
+      "line": 1433,
+      "location": "src/components/ui/APIErrorModal.jsx"
+    },
+    {
+      "title": "ConfirmModal",
+      "line": 1471,
+      "location": "src/components/ui/ConfirmModal.jsx"
+    },
+    {
+      "title": "DeleteDependencyModal",
+      "line": 1514,
+      "location": "src/components/ui/DeleteDependencyModal.jsx"
+    },
+    {
+      "title": "ResolveDeleteConflict",
+      "line": 1555,
+      "location": "src/components/ui/ResolveDeleteConflict.jsx"
+    },
+    {
+      "title": "DataTable",
+      "line": 1589,
+      "location": "src/components/ui/DataTable.jsx"
+    },
+    {
+      "title": "DataTableV2",
+      "line": 1633,
+      "location": "src/components/ui/table/DataTableV2.jsx"
+    },
+    {
+      "title": "ActionFooter",
+      "line": 1680,
+      "location": "src/components/ui/v2/ActionFooter.jsx"
+    },
+    {
+      "title": "ProgressBar",
+      "line": 1714,
+      "location": "src/components/ui/v2/ProgressBar.jsx"
+    },
+    {
+      "title": "RadioIndicator",
+      "line": 1757,
+      "location": "src/components/ui/v2/RadioIndicator.jsx"
+    },
+    {
+      "title": "GenericSelectDropdown",
+      "line": 1787,
+      "location": "src/components/ui/v2/GenericSelectDropdown.jsx"
+    },
+    {
+      "title": "CardContainer",
+      "line": 1846,
+      "location": "src/components/ui/v2/cards/CardContainer.jsx"
+    },
+    {
+      "title": "ExpandableLowDensityCard",
+      "line": 1881,
+      "location": "src/components/ui/v2/cards/ExpandableLowDensityCard.jsx"
+    },
+    {
+      "title": "HighDensityCard",
+      "line": 1925,
+      "location": "src/components/ui/v2/cards/HighDensityCard.jsx"
+    },
+    {
+      "title": "LowDensityCard",
+      "line": 1972,
+      "location": "src/components/ui/v2/cards/LowDensityCard.jsx"
+    },
+    {
+      "title": "MediumDensityCard",
+      "line": 2020,
+      "location": "src/components/ui/v2/cards/MediumDensityCard.jsx"
+    },
+    {
+      "title": "BarChartTrend",
+      "line": 2068,
+      "location": "src/components/ui/v2/cards/widgets/BarChartTrend.jsx"
+    },
+    {
+      "title": "CircularProgress",
+      "line": 2106,
+      "location": "src/components/ui/v2/cards/widgets/CircularProgress.jsx"
+    },
+    {
+      "title": "Badge (V2 Indicator)",
+      "line": 2143,
+      "location": "src/components/ui/v2/indicators/Badge.jsx"
+    },
+    {
+      "title": "Chip",
+      "line": 2180,
+      "location": "src/components/ui/v2/indicators/Chip.jsx"
+    },
+    {
+      "title": "Tag (V2 Indicator)",
+      "line": 2222,
+      "location": "src/components/ui/v2/indicators/Tag.jsx"
+    },
+    {
+      "title": "Logout",
+      "line": 2261,
+      "location": "src/components/ui/btn/Logout.jsx"
+    },
+    {
+      "title": "RefreshButton",
+      "line": 2287,
+      "location": "src/components/ui/btn/RefreshButton.jsx"
+    },
+    {
+      "title": "MobileBaseLayout",
+      "line": 2318,
+      "location": "src/components/layout/MobileBaseLayout.jsx"
+    },
+    {
+      "title": "AlertContainer",
+      "line": 2369,
+      "location": "src/components/ui/AlertContainer.jsx"
+    },
+    {
+      "title": "AlertItem",
+      "line": 2390,
+      "location": "src/components/ui/AlertItem.jsx"
+    },
+    {
+      "title": "PageErrorBoundary",
+      "line": 2417,
+      "location": "src/components/ui/PageErrorBoundary.jsx"
+    },
+    {
+      "title": "QueryStatus",
+      "line": 2442,
+      "location": "src/components/ui/QueryStatus.jsx"
+    },
+    {
+      "title": "ScrollableRibbon",
+      "line": 2493,
+      "location": "src/components/ui/v2/ScrollableRibbon.jsx"
+    },
+    {
+      "title": "SelectDropdown",
+      "line": 2521,
+      "location": "src/components/ui/v2/SelectDropdown.jsx"
+    },
+    {
+      "title": "StatusButton",
+      "line": 2557,
+      "location": "src/components/ui/v2/StatusButton.jsx"
+    },
+    {
+      "title": "Time",
+      "line": 2589,
+      "location": "src/components/ui/v2/Time.jsx"
+    },
+    {
+      "title": "TimeField",
+      "line": 2614,
+      "location": "src/components/ui/v2/TimeField/TimeField.jsx"
+    },
+    {
+      "title": "TimePill",
+      "line": 2642,
+      "location": "src/components/ui/v2/TimePill.jsx"
+    },
+    {
+      "title": "DescriptionSection",
+      "line": 2667,
+      "location": "src/components/ui/v2/DescriptionSection.jsx"
+    },
+    {
+      "title": "IconButton",
+      "line": 2697,
+      "location": "src/components/ui/v2/IconButton.jsx"
+    },
+    {
+      "title": "KpiRibbon",
+      "line": 2723,
+      "location": "src/components/ui/v2/KpiRibbon.jsx"
+    },
+    {
+      "title": "ProfileHero",
+      "line": 2750,
+      "location": "src/components/domain/ProfileHero.jsx"
+    },
+    {
+      "title": "HorizontalStatMetrics",
+      "line": 2786,
+      "location": "src/components/ui/v2/cards/HorizontalStatMetrics.jsx"
+    },
+    {
+      "title": "SlottedEntityCard",
+      "line": 2814,
+      "location": "src/components/ui/v2/cards/SlottedEntityCard.jsx"
+    },
+    {
+      "title": "StateSelector",
+      "line": 2842,
+      "location": "src/components/ui/v2/StateSelector.jsx"
+    },
+    {
+      "title": "AttendanceRegisterMatrix",
+      "line": 2870,
+      "location": "src/features/batch/components/profile/AttendanceRegisterMatrix.jsx"
+    },
+    {
+      "title": "AttendanceRow",
+      "line": 2898,
+      "location": "src/features/batch/components/profile/AttendanceRow.jsx"
+    }
+  ]
+}

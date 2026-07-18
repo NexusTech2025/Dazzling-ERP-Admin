@@ -28,3 +28,5 @@ backup_mocks.ps1
 default_settings.json
 mock_apis_backup.zip
 plan-auditor.skill
+temp/**
+test/**

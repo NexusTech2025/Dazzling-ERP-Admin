@@ -27,6 +27,38 @@ This document outlines key performance design patterns that must be followed dur
 *   **Tab View State Retention via Parallel Rendering & CSS Toggles**:
     When building tabbed interfaces where user inputs, ephemeral state, or scroll context must persist, render all tabs concurrently in a lookup registry (`tabRegistry`) and configure visual toggles (`hidden` vs. `block`) to swap them, rather than conditionally mounting them in JS. Combine this with `React.memo` on the child tabs to skip unneeded render passes.
 
+*   **Headless Hook Domain Separation (Read vs Write):**
+    When a presentational component accumulates business logic exceeding ~150 lines of non-JSX code (queries, staging buffers, mutations, and KPI calculations), decouple the logic into two domain-specific headless hooks:
+    1. **Read Domain Hook** (e.g. `useAttendanceRegistryData`): Manages data fetching, calendar coordinates, and baseline record merging. Returns read-only derived state.
+    2. **Write Domain Hook** (e.g. `useAttendanceTransactionState`): Accepts baseline data from the Read hook, manages staging buffers, delta pruning, payload formatting, and mutation commit handlers. Returns mutable state and action handlers.
+    The presentational component consumes both hooks and focuses exclusively on layout, column definitions, and conditional rendering.
+
+*   **DataTable Cell Wrapper Memoization:**
+    Never pass inline arrow function callbacks inside DataTable column `render` properties. Instead, extract interactive cells (status toggles, time inputs, action buttons) into dedicated memoized wrapper components (e.g. `StatusCell`, `TimeCell`, `ActionCell`) that:
+    1. Accept stable prop references (`studentId`, `updateStageField`).
+    2. Bind the row-specific handler inside `useCallback` within the wrapper.
+    3. Are wrapped in `React.memo` to skip re-renders when their specific row data is unchanged.
+    This guarantees O(1) cell rendering — only the modified row's cells re-render.
+
+*   **Static Config Array Hoisting:**
+    Static configuration arrays (e.g. status option lists, column header definitions, variant maps) that do not depend on component state or props must be declared at the **file module level**, outside the component function body. This ensures a stable reference identity across renders and prevents unnecessary child re-renders.
+
+*   **Callback Dependency Decoupling (Pass Object, Not ID):**
+    When a mutation callback needs to access data from a specific row (e.g. to build a save payload), pass the entire row object to the callback at invocation time instead of passing an ID and having the callback search through a derived list. This eliminates the derived list from the callback's `useCallback` dependency array, keeping the callback reference stable across renders.
+    ```javascript
+    // ❌ BAD: commitIndividualRow depends on studentsList (changes every keystroke)
+    const commitIndividualRow = useCallback(async (studentId) => {
+      const row = studentsList.find(s => s.student_id === studentId);
+      // ...
+    }, [studentsList, ...]);
+
+    // ✅ GOOD: commitIndividualRow is stable (no derived list dependency)
+    const commitIndividualRow = useCallback(async (row) => {
+      const payload = buildPayload(row.student_id, row);
+      // ...
+    }, [batchId, selectedDate, buildPayloadStructureItem, optimizedMutation]);
+    ```
+
 ---
 
 ## 2. Ingest & Caching Optimization
@@ -86,7 +118,7 @@ This document outlines key performance design patterns that must be followed dur
     - `Noon`: 12:00 – 14:00
     - `Afternoon`: 14:00 – 16:00
     - `Evening`: 16:00 onwards
-*   **Academic Class Filters**: When `CourseType === 'Academic'`, extract the class grade dynamically from the entity name (e.g. using regex `match(/Class\s*(\d+)/i)`) and display the target class selector dropdown.
+*   **Academic Class Filters (Deprecate Regex Guessing)**: Do not use regular expressions or text matching to extract class grades or boards from batch or course names. Instead, fetch related Course records, build lookup Maps (`new Map(courses.map(c => [c.course_id, c]))`), and read metadata properties directly (`course.metadata.class` and `course.metadata.board`) to construct filter selector lists.
 
 ---
 

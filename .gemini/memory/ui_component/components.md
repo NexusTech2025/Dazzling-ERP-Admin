@@ -2313,8 +2313,531 @@ import RefreshButton from 'src/components/ui/btn/RefreshButton';
   onRefresh={refetch}
 />
 ```
+---
 
+## MobileBaseLayout
+**Location:** `src/components/layout/MobileBaseLayout.jsx`
 
+### Description
+A macro layout container designed for mobile viewports (< 768px). It locks viewport scroll behaviors (`overflow-hidden`) to prevent layout shifting and provides dedicated flex-anchored slots for sticky headers, horizontal filters, segmented tab belts, metrics ribbons, scrollable body items, and sticky action buttons.
 
+### Usage Guidelines
+ALWAYS wrap mobile-specific pages in `MobileBaseLayout` to prevent browser elastic scrolling and address layout shift anomalies.
 
+### Props API
+#### MobileBaseLayout
+| Prop | Type | Description |
+| :--- | :--- | :--- |
+| `children` | `node` | Structural layout slots. |
 
+#### MobileBaseLayout.Header
+| Prop | Type | Description |
+| :--- | :--- | :--- |
+| `renderLeft` | `node` | Optional custom left icon button (e.g., back arrow). |
+| `title` | `string` | Bold title text. |
+| `renderRight` | `node` | Optional right action button (e.g., "+ New"). |
+
+#### MobileBaseLayout.FilterSlot
+| Prop | Type | Description |
+| :--- | :--- | :--- |
+| `children` | `node` | Horizontal scrollable filter controls. |
+
+#### MobileBaseLayout.ListSlot
+| Prop | Type | Description |
+| :--- | :--- | :--- |
+| `children` | `node` | Main vertical scroll list. |
+| `isEmpty` | `boolean` | Injected empty check (default: `false`). |
+| `renderEmptyState` | `node` | Custom empty status block node. |
+
+### Implementation Example
+```jsx
+import MobileBaseLayout from 'src/components/layout/MobileBaseLayout';
+
+<MobileBaseLayout>
+  <MobileBaseLayout.Header title="Leads Directory" />
+  <MobileBaseLayout.FilterSlot>
+    <TextInput placeholder="Search..." />
+  </MobileBaseLayout.FilterSlot>
+  <MobileBaseLayout.ListSlot>
+    {leads.map(lead => <LeadCard key={lead.id} data={lead} />)}
+  </MobileBaseLayout.ListSlot>
+</MobileBaseLayout>
+```
+
+---
+
+## AlertContainer
+**Location:** `src/components/ui/AlertContainer.jsx`
+
+### Description
+A system-wide floating container anchored at the top right of the viewport. It dynamically reads warning payloads from the global `useAlerts` store, offering collapsible minimization gates and automated peeking triggers when new warnings occur.
+
+### Usage Guidelines
+Mounted once at the application root layout level (`AdminLayout`). Do not instantiate manually inside standard view files.
+
+### Props API
+*This component has no public Props API (retrieves state from alerts store).*
+
+### Implementation Example
+```jsx
+import AlertContainer from 'src/components/ui/AlertContainer';
+
+<AlertContainer />
+```
+
+---
+
+## AlertItem
+**Location:** `src/components/ui/AlertItem.jsx`
+
+### Description
+A card-style notification banner representing a warning or error payload. It maps severities (`info`, `warning`, `danger`, `error`, `success`) to color tokens and provides a togglable panel to show stack trace logs.
+
+### Usage Guidelines
+Used internally by `AlertContainer` to render individual alert records.
+
+### Props API
+| Prop | Type | Description |
+| :--- | :--- | :--- |
+| `alert` | `object` | Alert configuration object: `{ variant, title, description }`. |
+| `onClose` | `function` | Click handler to remove/dismiss the alert. |
+
+### Implementation Example
+```jsx
+import AlertItem from 'src/components/ui/AlertItem';
+
+<AlertItem
+  alert={{ variant: 'danger', title: 'Network Failure', description: 'O(n) limit exceeded.' }}
+  onClose={() => console.log('dismissed')}
+/>
+```
+
+---
+
+## PageErrorBoundary
+**Location:** `src/components/ui/PageErrorBoundary.jsx`
+
+### Description
+A fallback error boundary component that catches JavaScript runtime errors in its child tree. It displays a user-friendly error message block with options to reload the page or retry, and outputs stack traces during local development.
+
+### Usage Guidelines
+Wrap feature page routes with this boundary to prevent complete application crashes from isolated page failures.
+
+### Props API
+| Prop | Type | Description |
+| :--- | :--- | :--- |
+| `children` | `node` | Child elements to evaluate. |
+
+### Implementation Example
+```jsx
+import PageErrorBoundary from 'src/components/ui/PageErrorBoundary';
+
+<PageErrorBoundary>
+  <ActiveDashboardView />
+</PageErrorBoundary>
+```
+
+---
+
+## QueryStatus
+**Location:** `src/components/ui/QueryStatus.jsx`
+
+### Description
+A modular group of query state-rendering helpers containing:
+- `LoadingState`: Standard circular spinner centered vertically.
+- `ErrorState`: Failure callout box with a retry action button.
+- `EmptyState`: Search/folder state icon with supporting messaging.
+- `TableSkeleton`: Animated skeleton block representing table rows.
+
+### Usage Guidelines
+Use to represent async state changes in list views or forms.
+
+### Props API
+#### LoadingState
+| Prop | Type | Description |
+| :--- | :--- | :--- |
+| `message` | `string` | Progress message text (default: `"Loading data..."`). |
+
+#### ErrorState
+| Prop | Type | Description |
+| :--- | :--- | :--- |
+| `title` | `string` | Bold error title (default: `"Something went wrong"`). |
+| `message` | `string` | Support description context. |
+| `onRetry` | `function` | Click refetch callback. |
+
+#### EmptyState
+| Prop | Type | Description |
+| :--- | :--- | :--- |
+| `title` | `string` | Primary bold message. |
+| `message` | `string` | Detail hint. |
+| `icon` | `string` | Material Symbols name. |
+| `action` | `node` | Action button node. |
+
+#### TableSkeleton
+| Prop | Type | Description |
+| :--- | :--- | :--- |
+| `rows` | `number` | Row skeletons to render (default: `5`). |
+| `cols` | `number` | Column cells per row (default: `5`). |
+
+### Implementation Example
+```jsx
+import { LoadingState, ErrorState, EmptyState } from 'src/components/ui/QueryStatus';
+
+if (isLoading) return <LoadingState message="Fetching roster..." />;
+if (error) return <ErrorState onRetry={refetch} />;
+if (data.length === 0) return <EmptyState title="No students registered" />;
+```
+
+---
+
+## ScrollableRibbon
+**Location:** `src/components/ui/v2/ScrollableRibbon.jsx`
+
+### Description
+A horizontal layout container featuring mobile-swipeable snap points. It hides desktop scrollbars and wraps child chips, tags, or tabs into a clean single-row track.
+
+### Usage Guidelines
+Wrap filters, segmented buttons, or action pills in a `ScrollableRibbon` for mobile screens.
+
+### Props API
+| Prop | Type | Description |
+| :--- | :--- | :--- |
+| `children` | `node` | Inline elements to display horizontally. |
+| `className` | `string` | Optional custom CSS container class overrides. |
+
+### Implementation Example
+```jsx
+import ScrollableRibbon from 'src/components/ui/v2/ScrollableRibbon';
+
+<ScrollableRibbon>
+  <button>Academic</button>
+  <button>Finance</button>
+  <button>Roster</button>
+</ScrollableRibbon>
+```
+
+---
+
+## SelectDropdown
+**Location:** `src/components/ui/v2/SelectDropdown.jsx`
+
+### Description
+A refactored compound combobox dropdown with a headless controller. It calculates viewport bounds dynamically to prevent pop-up overlaps, supports keyboard navigation, search filtering, and handles native form selects.
+
+### Usage Guidelines
+Standardized dropdown structure used under the hood by `GenericSelectDropdown`.
+
+### Props API
+| Prop | Type | Description |
+| :--- | :--- | :--- |
+| `items` | `array` | Selection choices data array. |
+| `selectedId` | `any` | Active item identifier. |
+| `onChange` | `function` | Value selection trigger callback. |
+| `idProp` | `string` | Record parameter serving as unique ID. |
+| `labelProp` | `string` | Record parameter used for text identification. |
+| `searchFields` | `array` | Parameters scanned by the inline filter. |
+
+### Implementation Example
+```jsx
+import { Dropdown } from 'src/components/ui/v2/SelectDropdown';
+
+<Dropdown items={branches} selectedId={selectedBranch} onChange={setSelectedBranch} idProp="id" labelProp="name">
+  <Dropdown.Trigger placeholder="Choose branch" />
+  <Dropdown.Menu>
+    <Dropdown.Search />
+    <Dropdown.Items>
+      {(item) => <Dropdown.Item key={item.id} item={item}>{item.name}</Dropdown.Item>}
+    </Dropdown.Items>
+  </Dropdown.Menu>
+</Dropdown>
+```
+
+---
+
+## StatusButton
+**Location:** `src/components/ui/v2/StatusButton.jsx`
+
+### Description
+A compact status toggler button. It renders green when active (prompting deactivation) and red when inactive (prompting activation), managing confirmation modals and spinner overlays.
+
+### Usage Guidelines
+Place inside table directory rows to quickly switch record states.
+
+### Props API
+| Prop | Type | Description |
+| :--- | :--- | :--- |
+| `currentStatus` | `string` | Status `'active'` or `'inactive'`. |
+| `entityName` | `string` | Display name of the record. |
+| `onStatusToggle` | `function` | Async callback function resolving to status updates. |
+
+### Implementation Example
+```jsx
+import StatusButton from 'src/components/ui/v2/StatusButton';
+
+<StatusButton
+  currentStatus={student.status}
+  entityName={student.name}
+  onStatusToggle={async (nextStatus) => {
+    await updateStatus(student.id, nextStatus);
+    return { success: true };
+  }}
+/>
+```
+
+---
+
+## Time
+**Location:** `src/components/ui/v2/Time.jsx`
+
+### Description
+A pure, optimized display primitive for uniform time presentation. It uses `useMemo` caching to isolate parsing cycles, format configurations, and tabular-num alignments.
+
+### Usage Guidelines
+Use for any read-only time representation (e.g. log events, payment times) instead of raw text lines.
+
+### Props API
+| Prop | Type | Description |
+| :--- | :--- | :--- |
+| `value` | `string` | ISO/Time string to format. |
+| `format` | `string` | Sizing `'12h'` (default) or `'24h'`. |
+| `fallback` | `string` | Rendered when value is empty (default: `"N/A"`). |
+
+### Implementation Example
+```jsx
+import Time from 'src/components/ui/v2/Time';
+
+<Time value="14:30:00" format="12h" />
+```
+
+---
+
+## TimeField
+**Location:** `src/components/ui/v2/TimeField/TimeField.jsx`
+
+### Description
+A specialized time input component featuring input division segment indicators (hours, minutes, seconds, meridiem). It maps keyboard controls, disabled flags, and switches interaction for mobile device fallback inputs.
+
+### Usage Guidelines
+Recommended for scheduling interfaces or class timings.
+
+### Props API
+| Prop | Type | Description |
+| :--- | :--- | :--- |
+| `value` | `string` | Schedular time value. |
+| `onChange` | `function` | Value change callback. |
+| `is24Hour` | `boolean` | Enable 24-hour style. |
+| `hideSeconds` | `boolean` | Hide second selectors (default: `true`). |
+
+### Implementation Example
+```jsx
+import { TimeField } from 'src/components/ui/v2/TimeField/TimeField';
+
+<TimeField value={startTime} onChange={setStartTime} is24Hour={false}>
+  {/* TimeField layout components */}
+</TimeField>
+```
+
+---
+
+## TimePill
+**Location:** `src/components/ui/v2/TimePill.jsx`
+
+### Description
+A visual capsule displaying a time value with a bold label prefix. It maps themes (`success`, `info`, `warning`, `danger`, `default`) to HSL colors.
+
+### Usage Guidelines
+Ideal for roster slots, slot limits, or transaction history rows.
+
+### Props API
+| Prop | Type | Description |
+| :--- | :--- | :--- |
+| `label` | `string` | Bold label prefix text. |
+| `value` | `string` | Time string value. |
+| `variant` | `string` | Style `'success'`, `'info'`, `'warning'`, `'danger'`, or `'default'`. |
+
+### Implementation Example
+```jsx
+import { TimePill } from 'src/components/ui/v2/TimePill';
+
+<TimePill label="Start" value="09:00:00" variant="success" />
+```
+
+---
+
+## DescriptionSection
+**Location:** `src/components/ui/v2/DescriptionSection.jsx`
+
+### Description
+A structured card body that groups KeyValuePair layouts in responsive columns. It includes a custom header row with optional edit actions.
+
+### Usage Guidelines
+Use to organize entity profile detail sections.
+
+### Props API
+| Prop | Type | Description |
+| :--- | :--- | :--- |
+| `title` | `string` | Section title text. |
+| `icon` | `string` | Material Symbols header badge icon. |
+| `onActionClick` | `function` | Optional callback for header action button. |
+| `actionLabel` | `string` | Header button text label (default: `"Edit"`). |
+
+### Implementation Example
+```jsx
+import DescriptionSection from 'src/components/ui/v2/DescriptionSection';
+import KeyValuePair from 'src/components/ui/v2/KeyValuePair';
+
+<DescriptionSection title="Contact Details" icon="call" onActionClick={() => console.log('Edit clicked')}>
+  <KeyValuePair label="Mobile" value="+91 9999999999" />
+  <KeyValuePair label="Email" value="student@example.com" />
+</DescriptionSection>
+```
+
+---
+
+## IconButton
+**Location:** `src/components/ui/v2/IconButton.jsx`
+
+### Description
+An atomic icon button container styled to handle hover background highlights, click transitions, and disabled constraints.
+
+### Usage Guidelines
+Recommended for small single-click triggers (dismiss, reload, open drawer).
+
+### Props API
+| Prop | Type | Description |
+| :--- | :--- | :--- |
+| `icon` | `string` | Material Symbol name. |
+| `onClick` | `function` | Click callback handler. |
+| `disabled` | `boolean` | Disable interaction. |
+| `title` | `string` | Hover tooltip text. |
+
+### Implementation Example
+```jsx
+import IconButton from 'src/components/ui/v2/IconButton';
+
+<IconButton icon="close" onClick={() => console.log('Closed')} title="Dismiss" />
+```
+
+---
+
+## KpiRibbon
+**Location:** `src/components/ui/v2/KpiRibbon.jsx`
+
+### Description
+A horizontal ribbon showing a grid list of small KPI stats. It supports custom color variants and prefix icons.
+
+### Usage Guidelines
+Renders density-focused metric summaries in mobile header rows.
+
+### Props API
+| Prop | Type | Description |
+| :--- | :--- | :--- |
+| `items` | `array` | List of stats `{ label, value, icon, variant, bgColor, textColor }`. |
+
+### Implementation Example
+```jsx
+import KpiRibbon from 'src/components/ui/v2/KpiRibbon';
+
+const kpis = [
+  { label: 'Active', value: 12, variant: 'success', icon: 'check_circle' },
+  { label: 'Pending', value: 3, variant: 'warning', icon: 'pending' }
+];
+<KpiRibbon items={kpis} />
+```
+
+---
+
+## ProfileHero
+**Location:** `src/components/ui/v2/ProfileHero.jsx`
+
+### Description
+A premium profile summary component. It displays user images/avatars, titles, status badges, copyable ID tags, and meta lines alongside trailing action buttons.
+
+### Usage Guidelines
+Used as the hero banner at the top of detail screens.
+
+### Props API
+| Prop | Type | Description |
+| :--- | :--- | :--- |
+| `avatar` | `node` | Renders an Avatar component. |
+| `title` | `string` | Full name or title text. |
+| `badge` | `node` | Status Badge component. |
+| `idText` | `string` | Copyable ID string. |
+| `metaLines` | `array` | Descriptive lines `{ text, icon }`. |
+| `actions` | `node` | Trigger buttons tray. |
+
+### Implementation Example
+```jsx
+import ProfileHero from 'src/components/ui/v2/ProfileHero';
+import Avatar from 'src/components/ui/v2/Avatar';
+import Badge from 'src/components/ui/Badge';
+
+<ProfileHero
+  avatar={<Avatar initials="JD" />}
+  title="John Doe"
+  badge={<Badge variant="success">Active</Badge>}
+  idText="ID: STU-1024"
+  metaLines={[{ text: 'Class 12', icon: 'school' }]}
+/>
+```
+
+---
+
+## HorizontalStatMetrics
+**Location:** `src/components/ui/v2/cards/HorizontalStatMetrics.jsx`
+
+### Description
+A layout system displaying a list of stats/indicators separated by vertical dividers. It handles overflow wrapping on mobile devices.
+
+### Usage Guidelines
+Recommended for inline statistics or horizontal summary badges.
+
+### Props API
+| Prop | Type | Description |
+| :--- | :--- | :--- |
+| `items` | `array` | Stats list `{ label, value, icon, minWidth, maxWidth }`. |
+| `allowWrap` | `boolean` | Enable wrap layout (default: `true`). |
+
+### Implementation Example
+```jsx
+import HorizontalStatMetrics from 'src/components/ui/v2/cards/HorizontalStatMetrics';
+
+const stats = [
+  { label: 'Collected', value: '₹24,500', icon: 'payments' },
+  { label: 'Pending', value: '₹12,000', icon: 'pending' }
+];
+<HorizontalStatMetrics items={stats} />
+```
+
+---
+
+## SlottedEntityCard
+**Location:** `src/components/ui/v2/cards/SlottedEntityCard.jsx`
+
+### Description
+A navigational list-style card. It displays a left icon, a title, a subtitle, metadata lines, status badges, and a chevron navigation arrow.
+
+### Usage Guidelines
+Used to list related resources inside detailed tabs or sidebars.
+
+### Props API
+| Prop | Type | Description |
+| :--- | :--- | :--- |
+| `icon` | `string` | Material Symbols icon name. |
+| `title` | `string` | Bold title text. |
+| `subtitle` | `string` | Description text. |
+| `metaText` | `string` | Supporting metadata text. |
+| `badge` | `node` | Status Badge component. |
+| `onClick` | `function` | Click navigation callback. |
+
+### Implementation Example
+```jsx
+import SlottedEntityCard from 'src/components/ui/v2/cards/SlottedEntityCard';
+
+<SlottedEntityCard
+  icon="menu_book"
+  title="Advanced Physics"
+  subtitle="Class 12 • Science"
+  onClick={() => console.log('Go to course')}
+/>
+```

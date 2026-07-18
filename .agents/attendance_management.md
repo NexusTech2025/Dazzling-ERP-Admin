@@ -6,6 +6,8 @@ This document serves as the core design pattern and rule registry for all daily 
 * **Unified Fetch**: Do not fetch registers individually by batch. Force the React Query hooks or component calls to fetch all batch records simultaneously (using `'all'` or similar date-wide endpoint).
 * **In-Memory Filtering**: Filter records dynamically inside the component's state using selectors and memoized hooks (`useMemo`) to handle search queries, batch selections, and status filters.
 * **Initial Snapshot**: Store a deep copy of the raw network response (`initialSnapshot` using `JSON.parse(JSON.stringify(initial))`) upon loading. The **Reset** button must restore staged records back to this snapshot rather than applying hardcoded fallback defaults (like always setting to 'P').
+* **Cohort-Wide Merge Strategy (Enrolled + Marked = Full View)**: The attendance roster component must always iterate over the **full enrolled student list** (from `useBatchStudentsQuery`), merging each student with their corresponding database record (if one exists for the selected date). Students without a saved record must default to status `'NR'` (Not Recorded) with batch-defined schedule times. This guarantees the component shows **all students** for any date — marked or unmarked, saved or unsaved.
+* **Batch Schedule as Default Time Source**: Never use hardcoded fallback entry/exit times (e.g. `'08:00'`, `'13:00'`). Always retrieve the batch's defined `start_time` and `end_time` from the batch detail query (`useBatchDetailQuery`) and use those as defaults for unmarked records. The only acceptable use of literal time strings is as a last-resort guard when the batch detail query itself returns null.
 
 ## 2. Not Recorded (NR) Status & Validation
 * **Timezone-Safe Date Boundary**: Always use timezone-safe, local midnight date calculations (`isPastLocalDate` in `src/lib/dateUtils.js`) instead of UTC string parsing (`toISOString()`) when classifying historical logs.
@@ -26,3 +28,9 @@ This document serves as the core design pattern and rule registry for all daily 
 
 ## 5. Zero-Width Mobile Card Selection
 * **Zero-Width Avatar selection**: In low-density mobile card layouts, map checkboxes directly inside the visual avatar/initials slot when selection mode is active. This avoids layout shift or horizontal reflow when entering multi-select states.
+
+## 6. Mobile Attendance View Architecture
+* **Full-Screen Takeover**: On mobile viewports (< 768px), attendance registry views must render as a full-viewport `<MobileBaseLayout>` takeover instead of embedding the desktop `<DataTable>` inside the existing page.
+* **Layout Slots**: Use `MobileBaseLayout.Header` (with back button), `MobileBaseLayout.RibbonSlot` (compact metrics), `MobileBaseLayout.FilterSlot` (date picker), `MobileBaseLayout.ListSlot` (student cards), and `MobileBaseLayout.ActionBarSlot` (sticky save bar).
+* **Shift Configuration**: Use the shared `<MobilePunchEditorDrawer>` bottom-sheet modal (from `src/components/domain/`) for configuring check-in/out times and remarks, instead of inline inputs on mobile cards. This component auto-detects student vs. teacher records via the `student_id` field.
+* **StatusCell Reuse**: Export and reuse the memoized `<StatusCell>` component from `AttendanceRegisterMatrix.jsx` in mobile card layouts to maintain consistent status toggle behavior and styling across both viewport layouts.

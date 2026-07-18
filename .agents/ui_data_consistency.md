@@ -36,6 +36,38 @@ This document establishes UI rendering, layout alignment, and database persisten
     *   **Conditional Mounting**: Prefer JSX conditional mounting over CSS display toggles (`hidden` / `block`) when states are lifted to parent orchestrators.
     *   **Decoupled Mobile Layouts**: Each sub-workspace is independently responsible for managing its own viewport rendering via its respective `Mobile*ListView` component (or `Mobile*ListView` wrapper). Do not combine multiple domains into monolithic mobile lists.
 
+*   **Parallel DOM Retention Map (Tab State Anti-Pattern)**:
+    When managing active tab views on profile detail pages, **never** use conditional `switch` or ternary statements to mount/unmount tab content panels. This destroys component scroll positions, input focus states, ephemeral React state (like staged form data), and causes unnecessary re-mount query triggers. Instead, render **all** tab panels simultaneously and toggle visibility using Tailwind `block` / `hidden` classes:
+    ```jsx
+    const tabRegistry = { Overview: <OverviewTab />, Students: <RosterTab /> };
+    {Object.entries(tabRegistry).map(([key, component]) => (
+      <div key={key} className={activeTab === key ? 'block' : 'hidden'}>
+        {component}
+      </div>
+    ))}
+    ```
+    This ensures child components maintain their entire lifecycle, cached query data, and DOM scroll offsets.
+
+*   **Headless Logic Hook + Pure Presentational Shell Separation**:
+    Complex profile pages must decouple business logic (queries, mutations, cache lookups, memoized derivations, and navigation callbacks) into a dedicated headless custom hook (e.g. `useBatchProfile`) located in `src/features/[domain]/hooks/`. The page-level component becomes a thin viewport router that instantiates the hook and delegates to `React.memo`-wrapped layout shells (`DesktopProfile` / `MobileProfile`). This achieves:
+    - Zero logic duplication between viewport variants.
+    - Isolated re-render boundaries via `React.memo`.
+    - Clean testability of business logic independent of UI.
+
+*   **Three-Tier Viewport Router Page Pattern**:
+    Page-level components (`src/pages/admin/`) should follow a strict three-tier execution model:
+    1. **Hook Layer**: Call the headless domain hook to obtain all data and callbacks.
+    2. **Guard Layer**: Render loading spinners and error boundaries as early returns.
+    3. **Router Layer**: Conditionally render `<MobileLayout>` or `<DesktopLayout>` based on `useIsMobile()`, passing all hook outputs as spread props.
+    ```jsx
+    const ProfilePage = () => {
+      const { isMobile, isLoading, error, ...props } = useDomainProfile();
+      if (isLoading) return <Spinner />;
+      if (error) return <ErrorView />;
+      return isMobile ? <MobileProfile {...props} /> : <DesktopProfile {...props} />;
+    };
+    ```
+
 ---
 
 ## 2. Database ID Persistence Policy
@@ -68,3 +100,6 @@ This document establishes UI rendering, layout alignment, and database persisten
     *   If validation errors are present, but the child is a React Hook Form `<Controller>`, custom sub-component, or standard container `<div>` (which cannot natively output helper text), the layout wrapper must render the error message fallback element automatically.
     *   This guarantees validation messages are visible to administrators, preventing silent form submission blocks.
 *   **React Hook Form Reset Normalization**: When initializing forms via `reset()` inside edit dialogs, ensure any complex object/array structures are stringified if the underlying validation schema (e.g. Yup) expects string inputs. This prevents validation mismatches during the submission handshake.
+*   **Database-Driven Defaults & Shared Time Utilities**:
+    *   Decouple time segment parsing, keyboard formatting, and boundary validation from React hooks/components into static helper services under `src/lib/` (e.g. `normalizeTime.js`, `formatTime.js`, `timeSegmentUtils.js`).
+    *   Never hardcode default shift/session times (e.g. `'08:00'`, `'16:00'`) in client-side state hooks. Always extract defaults from database-fetched relationship fields (e.g. `batch.schedule.start_time` and `batch.schedule.end_time`) with standard presets acting only as defensive fallbacks.
