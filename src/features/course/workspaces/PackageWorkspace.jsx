@@ -26,9 +26,9 @@ import MobilePackageListView from '../components/MobilePackageListView';
  * @category Components
  * @returns {React.ReactElement} The rendered Package management workspace sheet.
  */
-const PackageWorkspace = ({ 
-  workspaceState: propWorkspaceState, 
-  viewMode: propViewMode, 
+const PackageWorkspace = ({
+  workspaceState: propWorkspaceState,
+  viewMode: propViewMode,
   setViewMode: propSetViewMode,
   activeTab,
   setActiveTab,
@@ -51,6 +51,8 @@ const PackageWorkspace = ({
     setClassFilter,
     languageFilter,
     setLanguageFilter,
+    statusFilter,
+    setStatusFilter,
     deleteModal,
     setDeleteModal,
     handleOpenDelete,
@@ -59,6 +61,10 @@ const PackageWorkspace = ({
     error,
     filteredPackages,
     segmentOptions,
+    boardOptions,
+    classOptions,
+    languageOptions,
+    statusOptions,
     isAcademicFilterActive,
     selection,
     deletePackageMutation,
@@ -106,24 +112,7 @@ const PackageWorkspace = ({
     </div>
   );
 
-  const languageOptions = [
-    { label: 'ALL', value: '' },
-    { label: 'HINDI', value: 'Hindi' },
-    { label: 'ENGLISH', value: 'English' }
-  ];
 
-  const boardOptions = [
-    { label: 'ALL', value: '' },
-    { label: 'CBSE', value: 'CBSE' },
-    { label: 'RBSE', value: 'RBSE' },
-    { label: 'ICSE', value: 'ICSE' },
-    { label: 'IB', value: 'IB' }
-  ];
-
-  const classOptions = [...Array(12)].map((_, i) => ({
-    label: `Class ${i + 1}`,
-    value: String(i + 1)
-  }));
 
   const basePackageColumns = useMemo(() => {
     return createPackageColumns({
@@ -272,6 +261,9 @@ const PackageWorkspace = ({
         classFilter={classFilter}
         onClassChange={setClassFilter}
         classOptions={classOptions}
+        statusFilter={statusFilter}
+        onStatusChange={setStatusFilter}
+        statusOptions={statusOptions}
         isAcademicFilterActive={isAcademicFilterActive}
       />
 

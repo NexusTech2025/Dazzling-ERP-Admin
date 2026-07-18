@@ -47,7 +47,7 @@ const PackageCardDesktopVariant = ({ pkg, isSelected, onToggleSelect, isSelectio
   return (
     <MediumDensityCard
       title={pkg.name}
-      subtitle={`${pkg.target_class ? 'CLASS ' + pkg.target_class : 'K-12'} • ${pkg.board || 'STATE BOARD'}`}
+      subtitle={`${pkg.package_id} • ${pkg.target_class ? 'CLASS ' + pkg.target_class : 'K-12'} • ${pkg.board || 'STATE BOARD'} `}
       icon={
         <span className="material-symbols-outlined text-base leading-none">
           {iconData.icon}
@@ -55,6 +55,8 @@ const PackageCardDesktopVariant = ({ pkg, isSelected, onToggleSelect, isSelectio
       }
       badgeText={
         <div className="flex items-center gap-2">
+
+
           {pkg.discount_percent > 0 && (
             <span className="rounded bg-rose-500/10 border border-rose-500/20 px-1.5 py-0.5 text-[8px] font-black text-rose-400 uppercase tracking-wider">
               SAVE {pkg.discount_percent}%

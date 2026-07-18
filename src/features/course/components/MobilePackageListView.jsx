@@ -256,6 +256,20 @@ export const MobilePackageListView = ({
                 <span className="material-symbols-outlined absolute right-2.5 top-1/2 -translate-y-1/2 text-[16px] pointer-events-none text-text-secondary">keyboard_arrow_down</span>
               </div>
             )}
+
+            <div className="relative shrink-0">
+              <select
+                value={packageWorkspaceState.statusFilter}
+                onChange={(e) => packageWorkspaceState.setStatusFilter(e.target.value)}
+                className="appearance-none pr-8 pl-4 py-2 rounded-full border border-border-light dark:border-white/8 bg-white dark:bg-black/20 text-[11px] font-bold text-text-main dark:text-white outline-none cursor-pointer focus:border-primary transition-all"
+              >
+                <option value="">Status: All</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+                <option value="draft">Draft</option>
+              </select>
+              <span className="material-symbols-outlined absolute right-2.5 top-1/2 -translate-y-1/2 text-[16px] pointer-events-none text-text-secondary">keyboard_arrow_down</span>
+            </div>
           </div>
         </div>
       </MobileBaseLayout.FilterSlot>

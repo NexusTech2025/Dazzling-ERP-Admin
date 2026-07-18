@@ -6,6 +6,7 @@ import { queryKeys } from '../../../lib/react-query/queryKeys';
 import useSelection from '../../../hooks/useSelection';
 import useDeleteManyMutation from '../../../hooks/useDeleteManyMutation';
 import { API_REGISTRY } from '../../../services/apiRegistry';
+import { usePackageFilter } from './usePackageFilter';
 
 /**
  * @file usePackageWorkspaceState.js
@@ -34,6 +35,8 @@ import { API_REGISTRY } from '../../../services/apiRegistry';
  * @returns {Function} return.setClassFilter - State updater for classFilter.
  * @returns {string} return.languageFilter - Selected language medium filter.
  * @returns {Function} return.setLanguageFilter - State updater for languageFilter.
+ * @returns {string} return.statusFilter - Selected package status filter.
+ * @returns {Function} return.setStatusFilter - State updater for statusFilter.
  * @returns {object} return.deleteModal - Confirmation modal visibility and status details.
  * @returns {Function} return.setDeleteModal - State updater for deleteModal.
  * @returns {Function} return.handleOpenDelete - Trigger callback to display the delete modal drawer.
@@ -52,11 +55,6 @@ import { API_REGISTRY } from '../../../services/apiRegistry';
 export const usePackageWorkspaceState = () => {
   const queryClient = useQueryClient();
   const [viewMode, setViewMode] = useState('grid');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [segmentFilter, setSegmentFilter] = useState('');
-  const [boardFilter, setBoardFilter] = useState('');
-  const [classFilter, setClassFilter] = useState('');
-  const [languageFilter, setLanguageFilter] = useState('');
 
   const [deleteModal, setDeleteModal] = useState({
     isOpen: false,
@@ -83,58 +81,28 @@ export const usePackageWorkspaceState = () => {
     API_REGISTRY.ACADEMIC.DELETE_MANY_PACKAGES
   );
 
-  const selectedType = useMemo(() => {
-    return courseTypes.find(t => t.segment_id === segmentFilter);
-  }, [courseTypes, segmentFilter]);
-
-  const isAcademicFilterActive = useMemo(() => {
-    if (!segmentFilter) return false;
-    return selectedType 
-      ? (selectedType.entity_label === 'Subject' || selectedType.segment_name?.toLowerCase().includes('academic'))
-      : false;
-  }, [selectedType, segmentFilter]);
-
-  // Filter Logic - Packages
-  const filteredPackages = useMemo(() => {
-    return packages.filter(p => {
-      const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.package_id.toLowerCase().includes(searchQuery.toLowerCase());
-
-      const isAcademic = !!(p.board || p.target_class);
-      const matchesSegment = !segmentFilter ||
-        (isAcademicFilterActive && isAcademic) ||
-        (!isAcademicFilterActive && !isAcademic);
-
-      const matchesBoard = !boardFilter || p.board === boardFilter;
-      const matchesClass = !classFilter || String(p.target_class) === classFilter;
-
-      const matchesLanguage = !languageFilter ||
-        (languageFilter === 'Hindi' && p.name.includes('Hindi')) ||
-        (languageFilter === 'English' && (p.name.includes('English') || p.name.includes('CBSE')));
-
-      return matchesSearch && matchesSegment && matchesBoard && matchesClass && matchesLanguage;
-    });
-  }, [packages, searchQuery, segmentFilter, isAcademicFilterActive, boardFilter, classFilter, languageFilter]);
-
-  const segmentOptions = useMemo(() => {
-    const typesList = Array.isArray(courseTypes) ? courseTypes : [];
-    return [
-      { label: 'All', value: '', icon: 'apps' },
-      ...typesList.map(type => {
-        let icon = 'school';
-        const nameLower = type.segment_name?.toLowerCase() || '';
-        if (nameLower.includes('computer')) icon = 'computer';
-        else if (nameLower.includes('foundation')) icon = 'star';
-        else if (nameLower.includes('academic') || type.entity_label === 'Subject') icon = 'menu_book';
-        
-        return {
-          label: type.segment_name,
-          value: type.segment_id,
-          icon: icon
-        };
-      })
-    ];
-  }, [courseTypes]);
+  const {
+    searchQuery,
+    setSearchQuery,
+    segmentFilter,
+    setSegmentFilter,
+    boardFilter,
+    setBoardFilter,
+    classFilter,
+    setClassFilter,
+    languageFilter,
+    setLanguageFilter,
+    statusFilter,
+    setStatusFilter,
+    filteredPackages,
+    isAcademicFilterActive,
+    resetFilters,
+    segmentOptions,
+    boardOptions,
+    classOptions,
+    languageOptions,
+    statusOptions
+  } = usePackageFilter(packages, courseTypes);
 
   /**
    * Triggers the display of the confirmation modal for single or bulk package deletions.
@@ -172,6 +140,8 @@ export const usePackageWorkspaceState = () => {
     setClassFilter,
     languageFilter,
     setLanguageFilter,
+    statusFilter,
+    setStatusFilter,
     deleteModal,
     setDeleteModal,
     handleOpenDelete,
@@ -181,7 +151,12 @@ export const usePackageWorkspaceState = () => {
     error: packagesError || typesError,
     filteredPackages,
     segmentOptions,
+    boardOptions,
+    classOptions,
+    languageOptions,
+    statusOptions,
     isAcademicFilterActive,
+    resetFilters,
     selection,
     deletePackageMutation,
     deleteManyPackagesMutation,

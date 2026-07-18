@@ -26,6 +26,9 @@ const CourseFilters = ({
   classFilter = '',
   onClassChange,
   classOptions = [],
+  statusFilter = '',
+  onStatusChange,
+  statusOptions = [],
   isAcademicFilterActive = true
 }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -48,7 +51,8 @@ const CourseFilters = ({
     segmentFilter ? 1 : 0,
     languageFilter ? 1 : 0,
     boardFilter ? 1 : 0,
-    classFilter ? 1 : 0
+    classFilter ? 1 : 0,
+    statusFilter ? 1 : 0
   ].reduce((a, b) => a + b, 0);
 
   if (isMobile) {
@@ -96,10 +100,11 @@ const CourseFilters = ({
                 value={segmentFilter}
                 onChange={(e) => {
                   onSegmentChange(e.target.value);
-                  if (e.target.value === '' && onLanguageChange && onBoardChange && onClassChange) {
+                  if (e.target.value === '' && onLanguageChange && onBoardChange && onClassChange && onStatusChange) {
                     onLanguageChange('');
                     onBoardChange('');
                     onClassChange('');
+                    onStatusChange('');
                   }
                 }}
                 className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700/80 rounded-xl px-3 py-2 text-xs font-bold text-text-main dark:text-white outline-none focus:ring-1 focus:ring-primary"
@@ -166,6 +171,24 @@ const CourseFilters = ({
               </div>
             )}
 
+            {/* Status Selector */}
+            {statusOptions && statusOptions.length > 0 && (
+              <div className="space-y-1 pt-2 border-t border-slate-100 dark:border-white/5">
+                <span className="text-[10px] font-black text-text-secondary uppercase tracking-widest pl-1">Status:</span>
+                <select
+                  value={statusFilter}
+                  onChange={(e) => onStatusChange && onStatusChange(e.target.value)}
+                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700/80 rounded-xl px-3 py-2 text-xs font-bold text-text-main dark:text-white outline-none focus:ring-1 focus:ring-primary"
+                >
+                  {statusOptions.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label.toUpperCase()}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
             {/* Clear All / Close Row */}
             <div className="flex gap-2 justify-end pt-2 border-t border-slate-100 dark:border-white/5">
               {activeFiltersCount > 0 && (
@@ -176,6 +199,7 @@ const CourseFilters = ({
                     if (onLanguageChange) onLanguageChange('');
                     if (onBoardChange) onBoardChange('');
                     if (onClassChange) onClassChange('');
+                    if (onStatusChange) onStatusChange('');
                     setIsDropdownOpen(false);
                   }}
                   className="px-3 py-1.5 text-xs font-bold text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
@@ -218,10 +242,11 @@ const CourseFilters = ({
             value={segmentFilter}
             onChange={(val) => {
               onSegmentChange(val);
-              if (val === '' && onLanguageChange && onBoardChange && onClassChange) {
+              if (val === '' && onLanguageChange && onBoardChange && onClassChange && onStatusChange) {
                 onLanguageChange('');
                 onBoardChange('');
                 onClassChange('');
+                onStatusChange('');
               }
             }}
             defaultLabel="All Segments"
@@ -261,11 +286,21 @@ const CourseFilters = ({
             )}
           </>
         )}
+
+        {statusOptions && statusOptions.length > 0 && (
+          <SelectGroupFilter
+            label="Status"
+            options={statusOptions}
+            value={statusFilter}
+            onChange={onStatusChange}
+            defaultLabel="All Statuses"
+          />
+        )}
       </div>
 
       {/* Action Tray */}
       <div className="flex items-center gap-2 shrink-0 self-end md:self-auto">
-        {(segmentFilter || languageFilter || boardFilter || classFilter) && (
+        {(segmentFilter || languageFilter || boardFilter || classFilter || statusFilter) && (
           <button
             type="button"
             onClick={() => {
@@ -273,6 +308,7 @@ const CourseFilters = ({
               if (onLanguageChange) onLanguageChange('');
               if (onBoardChange) onBoardChange('');
               if (onClassChange) onClassChange('');
+              if (onStatusChange) onStatusChange('');
             }}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-rose-200 dark:border-rose-800 text-xs font-bold text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-all cursor-pointer"
           >
