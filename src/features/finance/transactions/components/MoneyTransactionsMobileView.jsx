@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import ExpandableLowDensityCard from '../../../../components/ui/v2/cards/ExpandableLowDensityCard';
 
 /**
@@ -32,6 +32,70 @@ export const MoneyTransactionsMobileView = ({
     }));
   };
 
+  const getReconciliationBadgeStyles = useCallback((status) => {
+    switch (status) {
+      case 'matched':
+        return 'bg-emerald-100 dark:bg-emerald-950/30 text-emerald-800 dark:text-emerald-400 border-emerald-200 dark:border-emerald-900/30';
+
+      case 'discrepancy':
+        return 'bg-red-100 dark:bg-red-950/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-900/30';
+
+      default:
+        return 'bg-amber-100 dark:bg-amber-950/30 text-amber-800 dark:text-amber-400 border-amber-200 dark:border-amber-900/30';
+    }
+  }, []);
+
+  const getTransactionTypeBadgeStyles = useCallback((isReceived) => {
+    switch (isReceived) {
+      case true:
+        return 'bg-emerald-100 dark:bg-emerald-950/30 text-emerald-800 dark:text-emerald-400 border-emerald-200 dark:border-emerald-900/30';
+
+      case false:
+      default:
+        return 'bg-red-100 dark:bg-red-950/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-900/30';
+    }
+  }, []);
+
+  const getPartyBadgeStyles = useCallback((partyType) => {
+    switch (partyType) {
+      case 'student':
+        return 'bg-indigo-100 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-400 border-indigo-200 dark:border-indigo-900/30';
+
+      case 'teacher':
+        return 'bg-purple-100 dark:bg-purple-950/30 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-900/30';
+
+      case 'staff':
+        return 'bg-amber-100 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-900/30';
+
+      default:
+        return 'bg-slate-100 dark:bg-slate-800 text-text-secondary dark:text-on-surface-variant border-border-light dark:border-border-dark';
+    }
+  }, []);
+
+
+
+  const getPaymentMethodBadgeStyles = useCallback((paymentMethod) => {
+    switch (paymentMethod) {
+      case 'cash':
+        return 'bg-blue-100 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-900/30';
+
+      case 'bank':
+        return 'bg-green-100 dark:bg-green-950/30 text-green-700 dark:text-green-400 border-green-200 dark:border-green-900/30';
+
+      case 'paytm':
+        return 'bg-cyan-100 dark:bg-cyan-950/30 text-cyan-700 dark:text-cyan-400 border-cyan-200 dark:border-cyan-900/30';
+
+      case 'phonepe':
+        return 'bg-purple-100 dark:bg-purple-950/30 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-900/30';
+
+      case 'other':
+        return 'bg-amber-100 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-900/30';
+
+      default:
+        return 'bg-slate-100 dark:bg-slate-800 text-text-secondary dark:text-on-surface-variant border-border-light dark:border-border-dark';
+    }
+  }, []);
+
   return (
     <div className="space-y-4">
       {transactions.length > 0 ? (
@@ -41,20 +105,13 @@ export const MoneyTransactionsMobileView = ({
           const isChecked = selectedIds.includes(tx.transaction_id);
 
           // Badges and styles
-          const typeBadgeStyles = isReceived
-            ? 'bg-emerald-100 dark:bg-emerald-950/30 text-emerald-800 dark:text-emerald-400 border-emerald-200 dark:border-emerald-900/30'
-            : 'bg-red-100 dark:bg-red-950/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-900/30';
+          const typeBadgeStyles = getTransactionTypeBadgeStyles(isReceived);
 
-          const partyBadgeStyles =
-            tx.party_type === 'student' ? 'bg-indigo-100 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-400 border-indigo-200 dark:border-indigo-900/30' :
-              tx.party_type === 'teacher' ? 'bg-purple-100 dark:bg-purple-950/30 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-900/30' :
-                tx.party_type === 'staff' ? 'bg-amber-100 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-900/30' :
-                  'bg-slate-100 dark:bg-slate-800 text-text-secondary dark:text-on-surface-variant border-border-light dark:border-border-dark';
+          const partyBadgeStyles = getPartyBadgeStyles(tx.party_type);
 
-          const reconBadgeStyles =
-            tx.reconciliation_status === 'matched' ? 'bg-emerald-100 dark:bg-emerald-950/30 text-emerald-800 dark:text-emerald-400 border-emerald-200 dark:border-emerald-900/30' :
-              tx.reconciliation_status === 'discrepancy' ? 'bg-red-100 dark:bg-red-950/30 text-red-800 dark:text-red-400 border-red-200 dark:border-red-900/30' :
-                'bg-amber-100 dark:bg-amber-950/30 text-amber-800 dark:text-amber-400 border-amber-200 dark:border-amber-900/30';
+          const paymentMethodBadgeStyles = getPaymentMethodBadgeStyles(tx.payment_method);
+          const reconBadgeStyles = getReconciliationBadgeStyles(tx.reconciliation_status);
+
 
           return (
             <ExpandableLowDensityCard
@@ -65,11 +122,30 @@ export const MoneyTransactionsMobileView = ({
               onToggleExpand={(e) => toggleExpand(e, tx.transaction_id)}
               onCardClick={() => onRowClick(tx)}
               leftHeader={
-                <div className="flex flex-col gap-0.5">
-                  <span className="font-mono font-bold text-primary text-[12px]">#{tx.transaction_id}</span>
-                  <span className={`text-[8px] font-black uppercase tracking-wider px-1.5 py-0.2 rounded w-fit border ${partyBadgeStyles}`}>
-                    {tx.party_type}
-                  </span>
+                <div className="flex flex-col gap-0.5 items-start">
+                  <div className='flex gap-1 items-center'>
+                    <span className="font-mono font-bold text-primary text-[12px]">{tx.from_to}
+                    </span>
+                    <span className={`text-[8px] font-black uppercase px-1.5  rounded w-fit border ${partyBadgeStyles}`}>
+                      {tx.party_type}
+                    </span>
+
+                    <span className={`text-[8px] font-black uppercase px-1.5  rounded w-fit border ${paymentMethodBadgeStyles}`}>
+                      {tx.payment_method}
+                    </span>
+                  </div>
+
+                  <div className="inline-flex rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden">
+                    <span className="px-3 py-1 ps-4 text-xs font-medium text-slate-600 dark:text-slate-300">
+                      by
+                    </span>
+
+                    <div className="self-stretch w-px bg-slate-200 dark:bg-slate-700" />
+
+                    <span className="px-2 pe-4 py-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                      {tx.by}
+                    </span>
+                  </div>
                 </div>
               }
               rightHeader={
