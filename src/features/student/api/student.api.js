@@ -106,3 +106,40 @@ export const removeStudent = (token, id, options = {}) => {
     fetchOptions
   );
 };
+
+/**
+ * Fetches enrollment records from backend, including nested student fee accounts, fee plans, Adjustments, installments, and payment logs.
+ * 
+ * @async
+ * @function fetchEnrollments
+ * @param {string} token - The active user authorization session token.
+ * @param {object} [filter={}] - Target search matching database columns (e.g. enrollment_id).
+ * @param {object} [options={}] - HTTP fetch and query configuration options.
+ * @param {number} [options.limit=3] - Target pagination batch size limit.
+ * @param {number} [options.offset=0] - Target pagination offset.
+ * @param {AbortSignal} [options.signal] - Abort signal to cancel request.
+ * @returns {Promise<object>} Standard response envelope with an array of matching enrollment records.
+ */
+export const fetchEnrollments = (token, filter = {}, options = {}) => {
+  const { limit = 3, offset = 0, signal } = options;
+  const payload = {
+    target: 'Enrollment',
+    where: filter,
+    pagination: {
+      limit,
+      offset
+    },
+    include: {
+      studentfeeaccounts: {
+        include: {
+          feeplan: {},
+          feeadjustments: {},
+          installments: {
+            include: ['payments']
+          }
+        }
+      }
+    }
+  };
+  return executeAction(API_REGISTRY.DATA.QUERY, payload, token, { signal });
+};

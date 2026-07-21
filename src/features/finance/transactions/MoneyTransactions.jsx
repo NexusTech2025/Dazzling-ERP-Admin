@@ -16,7 +16,6 @@ import SelectionActionBar from '../../../components/ui/v2/SelectionActionBar';
 import Button from '../../../components/ui/v2/Button';
 import KpiCard from '../../../components/ui/v2/KpiCard';
 import KpiGrid from '../../../components/ui/v2/KpiGrid';
-import TextInput from '../../../components/ui/v2/TextInput';
 
 /**
  * Processes list sorting for money transaction records.
@@ -235,6 +234,147 @@ const MoneyTransactions = () => {
       : <span className="material-symbols-outlined text-[12px] ml-0.5 text-primary">arrow_downward</span>;
   };
 
+  // Shared KPI grid element (used by both mobile and desktop)
+  const kpiGridElement = (
+    <KpiGrid cols={3} smCols={3} lgCols={4} gap={1} className="items-center justify-items-center">
+      <KpiCard
+        label="Total Received"
+        value={totalReceived}
+        icon="call_received"
+        variant="success"
+        size="sm"
+      />
+      <KpiCard
+        label="Total Sent"
+        value={totalSent}
+        icon="call_made"
+        variant="danger"
+        size="sm"
+      />
+      <KpiCard
+        label="Net Balance"
+        value={netBalance}
+        icon="account_balance"
+        variant={netBalance >= 0 ? 'success' : 'danger'}
+        size="sm"
+      />
+      <KpiCard
+        label="Total Logs"
+        value={totalLogs}
+        icon="history"
+        variant="info"
+        size="sm"
+        isCount={true}
+      />
+    </KpiGrid>
+  );
+
+  // Shared filter panel element
+  const filterPanelElement = (
+    <TransactionFilterPanel
+      searchQuery={searchQuery}
+      onSearchChange={(val) => { setSearchQuery(val); setCurrentPage(1); }}
+      flowType={flowType}
+      onFlowTypeChange={(val) => { setFlowType(val); setCurrentPage(1); }}
+      selectedCategory={selectedCategory}
+      onCategoryChange={(val) => { setSelectedCategory(val); setCurrentPage(1); }}
+      categories={categories}
+      reconciliationFilter={reconciliationFilter}
+      onReconciliationChange={(val) => { setReconciliationFilter(val); setCurrentPage(1); }}
+      startDate={startDate}
+      onStartDateChange={(val) => { setStartDate(val); setCurrentPage(1); }}
+      endDate={endDate}
+      onEndDateChange={(val) => { setEndDate(val); setCurrentPage(1); }}
+      onClearFilters={handleClearFilters}
+      isMobile={isMobile}
+    />
+  );
+
+  // Shared pagination element
+  const paginationElement = totalPages > 1 ? (
+    <div className="px-6 py-3 border border-border-light dark:border-border-dark rounded-xl flex items-center justify-between bg-surface-light dark:bg-surface-dark text-[9px] font-bold">
+      <p className="text-[9px] text-text-secondary uppercase tracking-wider">
+        Showing {(currentPage - 1) * itemsPerPage + 1}-{Math.min(currentPage * itemsPerPage, sortedTransactions.length)} of {sortedTransactions.length} results
+      </p>
+      <div className="flex items-center gap-1">
+        <button
+          onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+          disabled={currentPage === 1}
+          className="p-1 bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded disabled:opacity-40"
+        >
+          <span className="material-symbols-outlined text-xs">chevron_left</span>
+        </button>
+        {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+          <button
+            key={page}
+            onClick={() => setCurrentPage(page)}
+            className={`w-5 h-5 flex items-center justify-center rounded text-[10px] font-bold border transition-all ${currentPage === page
+              ? 'bg-primary border-primary text-white'
+              : 'bg-surface-light dark:bg-surface-dark border-border-light dark:border-border-dark text-text-main dark:text-white hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
+          >
+            {page}
+          </button>
+        ))}
+        <button
+          onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+          disabled={currentPage === totalPages}
+          className="p-1 bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded disabled:opacity-40"
+        >
+          <span className="material-symbols-outlined text-xs">chevron_right</span>
+        </button>
+      </div>
+    </div>
+  ) : null;
+
+  // --- Mobile Layout (MobileBaseLayout-wrapped) ---
+  if (isMobile) {
+    return (
+      <>
+        <MoneyTransactionsMobileView
+          transactions={paginatedTransactions}
+          selectedIds={selectedIds}
+          onSelectRow={handleSelectRow}
+          getCategoryName={getCategoryName}
+          onRowClick={setActiveDetailTx}
+          onEdit={handleOpenForm}
+          onDelete={handleDelete}
+          onOpenForm={handleOpenForm}
+          onClearSelection={() => setSelectedIds([])}
+          onBulkDelete={handleBulkDelete}
+          onManageCategories={() => setIsCategoryOpen(true)}
+          filterPanel={filterPanelElement}
+          kpiGrid={kpiGridElement}
+          pagination={paginationElement}
+        />
+
+        {/* Modal and Drawer Components (portal-based, shared) */}
+        <CategoryManagerModal
+          isOpen={isCategoryOpen}
+          onClose={() => setIsCategoryOpen(false)}
+        />
+
+        <MoneyTransactionForm
+          isOpen={isFormOpen}
+          onClose={handleCloseForm}
+          initialData={selectedTx}
+        />
+
+        <TransactionDetailsDrawer
+          transaction={activeDetailTx}
+          isOpen={activeDetailTx !== null}
+          onClose={() => setActiveDetailTx(null)}
+          onEdit={(tx) => {
+            setActiveDetailTx(null);
+            handleOpenForm(tx);
+          }}
+          getCategoryName={getCategoryName}
+        />
+      </>
+    );
+  }
+
+  // --- Desktop Layout ---
   return (
     <div className="w-full lg:w-[98%] lg:mx-auto xl:w-[95%] max-w-[1440px] pt-6 lg:pt-10 pb-6 space-y-6">
 
@@ -263,277 +403,185 @@ const MoneyTransactions = () => {
       </div>
 
       {/* KPI stats section */}
-      <KpiGrid cols={3} smCols={3} lgCols={4} gap={1} className="items-center justify-items-center">
-        <KpiCard
-          label="Total Received"
-          value={totalReceived}
-          icon="call_received"
-          variant="success"
-          size="sm"
-        />
-        <KpiCard
-          label="Total Sent"
-          value={totalSent}
-          icon="call_made"
-          variant="danger"
-          size="sm"
-        />
-        <KpiCard
-          label="Net Balance"
-          value={netBalance}
-          icon="account_balance"
-          variant={netBalance >= 0 ? 'success' : 'danger'}
-          size="sm"
-        />
-        <KpiCard
-          label="Total Logs"
-          value={totalLogs}
-          icon="history"
-          variant="info"
-          size="sm"
-          isCount={true}
-        />
-      </KpiGrid>
+      {kpiGridElement}
 
       {/* Filters block */}
-      <TransactionFilterPanel
-        searchQuery={searchQuery}
-        onSearchChange={(val) => { setSearchQuery(val); setCurrentPage(1); }}
-        flowType={flowType}
-        onFlowTypeChange={(val) => { setFlowType(val); setCurrentPage(1); }}
-        selectedCategory={selectedCategory}
-        onCategoryChange={(val) => { setSelectedCategory(val); setCurrentPage(1); }}
-        categories={categories}
-        reconciliationFilter={reconciliationFilter}
-        onReconciliationChange={(val) => { setReconciliationFilter(val); setCurrentPage(1); }}
-        startDate={startDate}
-        onStartDateChange={(val) => { setStartDate(val); setCurrentPage(1); }}
-        endDate={endDate}
-        onEndDateChange={(val) => { setEndDate(val); setCurrentPage(1); }}
-        onClearFilters={handleClearFilters}
-        isMobile={isMobile}
-      />
+      {filterPanelElement}
 
-      {/* Grid container or Mobile layout */}
-      {isMobile ? (
-        <MoneyTransactionsMobileView
-          transactions={paginatedTransactions}
-          selectedIds={selectedIds}
-          onSelectRow={handleSelectRow}
-          getCategoryName={getCategoryName}
-          onRowClick={setActiveDetailTx}
-          onEdit={handleOpenForm}
-          onDelete={handleDelete}
-        />
-      ) : (
-        <div className="bg-surface-light/80 dark:bg-surface-dark/80 backdrop-blur-md border border-border-light dark:border-border-dark rounded-xl overflow-hidden shadow-sm">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-slate-50 dark:bg-slate-900/50 border-b border-border-light dark:border-border-dark text-[9px] font-black text-text-secondary uppercase tracking-wider">
-                  <th className="px-4 py-3 w-10 text-center">
-                    <input
-                      type="checkbox"
-                      checked={paginatedTransactions.length > 0 && selectedIds.length === paginatedTransactions.length}
-                      onChange={handleSelectAll}
-                      className="rounded border-border-light dark:border-border-dark text-primary focus:ring-primary w-3.5 h-3.5"
-                    />
-                  </th>
-                  <th className="px-4 py-3 cursor-pointer select-none hover:bg-slate-100/50 dark:hover:bg-slate-900/50 transition-colors" onClick={() => requestSort('transaction_id')}>
-                    <div className="flex items-center">
-                      Identifier {getSortIcon('transaction_id')}
-                    </div>
-                  </th>
-                  <th className="px-4 py-3 cursor-pointer select-none hover:bg-slate-100/50 dark:hover:bg-slate-900/50 transition-colors" onClick={() => requestSort('transaction_date')}>
-                    <div className="flex items-center">
-                      Date {getSortIcon('transaction_date')}
-                    </div>
-                  </th>
-                  <th className="px-4 py-3">Category</th>
-                  <th className="px-4 py-3">Sent From/To</th>
-                  <th className="px-4 py-3">Received/Sent By</th>
-                  <th className="px-4 py-3">Payment Info</th>
-                  <th className="px-4 py-3">Audit & Status</th>
-                  <th className="px-4 py-3 text-right cursor-pointer select-none hover:bg-slate-100/50 dark:hover:bg-slate-900/50 transition-colors" onClick={() => requestSort('amount')}>
-                    <div className="flex items-center justify-end">
-                      Amount {getSortIcon('amount')}
-                    </div>
-                  </th>
-                  <th className="px-4 py-3 text-center">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border-light dark:divide-border-dark text-[10.5px]">
-                {paginatedTransactions.length > 0 ? (
-                  paginatedTransactions.map((tx) => (
-                    <tr
-                      key={tx.transaction_id}
-                      className={`hover:bg-slate-50/50 dark:hover:bg-slate-800/10 cursor-pointer transition-colors group ${selectedIds.includes(tx.transaction_id) ? 'bg-primary/5' : ''
-                        }`}
-                      onClick={() => setActiveDetailTx(tx)}
-                    >
-                      <td className="px-4 py-2.5 text-center" onClick={(e) => e.stopPropagation()}>
-                        <input
-                          type="checkbox"
-                          checked={selectedIds.includes(tx.transaction_id)}
-                          onChange={() => handleSelectRow(tx.transaction_id)}
-                          className="rounded border-border-light dark:border-border-dark text-primary focus:ring-primary w-3.5 h-3.5"
-                        />
-                      </td>
-                      <td className="px-4 py-2.5">
-                        <div className="flex items-center justify-between gap-3 min-w-[130px]">
-                          <div className="flex flex-col gap-0.5">
-                            <span className="font-mono font-bold text-primary text-[11px]">#{tx.transaction_id}</span>
-                            <span className={`text-[7.5px] font-black uppercase tracking-wider px-1 py-0.2 rounded w-fit border ${tx.party_type === 'student' ? 'bg-indigo-100 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-400 border-indigo-200 dark:border-indigo-900/30' :
-                              tx.party_type === 'teacher' ? 'bg-purple-100 dark:bg-purple-950/30 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-900/30' :
-                                tx.party_type === 'staff' ? 'bg-amber-100 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-900/30' :
-                                  'bg-slate-100 dark:bg-slate-800 text-text-secondary dark:text-on-surface-variant border-border-light dark:border-border-dark'
-                              }`}>
-                              {tx.party_type}
-                            </span>
-                          </div>
-                          <div className="flex items-center justify-center pr-2">
-                            {tx.type === 'in' ? (
-                              <span className="material-symbols-outlined text-emerald-500 font-black text-sm" title="Received (In)">arrow_downward</span>
-                            ) : (
-                              <span className="material-symbols-outlined text-red-500 font-black text-sm" title="Sent (Out)">arrow_upward</span>
-                            )}
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-2.5 text-text-secondary dark:text-on-surface-variant">
-                        {new Date(tx.transaction_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
-                      </td>
-                      <td className="px-4 py-2.5 font-semibold text-text-main dark:text-white">
-                        {getCategoryName(tx.category_id)}
-                      </td>
-                      <td className="px-4 py-2.5">
+      {/* Desktop table */}
+      <div className="bg-surface-light/80 dark:bg-surface-dark/80 backdrop-blur-md border border-border-light dark:border-border-dark rounded-xl overflow-hidden shadow-sm">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-slate-50 dark:bg-slate-900/50 border-b border-border-light dark:border-border-dark text-[9px] font-black text-text-secondary uppercase tracking-wider">
+                <th className="px-4 py-3 w-10 text-center">
+                  <input
+                    type="checkbox"
+                    checked={paginatedTransactions.length > 0 && selectedIds.length === paginatedTransactions.length}
+                    onChange={handleSelectAll}
+                    className="rounded border-border-light dark:border-border-dark text-primary focus:ring-primary w-3.5 h-3.5"
+                  />
+                </th>
+                <th className="px-4 py-3 cursor-pointer select-none hover:bg-slate-100/50 dark:hover:bg-slate-900/50 transition-colors" onClick={() => requestSort('transaction_id')}>
+                  <div className="flex items-center">
+                    Identifier {getSortIcon('transaction_id')}
+                  </div>
+                </th>
+                <th className="px-4 py-3 cursor-pointer select-none hover:bg-slate-100/50 dark:hover:bg-slate-900/50 transition-colors" onClick={() => requestSort('transaction_date')}>
+                  <div className="flex items-center">
+                    Date {getSortIcon('transaction_date')}
+                  </div>
+                </th>
+                <th className="px-4 py-3">Category</th>
+                <th className="px-4 py-3">Sent From/To</th>
+                <th className="px-4 py-3">Received/Sent By</th>
+                <th className="px-4 py-3">Payment Info</th>
+                <th className="px-4 py-3">Audit & Status</th>
+                <th className="px-4 py-3 text-right cursor-pointer select-none hover:bg-slate-100/50 dark:hover:bg-slate-900/50 transition-colors" onClick={() => requestSort('amount')}>
+                  <div className="flex items-center justify-end">
+                    Amount {getSortIcon('amount')}
+                  </div>
+                </th>
+                <th className="px-4 py-3 text-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border-light dark:divide-border-dark text-[10.5px]">
+              {paginatedTransactions.length > 0 ? (
+                paginatedTransactions.map((tx) => (
+                  <tr
+                    key={tx.transaction_id}
+                    className={`hover:bg-slate-50/50 dark:hover:bg-slate-800/10 cursor-pointer transition-colors group ${selectedIds.includes(tx.transaction_id) ? 'bg-primary/5' : ''
+                      }`}
+                    onClick={() => setActiveDetailTx(tx)}
+                  >
+                    <td className="px-4 py-2.5 text-center" onClick={(e) => e.stopPropagation()}>
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.includes(tx.transaction_id)}
+                        onChange={() => handleSelectRow(tx.transaction_id)}
+                        className="rounded border-border-light dark:border-border-dark text-primary focus:ring-primary w-3.5 h-3.5"
+                      />
+                    </td>
+                    <td className="px-4 py-2.5">
+                      <div className="flex items-center justify-between gap-3 min-w-[130px]">
                         <div className="flex flex-col gap-0.5">
-                          <span className="font-semibold text-text-main dark:text-white">{tx.from_to || tx.party_name}</span>
-                          {tx.party_id && (
-                            <span className="text-[9px] text-text-secondary dark:text-on-surface-variant font-mono">
-                              ID: {tx.party_id}
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-4 py-2.5 font-medium text-text-secondary dark:text-on-surface-variant">
-                        {tx.by || tx.created_by || '—'}
-                      </td>
-                      <td className="px-4 py-2.5">
-                        <div className="flex flex-col">
-                          <span className="capitalize font-semibold text-text-main dark:text-white">
-                            {tx.payment_method}
+                          <span className="font-mono font-bold text-primary text-[11px]">#{tx.transaction_id}</span>
+                          <span className={`text-[7.5px] font-black uppercase tracking-wider px-1 py-0.2 rounded w-fit border ${tx.party_type === 'student' ? 'bg-indigo-100 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-400 border-indigo-200 dark:border-indigo-900/30' :
+                            tx.party_type === 'teacher' ? 'bg-purple-100 dark:bg-purple-950/30 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-900/30' :
+                              tx.party_type === 'staff' ? 'bg-amber-100 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-900/30' :
+                                'bg-slate-100 dark:bg-slate-800 text-text-secondary dark:text-on-surface-variant border-border-light dark:border-border-dark'
+                            }`}>
+                            {tx.party_type}
                           </span>
-                          {tx.payment_reference && (
-                            <span className="text-[9px] text-text-secondary dark:text-on-surface-variant font-mono">
-                              REF: {tx.payment_reference}
-                            </span>
-                          )}
                         </div>
-                      </td>
-                      <td className="px-4 py-2.5">
-                        <div className="flex flex-wrap items-center gap-1.5">
-                          {tx.reconciliation_status === 'matched' ? (
-                            <span className="px-1.5 py-0.2 rounded text-[7.5px] font-black uppercase bg-emerald-100 dark:bg-emerald-950/30 text-emerald-800 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900/30">
-                              Matched
-                            </span>
-                          ) : tx.reconciliation_status === 'discrepancy' ? (
-                            <span className="px-1.5 py-0.2 rounded text-[7.5px] font-black uppercase bg-red-100 dark:bg-red-950/30 text-red-800 dark:text-red-400 border border-red-200 dark:border-red-900/30">
-                              Discrepancy
-                            </span>
+                        <div className="flex items-center justify-center pr-2">
+                          {tx.type === 'in' ? (
+                            <span className="material-symbols-outlined text-emerald-500 font-black text-sm" title="Received (In)">arrow_downward</span>
                           ) : (
-                            <span className="px-1.5 py-0.2 rounded text-[7.5px] font-black uppercase bg-amber-100 dark:bg-amber-950/30 text-amber-800 dark:text-amber-400 border border-amber-200 dark:border-amber-900/30">
-                              Unreconciled
-                            </span>
-                          )}
-                          {tx.attachment_drive_id && (
-                            <a
-                              href={`https://drive.google.com/open?id=${tx.attachment_drive_id}`}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="p-0.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded text-text-secondary hover:text-primary transition-all flex items-center"
-                              title="View Receipt Attachment"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <span className="material-symbols-outlined text-[13px]">attachment</span>
-                            </a>
+                            <span className="material-symbols-outlined text-red-500 font-black text-sm" title="Sent (Out)">arrow_upward</span>
                           )}
                         </div>
-                      </td>
-                      <td className="px-4 py-2.5 text-right font-mono font-bold text-[11px]">
-                        <span className={tx.type === 'in' ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500'}>
-                          {tx.type === 'in' ? '+' : '-'}₹{tx.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </div>
+                    </td>
+                    <td className="px-4 py-2.5 text-text-secondary dark:text-on-surface-variant">
+                      {new Date(tx.transaction_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </td>
+                    <td className="px-4 py-2.5 font-semibold text-text-main dark:text-white">
+                      {getCategoryName(tx.category_id)}
+                    </td>
+                    <td className="px-4 py-2.5">
+                      <div className="flex flex-col gap-0.5">
+                        <span className="font-semibold text-text-main dark:text-white">{tx.from_to || tx.party_name}</span>
+                        {tx.party_id && (
+                          <span className="text-[9px] text-text-secondary dark:text-on-surface-variant font-mono">
+                            ID: {tx.party_id}
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-4 py-2.5 font-medium text-text-secondary dark:text-on-surface-variant">
+                      {tx.by || tx.created_by || '—'}
+                    </td>
+                    <td className="px-4 py-2.5">
+                      <div className="flex flex-col">
+                        <span className="capitalize font-semibold text-text-main dark:text-white">
+                          {tx.payment_method}
                         </span>
-                      </td>
-                      <td className="px-4 py-2.5 text-center" onClick={(e) => e.stopPropagation()}>
-                        <div className="flex justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button
-                            onClick={() => handleOpenForm(tx)}
-                            className="p-1.5 hover:bg-primary/10 rounded-md text-text-secondary hover:text-primary transition-all"
-                            title="Edit transaction"
+                        {tx.payment_reference && (
+                          <span className="text-[9px] text-text-secondary dark:text-on-surface-variant font-mono">
+                            REF: {tx.payment_reference}
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-4 py-2.5">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        {tx.reconciliation_status === 'matched' ? (
+                          <span className="px-1.5 py-0.2 rounded text-[7.5px] font-black uppercase bg-emerald-100 dark:bg-emerald-950/30 text-emerald-800 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900/30">
+                            Matched
+                          </span>
+                        ) : tx.reconciliation_status === 'discrepancy' ? (
+                          <span className="px-1.5 py-0.2 rounded text-[7.5px] font-black uppercase bg-red-100 dark:bg-red-950/30 text-red-800 dark:text-red-400 border border-red-200 dark:border-red-900/30">
+                            Discrepancy
+                          </span>
+                        ) : (
+                          <span className="px-1.5 py-0.2 rounded text-[7.5px] font-black uppercase bg-amber-100 dark:bg-amber-950/30 text-amber-800 dark:text-amber-400 border border-amber-200 dark:border-amber-900/30">
+                            Unreconciled
+                          </span>
+                        )}
+                        {tx.attachment_drive_id && (
+                          <a
+                            href={`https://drive.google.com/open?id=${tx.attachment_drive_id}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="p-0.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded text-text-secondary hover:text-primary transition-all flex items-center"
+                            title="View Receipt Attachment"
+                            onClick={(e) => e.stopPropagation()}
                           >
-                            <span className="material-symbols-outlined text-base">edit</span>
-                          </button>
-                          <button
-                            onClick={() => handleDelete(tx.transaction_id)}
-                            className="p-1.5 hover:bg-red-500/10 rounded-md text-text-secondary hover:text-red-500 transition-all"
-                            title="Delete transaction"
-                          >
-                            <span className="material-symbols-outlined text-base">delete</span>
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan="10" className="text-center py-12 text-text-secondary text-sm">
-                      No transactions registered matching active filters.
+                            <span className="material-symbols-outlined text-[13px]">attachment</span>
+                          </a>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-4 py-2.5 text-right font-mono font-bold text-[11px]">
+                      <span className={tx.type === 'in' ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500'}>
+                        {tx.type === 'in' ? '+' : '-'}₹{tx.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </span>
+                    </td>
+                    <td className="px-4 py-2.5 text-center" onClick={(e) => e.stopPropagation()}>
+                      <div className="flex justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={() => handleOpenForm(tx)}
+                          className="p-1.5 hover:bg-primary/10 rounded-md text-text-secondary hover:text-primary transition-all"
+                          title="Edit transaction"
+                        >
+                          <span className="material-symbols-outlined text-base">edit</span>
+                        </button>
+                        <button
+                          onClick={() => handleDelete(tx.transaction_id)}
+                          className="p-1.5 hover:bg-red-500/10 rounded-md text-text-secondary hover:text-red-500 transition-all"
+                          title="Delete transaction"
+                        >
+                          <span className="material-symbols-outlined text-base">delete</span>
+                        </button>
+                      </div>
                     </td>
                   </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="10" className="text-center py-12 text-text-secondary text-sm">
+                    No transactions registered matching active filters.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
-      )}
+      </div>
 
       {/* Pagination footer */}
-      {totalPages > 1 && (
-        <div className="px-6 py-3 border border-border-light dark:border-border-dark rounded-xl flex items-center justify-between bg-surface-light dark:bg-surface-dark text-[9px] font-bold">
-          <p className="text-[9px] text-text-secondary uppercase tracking-wider">
-            Showing {(currentPage - 1) * itemsPerPage + 1}-{Math.min(currentPage * itemsPerPage, sortedTransactions.length)} of {sortedTransactions.length} results
-          </p>
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-              disabled={currentPage === 1}
-              className="p-1 bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded disabled:opacity-40"
-            >
-              <span className="material-symbols-outlined text-xs">chevron_left</span>
-            </button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-              <button
-                key={page}
-                onClick={() => setCurrentPage(page)}
-                className={`w-5 h-5 flex items-center justify-center rounded text-[10px] font-bold border transition-all ${currentPage === page
-                  ? 'bg-primary border-primary text-white'
-                  : 'bg-surface-light dark:bg-surface-dark border-border-light dark:border-border-dark text-text-main dark:text-white hover:bg-slate-100 dark:hover:bg-slate-800'
-                  }`}
-              >
-                {page}
-              </button>
-            ))}
-            <button
-              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-              disabled={currentPage === totalPages}
-              className="p-1 bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded disabled:opacity-40"
-            >
-              <span className="material-symbols-outlined text-xs">chevron_right</span>
-            </button>
-          </div>
-        </div>
-      )}
+      {paginationElement}
 
       {/* Bulk Delete Bar */}
       <SelectionActionBar

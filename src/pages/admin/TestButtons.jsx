@@ -1,12 +1,48 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import ActionCardButton from '../../components/ui/buttons/ActionCardButton';
+import { useEnrollmentsQuery } from '../../features/student/hooks/useEnrollmentQueries';
 
 const TestButtons = () => {
+  const [triggerQuery, setTriggerQuery] = useState(false);
+  const { data: enrollments, isLoading, error } = useEnrollmentsQuery({}, { limit: 3, offset: 0, enabled: triggerQuery });
+
+  useEffect(() => {
+    if (enrollments) {
+      console.log('--- useEnrollmentsQuery Test Data ---');
+      console.log(enrollments);
+      console.log('-------------------------------------');
+    }
+  }, [enrollments]);
+
+  useEffect(() => {
+    if (error) {
+      console.error('--- useEnrollmentsQuery Test Error ---');
+      console.error(error);
+      console.log('--------------------------------------');
+    }
+  }, [error]);
+
   return (
     <div className="space-y-12 py-16 px-6">
       <div className="flex flex-col gap-2 border-b border-slate-200 dark:border-slate-800 pb-8">
         <h1 className="text-4xl font-black text-text-main dark:text-white tracking-tight">Action Card Showcase</h1>
         <p className="text-text-secondary text-lg font-medium">Testing the 5 variants of our reusable ActionCardButton component.</p>
+        
+        {/* Enrollments Hook Test Trigger */}
+        <div className="mt-4 p-4 rounded-2xl border border-border-light dark:border-border-dark bg-slate-50 dark:bg-slate-900/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h4 className="text-sm font-bold text-text-main dark:text-white">Query Hook Integration Test</h4>
+            <p className="text-xs text-text-secondary mt-0.5">Click the trigger to run useEnrollmentsQuery and inspect logs in console.</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setTriggerQuery(true)}
+            disabled={isLoading}
+            className="px-5 py-2.5 bg-primary text-white text-xs font-black uppercase tracking-wider rounded-xl shadow-lg shadow-primary/25 hover:bg-primary-dark active:scale-95 transition-all disabled:opacity-50 disabled:pointer-events-none"
+          >
+            {isLoading ? 'Fetching Data...' : 'Trigger Enrollment Query'}
+          </button>
+        </div>
       </div>
 
       <div className="space-y-10">

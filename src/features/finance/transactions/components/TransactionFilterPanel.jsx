@@ -58,7 +58,7 @@ export const TransactionFilterPanel = ({
 
   if (isMobile) {
     return (
-      <div className="space-y-3">
+      <div className="space-y-3 w-full">
         {/* Mobile Header: Search Bar + Filter Toggle */}
         <div className="flex items-center gap-2">
           <TextInput

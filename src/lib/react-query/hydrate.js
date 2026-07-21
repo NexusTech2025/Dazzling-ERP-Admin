@@ -21,7 +21,7 @@ import { validateRecordSchema } from './validationEngine.js';
 export const safeParseMetadata = (metadata) => {
   if (!metadata) return {};
   if (typeof metadata === 'object') return metadata;
-  
+
   if (typeof metadata === 'string') {
     const trimmed = metadata.trim();
     if (trimmed === '' || trimmed === '{}' || trimmed === 'null' || trimmed === 'undefined') {
@@ -197,7 +197,7 @@ export function hydratePackage(pkg, queryClient) {
   if (!pkg) return null;
 
   const courses = queryClient.getQueryData(queryKeys.course.list(EMPTY_FILTER)) || [];
-  
+
   // Resolve raw items from pkg.packageitems, pkg.package_items, or the query cache
   let items = pkg.packageitems || pkg.package_items;
   if (!items || items.length === 0) {
@@ -236,6 +236,74 @@ export function hydratePackage(pkg, queryClient) {
   };
 }
 
+/**
+ * Normalizes a raw Enrollment record.
+ * Standardizes primary key identification and parses stringified metadata.
+ * 
+ * @function normalizeEnrollment
+ * @param {object} enrollment - Raw enrollment payload from database.
+ * @returns {object|null} Normalized enrollment record.
+ */
+export function normalizeEnrollment(enrollment) {
+  if (!enrollment) return null;
+  return {
+    ...enrollment,
+    id: enrollment.enrollment_id ?? enrollment.id ?? null,
+    enrollment_id: enrollment.enrollment_id ?? enrollment.id ?? null,
+    metadata: safeParseMetadata(enrollment.metadata)
+  };
+}
+
+/**
+ * Hydrates Enrollment relations by resolving the Student object from query cache.
+ * Maps student record onto the enrollment.student slot and propagates to sub-accounts.
+ * 
+ * @function hydrateEnrollment
+ * @param {object} enrollment - Normalized enrollment record.
+ * @param {QueryClient} queryClient - TanStack Query client.
+ * @returns {object|null} Relational stitched enrollment record.
+ */
+export function hydrateEnrollment(enrollment, queryClient) {
+  if (!enrollment) return null;
+
+  const students = queryClient.getQueryData(queryKeys.student.list(EMPTY_FILTER)) || [];
+  let student = students.find(s => s.student_id === enrollment.student_id || s.id === enrollment.student_id);
+
+  if (!student) {
+    const cachedDetail = queryClient.getQueryData(queryKeys.student.detail(enrollment.student_id));
+    if (cachedDetail) {
+      student = cachedDetail;
+    } else {
+      const listQueries = queryClient.getQueriesData({ queryKey: ['student', 'list'] });
+      for (const [_, listData] of listQueries) {
+        if (Array.isArray(listData)) {
+          const found = listData.find(s => s && (s.student_id === enrollment.student_id || s.id === enrollment.student_id));
+          if (found) {
+            student = found;
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  const studentData = student || null;
+
+  // const studentfeeaccounts = (enrollment.studentfeeaccounts || []).map(account => ({
+  //   ...account,
+  //   enrollment: {
+  //     ...enrollment,
+  //     student: studentData
+  //   }
+  // }));
+  enrollment = normalizeEnrollment(enrollment);
+  return {
+    ...enrollment,
+    student: studentData,
+    // studentfeeaccounts
+  };
+}
+
 
 // --- GLOBAL STRATEGY ROUTERS ---
 
@@ -243,13 +311,15 @@ const NORMALIZERS = {
   course: normalizeCourse,
   batch: normalizeBatch,
   package: normalizePackage,
-  coursetype: normalizeCourseType
+  coursetype: normalizeCourseType,
+  enrollment: normalizeEnrollment
 };
 
 const HYDRATORS = {
   course: hydrateCourse,
   batch: hydrateBatch,
-  package: hydratePackage
+  package: hydratePackage,
+  enrollment: hydrateEnrollment
 };
 
 /**
@@ -269,9 +339,9 @@ const validatedRecords = new WeakSet();
 export function hydrateRecord(entityName, data, queryClient) {
   const hydrator = HYDRATORS[entityName?.toLowerCase()];
   if (!hydrator) return data;
-  
-  const hydrated = Array.isArray(data) 
-    ? data.map(record => hydrator(record, queryClient)) 
+
+  const hydrated = Array.isArray(data)
+    ? data.map(record => hydrator(record, queryClient))
     : hydrator(data, queryClient);
 
   // Validate the fully hydrated record(s) to guarantee schema compliance at read-time select

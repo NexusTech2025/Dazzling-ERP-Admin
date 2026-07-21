@@ -88,6 +88,13 @@ export const ENTITY_CONFIGS = {
     detailKey: (id) => [...queryKeys.attendance.all, 'detail', id],
     isValidDetail: (data) => data && typeof data === 'object' && 'attendance_id' in data
   },
+  enrollment: {
+    primaryKey: 'enrollment_id',
+    listKey: (filter) => queryKeys.enrollment.list(filter),
+    detailKey: (id) => queryKeys.enrollment.detail(id),
+    listsKey: () => queryKeys.enrollment.all,
+    isValidDetail: (data) => data && typeof data === 'object' && 'enrollment_id' in data
+  },
   user: {
     primaryKey: 'user_id',
     listKey: (filter) => queryKeys.user.list(filter),
