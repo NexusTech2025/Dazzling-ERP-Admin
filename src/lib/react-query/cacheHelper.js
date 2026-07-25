@@ -121,7 +121,7 @@ export function getCachedRecord(queryClient, entity, id) {
   // 2. Fallback: Scan list queries
   const listsKey = typeof config.listsKey === 'function' ? config.listsKey() : config.listsKey;
   const listQueries = queryClient.getQueriesData({ queryKey: listsKey });
-  
+
   for (const [_, listData] of listQueries) {
     if (Array.isArray(listData)) {
       const item = listData.find(e => e && e[config.primaryKey] === id);
@@ -320,7 +320,7 @@ export function getCachedList(queryClient, entity, filter = {}, options = {}) {
 export async function resolveList(queryClient, entity, filter = {}, fetchFn, options = {}) {
   const { onSuccess, onFailure, forceRefetch = false } = options;
   const config = ENTITY_CONFIGS[entity];
-  
+
   if (!config) {
     const error = new CacheLayerError(`Unsupported entity type: ${entity}`, { entity, filter });
     console.error(`[CacheLayerError] Configuration lookup failed.`, error);
@@ -408,7 +408,7 @@ export async function resolveList(queryClient, entity, filter = {}, fetchFn, opt
               if (rules.type === 'string' && typeof value !== 'string') valid = false;
               if (rules.type === 'number' && typeof value !== 'number') valid = false;
               if (!valid) failedViolationsList.push({ field: fieldName, type: 'type_mismatch' });
-              
+
               // Choices verification hook
               if (rules.choices && !rules.choices.includes(value)) {
                 failedViolationsList.push({ field: fieldName, type: 'invalid_choice' });

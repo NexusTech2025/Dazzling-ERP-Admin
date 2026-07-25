@@ -7,6 +7,7 @@ import { branchSchema } from './schemas/branch.schema.js';
 import { packageItemSchema } from './schemas/packageItem.schema.js';
 import { packagePerkSchema } from './schemas/packagePerk.schema.js';
 import { courseTypeSchema } from './schemas/courseType.schema.js';
+import { enrollmentSchema } from './schemas/enrollment.schema.js';
 
 export const SCHEMA_REGISTRY = {
   package: packageSchema,
@@ -17,7 +18,8 @@ export const SCHEMA_REGISTRY = {
   branch: branchSchema,
   packageitem: packageItemSchema,
   packageperk: packagePerkSchema,
-  coursetype: courseTypeSchema
+  coursetype: courseTypeSchema,
+  enrollment: enrollmentSchema
 };
 
 /**

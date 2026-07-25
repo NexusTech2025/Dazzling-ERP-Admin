@@ -1,9 +1,10 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useAuth } from '../../../context/AuthContextCore';
-import { queryKeys, EMPTY_FILTER } from '../../../lib/react-query/queryKeys';
-import { getCachedList, resolveList } from '../../../lib/react-query/cacheHelper';
+import { useAuth } from '../../../context/AuthContextCore.js';
+import { queryKeys, EMPTY_FILTER } from '../../../lib/react-query/queryKeys.js';
+import { getCachedList, resolveList } from '../../../lib/react-query/cacheHelper.js';
 import { hydrateRecord } from '../../../lib/react-query/hydrate.js';
-import { fetchEnrollments } from '../api/student.api';
+import { resolveEnrollmentList } from '../../../lib/react-query/cacheStrategies.js';
+import { fetchEnrollments } from '../api/student.api.js';
 
 /**
  * Custom TanStack Query hook to load dynamic nested enrollment records.
@@ -20,18 +21,19 @@ import { fetchEnrollments } from '../api/student.api';
 export const useEnrollmentsQuery = (filter = EMPTY_FILTER, options = {}) => {
   const { token } = useAuth();
   const queryClient = useQueryClient();
-  const { limit = 3, offset = 0, enabled = true } = options;
-  const queryFilter = { ...filter, limit, offset };
+  const { enabled = true } = options;
 
   return useQuery({
-    queryKey: queryKeys.enrollment.list(queryFilter),
+    // 🔒 Stable queryKey without dynamic filter to prevent cache fragmentation
+    queryKey: queryKeys.enrollment.list(EMPTY_FILTER),
     queryFn: async ({ signal }) => {
+      // 🚀 resolveList checks cache via getCachedList + strategy, or fetches network if missing
       return resolveList(
         queryClient,
         'enrollment',
-        queryFilter,
+        filter,
         async () => {
-          const response = await fetchEnrollments(token, filter, { limit, offset, signal });
+          const response = await fetchEnrollments(token, EMPTY_FILTER, { signal });
           if (!response.success) {
             throw new Error(response.error?.message || response.message || 'Failed to fetch enrollments');
           }
@@ -40,12 +42,17 @@ export const useEnrollmentsQuery = (filter = EMPTY_FILTER, options = {}) => {
       );
     },
     select: (data) => {
-      // Runs read-time relational stitching and validates output schema (lazy mode)
-      return hydrateRecord('enrollment', data, queryClient);
+      // 1. Relational hydration & schema validation
+      const hydrated = hydrateRecord('enrollment', data, queryClient);
+      // 2. Filter dataset using strategy callback if filter is provided
+      if (!filter || filter === EMPTY_FILTER || Object.keys(filter).length === 0) {
+        return hydrated;
+      }
+      return resolveEnrollmentList(hydrated, filter);
     },
     enabled: !!token && enabled,
-    initialData: () => getCachedList(queryClient, 'enrollment', queryFilter),
-    initialDataUpdatedAt: () => queryClient.getQueryState(queryKeys.enrollment.list(queryFilter))?.dataUpdatedAt,
+    initialData: () => getCachedList(queryClient, 'enrollment', filter),
+    initialDataUpdatedAt: () => queryClient.getQueryState(queryKeys.enrollment.list(EMPTY_FILTER))?.dataUpdatedAt,
     staleTime: 1000 * 60 * 5, // 5 minutes cache stale window
     refetchOnWindowFocus: false
   });

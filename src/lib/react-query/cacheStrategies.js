@@ -77,8 +77,10 @@
 
 
 
+const IGNORED_FILTER_KEYS = new Set(['limit', 'offset', 'page', 'sort', 'order']);
+
 /**
- * Removes empty filter values so they don't participate in comparisons.
+ * Removes empty filter values and non-entity pagination controls so they don't participate in field comparisons.
  *
  * @param {object} filter - Raw filter object.
  * @returns {Array<[string, any]>} Active filter entries.
@@ -87,7 +89,8 @@ export function prepareFilters(filter) {
   if (!filter) return [];
 
   return Object.entries(filter).filter(
-    ([, value]) => value !== undefined &&
+    ([key, value]) => !IGNORED_FILTER_KEYS.has(key) &&
+      value !== undefined &&
       value !== null &&
       value !== ""
   );
@@ -141,9 +144,24 @@ export function resolveBatchList(cachedList, filter) {
 }
 
 /**
+ * Enrollment list resolver.
+ * Filters cached enrollment records in RAM by entity fields, completely ignoring limit and offset parameters.
+ *
+ * @param {Array<object>} cachedList
+ * @param {object} filter
+ * @returns {Array<object>}
+ */
+export function resolveEnrollmentList(cachedList, filter) {
+  const activeFilters = prepareFilters(filter);
+
+  return filterCollection(cachedList, activeFilters);
+}
+
+/**
  * Registry mapping entities to their respective resolution strategy callbacks.
  * @type {Object.<string, Function>}
  */
 export const CACHE_RESOLVER_STRATEGIES = {
-  batch: resolveBatchList
+  batch: resolveBatchList,
+  enrollment: resolveEnrollmentList
 };

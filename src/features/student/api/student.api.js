@@ -18,7 +18,7 @@ import { API_REGISTRY } from '../../../services/apiRegistry';
  * @param {object} [options={}] - HTTP fetch configuration options (e.g. AbortController signal).
  * @returns {Promise<object>} Standard response envelope with an array of matching student records.
  */
-export const fetchStudents = (token, filter = {}, options = {}) => 
+export const fetchStudents = (token, filter = {}, options = {}) =>
   executeAction(API_REGISTRY.DATA.QUERY, { target: 'Student', where: filter }, token, options);
 
 /**
@@ -32,7 +32,7 @@ export const fetchStudents = (token, filter = {}, options = {}) =>
  * @param {object} [options={}] - HTTP fetch configuration options.
  * @returns {Promise<object>} Standard response envelope confirming registration status.
  */
-export const createStudent = (token, userData, profileData, options = {}) => 
+export const createStudent = (token, userData, profileData, options = {}) =>
   executeAction(API_REGISTRY.STUDENT.ADD, { userData, profileData }, token, options);
 
 /**
@@ -51,7 +51,7 @@ export const createStudent = (token, userData, profileData, options = {}) =>
  * @param {object} [options={}] - HTTP fetch configuration options.
  * @returns {Promise<object>} Standard response envelope with the recorded Lead ID.
  */
-export const createStudentLead = (token, leadData, options = {}) => 
+export const createStudentLead = (token, leadData, options = {}) =>
   executeAction(API_REGISTRY.STUDENT.ADD_LEAD, { leadData }, token, options);
 
 /**
@@ -69,7 +69,7 @@ export const createStudentLead = (token, leadData, options = {}) =>
  * @param {object} [options={}] - HTTP fetch configuration options.
  * @returns {Promise<object>} Standard response envelope indicating transaction success.
  */
-export const registerStudentTransaction = (token, registrationData, options = {}) => 
+export const registerStudentTransaction = (token, registrationData, options = {}) =>
   executeAction(API_REGISTRY.STUDENT.REGISTER, registrationData, token, options);
 
 /**
@@ -83,7 +83,7 @@ export const registerStudentTransaction = (token, registrationData, options = {}
  * @param {object} [options={}] - HTTP fetch configuration options.
  * @returns {Promise<object>} Standard response envelope confirming modification state.
  */
-export const modifyStudent = (token, id, data, options = {}) => 
+export const modifyStudent = (token, id, data, options = {}) =>
   executeAction(API_REGISTRY.STUDENT.UPDATE, { id, data }, token, options);
 
 /**
@@ -121,7 +121,7 @@ export const removeStudent = (token, id, options = {}) => {
  * @returns {Promise<object>} Standard response envelope with an array of matching enrollment records.
  */
 export const fetchEnrollments = (token, filter = {}, options = {}) => {
-  const { limit = 3, offset = 0, signal } = options;
+  const { limit = 200, offset = 0, signal } = options;
   const payload = {
     target: 'Enrollment',
     where: filter,
