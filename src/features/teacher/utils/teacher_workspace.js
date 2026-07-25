@@ -4,6 +4,7 @@
  */
 
 import { isPastLocalDate, formatStructuredToTime } from '../../../lib/dateUtils';
+import { buildTeacherBaselineRegistry } from '../../attendance/utils/attendanceUtils';
 
 /**
  * Formats full dates to standard text display.
@@ -13,10 +14,10 @@ import { isPastLocalDate, formatStructuredToTime } from '../../../lib/dateUtils'
 export const formatProfileDate = (dateString) => {
   if (!dateString) return '';
   const date = new Date(dateString.split('T')[0]);
-  return isNaN(date.getTime()) ? '' : date.toLocaleDateString(undefined, { 
-    year: 'numeric', 
-    month: 'short', 
-    day: 'numeric' 
+  return isNaN(date.getTime()) ? '' : date.toLocaleDateString(undefined, {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
   });
 };
 
@@ -55,9 +56,9 @@ export const formatToKey = (dateObj) => {
 export const isSameLocalDate = (date1, date2) => {
   const d1 = date1 instanceof Date ? date1 : new Date(date1);
   const d2 = date2 instanceof Date ? date2 : new Date(date2);
-  
+
   if (isNaN(d1.getTime()) || isNaN(d2.getTime())) return false;
-  
+
   return (
     d1.getFullYear() === d2.getFullYear() &&
     d1.getMonth() === d2.getMonth() &&
@@ -73,21 +74,21 @@ export const isSameLocalDate = (date1, date2) => {
  */
 export const normalizeAttendanceList = (attendanceArray) => {
   if (!Array.isArray(attendanceArray)) return {};
-  
+
   return attendanceArray.reduce((acc, record) => {
     if (!record?.attendance_date) return acc;
-    
+
     // Re-evaluate the ISO string into local browser space
     const localDate = toLocalDate(record.attendance_date);
     const dateKey = formatToKey(localDate);
-    
+
     if (dateKey) {
       acc[dateKey] = {
         ...record,
         _localDateInstance: localDate // Attached for seamless direct comparisons
       };
     }
-    
+
     return acc;
   }, {});
 };
@@ -109,15 +110,15 @@ export const calculateMonthlyStats = (indexedData, currentYear, currentMonth) =>
   Object.keys(indexedData).forEach((dateKey) => {
     const record = indexedData[dateKey];
     const recordDate = record._localDateInstance;
-    
+
     // Boundary filter check matching the target workspace dimensions
     if (recordDate && recordDate.getFullYear() === currentYear && recordDate.getMonth() === currentMonth) {
       const status = record.status?.toUpperCase();
-      
+
       if (status === 'P' || status === 'PRESENT') presentDays++;
       else if (status === 'L' || status === 'LATE') lateDays++;
       else if (status === 'A' || status === 'ABSENT') absentDays++;
-      
+
       totalHours += record.duration || 0;
     }
   });
@@ -144,61 +145,11 @@ export const calculateMonthlyStats = (indexedData, currentYear, currentMonth) =>
  * @returns {Object} Constant-time O(1) staged record lookup map
  */
 export const initializeStagedRecords = (teachers, dailyLogs, batches, selectedDate) => {
+  const baselineList = buildTeacherBaselineRegistry(teachers, dailyLogs, batches, selectedDate);
   const staged = {};
-  const todayStr = new Date().toLocaleDateString('sv-SE');
-  const isToday = selectedDate === todayStr;
-  const isPastDate = isPastLocalDate(selectedDate);
-
-  teachers.forEach(teacher => {
-    const teacherBatches = batches.filter(b => b.teacher_id === teacher.teacher_id);
-    
-    teacherBatches.forEach(batch => {
-      const matchingLog = dailyLogs.find(log => 
-        log.teacher_id === teacher.teacher_id && 
-        (log.batch_id === batch.batch_id || !log.batch_id)
-      );
-
-      // Retrieve default check-in and check-out times from batch schedule, falling back to 08:00/16:00
-      const defaultIn = batch.schedule?.start_time || '08:00';
-      const defaultOut = batch.schedule?.end_time || '16:00';
-
-      let statusVal = 'P';
-      let entryTimeStr = defaultIn;
-      let exitTimeStr = defaultOut;
-      let remarksStr = '';
-      const isUnrecordedPast = !matchingLog && isPastDate;
-      const isUnrecordedToday = !matchingLog && isToday;
-
-      if (matchingLog) {
-        if (matchingLog.status === 'Absent' || matchingLog.status === 'A') statusVal = 'A';
-        else if (matchingLog.status === 'Late' || matchingLog.status === 'L') statusVal = 'L';
-        else statusVal = 'P';
-
-        entryTimeStr = formatStructuredToTime(matchingLog.entry_time) || defaultIn;
-        exitTimeStr = formatStructuredToTime(matchingLog.exit_time) || defaultOut;
-        remarksStr = matchingLog.remarks || '';
-      } else if (isToday) {
-        statusVal = ''; 
-      }
-
-      const compositeKey = `${teacher.teacher_id}_${batch.batch_id}`;
-      staged[compositeKey] = {
-        id: compositeKey,
-        teacher_id: teacher.teacher_id,
-        batch_id: batch.batch_id,
-        batch_name: batch.batch_name || batch.name || batch.batch_id,
-        full_name: teacher.full_name,
-        phone: teacher.mobile_number,
-        status: statusVal,
-        entry_time: entryTimeStr,
-        exit_time: exitTimeStr,
-        remarks: remarksStr,
-        isUnmarkedPastDate: isUnrecordedPast,
-        isUnmarkedCurrentDate: isUnrecordedToday
-      };
-    });
+  baselineList.forEach(record => {
+    staged[record.id] = record;
   });
-
   return staged;
 };
 
@@ -213,9 +164,9 @@ export const calculateAttendanceMetrics = (records) => {
   const absent = records.filter(t => t.status === 'A' && !t.isUnmarkedPastDate && !t.isUnmarkedCurrentDate).length;
   const late = records.filter(t => t.status === 'L' && !t.isUnmarkedPastDate && !t.isUnmarkedCurrentDate).length;
   const unrecorded = records.filter(t => t.isUnmarkedPastDate || t.isUnmarkedCurrentDate).length;
-  
-  const attendanceRate = total > 0 
-    ? Math.round(((present + late) / (total - unrecorded || 1)) * 100) 
+
+  const attendanceRate = total > 0
+    ? Math.round(((present + late) / (total - unrecorded || 1)) * 100)
     : 0;
 
   return { total, present, absent, late, unrecorded, attendanceRate };

@@ -382,7 +382,114 @@ export function buildStudentBaselineRegistry(batchStudents, recordedEntries, sel
 }
 
 /**
- * Matches teacher-batch assignments with daily logs, initializing baseline records.
+ * Abstract Strategy interface for resolving attendance record parameters.
+ */
+class AttendanceResolutionStrategy {
+    resolve(log, context) {
+        throw new Error('AttendanceResolutionStrategy.resolve must be implemented by concrete subclass.');
+    }
+}
+
+/**
+ * Concrete Strategy handling existing database logs.
+ */
+class RecordedLogStrategy extends AttendanceResolutionStrategy {
+    resolve(log, context) {
+        const { defaultIn, defaultOut } = context;
+        let statusVal = log.status || 'NR';
+        if (statusVal === 'Absent') statusVal = 'A';
+        else if (statusVal === 'Late') statusVal = 'L';
+        else if (statusVal === 'Present') statusVal = 'P';
+
+        return {
+            status: statusVal,
+            entry_time: formatStructuredToTime(log.entry_time) || defaultIn,
+            exit_time: formatStructuredToTime(log.exit_time) || defaultOut,
+            remarks: log.remarks || '',
+            isUnmarkedPastDate: false,
+            isUnmarkedCurrentDate: false
+        };
+    }
+}
+
+/**
+ * Concrete Strategy handling missing logs (Unrecorded entries).
+ * Rule: No entry in database -> Client-side virtual status is ALWAYS 'NR' (Not Recorded). Zero default 'P' fallbacks.
+ */
+class UnrecordedLogStrategy extends AttendanceResolutionStrategy {
+    resolve(log, context) {
+        const { defaultIn, defaultOut, isPastDate, isToday } = context;
+        return {
+            status: 'NR',
+            entry_time: defaultIn,
+            exit_time: defaultOut,
+            remarks: '',
+            isUnmarkedPastDate: isPastDate,
+            isUnmarkedCurrentDate: isToday
+        };
+    }
+}
+
+/**
+ * Context Selector Strategy Factory
+ */
+export const AttendanceStatusResolver = {
+    recordedStrategy: new RecordedLogStrategy(),
+    unrecordedStrategy: new UnrecordedLogStrategy(),
+
+    resolveRecord(matchingLog, context) {
+        const strategy = matchingLog ? this.recordedStrategy : this.unrecordedStrategy;
+        return strategy.resolve(matchingLog, context);
+    }
+};
+
+/**
+ * Compiles a fast O(1) Map for teacher entities indexed by teacher_id.
+ * @param {Array<Object>} teachers - Flat list of teacher records.
+ * @returns {Map<string, Object>} teacher_id -> teacher Object lookup map.
+ */
+export function buildTeacherHashMap(teachers) {
+    const teachersMap = new Map();
+    if (!Array.isArray(teachers)) return teachersMap;
+
+    teachers.forEach(t => {
+        if (t && t.teacher_id) {
+            teachersMap.set(String(t.teacher_id).trim(), t);
+        }
+    });
+    return teachersMap;
+}
+
+/**
+ * Compiles a fast O(1) Map for attendance logs indexed by `${batch_id}_${teacher_id}`.
+ * @param {Array<Object>} dailyLogs - Flat list of daily attendance log entries.
+ * @param {string} [selectedDate] - Optional date key (YYYY-MM-DD) filter.
+ * @returns {Map<string, Object>} `${batch_id}_${teacher_id}` -> log Object lookup map.
+ */
+export function buildDailyLogsHashMap(dailyLogs, selectedDate) {
+    const dailyLogsMap = new Map();
+    if (!Array.isArray(dailyLogs)) return dailyLogsMap;
+
+    dailyLogs.forEach(log => {
+        if (log && log.batch_id) {
+            let matchesDate = true;
+            if (selectedDate && log.attendance_date) {
+                const logLocalDate = toLocalDate(log.attendance_date);
+                const logDateKey = formatToKey(logLocalDate);
+                matchesDate = (logDateKey === selectedDate);
+            }
+            if (matchesDate) {
+                const logKey = `${String(log.batch_id).trim()}_${String(log.teacher_id || '').trim()}`;
+                dailyLogsMap.set(logKey, log);
+            }
+        }
+    });
+    return dailyLogsMap;
+}
+
+/**
+ * Matches academic cohorts (batches) as the primary base entity, hydrating teacher info via O(1) HashMaps
+ * and injecting daily attendance logs using AttendanceStatusResolver.
  * @param {Array<Object>} teachers - Flat array of all teachers.
  * @param {Array<Object>} dailyLogs - Flat array of daily attendance logs.
  * @param {Array<Object>} batches - Flat array of all academic cohorts.
@@ -390,68 +497,60 @@ export function buildStudentBaselineRegistry(batchStudents, recordedEntries, sel
  * @returns {Array<Object>} Daily teacher-batch baseline array.
  */
 export function buildTeacherBaselineRegistry(teachers, dailyLogs, batches, selectedDate) {
-    if (!Array.isArray(teachers) || !Array.isArray(batches)) return [];
-    const logs = Array.isArray(dailyLogs) ? dailyLogs : [];
+    if (!Array.isArray(batches)) return [];
 
     const todayStr = new Date().toLocaleDateString('sv-SE');
     const isToday = selectedDate === todayStr;
     const isPastDate = isPastLocalDate(selectedDate);
 
+    // 1. Build decoupled O(1) HashMaps
+    const teachersMap = buildTeacherHashMap(teachers);
+    const dailyLogsMap = buildDailyLogsHashMap(dailyLogs, selectedDate);
+
+    // 2. Single-Pass O(B) Transformation over batches[] as primary baseline ground truth
     const result = [];
 
-    teachers.forEach(teacher => {
-        const teacherBatches = batches.filter(b => b.teacher_id === teacher.teacher_id);
+    batches.forEach(batch => {
+        if (!batch || !batch.batch_id) return;
 
-        teacherBatches.forEach(batch => {
-            const matchingLog = logs.find(log => {
-                if (log.teacher_id !== teacher.teacher_id) return false;
-                if (log.batch_id !== batch.batch_id) return false;
-                if (log.attendance_date) {
-                    const logLocalDate = toLocalDate(log.attendance_date);
-                    const logDateKey = formatToKey(logLocalDate);
-                    return logDateKey === selectedDate;
-                }
-                return true;
-            });
+        const batchId = String(batch.batch_id).trim();
+        const teacherId = batch.teacher_id ? String(batch.teacher_id).trim() : '';
 
-            const defaultIn = batch.schedule?.start_time || '08:00';
-            const defaultOut = batch.schedule?.end_time || '16:00';
+        // O(1) Teacher Hydration
+        const teacher = teacherId ? teachersMap.get(teacherId) : null;
+        const fullName = teacher?.full_name || teacher?.displayName || (teacherId ? `Teacher (${teacherId})` : 'Unassigned Faculty');
+        const phone = teacher?.mobile_number || teacher?.phone || '';
 
-            let statusVal = 'P';
-            let entryTimeStr = defaultIn;
-            let exitTimeStr = defaultOut;
-            let remarksStr = '';
-            const isUnrecordedPast = !matchingLog && isPastDate;
-            const isUnrecordedToday = !matchingLog && isToday;
+        // O(1) Matching Log Lookup
+        const logKey = `${batchId}_${teacherId}`;
+        const matchingLog = dailyLogsMap.get(logKey);
 
-            if (matchingLog) {
-                statusVal = matchingLog.status || 'NR';
-                if (statusVal === 'Absent') statusVal = 'A';
-                else if (statusVal === 'Late') statusVal = 'L';
-                else if (statusVal === 'Present') statusVal = 'P';
+        // Schedule Default Bounds
+        const defaultIn = batch.schedule?.start_time || '08:00';
+        const defaultOut = batch.schedule?.end_time || '16:00';
 
-                entryTimeStr = formatStructuredToTime(matchingLog.entry_time) || defaultIn;
-                exitTimeStr = formatStructuredToTime(matchingLog.exit_time) || defaultOut;
-                remarksStr = matchingLog.remarks || '';
-            } else if (isToday) {
-                statusVal = 'NR';
-            }
+        // Strategy Resolution
+        const resolved = AttendanceStatusResolver.resolveRecord(matchingLog, {
+            defaultIn,
+            defaultOut,
+            isPastDate,
+            isToday
+        });
 
-            const compositeKey = `${teacher.teacher_id}_${batch.batch_id}`;
-            result.push({
-                id: compositeKey,
-                teacher_id: teacher.teacher_id,
-                batch_id: batch.batch_id,
-                batch_name: batch.batch_name || batch.name || batch.batch_id,
-                full_name: teacher.full_name,
-                phone: teacher.mobile_number,
-                status: statusVal,
-                entry_time: entryTimeStr,
-                exit_time: exitTimeStr,
-                remarks: remarksStr,
-                isUnmarkedPastDate: isUnrecordedPast,
-                isUnmarkedCurrentDate: isUnrecordedToday
-            });
+        const compositeKey = `${batchId}_${teacherId || 'unassigned'}`;
+        result.push({
+            id: compositeKey,
+            batch_id: batchId,
+            batch_name: batch.batch_name || batch.name || batchId,
+            teacher_id: teacherId,
+            full_name: fullName,
+            phone: phone,
+            status: resolved.status,
+            entry_time: resolved.entry_time,
+            exit_time: resolved.exit_time,
+            remarks: resolved.remarks,
+            isUnmarkedPastDate: resolved.isUnmarkedPastDate,
+            isUnmarkedCurrentDate: resolved.isUnmarkedCurrentDate
         });
     });
 
