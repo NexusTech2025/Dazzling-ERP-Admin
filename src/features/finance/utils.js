@@ -156,3 +156,99 @@ export const aggregateBillingAccountsByStudent = (mappedAccounts = []) => {
     };
   });
 };
+
+/**
+ * Scans General Ledger MoneyTransactions to find outflows for a specific teacher without a linked TPT record.
+ * 
+ * @param {Array<Object>} moneyTransactions - Collection of General Ledger MoneyTransaction objects.
+ * @param {string} teacherId - Target teacher primary identifier (e.g., 'TCH-00001').
+ * @returns {Array<Object>} List of unlinked teacher GL outflow records.
+ */
+export const findUnlinkedTeacherGlOutflows = (moneyTransactions = [], teacherId = '') => {
+  if (!teacherId || !Array.isArray(moneyTransactions)) return [];
+
+  return moneyTransactions.filter(mt => {
+    // 1. Must be an outflow (expense transaction, DEBIT, or type === 'out')
+    const isOutflow = mt.type === 'out' || mt.transaction_type === 'expense' || mt.type === 'DEBIT';
+    if (!isOutflow) return false;
+
+    // 2. Check party association (party_id matches teacherId, OR party_type === 'teacher')
+    const hasMatchingPartyId = mt.party_id && String(mt.party_id) === String(teacherId);
+    const isTeacherPartyType = mt.party_type && String(mt.party_type).toLowerCase() === 'teacher';
+    
+    // If party_id exists and points to a DIFFERENT teacher, exclude it
+    if (mt.party_id && String(mt.party_id) !== String(teacherId)) {
+      return false;
+    }
+
+    if (!hasMatchingPartyId && !isTeacherPartyType) {
+      return false;
+    }
+
+    // 3. Must lack a linked TPT reference key and not be marked non-salary
+    const hasTptKey = mt.payment_reference && (mt.payment_reference.includes('TPT-') || mt.payment_reference.includes('tpt-'));
+    const isNonSalary = mt.payment_reference === 'NON_SALARY_REIMBURSEMENT';
+    return !hasTptKey && !isNonSalary;
+  });
+};
+
+/**
+ * Utility helper to identify candidate matching General Ledger transactions for an unlinked Teacher Payment.
+ * 
+ * @param {Object} tptRecord - Unsynced TeacherPaymentTransaction record.
+ * @param {Array<Object>} unlinkedGlOutflows - List of unlinked GL MoneyTransactions.
+ * @returns {Object|null} Matching MoneyTransaction candidate or null if no match found within 7-day window.
+ */
+export const findSmartGlMatch = (tptRecord, unlinkedGlOutflows = []) => {
+  if (!tptRecord || !tptRecord.amount || !Array.isArray(unlinkedGlOutflows)) return null;
+
+  return unlinkedGlOutflows.find(mt => {
+    // Exact amount match check
+    const isAmountEqual = Math.abs(Number(mt.amount || 0) - Number(tptRecord.amount || 0)) < 0.01;
+    if (!isAmountEqual) return false;
+
+    // Date proximity heuristic: Math.abs(diffDays) <= 7
+    try {
+      const tptDate = new Date(tptRecord.transaction_date).getTime();
+      const mtDate = new Date(mt.transaction_date).getTime();
+      if (isNaN(tptDate) || isNaN(mtDate)) return false;
+      const diffDays = Math.abs(tptDate - mtDate) / (1000 * 60 * 60 * 24);
+      return diffDays <= 7;
+    } catch {
+      return false;
+    }
+  }) || null;
+};
+
+/**
+ * Verifies reconciliation match between a General Ledger MoneyTransaction and a Teacher Payment.
+ * 
+ * @param {Object} glRecord - General Ledger MoneyTransaction object.
+ * @param {Object} tptRecord - Sub-Ledger TeacherPaymentTransaction object.
+ * @returns {Object} Reconciliation audit report { isReconciled, isAmountEqual, isLinked, glAmount, tptAmount, compositeKey, delta }.
+ */
+export const verifyGlSubledgerLink = (glRecord = {}, tptRecord = {}) => {
+  const glAmount = Number(glRecord?.amount || 0);
+  const tptAmount = Number(tptRecord?.amount || 0);
+  const isAmountEqual = Math.abs(glAmount - tptAmount) < 0.01;
+
+  const teacherId = tptRecord?.teacher_id || glRecord?.party_id;
+  const salaryMonth = tptRecord?.salary_month || (glRecord?.transaction_date ? glRecord.transaction_date.slice(0, 7) : '');
+  const tptId = tptRecord?.transaction_id || tptRecord?.id;
+  const compositeKey = `${teacherId}_${salaryMonth}_${tptId}`;
+
+  const isLinked = glRecord?.payment_reference === compositeKey || 
+                  (glRecord?.payment_reference && glRecord.payment_reference.includes(tptId));
+
+  return {
+    isReconciled: isAmountEqual && isLinked,
+    isAmountEqual,
+    isLinked,
+    glAmount,
+    tptAmount,
+    compositeKey,
+    delta: Math.abs(glAmount - tptAmount)
+  };
+};
+
+

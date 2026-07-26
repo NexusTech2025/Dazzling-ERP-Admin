@@ -11,12 +11,12 @@ import {
   TableCell,
   TableEmpty
 } from '../../../../../components/ui/table';
-import { formatDateBounds } from '../../../utils/teacher.utils';
+import { formatDateBounds, formatSalaryMonth } from '../../../utils/teacher.utils';
 import { useMoneyTransactionsQuery } from '../../../../finance/hooks/useFinanceQueries';
 
 const TeacherPaymentTransactionsCard = React.memo(({ transactions = [], teacherId, teacherName, onSyncLedger }) => {
   const { data: moneyTransactions = [] } = useMoneyTransactionsQuery();
-
+  console.log("teacher payment transactions: ", transactions)
   return (
     <Card>
       <Card.Header border={true} className="flex items-center justify-between bg-slate-50/20 dark:bg-slate-800/20">
@@ -46,7 +46,7 @@ const TeacherPaymentTransactionsCard = React.memo(({ transactions = [], teacherI
             <TableHeader>
               <TableRow>
                 <TableHead>Date</TableHead>
-                <TableHead>Salary Month</TableHead>
+                {/* <TableHead>Salary Month</TableHead> */}
                 <TableHead>Type</TableHead>
                 <TableHead>Method</TableHead>
                 <TableHead>Ref Number</TableHead>
@@ -60,20 +60,20 @@ const TeacherPaymentTransactionsCard = React.memo(({ transactions = [], teacherI
               {transactions.map((tx) => {
                 const targetTeacherId = teacherId || tx.teacher_id;
                 const compositeKey = `${targetTeacherId}_${tx.salary_month}_${tx.transaction_id}`;
-                
-                const isSynced = moneyTransactions.some(mt => 
-                  mt.payment_reference === compositeKey || 
+
+                const isSynced = moneyTransactions.some(mt =>
+                  mt.payment_reference === compositeKey ||
                   (mt.payment_reference && mt.payment_reference.includes(tx.transaction_id))
                 );
 
                 return (
                   <TableRow key={tx.transaction_id}>
-                    <TableCell className="text-xs">
+                    <TableCell className="text-xs min-w-[100px]">
                       {formatDateBounds(tx.transaction_date, 'N/A')}
                     </TableCell>
-                    <TableCell className="font-mono text-xs">
-                      {tx.salary_month || 'N/A'}
-                    </TableCell>
+                    {/* <TableCell className="font-semibold text-xs text-text-main dark:text-white">
+                      {tx.salary_month}
+                    </TableCell> */}
                     <TableCell className="capitalize text-xs font-semibold">
                       {tx.payment_type || 'SALARY'}
                     </TableCell>
@@ -88,13 +88,13 @@ const TeacherPaymentTransactionsCard = React.memo(({ transactions = [], teacherI
                     </TableCell>
                     <TableCell>
                       {isSynced ? (
-                        <div className="flex items-center gap-1 text-emerald-500 font-bold text-xs" title="Synced with General Ledger">
-                          <span className="material-symbols-outlined text-sm">sync</span>
+                        <div className="flex items-center gap-1 text-emerald-500 font-bold !text-xs" title="Synced with General Ledger">
+                          <span className="material-symbols-outlined !text-[14px]">sync</span>
                           <span className="text-[10px] uppercase">Synced</span>
                         </div>
                       ) : (
-                        <div className="flex items-center gap-1 text-rose-500 font-bold text-xs" title="Not Synced with General Ledger">
-                          <span className="material-symbols-outlined text-sm animate-pulse">sync_problem</span>
+                        <div className="flex items-center gap-1 text-rose-500 font-bold !text-xs" title="Not Synced with General Ledger">
+                          <span className="material-symbols-outlined !text-[14px] animate-pulse">sync_problem</span>
                           <span className="text-[10px] uppercase">Not Synced</span>
                         </div>
                       )}

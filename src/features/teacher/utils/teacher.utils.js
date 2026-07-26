@@ -126,3 +126,44 @@ export const formatDateBounds = (dateStr, fallback = 'N/A') => {
   if (!dateStr) return fallback;
   return format(parseISO(dateStr), 'MMM d, yyyy');
 };
+
+/**
+ * Formats a raw salary month string ('2026-07', '2026-07-01', or full ISO string) into 'July 2026' format.
+ * Robustly extracts year and month to prevent timezone drift or ISO parse failures.
+ * 
+ * @param {string|Date} salaryMonthVal - Raw month string or date object.
+ * @param {string} [fallback='N/A'] - Fallback display label.
+ * @returns {string} Formatted salary month label (e.g., 'July 2026').
+ */
+export const formatSalaryMonth = (salaryMonthVal, fallback = 'N/A') => {
+  if (!salaryMonthVal) return fallback;
+
+  const str = String(salaryMonthVal).trim();
+  if (!str) return fallback;
+
+  try {
+    // 1. Direct YYYY-MM regex extraction (handles "2026-07", "2026-07-26", "2026-07-01T00:00:00.000Z")
+    const yyyyMmMatch = str.match(/^(\d{4})-(\d{2})/);
+    if (yyyyMmMatch) {
+      const year = parseInt(yyyyMmMatch[1], 10);
+      const monthIndex = parseInt(yyyyMmMatch[2], 10) - 1; // 0-indexed month for Date
+      if (year > 1900 && monthIndex >= 0 && monthIndex < 12) {
+        // Construct local date on the 15th to eliminate timezone boundary shifts
+        const localDate = new Date(year, monthIndex, 15);
+        return format(localDate, 'MMMM yyyy');
+      }
+    }
+
+    // 2. Fallback parseISO for non-standard ISO date strings
+    const parsedDate = parseISO(str);
+    if (!isNaN(parsedDate.getTime())) {
+      return format(parsedDate, 'MMMM yyyy');
+    }
+  } catch (err) {
+    console.error('formatSalaryMonth error:', err);
+  }
+
+  return str || fallback;
+};
+
+

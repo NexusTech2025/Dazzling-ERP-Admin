@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
@@ -10,6 +10,7 @@ import SelectInput from '../../../../../components/ui/v2/SelectInput';
 import RadioGroup from '../../../../../components/ui/v2/RadioGroup';
 import Button from '../../../../../components/ui/v2/Button';
 import { useRecordTeacherPaymentMutation } from '../../../hooks/useTeacherQueries';
+import { useUpdateMoneyTransactionMutation } from '../../../../finance/hooks/useFinanceQueries';
 
 // 1. Declarative Yup Validation Schema for user-editable form fields
 export const teacherPaymentSchema = yup.object({
@@ -46,24 +47,24 @@ export const teacherPaymentSchema = yup.object({
     .nullable()
     .transform(val => (val ? val.trim() : null))
 })
-.test(
-  'matching-salary-month',
-  'Transaction date must fall within the selected salary month.',
-  function (values) {
-    const { salary_month, transaction_date } = values || {};
-    if (!salary_month || !transaction_date) return true;
+  .test(
+    'matching-salary-month',
+    'Transaction date must fall within the selected salary month.',
+    function (values) {
+      const { salary_month, transaction_date } = values || {};
+      if (!salary_month || !transaction_date) return true;
 
-    const txMonth = transaction_date.slice(0, 7);
-    if (txMonth !== salary_month) {
-      return this.createError({
-        path: 'transaction_date',
-        message: `Transaction date (${transaction_date}) must fall within the selected salary month (${salary_month}).`
-      });
+      const txMonth = transaction_date.slice(0, 7);
+      if (txMonth !== salary_month) {
+        return this.createError({
+          path: 'transaction_date',
+          message: `Transaction date (${transaction_date}) must fall within the selected salary month (${salary_month}).`
+        });
+      }
+      return true;
     }
-    return true;
-  }
-)
-.required();
+  )
+  .required();
 
 const PAYMENT_TYPE_OPTIONS = [
   { label: 'Salary', value: 'salary' },
@@ -88,9 +89,30 @@ const RecordTeacherPaymentModal = ({
   initialPaymentType = 'salary',
   activeBaseRate = 0,
   pendingAmount = 0,
+  initialData = null,
   onSuccess
 }) => {
   const recordPaymentMutation = useRecordTeacherPaymentMutation();
+  const updateGlMutation = useUpdateMoneyTransactionMutation();
+
+  const getFormDefaults = () => {
+    const defaultAmount = initialData?.amount ?? (activeBaseRate > 0 ? activeBaseRate : (pendingAmount > 0 ? pendingAmount : ''));
+    const defaultTxDate = initialData?.transaction_date || format(new Date(), 'yyyy-MM-dd');
+    const defaultMonth = initialData?.transaction_date ? initialData.transaction_date.slice(0, 7) : format(new Date(), 'yyyy-MM');
+    const defaultMethod = initialData?.payment_method || 'bank';
+    const glId = initialData?.gl_transaction_id || initialData?.transaction_id || '';
+    const defaultNotes = glId ? `Created from GL entry ${glId}${initialData?.notes ? `: ${initialData.notes}` : ''}` : '';
+
+    return {
+      payment_type: initialPaymentType || 'salary',
+      salary_month: defaultMonth,
+      amount: defaultAmount,
+      payment_method: defaultMethod,
+      transaction_date: defaultTxDate,
+      reference_number: glId || '',
+      notes: defaultNotes
+    };
+  };
 
   // 2. Initialize useForm with yupResolver and defaultValues
   const {
@@ -102,31 +124,15 @@ const RecordTeacherPaymentModal = ({
   } = useForm({
     resolver: yupResolver(teacherPaymentSchema),
     mode: 'onSubmit',
-    defaultValues: {
-      payment_type: initialPaymentType || 'salary',
-      salary_month: format(new Date(), 'yyyy-MM'),
-      amount: activeBaseRate > 0 ? activeBaseRate : (pendingAmount > 0 ? pendingAmount : ''),
-      payment_method: 'bank',
-      transaction_date: format(new Date(), 'yyyy-MM-dd'),
-      reference_number: '',
-      notes: ''
-    }
+    defaultValues: getFormDefaults()
   });
 
   // Re-hydrate form state whenever modal opens or props change
   useEffect(() => {
     if (isOpen) {
-      reset({
-        payment_type: initialPaymentType || 'salary',
-        salary_month: format(new Date(), 'yyyy-MM'),
-        amount: activeBaseRate > 0 ? activeBaseRate : (pendingAmount > 0 ? pendingAmount : ''),
-        payment_method: 'bank',
-        transaction_date: format(new Date(), 'yyyy-MM-dd'),
-        reference_number: '',
-        notes: ''
-      });
+      reset(getFormDefaults());
     }
-  }, [isOpen, initialPaymentType, activeBaseRate, pendingAmount, reset]);
+  }, [isOpen, initialPaymentType, activeBaseRate, pendingAmount, initialData, reset]);
 
   const onSubmit = (data) => {
     const payload = {
@@ -142,14 +148,16 @@ const RecordTeacherPaymentModal = ({
 
     recordPaymentMutation.mutate(payload, {
       onSuccess: (res) => {
-        // Robust check for success across API envelope variants
         const isSuccessful = res?.success !== false && res?.status !== 'error';
         if (isSuccessful) {
           const recordData = res?.data || res?.record || res;
           if (onSuccess) {
-            onSuccess(recordData, payload);
+            onSuccess(recordData, payload, {
+              isGlConverted: !!initialData,
+              glRecord: initialData
+            });
           }
-          onClose(); // Disperse / close current record modal
+          onClose();
         }
       },
       onError: (err) => {
@@ -157,6 +165,7 @@ const RecordTeacherPaymentModal = ({
       }
     });
   };
+
 
   // Determine if top-level global generic error banner should be displayed
   const hasValidationErrors = isSubmitted && !isValid && Object.keys(errors).length > 0;
@@ -278,7 +287,7 @@ const RecordTeacherPaymentModal = ({
       </Modal.Body>
 
       <Modal.Footer>
-        <Button variant="outlined" onClick={onClose}>
+        <Button variant="outlined" onClick={onClose} disabled={recordPaymentMutation.isPending}>
           Cancel
         </Button>
         <Button
