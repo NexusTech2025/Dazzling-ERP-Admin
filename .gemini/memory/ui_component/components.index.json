@@ -424,6 +424,16 @@
       "title": "AttendanceRow",
       "line": 2898,
       "location": "src/features/batch/components/profile/AttendanceRow.jsx"
+    },
+    {
+      "title": "StudentFeeTab",
+      "line": 2926,
+      "location": "src/features/student/components/profile/StudentFeeTab.jsx"
+    },
+    {
+      "title": "FeeAccountCard",
+      "line": 2954,
+      "location": "src/features/student/components/profile/fee/FeeAccountCard.jsx"
     }
   ]
 }

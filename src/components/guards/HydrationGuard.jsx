@@ -1,13 +1,19 @@
 import React from 'react';
 import { useErpHydration } from '../../hooks/useErpHydration';
+import { useEnrollmentsQuery } from '../../features/student/hooks/useEnrollmentQueries';
 import FullScreenSplash from '../ui/v2/loaders/FullScreenSplash';
 
 /**
- * HydrationGuard: Strategy 1 - App Initialization Guard
- * Blocks rendering of protected routes until critical ERP data is cached.
+ * HydrationGuard: App Initialization Guard
+ * Runs initial ERP batch read and standalone nested Enrollments query in parallel.
  */
 const HydrationGuard = ({ children }) => {
-  const { isLoading, isError, error } = useErpHydration();
+  const { isLoading: isErpLoading, isError: isErpError, error: erpError } = useErpHydration();
+  const { isLoading: isEnrollmentsLoading, isError: isEnrollmentsError, error: enrollmentsError } = useEnrollmentsQuery();
+
+  const isLoading = isErpLoading || isEnrollmentsLoading;
+  const isError = isErpError || isEnrollmentsError;
+  const error = erpError || enrollmentsError;
 
   // 1. Loading State: Show the Splash Screen
   if (isLoading) {
@@ -26,7 +32,7 @@ const HydrationGuard = ({ children }) => {
           <p className="text-text-secondary mb-8">
             {error?.message || "We couldn't load the initial ERP data. Please check your connection and try again."}
           </p>
-          <button 
+          <button
             onClick={() => window.location.reload()}
             className="w-full py-3 bg-primary text-white font-bold rounded-xl hover:bg-primary-dark transition-all shadow-lg shadow-primary/20"
           >

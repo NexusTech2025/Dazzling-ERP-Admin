@@ -13,6 +13,9 @@ export const PackageRevenueTab = ({
   pending = 0,
   isMobile = false
 }) => {
+
+  console.log(feeAccounts)
+
   if (isLoading) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -74,8 +77,8 @@ export const PackageRevenueTab = ({
                 : '—';
               const isOverdue = inst.status?.toLowerCase() === 'overdue';
               return (
-                <div 
-                  key={inst.installment_id || idx} 
+                <div
+                  key={inst.installment_id || idx}
                   className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-border-light dark:border-border-dark shadow-sm flex items-center justify-between min-h-[52px]"
                 >
                   <div className="min-w-0">
@@ -89,13 +92,12 @@ export const PackageRevenueTab = ({
                       <p className="text-xs font-bold text-text-main dark:text-white font-mono">₹{inst.amount?.toLocaleString()}</p>
                       <p className="text-[9px] text-emerald-600 font-bold font-mono">Paid: ₹{inst.paid_amount?.toLocaleString()}</p>
                     </div>
-                    <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full shrink-0 ${
-                      inst.status?.toLowerCase() === 'paid' 
-                        ? 'bg-green-50 text-green-700 dark:bg-green-950/20 dark:text-green-400' 
-                        : isOverdue 
-                        ? 'bg-red-50 text-red-700 dark:bg-red-950/20 dark:text-red-400' 
-                        : 'bg-yellow-50 text-yellow-700 dark:bg-yellow-950/20 dark:text-yellow-400'
-                    }`}>
+                    <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full shrink-0 ${inst.status?.toLowerCase() === 'paid'
+                        ? 'bg-green-50 text-green-700 dark:bg-green-950/20 dark:text-green-400'
+                        : isOverdue
+                          ? 'bg-red-50 text-red-700 dark:bg-red-950/20 dark:text-red-400'
+                          : 'bg-yellow-50 text-yellow-700 dark:bg-yellow-950/20 dark:text-yellow-400'
+                      }`}>
                       {inst.status}
                     </span>
                   </div>

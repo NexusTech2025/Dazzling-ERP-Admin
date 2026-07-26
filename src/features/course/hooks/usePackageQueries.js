@@ -1,9 +1,11 @@
+import { useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useAuth } from '../../../context/AuthContextCore';
-import { queryKeys, EMPTY_FILTER } from '../../../lib/react-query/queryKeys';
-import { getCachedRecord, resolveRecord, getCachedList, resolveList } from '../../../lib/react-query/cacheHelper';
-import { apiClient } from '../../../services/apiClient';
-import { API_REGISTRY } from '../../../services/apiRegistry';
+import { useAuth } from '../../../context/AuthContextCore.js';
+import { queryKeys, EMPTY_FILTER } from '../../../lib/react-query/queryKeys.js';
+import { getCachedRecord, resolveRecord, getCachedList, resolveList } from '../../../lib/react-query/cacheHelper.js';
+import { apiClient } from '../../../services/apiClient.js';
+import { API_REGISTRY } from '../../../services/apiRegistry.js';
+import { useEnrollmentsQuery } from '../../student/hooks/useEnrollmentQueries.js';
 
 import {
   fetchCourses,
@@ -14,7 +16,7 @@ import {
   createPackage,
   updatePackage,
   deletePackage
-} from '../api/course.api';
+} from '../api/course.api.js';
 
 // --- PACKAGES ---
 
@@ -207,31 +209,27 @@ export const useDeletePackageMutation = () => {
 
 
 /**
- * Hook for fetching all student enrollments for a specific package.
- * Returns enrollment records with the nested student relation hydrated.
+ * Hook for resolving all student enrollments for a specific package.
+ * Leverages the master enrollment query cache and in-memory strategy filtering.
  *
  * @function usePackageEnrollmentsQuery
  * @param {string} packageId - The package identifier to scope the enrollment query.
- * @returns {object} React Query result containing enrollment records.
+ * @returns {object} React Query result containing enrollment records for the specified package.
  */
 export const usePackageEnrollmentsQuery = (packageId) => {
-  const { token } = useAuth();
+  const queryFilter = useMemo(() => {
+    if (!packageId) return null;
+    return {
+      item_id: packageId
+    };
+  }, [packageId]);
 
-  return useQuery({
-    queryKey: [...queryKeys.course.package.detail(packageId), 'enrollments'],
-    queryFn: async ({ signal }) => {
-      console.log('[usePackageEnrollmentsQuery] Fetching enrollments for package:', packageId);
-      const response = await fetchPackageEnrollments(token, packageId, { signal });
-      if (!response.success) {
-        throw new Error(response.error?.message || response.message || 'Failed to fetch package enrollments');
-      }
-      console.log('[usePackageEnrollmentsQuery] API Response:', response);
-      return response.data?.data || [];
-    },
-    enabled: !!token && !!packageId,
-    staleTime: 1000 * 60 * 5,
-    refetchOnWindowFocus: false,
-  });
+  return useEnrollmentsQuery(
+    queryFilter || EMPTY_FILTER,
+    {
+      enabled: !!packageId
+    }
+  );
 };
 
 /**
@@ -260,4 +258,47 @@ export const usePackageFeeAccountsQuery = (packageId) => {
     staleTime: 1000 * 60 * 5,
     refetchOnWindowFocus: false,
   });
+};
+
+/**
+ * Resolves all unique student profiles enrolled in a package.
+ * Extracts student IDs from package enrollments and retrieves student profiles,
+ * prioritizing enrollment.student and falling back to getCachedRecord from student query cache when missing.
+ * 
+ * @function usePackageStudent
+ * @param {string} packageId - The package identifier to analyze.
+ * @returns {object} Standard payload matching: { data: Array<Student>, isLoading: boolean, error: Error|null }
+ */
+export const usePackageStudent = (packageId) => {
+  const queryClient = useQueryClient();
+  const enrollmentsQuery = usePackageEnrollmentsQuery(packageId);
+
+  const students = useMemo(() => {
+    if (!enrollmentsQuery.data) return [];
+    const seen = new Set();
+    const result = [];
+
+    for (const enrollment of enrollmentsQuery.data) {
+      if (enrollment.student_id && !seen.has(enrollment.student_id)) {
+        seen.add(enrollment.student_id);
+
+        // 1. Check enrollment.student property first.
+        // 2. Query student cache ONLY if enrollment.student is missing.
+        const studentProfile = enrollment.student || getCachedRecord(queryClient, 'student', enrollment.student_id);
+
+        // 3. Only push valid resolved student profiles (no artificial fallbacks)
+        if (studentProfile) {
+          result.push(studentProfile);
+        }
+      }
+    }
+
+    return result;
+  }, [enrollmentsQuery.data, queryClient]);
+
+  return {
+    data: students,
+    isLoading: enrollmentsQuery.isLoading,
+    error: enrollmentsQuery.error
+  };
 };

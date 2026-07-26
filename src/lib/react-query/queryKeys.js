@@ -117,6 +117,11 @@ export const queryKeys = {
     payments: (filter = EMPTY_FILTER) => ['finance', 'payments', { filter }],
     accountingData: ['finance', 'accounting-data']
   },
+  enrollment: {
+    all: ['enrollment'],
+    list: (filter = EMPTY_FILTER) => [...queryKeys.enrollment.all, 'list', { filter }],
+    detail: (id) => [...queryKeys.enrollment.all, 'detail', id]
+  },
   user: {
     all: ['user'],
     lists: () => [...queryKeys.user.all, 'list'],

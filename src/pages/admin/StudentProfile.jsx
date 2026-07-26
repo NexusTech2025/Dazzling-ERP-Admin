@@ -29,6 +29,7 @@ import GuardianInfo from '../../features/student/components/profile/GuardianInfo
 import AcademicBackground from '../../features/student/components/profile/AcademicBackground';
 import EnrollmentDetails from '../../features/student/components/profile/EnrollmentDetails';
 import FeeSchedule from '../../features/student/components/profile/FeeSchedule';
+import StudentFeeTab from '../../features/student/components/profile/StudentFeeTab';
 import ProfileSidebar from '../../features/student/components/profile/ProfileSidebar';
 import AttendanceHeatmap from '../../features/student/components/profile/AttendanceHeatmap';
 
@@ -110,7 +111,7 @@ const StudentProfile = () => {
       ),
       Fees: (
         <div className="animate-in fade-in slide-in-from-right-4 duration-500">
-          <FeeSchedule installments={installments} />
+          <StudentFeeTab studentId={id} />
         </div>
       )
     };
