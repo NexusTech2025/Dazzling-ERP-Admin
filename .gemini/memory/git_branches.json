@@ -1,6 +1,6 @@
 {
-  "active_branch": "main",
-  "updated_at": "2026-07-26T11:14:46.535Z",
+  "active_branch": "feature/teacher-payroll-payment",
+  "updated_at": "2026-07-26T16:27:05.543Z",
   "branches": {
     "package-patches-bugfix": {
       "branch_name": "package-patches-bugfix",
@@ -39,6 +39,22 @@
         "04cb0d5 feat(student,finance): redesign student fee tab layout with master-detail installment timeline"
       ],
       "recommendation": "🟢 Ready for Merge / PR: All recent work is committed and working tree is clean. Consider merging into main."
+    },
+    "feature/teacher-payroll-payment": {
+      "branch_name": "feature/teacher-payroll-payment",
+      "parent_branch": "main",
+      "purpose": "Teacher salary/stipend payment recording, RecordTeacherPaymentModal, and general ledger transaction sync.",
+      "status": "in_progress",
+      "working_tree_clean": false,
+      "uncommitted_changes_count": 17,
+      "commits_count_ahead": 2,
+      "created_at": "2026-07-26T12:41:31.237Z",
+      "last_activity_at": "2026-07-26T16:27:05.635Z",
+      "commits_summary": [
+        "1a88456 config(memory,plan): record teacher payment plans, RHF memory rules, and branch status logic",
+        "84d7e16 feat(teacher,payroll): integrate RecordTeacherPaymentModal with React Hook Form and ResponseModal sync"
+      ],
+      "recommendation": "🟡 Active Work in Progress: You have 17 uncommitted file(s). Commit or stash your changes before merging or switching branches."
     }
   }
 }

@@ -18,10 +18,6 @@ function updateBranchStatus() {
   const uncommittedLines = statusOutput ? statusOutput.split('\n').filter(Boolean) : [];
   const isWorkingTreeClean = uncommittedLines.length === 0;
 
-  // Get recent commits
-  const logOutput = runCmd('git log -n 5 --oneline');
-  const recentCommits = logOutput ? logOutput.split('\n').filter(Boolean) : [];
-
   // Ensure memory dir exists
   const memoryDir = path.dirname(MEMORY_FILE);
   if (!fs.existsSync(memoryDir)) {
@@ -52,6 +48,12 @@ function updateBranchStatus() {
   const createdAt = existingBranchData.created_at || new Date().toISOString();
   const purpose = existingBranchData.purpose || `Feature/bugfix work on ${currentBranch}`;
 
+  // Get branch-specific commits ahead of parent branch
+  const parentBranch = existingBranchData.parent_branch || 'main';
+  const logCmd = currentBranch === parentBranch ? 'git log -n 5 --oneline' : `git log ${parentBranch}..HEAD --oneline`;
+  const logOutput = runCmd(logCmd);
+  const recentCommits = logOutput ? logOutput.split('\n').filter(Boolean) : [];
+
   // Determine branch status & lifecycle recommendation
   let status = 'active';
   let recommendation = '';
@@ -71,7 +73,7 @@ function updateBranchStatus() {
 
   memoryStore.branches[currentBranch] = {
     branch_name: currentBranch,
-    parent_branch: existingBranchData.parent_branch || 'main',
+    parent_branch: parentBranch,
     purpose,
     status,
     working_tree_clean: isWorkingTreeClean,

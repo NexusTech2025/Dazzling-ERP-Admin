@@ -24,7 +24,7 @@ const SalaryConfigsCard = React.memo(({ salaryConfigs = [], activeConfig, onEdit
   }, [salaryConfigs]);
 
   return (
-    <Card className="h-full">
+    <Card>
       <Card.Header border={true} className="flex items-center justify-between bg-slate-50/20 dark:bg-slate-800/20">
         <div className="flex items-center gap-2">
           <span className="material-symbols-outlined text-text-secondary text-xl" aria-hidden="true">payments</span>
@@ -48,7 +48,8 @@ const SalaryConfigsCard = React.memo(({ salaryConfigs = [], activeConfig, onEdit
             <TableEmpty message="No salary configurations found." icon="payments" />
           </div>
         ) : (
-          <TableContainer>
+          <div className="max-h-[320px] overflow-y-auto">
+            <TableContainer>
             <TableHeader>
               <TableRow>
                 <TableHead>Status</TableHead>
@@ -133,6 +134,7 @@ const SalaryConfigsCard = React.memo(({ salaryConfigs = [], activeConfig, onEdit
               })}
             </TableBody>
           </TableContainer>
+          </div>
         )}
       </Card.Body>
     </Card>

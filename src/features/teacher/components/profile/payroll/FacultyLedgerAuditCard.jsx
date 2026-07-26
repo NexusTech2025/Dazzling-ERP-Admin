@@ -173,7 +173,7 @@ const FacultyLedgerAuditCard = React.memo(({ calculations = {}, onReconcile, onD
           onClick={onDisburse}
           className="flex-1 text-[10px] uppercase font-bold bg-indigo-600 hover:bg-indigo-700 text-white"
         >
-          Disburse Salary
+          Pay Salary
         </Button>
       </Card.Footer>
     </Card>

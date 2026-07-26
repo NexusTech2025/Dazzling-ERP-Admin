@@ -192,7 +192,10 @@ The AI agent must run these checks when encountering custom or external input co
 ### 2. Check for Manual State Anti-Patterns
 
 * **Target:** Look for instances where developers try to sync third-party components by keeping parallel `useState` hooks and updating the form via `setValue` inside an `onChange` callback.
-* **Diagnostic rule:** Flag this as an anti-pattern. The `<Controller />` component removes the need for manual synchronization hooks.
+### 3. Check FormField `name` Prop Requirement
+
+* **Target:** Check every `<FormField>` wrapper around a `<Controller />` or input component.
+* **Diagnostic rule:** Always pass the `name` prop explicitly to `<FormField>` (e.g. `<FormField name="payment_type" label="...">`). Omitting the `name` prop on `<FormField>` can cause layout element cloning to inject `name: undefined` into wrapped `<Controller />` elements, which triggers React Hook Form's `getNodeParentName` `TypeError: Cannot read properties of undefined (reading 'substring')` exception.
 
 ---
 
