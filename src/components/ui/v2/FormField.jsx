@@ -17,17 +17,22 @@ const FormField = ({
   className = "",
   containerClassName = ""
 }) => {
-  const fieldId = name;
+  const fieldId = name || (isValidElement(children) ? children.props?.name : undefined);
 
-  // Inject props into child input (BaseInput, Select, etc.)
+  // Safely construct child props to avoid overwriting existing child.props.name with undefined
+  const injectedChildProps = {
+    error,
+    "aria-invalid": !!error,
+    "aria-describedby": error ? `${fieldId || 'field'}-error` : helperText ? `${fieldId || 'field'}-helper` : undefined,
+  };
+
+  if (name !== undefined) {
+    injectedChildProps.name = name;
+    injectedChildProps.id = name;
+  }
+
   const enhancedChild = isValidElement(children) 
-    ? cloneElement(children, {
-        id: fieldId,
-        name,
-        error: error,
-        "aria-invalid": !!error,
-        "aria-describedby": error ? `${fieldId}-error` : helperText ? `${fieldId}-helper` : undefined,
-      })
+    ? cloneElement(children, injectedChildProps)
     : children;
 
   const isHorizontal = layout === "horizontal";

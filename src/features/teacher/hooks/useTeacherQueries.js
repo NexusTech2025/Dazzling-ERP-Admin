@@ -582,8 +582,18 @@ export const useRecordTeacherPaymentMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ teacherId, paymentType, amount, paymentMethod, transactionDate, referenceNumber, salaryMonth, notes, options }) =>
-      apiClient.executeAction(
+    mutationFn: (payload) => {
+      const teacherId = payload.teacherId || payload.teacher_id;
+      const paymentType = payload.paymentType || payload.payment_type;
+      const amount = payload.amount;
+      const paymentMethod = payload.paymentMethod || payload.payment_method;
+      const transactionDate = payload.transactionDate || payload.transaction_date;
+      const referenceNumber = payload.referenceNumber || payload.reference_number;
+      const salaryMonth = payload.salaryMonth || payload.salary_month;
+      const notes = payload.notes;
+      const options = payload.options;
+
+      return apiClient.executeAction(
         API_REGISTRY.STAFF.RECORD_PAYMENT,
         {
           teacher_id: teacherId,
@@ -597,9 +607,11 @@ export const useRecordTeacherPaymentMutation = () => {
         },
         token,
         options
-      ),
-    onSuccess: (response, { teacherId }) => {
-      if (response.success) {
+      );
+    },
+    onSuccess: (response, payload) => {
+      const teacherId = payload?.teacherId || payload?.teacher_id;
+      if (response.success && teacherId) {
         queryClient.invalidateQueries({ queryKey: [...queryKeys.teacher.detail(teacherId), 'paymentTransactions'] });
       }
     }

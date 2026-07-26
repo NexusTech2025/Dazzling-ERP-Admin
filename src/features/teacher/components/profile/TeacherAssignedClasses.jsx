@@ -54,13 +54,15 @@ const TeacherAssignedClasses = ({ teacherId }) => {
             <Card.Header className="flex justify-between items-start gap-2 border-b border-border-light dark:border-border-dark py-2.5 px-4">
               <div className="flex flex-col min-w-0">
                 <span className="text-[8px] font-bold uppercase text-primary tracking-wider truncate">
-                  {batch.course_name} {batch.course?.language_medium}
+                  {batch.course_name} {batch.course?.language_medium ? `(${batch.course.language_medium})` : ''}
                 </span>
                 <h4 className="text-sm font-bold text-text-main dark:text-white truncate group-hover:text-primary transition-colors mt-0.5">
                   {batch.batch_name}<br />
-                  <Badge variant="info" className="!text-[7px] px-1.5 py-0.5 font-bold leading-none capitalize">
-                    {`• ${batch.course.language_medium} Medium`}
-                  </Badge>
+                  {batch.course?.language_medium && (
+                    <Badge variant="info" className="!text-[7px] px-1.5 py-0.5 font-bold leading-none capitalize">
+                      {`• ${batch.course.language_medium} Medium`}
+                    </Badge>
+                  )}
                 </h4>
 
 

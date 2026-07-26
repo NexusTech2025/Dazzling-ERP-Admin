@@ -25,7 +25,9 @@ export function ResponseModal({
   subtitle,
   items = [],
   errorObj = null,
-  onRetry = null
+  onRetry = null,
+  actionButton = null,
+  closeText = null
 }) {
   const isSuccess = variant === 'success';
   const isError = variant === 'error';
@@ -85,13 +87,13 @@ export function ResponseModal({
           </Button>
         )}
         <Button
-          variant="contained"
+          variant="outlined"
           size="sm"
           onClick={onClose}
-          className={isError ? 'bg-rose-600 hover:bg-rose-700 text-white' : 'bg-emerald-600 hover:bg-emerald-700 text-white'}
         >
-          {isSuccess ? 'Done' : 'Dismiss'}
+          {closeText || (isSuccess ? 'Done' : 'Dismiss')}
         </Button>
+        {actionButton}
       </Modal.Footer>
     </Modal>
   );

@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { parseISO, format } from 'date-fns';
 import Card from '../../../../../components/ui/Card';
 import Badge from '../../../../../components/ui/Badge';
 
 const ConfigHistoryTimelineCard = React.memo(({ sortedHistory = [], activeConfig, onEdit, onDelete }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+
   const formatShortDate = (dateStr) => {
     if (!dateStr) return '';
     try {
@@ -13,20 +15,43 @@ const ConfigHistoryTimelineCard = React.memo(({ sortedHistory = [], activeConfig
     }
   };
 
+  const summaryText = `${sortedHistory.length} Revision${sortedHistory.length === 1 ? '' : 's'}${activeConfig?.effective_from ? ` • Active ${formatShortDate(activeConfig.effective_from)}` : ''}`;
+
   return (
-    <Card className="h-full">
-      <Card.Header border={true} className="flex items-center justify-between bg-slate-50/20 dark:bg-slate-800/20">
+    <Card className="transition-all duration-300">
+      <Card.Header 
+        border={true} 
+        className="flex items-center justify-between bg-slate-50/20 dark:bg-slate-800/20 cursor-pointer select-none"
+        onClick={() => setIsExpanded(prev => !prev)}
+      >
         <div className="flex items-center gap-2">
           <span className="material-symbols-outlined text-text-secondary text-xl" aria-hidden="true">history</span>
           <h3 className="text-lg font-bold text-text-main dark:text-white">
             Config History
           </h3>
         </div>
+        <div className="flex items-center gap-2">
+          {!isExpanded && (
+            <Badge variant="default" className="text-[10px] font-semibold text-text-secondary px-2 py-0.5">
+              {summaryText}
+            </Badge>
+          )}
+          <button 
+            type="button"
+            className="p-1 text-text-secondary hover:text-text-main dark:hover:text-white rounded-lg transition-colors"
+            aria-label={isExpanded ? 'Collapse config history' : 'Expand config history'}
+          >
+            <span className="material-symbols-outlined text-xl leading-none">
+              {isExpanded ? 'expand_less' : 'expand_more'}
+            </span>
+          </button>
+        </div>
       </Card.Header>
 
-      <Card.Body className="p-6">
-        {sortedHistory.length > 0 ? (
-          <div className="relative pl-2">
+      <div className={`transition-all duration-300 ease-in-out overflow-hidden ${isExpanded ? 'max-h-[1200px] opacity-100' : 'max-h-0 opacity-0 pointer-events-none'}`}>
+        <Card.Body className="p-6">
+          {sortedHistory.length > 0 ? (
+            <div className="relative pl-2">
             {sortedHistory.map((item, index) => {
               const isCurrent = item.salary_config_id === activeConfig?.salary_config_id;
               const val = item.base_value || item.base_amount || 0;
@@ -107,6 +132,7 @@ const ConfigHistoryTimelineCard = React.memo(({ sortedHistory = [], activeConfig
           Archive Records
         </button>
       </Card.Footer>
+      </div>
     </Card>
   );
 });
