@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import Button from '../../../../components/ui/v2/Button';
 import { useEnrollmentsQuery } from '../../hooks/useEnrollmentQueries';
 import FeeAccountCard from './fee/FeeAccountCard';
+import RecordPaymentModal from '../../../finance/RecordPaymentModal';
 
 /**
  * Top-level Student Fee Tab profile view.
@@ -12,10 +13,14 @@ import FeeAccountCard from './fee/FeeAccountCard';
  * @returns {JSX.Element} Student Fee Tab layout.
  */
 export const StudentFeeTab = ({ studentId }) => {
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+
   const { data: enrollments = [], isLoading, error } = useEnrollmentsQuery(
     studentId ? { student_id: studentId } : null,
     { enabled: !!studentId }
   );
+
+  console.log("Enrollments: ", enrollments)
 
   if (isLoading) {
     return (
@@ -57,7 +62,8 @@ export const StudentFeeTab = ({ studentId }) => {
             variant="contained"
             size="sm"
             startIcon="add"
-            onClick={() => alert('Record Payment clicked...')}
+            disabled={enrollments.length === 0}
+            onClick={() => setIsPaymentModalOpen(true)}
             className="shadow-md shadow-primary/20 rounded-xl text-xs font-bold"
           >
             Record Payment
@@ -105,6 +111,17 @@ export const StudentFeeTab = ({ studentId }) => {
             </p>
           </div>
         </div>
+      )}
+
+      {/* Top-Level Record Payment Modal Portal */}
+      {isPaymentModalOpen && enrollments.length > 0 && (
+        <RecordPaymentModal
+          isOpen={isPaymentModalOpen}
+          onClose={() => setIsPaymentModalOpen(false)}
+          enrollment={enrollments[0]}
+          feeAccount={enrollments[0]?.studentfeeaccounts?.[0]}
+          installment={enrollments[0]?.studentfeeaccounts?.[0]?.installments?.[0]}
+        />
       )}
     </div>
   );

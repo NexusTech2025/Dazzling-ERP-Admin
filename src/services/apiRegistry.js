@@ -30,6 +30,7 @@ export const API_REGISTRY = {
   },
   FINANCE: {
     GET_STUDENT_FEES: 'getstudentfees',
+    STUDENT_PAYMENT_TRANSACTION: 'finance_record_payment',
     RECORD_PAYMENT: 'recordpayment',
     GENERATE_FEE_PLAN: 'generatefeeplan',
     PREVIEW_FEE: 'finance_preview_fee',

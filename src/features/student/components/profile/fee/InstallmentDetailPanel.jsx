@@ -1,6 +1,7 @@
 import React from 'react';
 import Badge from '../../../../../components/ui/Badge';
 import Button from '../../../../../components/ui/v2/Button';
+import LowDensityCard from '../../../../../components/ui/v2/cards/LowDensityCard';
 
 /**
  * Side panel displaying breakdown and transaction ledger for a selected installment.
@@ -48,6 +49,15 @@ export const InstallmentDetailPanel = ({ installment, installmentIndex = 1 }) =>
     } catch {
       return String(dateVal);
     }
+  };
+
+  const getPaymentMethodIcon = (methodStr) => {
+    const m = (methodStr || '').toLowerCase();
+    if (m.includes('upi')) return 'smartphone';
+    if (m.includes('cash')) return 'payments';
+    if (m.includes('bank') || m.includes('neft') || m.includes('transfer')) return 'account_balance';
+    if (m.includes('cheque') || m.includes('check')) return 'edit_note';
+    return 'credit_card';
   };
 
   return (
@@ -106,45 +116,35 @@ export const InstallmentDetailPanel = ({ installment, installmentIndex = 1 }) =>
 
         {payments.length > 0 ? (
           <div className="space-y-3">
-            {payments.map((pmt, idx) => (
-              <div
-                key={pmt.payment_id || pmt.id || idx}
-                className="p-3.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs space-y-2 relative group"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="size-2 rounded-full bg-emerald-500"></span>
-                    <span className="font-bold text-slate-800 dark:text-slate-200">{formatDate(pmt.payment_date || pmt.created_at)}</span>
-                  </div>
-                  <span className="font-extrabold text-emerald-600 dark:text-emerald-400 text-sm">
-                    ₹{Number(pmt.amount_paid || pmt.amount || 0).toLocaleString()}
-                  </span>
-                </div>
+            {payments.map((pmt, idx) => {
+              const method = pmt.payment_method || pmt.payment_mode || 'N/A';
+              const instId = pmt.installment_id || installment?.installment_id || `INS-#${installmentIndex}`;
+              const username = pmt.created_by || pmt.received_by || pmt.recorded_by || 'Admin';
+              const txnRef = pmt.transaction_reference || pmt.transaction_ref || pmt.txn_id;
 
-                <div className="pl-4 space-y-1 text-slate-500 dark:text-slate-400 font-mono text-[11px]">
-                  {pmt.payment_mode && (
-                    <div className="uppercase font-sans font-bold text-slate-700 dark:text-slate-300">
-                      {pmt.payment_mode}
-                    </div>
-                  )}
-                  {(pmt.transaction_ref || pmt.txn_id) && (
-                    <div>TXN: {pmt.transaction_ref || pmt.txn_id}</div>
-                  )}
-                  {pmt.received_by && (
-                    <div className="font-sans text-[11px]">By: {pmt.received_by}</div>
-                  )}
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => alert(`Downloading Receipt for Txn: ${pmt.transaction_ref || pmt.payment_id || 'N/A'}`)}
-                  className="absolute right-3 bottom-3 text-slate-400 hover:text-primary transition-colors"
-                  title="Download Receipt"
-                >
-                  <span className="material-symbols-outlined text-lg">download</span>
-                </button>
-              </div>
-            ))}
+              return (
+                <LowDensityCard
+                  key={pmt.payment_id || pmt.id || idx}
+                  icon={getPaymentMethodIcon(method)}
+                  title={formatDate(pmt.payment_date || pmt.created_at)}
+                  subtitle1={`${method.toUpperCase()} • ${instId}`}
+                  subtitle2={`By: ${username}${txnRef ? ` • Ref: ${txnRef}` : ''}`}
+                  bodyText={
+                    <span className="font-extrabold text-emerald-600 dark:text-emerald-400 text-sm">
+                      ₹{Number(pmt.amount_paid || pmt.amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                    </span>
+                  }
+                  actions={[
+                    {
+                      icon: 'download',
+                      label: 'Download Receipt',
+                      priority: 'primary',
+                      onClick: () => alert(`Downloading Receipt for Txn: ${txnRef || pmt.payment_id || 'N/A'}`)
+                    }
+                  ]}
+                />
+              );
+            })}
           </div>
         ) : (
           <div className="text-center py-4 text-xs text-slate-400 italic">

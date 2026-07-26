@@ -19,7 +19,7 @@ import { API_REGISTRY } from '../../../services/apiRegistry';
  * @param {object} [options={}] - HTTP fetch configuration options (e.g. AbortController signal).
  * @returns {Promise<object>} Standard response envelope with an array of installment schedules.
  */
-export const fetchInstallments = (token, filter = {}, options = {}) => 
+export const fetchInstallments = (token, filter = {}, options = {}) =>
   executeAction(API_REGISTRY.DATA.QUERY, { target: 'Installments', where: filter }, token, options);
 
 /**
@@ -31,7 +31,7 @@ export const fetchInstallments = (token, filter = {}, options = {}) =>
  * @param {object} [options={}] - HTTP fetch configuration options.
  * @returns {Promise<object>} Standard response envelope containing a single summary details object.
  */
-export const fetchRevenueSummary = (token, options = {}) => 
+export const fetchRevenueSummary = (token, options = {}) =>
   executeAction(API_REGISTRY.DATA.QUERY, { target: 'RevenueSummary', where: {} }, token, options);
 
 /**
@@ -44,7 +44,7 @@ export const fetchRevenueSummary = (token, options = {}) =>
  * @param {object} [options={}] - HTTP fetch configuration options.
  * @returns {Promise<object>} Standard response envelope containing the active overdue installment lists.
  */
-export const fetchOverdueAccounts = (token, filter = {}, options = {}) => 
+export const fetchOverdueAccounts = (token, filter = {}, options = {}) =>
   executeAction(API_REGISTRY.DATA.QUERY, { target: 'Installments', where: { ...filter, status: 'Overdue' } }, token, options);
 
 /**
@@ -57,7 +57,7 @@ export const fetchOverdueAccounts = (token, filter = {}, options = {}) =>
  * @param {object} [options={}] - HTTP fetch configuration options.
  * @returns {Promise<object>} Standard response envelope containing the compiled student ledger data.
  */
-export const fetchStudentFeeOverview = (token, studentId, options = {}) => 
+export const fetchStudentFeeOverview = (token, studentId, options = {}) =>
   executeAction(API_REGISTRY.FINANCE.GET_STUDENT_FEES, { studentId }, token, options);
 
 /**
@@ -76,8 +76,8 @@ export const fetchStudentFeeOverview = (token, studentId, options = {}) =>
  * @param {object} [options={}] - HTTP fetch configuration options.
  * @returns {Promise<object>} Standard response envelope confirming ledger state post-transaction.
  */
-export const recordPayment = (token, data, options = {}) => 
-  executeAction(API_REGISTRY.FINANCE.RECORD_PAYMENT, { data }, token, options);
+export const recordPayment = (token, data, options = {}) =>
+  executeAction(API_REGISTRY.FINANCE.STUDENT_PAYMENT_TRANSACTION, data, token, options);
 
 /**
  * Creates and inserts a binding fee schedule structure (installments and due dates) for a student's enrollment.
@@ -95,7 +95,7 @@ export const recordPayment = (token, data, options = {}) =>
  * @param {object} [options={}] - HTTP fetch configuration options.
  * @returns {Promise<object>} Standard response envelope indicating structural generation success.
  */
-export const generateFeePlan = (token, data, options = {}) => 
+export const generateFeePlan = (token, data, options = {}) =>
   executeAction(API_REGISTRY.FINANCE.GENERATE_FEE_PLAN, { data }, token, options);
 
 // ==========================================

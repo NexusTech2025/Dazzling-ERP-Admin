@@ -2,10 +2,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../../context/AuthContextCore';
 import { queryKeys } from '../../../lib/react-query/queryKeys';
 import { useDeleteManyMutation } from '../../../hooks/useDeleteManyMutation';
-import { 
-  fetchInstallments, 
-  fetchRevenueSummary, 
-  fetchOverdueAccounts, 
+import {
+  fetchInstallments,
+  fetchRevenueSummary,
+  fetchOverdueAccounts,
   fetchStudentFeeOverview,
   recordPayment,
   generateFeePlan,
@@ -109,7 +109,7 @@ export const useRecordPaymentMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ data, options }) => recordPayment(token, data, options),
+    mutationFn: (variables) => recordPayment(token, variables),
     onSuccess: (response) => {
       if (response.success) {
         queryClient.invalidateQueries({ queryKey: queryKeys.finance.all });

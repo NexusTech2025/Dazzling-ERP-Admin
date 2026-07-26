@@ -5,6 +5,7 @@ import Button from '../../../../../components/ui/v2/Button';
 import ProgressBar from '../../../../../components/ui/v2/ProgressBar';
 import InstallmentStepperTimeline from './InstallmentStepperTimeline';
 import InstallmentDetailPanel from './InstallmentDetailPanel';
+import RecordPaymentModal from '../../../../finance/RecordPaymentModal';
 
 /**
  * Self-contained financial account card for a single student enrollment.
@@ -16,6 +17,8 @@ import InstallmentDetailPanel from './InstallmentDetailPanel';
  */
 export const FeeAccountCard = ({ enrollment, defaultExpanded = true }) => {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [modalTargetInstallment, setModalTargetInstallment] = useState(null);
 
   const feeAccount = enrollment?.studentfeeaccounts?.[0];
   const feePlan = feeAccount?.feeplan || enrollment?.feeplan;
@@ -313,7 +316,10 @@ export const FeeAccountCard = ({ enrollment, defaultExpanded = true }) => {
                                 <Button
                                   variant="outlined"
                                   size="sm"
-                                  onClick={() => alert(`Record payment for Installment #${idx + 1}`)}
+                                  onClick={() => {
+                                    setModalTargetInstallment(inst);
+                                    setIsPaymentModalOpen(true);
+                                  }}
                                   className="text-[11px] py-1 px-2.5 rounded-lg"
                                 >
                                   Record Payment
@@ -338,6 +344,20 @@ export const FeeAccountCard = ({ enrollment, defaultExpanded = true }) => {
             </>
           )}
         </Card.Body>
+      )}
+
+      {/* Record Payment Modal Portal */}
+      {isPaymentModalOpen && (
+        <RecordPaymentModal
+          isOpen={isPaymentModalOpen}
+          onClose={() => {
+            setIsPaymentModalOpen(false);
+            setModalTargetInstallment(null);
+          }}
+          enrollment={enrollment}
+          feeAccount={feeAccount}
+          installment={modalTargetInstallment || selectedInstallmentObj}
+        />
       )}
     </Card>
   );
