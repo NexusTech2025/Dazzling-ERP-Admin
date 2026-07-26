@@ -1,6 +1,6 @@
 {
-  "active_branch": "main",
-  "updated_at": "2026-07-26T11:14:46.535Z",
+  "active_branch": "feature/teacher-payroll-payment",
+  "updated_at": "2026-07-26T14:18:48.539Z",
   "branches": {
     "package-patches-bugfix": {
       "branch_name": "package-patches-bugfix",
@@ -39,6 +39,19 @@
         "04cb0d5 feat(student,finance): redesign student fee tab layout with master-detail installment timeline"
       ],
       "recommendation": "🟢 Ready for Merge / PR: All recent work is committed and working tree is clean. Consider merging into main."
+    },
+    "feature/teacher-payroll-payment": {
+      "branch_name": "feature/teacher-payroll-payment",
+      "parent_branch": "main",
+      "purpose": "Teacher salary/stipend payment recording, RecordTeacherPaymentModal, and general ledger transaction sync.",
+      "status": "in_progress",
+      "working_tree_clean": false,
+      "uncommitted_changes_count": 16,
+      "commits_count_ahead": 0,
+      "created_at": "2026-07-26T12:41:31.237Z",
+      "last_activity_at": "2026-07-26T14:18:48.629Z",
+      "commits_summary": [],
+      "recommendation": "🟡 Active Work in Progress: You have 16 uncommitted file(s). Commit or stash your changes before merging or switching branches."
     }
   }
 }
