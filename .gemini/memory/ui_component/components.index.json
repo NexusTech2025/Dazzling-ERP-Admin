@@ -266,6 +266,16 @@
       "location": "src/components/ui/v2/cards/ExpandableLowDensityCard.jsx"
     },
     {
+      "title": "Modal",
+      "line": 2100,
+      "location": "src/components/ui/Modal.jsx"
+    },
+    {
+      "title": "ResponseModal",
+      "line": 2150,
+      "location": "src/components/ui/ResponseModal.jsx"
+    },
+    {
       "title": "HighDensityCard",
       "line": 1925,
       "location": "src/components/ui/v2/cards/HighDensityCard.jsx"

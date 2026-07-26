@@ -1,0 +1,44 @@
+{
+  "active_branch": "main",
+  "updated_at": "2026-07-26T11:12:25.484Z",
+  "branches": {
+    "package-patches-bugfix": {
+      "branch_name": "package-patches-bugfix",
+      "parent_branch": "main",
+      "purpose": "Package filter bugfixes, enrollment query hydration, teacher attendance strategy refactoring, and Student Fee Tab / RecordPaymentModal redesign.",
+      "status": "in_progress",
+      "working_tree_clean": false,
+      "uncommitted_changes_count": 10,
+      "commits_count_ahead": 5,
+      "created_at": "2026-07-26T09:43:07.895Z",
+      "last_activity_at": "2026-07-26T11:06:51.625Z",
+      "commits_summary": [
+        "89e2720 feat(finance,student): integrate RecordPaymentModal lifecycle, payment API, and LowDensityCard receipt UI",
+        "04cb0d5 feat(student,finance): redesign student fee tab layout with master-detail installment timeline",
+        "2ff5904 refactor(attendance,teacher): implement O(1) HashMap batch-first baseline strategy engine",
+        "db709f8 feat(student,course): integrate enrollment relational hydration layer and package filter query system",
+        "70de7c2 feat(student): integrate enrollment queries and relational hydration layer"
+      ],
+      "recommendation": "🟡 Active Work in Progress: You have 10 uncommitted file(s). Commit or stash your changes before merging or switching branches."
+    },
+    "main": {
+      "branch_name": "main",
+      "parent_branch": "main",
+      "purpose": "Feature/bugfix work on main",
+      "status": "in_progress",
+      "working_tree_clean": false,
+      "uncommitted_changes_count": 3,
+      "commits_count_ahead": 5,
+      "created_at": "2026-07-26T11:12:25.484Z",
+      "last_activity_at": "2026-07-26T11:12:25.484Z",
+      "commits_summary": [
+        "e95ecfe docs: update operational guidelines, developer rules, and dependency configurations",
+        "3bba264 feat(course): extract usePackageFilter hook and add status filtering",
+        "9a3c630 feat(admin-attendance): integrate useTeacherAttendanceStrategy and superadmin user management",
+        "6272e97 refactor(attendance): decouple daily matrix registry logic and optimize mobile rendering",
+        "8b0a003 feat(profile): decouple batch profile layout and introduce compound ProfileHero"
+      ],
+      "recommendation": "🟡 Active Work in Progress: You have 3 uncommitted file(s). Commit or stash your changes before merging or switching branches."
+    }
+  }
+}

@@ -1,0 +1,71 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "GitBranchMemoryStore",
+  "type": "object",
+  "required": ["active_branch", "updated_at", "branches"],
+  "properties": {
+    "active_branch": {
+      "type": "string",
+      "description": "Name of the currently checked out Git branch"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO timestamp of the last branch memory update"
+    },
+    "branches": {
+      "type": "object",
+      "description": "Map of branch names to their lifecycle metadata",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["branch_name", "parent_branch", "status", "working_tree_clean", "last_activity_at"],
+        "properties": {
+          "branch_name": {
+            "type": "string"
+          },
+          "parent_branch": {
+            "type": "string",
+            "default": "main"
+          },
+          "purpose": {
+            "type": "string",
+            "description": "Semantic description of feature/bugfix scope"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["active", "in_progress", "ready_for_merge", "merged", "stale", "abandoned"]
+          },
+          "working_tree_clean": {
+            "type": "boolean"
+          },
+          "uncommitted_changes_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "commits_count_ahead": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "last_activity_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "commits_summary": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "recommendation": {
+            "type": "string",
+            "description": "Automated actionable lifecycle advice (merge, commit, close, or create new branch)"
+          }
+        }
+      }
+    }
+  }
+}
