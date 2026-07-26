@@ -16,6 +16,7 @@ import TextInput from '../../../../components/ui/v2/TextInput';
 import SelectInput from '../../../../components/ui/v2/SelectInput';
 import DateInput from '../../../../components/ui/v2/DateInput';
 import Button from '../../../../components/ui/v2/Button';
+import ResponseModal from '../../../../components/ui/ResponseModal';
 
 const PAYMENT_METHODS = [
   { label: 'Cash', value: 'cash' },
@@ -190,6 +191,15 @@ const MoneyTransactionForm = ({ isOpen, onClose, initialData }) => {
     return Object.keys(errors).length === 0;
   };
 
+  const [responseModal, setResponseModal] = useState({
+    isOpen: false,
+    variant: 'success',
+    title: '',
+    subtitle: '',
+    items: [],
+    errorObj: null
+  });
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitError('');
@@ -216,9 +226,9 @@ const MoneyTransactionForm = ({ isOpen, onClose, initialData }) => {
     };
 
     try {
-      if (initialData) {
+      if (initialData && (initialData.transaction_id || initialData.id)) {
         const res = await updateMutation.mutateAsync({
-          id: initialData.transaction_id,
+          id: initialData.transaction_id || initialData.id,
           data: payload
         });
         if (res.success) {
@@ -229,13 +239,51 @@ const MoneyTransactionForm = ({ isOpen, onClose, initialData }) => {
       } else {
         const res = await createMutation.mutateAsync(payload);
         if (res.success) {
-          onClose();
+          const createdId = res.data?.data?.transaction_id || res.data?.transaction_id || 'MTX-SUCCESS';
+          setResponseModal({
+            isOpen: true,
+            variant: 'success',
+            title: 'General Ledger Entry Recorded Successfully!',
+            subtitle: 'Transaction row logged into master MoneyTransaction table.',
+            items: [
+              { label: 'Transaction ID', value: createdId, isMono: true },
+              { label: 'Composite Ref', value: payload.payment_reference || 'N/A', isMono: true },
+              { label: 'Amount Deposited', value: `₹${Number(payload.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`, isHighlight: true },
+              { label: 'Party Name', value: payload.party_name || 'N/A' },
+              { label: 'Channel', value: (payload.payment_method || '').toUpperCase() },
+              { label: 'Logged By', value: payload.created_by || 'Admin' }
+            ],
+            errorObj: null
+          });
         } else {
-          setSubmitError(res.error?.message || res.message || 'Failed to record transaction');
+          const errText = res.error?.message || res.message || 'Failed to record transaction';
+          setSubmitError(errText);
+          setResponseModal({
+            isOpen: true,
+            variant: 'error',
+            title: 'Failed to Record General Ledger Entry',
+            subtitle: 'Backend rejected transaction submission.',
+            errorObj: {
+              code: 'DATA_CREATE_ERROR',
+              message: errText,
+              details: JSON.stringify(res.error || res)
+            }
+          });
         }
       }
     } catch (err) {
       setSubmitError(err.message || 'Transaction submission failed');
+      setResponseModal({
+        isOpen: true,
+        variant: 'error',
+        title: 'Transaction Submission Failed',
+        subtitle: 'An unexpected exception occurred.',
+        errorObj: {
+          code: 'EXCEPTION_THROWN',
+          message: err.message || 'Transaction submission failed',
+          details: String(err)
+        }
+      });
     }
   };
 
@@ -524,6 +572,22 @@ const MoneyTransactionForm = ({ isOpen, onClose, initialData }) => {
         </footer>
 
       </div>
+
+      {/* Response Flash Pop-up Modal */}
+      {responseModal.isOpen && (
+        <ResponseModal
+          isOpen={responseModal.isOpen}
+          onClose={() => {
+            setResponseModal(prev => ({ ...prev, isOpen: false }));
+            onClose();
+          }}
+          variant={responseModal.variant}
+          title={responseModal.title}
+          subtitle={responseModal.subtitle}
+          items={responseModal.items}
+          errorObj={responseModal.errorObj}
+        />
+      )}
     </div>
   );
 };

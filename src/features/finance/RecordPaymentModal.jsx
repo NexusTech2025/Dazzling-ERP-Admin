@@ -8,6 +8,7 @@ import ConfirmModal from '../../components/ui/ConfirmModal';
 import { useAuth } from '../../context/AuthContextCore';
 import { useRecordPaymentMutation } from './hooks/useFinanceQueries';
 import { queryKeys, EMPTY_FILTER } from '../../lib/react-query/queryKeys';
+import MoneyTransactionForm from './transactions/components/MoneyTransactionForm';
 
 /**
  * 2-Step Interactive Payment Recording Modal Dialog with ConfirmModal integration.
@@ -75,6 +76,17 @@ export const RecordPaymentModal = ({
     status: 'idle', // 'idle' | 'processing' | 'success' | 'error'
     resultMessage: null
   });
+
+  // Stage 2 MoneyTransactionForm State
+  const [isMoneyTxModalOpen, setIsMoneyTxModalOpen] = useState(false);
+  const [moneyTxInitialData, setMoneyTxInitialData] = useState(null);
+
+  const handleCloseAll = () => {
+    setIsMoneyTxModalOpen(false);
+    setMoneyTxInitialData(null);
+    setConfirmModal({ isOpen: false, status: 'idle', resultMessage: null });
+    onClose();
+  };
 
   // Sync amount input when target installment changes
   useEffect(() => {
@@ -223,52 +235,50 @@ export const RecordPaymentModal = ({
       },
       {
         onSuccess: (res) => {
-        if (res?.success || res?.data?.success) {
-          queryClient.invalidateQueries({ queryKey: queryKeys.finance.all });
-          queryClient.invalidateQueries({ queryKey: queryKeys.enrollment.list(EMPTY_FILTER) });
+          if (res?.success || res?.data?.success) {
+            queryClient.invalidateQueries({ queryKey: queryKeys.finance.all });
+            queryClient.invalidateQueries({ queryKey: queryKeys.enrollment.list(EMPTY_FILTER) });
 
-          const receiptId = res?.data?.data?.payment_id || res?.data?.payment_id || 'PAY-SUCCESS';
+            const pmtId = res?.data?.data?.payment_id || res?.data?.payment_id || res?.payment_id || `PMT-${Date.now()}`;
+            const compositeKey = `${studentFeeId}_${installmentId}_${pmtId}`;
 
-          setConfirmModal({
-            isOpen: true,
-            status: 'success',
-            resultMessage: (
-              <div className="space-y-3 text-xs text-slate-700 dark:text-slate-300">
-                <p className="font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5 text-sm">
-                  <span className="material-symbols-outlined">check_circle</span>
-                  Payment Transaction Recorded Successfully!
-                </p>
-                <div className="p-3.5 rounded-xl border border-emerald-200 dark:border-emerald-900/40 bg-emerald-50/50 dark:bg-emerald-950/20 space-y-2 text-xs">
-                  <div className="flex justify-between items-center">
-                    <span className="text-slate-500">Receipt / Payment ID:</span>
-                    <strong className="font-mono text-slate-900 dark:text-white">{receiptId}</strong>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-slate-500">Amount Deposited:</span>
-                    <strong className="text-emerald-600 dark:text-emerald-400">₹{numericAmountPaid.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</strong>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-slate-500">New Balance Due:</span>
-                    <strong className="text-amber-600 dark:text-amber-400">₹{newBalanceDue.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</strong>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-slate-500">Account Status:</span>
-                    <span className="font-extrabold uppercase text-emerald-600">{newBalanceDue === 0 ? 'COMPLETED' : 'ACTIVE'}</span>
-                  </div>
-                </div>
-                <p className="text-[11px] text-slate-500">All student installment schedules and RAM caches have been rebalanced.</p>
-              </div>
-            )
-          });
-        } else {
-          const errorMsg = res?.message || res?.error?.message || 'Failed to process payment transaction.';
-          setConfirmModal({
-            isOpen: true,
-            status: 'error',
-            resultMessage: errorMsg
-          });
-        }
-      },
+            const mappedChannel = (() => {
+              const m = (paymentMethod || '').toLowerCase();
+              if (m === 'cash') return 'cash';
+              if (m === 'bank_transfer' || m === 'bank') return 'bank';
+              if (m === 'upi') return 'phonepe';
+              return 'other';
+            })();
+
+            const derivedTxData = {
+              type: 'in',
+              amount: numericAmountPaid,
+              transaction_date: paymentDate,
+              category_id: '', // User picks category in MoneyTransactionForm dropdown
+              payment_method: mappedChannel,
+              payment_reference: compositeKey, // Pre-filled with composite key (student_fee_id_installment_id)
+              notes: `Student Fee Payment - Installment #${targetIndex + 1} (${programName})`,
+              remarks: remarks.trim() || '',
+              party_type: 'student',
+              party_id: student?.student_id || student?.id || enrollment?.student_id || '',
+              party_name: studentName,
+              by: currentUserName,
+              reconciliation_status: 'unreconciled'
+            };
+
+            // Transition from ConfirmModal to Stage 2 MoneyTransactionForm
+            setConfirmModal({ isOpen: false, status: 'idle', resultMessage: null });
+            setMoneyTxInitialData(derivedTxData);
+            setIsMoneyTxModalOpen(true);
+          } else {
+            const errorMsg = res?.message || res?.error?.message || 'Failed to process payment transaction.';
+            setConfirmModal({
+              isOpen: true,
+              status: 'error',
+              resultMessage: errorMsg
+            });
+          }
+        },
         onError: (err) => {
           setConfirmModal({
             isOpen: true,
@@ -720,6 +730,15 @@ return (
         cancelText="Back"
         status={confirmModal.status}
         resultMessage={confirmModal.resultMessage}
+      />
+    )}
+
+    {/* Stage 2 Prebuilt MoneyTransactionForm Modal */}
+    {isMoneyTxModalOpen && (
+      <MoneyTransactionForm
+        isOpen={isMoneyTxModalOpen}
+        onClose={handleCloseAll}
+        initialData={moneyTxInitialData}
       />
     )}
   </div>

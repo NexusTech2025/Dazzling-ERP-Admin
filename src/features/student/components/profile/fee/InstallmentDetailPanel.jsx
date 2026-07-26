@@ -1,7 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import Badge from '../../../../../components/ui/Badge';
 import Button from '../../../../../components/ui/v2/Button';
-import LowDensityCard from '../../../../../components/ui/v2/cards/LowDensityCard';
+import PaymentReceiptCard from './PaymentReceiptCard';
+import MoneyTransactionForm from '../../../../finance/transactions/components/MoneyTransactionForm';
+import { useMoneyTransactionsQuery } from '../../../../finance/hooks/useFinanceQueries';
+import { useAuth } from '../../../../../context/AuthContextCore';
 
 /**
  * Side panel displaying breakdown and transaction ledger for a selected installment.
@@ -9,9 +12,23 @@ import LowDensityCard from '../../../../../components/ui/v2/cards/LowDensityCard
  * @param {object} props - Component properties.
  * @param {object} [props.installment] - Target installment object containing payment receipts.
  * @param {number} [props.installmentIndex=1] - 1-based index of the installment.
+ * @param {object} [props.feeAccount] - Target parent StudentFeeAccount object (SFA-xxx).
+ * @param {object} [props.enrollment] - Target enrollment entity.
  * @returns {JSX.Element} Installment detail side panel.
  */
-export const InstallmentDetailPanel = ({ installment, installmentIndex = 1 }) => {
+export const InstallmentDetailPanel = ({
+  installment,
+  installmentIndex = 1,
+  feeAccount,
+  enrollment
+}) => {
+  const { user } = useAuth();
+  const currentUserName = user?.name || user?.full_name || user?.username || 'manish_kumar';
+
+  const { data: moneyTransactions = [] } = useMoneyTransactionsQuery();
+  const [expandedCards, setExpandedCards] = useState({});
+  const [syncModalState, setSyncModalState] = useState({ isOpen: false, initialData: null });
+
   if (!installment) {
     return (
       <div className="p-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 text-center py-12">
@@ -58,6 +75,56 @@ export const InstallmentDetailPanel = ({ installment, installmentIndex = 1 }) =>
     if (m.includes('bank') || m.includes('neft') || m.includes('transfer')) return 'account_balance';
     if (m.includes('cheque') || m.includes('check')) return 'edit_note';
     return 'credit_card';
+  };
+
+  // Single Source of Truth Sync Check Helper
+  const checkIsInstallmentSynced = (studentFeeId, installmentId, paymentId) => {
+    console.log(`Checking is Syncked: ${studentFeeId}_${installmentId}_${paymentId}`)
+    if (!studentFeeId || !installmentId || !paymentId) return false;
+    const compositeKey = `${studentFeeId}_${installmentId}_${paymentId}`;
+    return moneyTransactions.some(tx => (tx.payment_reference || '').trim() === compositeKey);
+  };
+
+  const handleToggleExpand = (cardKey) => {
+    setExpandedCards(prev => ({ ...prev, [cardKey]: !prev[cardKey] }));
+  };
+
+  const handleOpenSyncModal = (pmt) => {
+    const student = enrollment?.student;
+    const studentId = student?.student_id || student?.id || enrollment?.student_id || '';
+    const studentName = student?.full_name || student?.student_name || 'Student';
+    const programName = enrollment?.item_name || enrollment?.package_name || enrollment?.course_name || 'Academic Program';
+
+    const studentFeeId = feeAccount?.student_fee_id || feeAccount?.id || 'SFA-000000';
+    const installmentId = pmt.installment_id || installment?.installment_id || installment?.id || `INS-00000${installmentIndex}`;
+    const pmtId = pmt.payment_id || pmt.id || `PMT-${installmentIndex}`;
+    const compositeKey = `${studentFeeId}_${installmentId}_${pmtId}`;
+
+    const mappedChannel = (() => {
+      const m = (pmt.payment_method || pmt.payment_mode || '').toLowerCase();
+      if (m === 'cash') return 'cash';
+      if (m.includes('bank') || m.includes('neft')) return 'bank';
+      if (m.includes('upi')) return 'phonepe';
+      return 'other';
+    })();
+
+    const initialData = {
+      type: 'in',
+      amount: Number(pmt.amount_paid || pmt.amount || 0),
+      transaction_date: pmt.payment_date || pmt.created_at ? (pmt.payment_date || pmt.created_at).split('T')[0] : new Date().toISOString().split('T')[0],
+      category_id: '',
+      payment_method: mappedChannel,
+      payment_reference: compositeKey,
+      notes: `Student Fee Payment Sync - Installment #${installmentIndex} (${programName})`,
+      remarks: pmt.remarks || '',
+      party_type: 'student',
+      party_id: studentId,
+      party_name: studentName,
+      by: pmt.created_by || pmt.received_by || currentUserName,
+      reconciliation_status: 'unreconciled'
+    };
+
+    setSyncModalState({ isOpen: true, initialData });
   };
 
   return (
@@ -117,31 +184,26 @@ export const InstallmentDetailPanel = ({ installment, installmentIndex = 1 }) =>
         {payments.length > 0 ? (
           <div className="space-y-3">
             {payments.map((pmt, idx) => {
-              const method = pmt.payment_method || pmt.payment_mode || 'N/A';
+              const pmtKey = pmt.payment_id || pmt.id || `pmt-${idx}`;
+              const studentFeeId = feeAccount?.student_fee_id || feeAccount?.id || 'SFA-000000';
               const instId = pmt.installment_id || installment?.installment_id || `INS-#${installmentIndex}`;
-              const username = pmt.created_by || pmt.received_by || pmt.recorded_by || 'Admin';
-              const txnRef = pmt.transaction_reference || pmt.transaction_ref || pmt.txn_id;
+              const isSynced = checkIsInstallmentSynced(studentFeeId, instId, pmtKey);
+              const isExpanded = !!expandedCards[pmtKey];
 
               return (
-                <LowDensityCard
-                  key={pmt.payment_id || pmt.id || idx}
-                  icon={getPaymentMethodIcon(method)}
-                  title={formatDate(pmt.payment_date || pmt.created_at)}
-                  subtitle1={`${method.toUpperCase()} • ${instId}`}
-                  subtitle2={`By: ${username}${txnRef ? ` • Ref: ${txnRef}` : ''}`}
-                  bodyText={
-                    <span className="font-extrabold text-emerald-600 dark:text-emerald-400 text-sm">
-                      ₹{Number(pmt.amount_paid || pmt.amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                    </span>
-                  }
-                  actions={[
-                    {
-                      icon: 'download',
-                      label: 'Download Receipt',
-                      priority: 'primary',
-                      onClick: () => alert(`Downloading Receipt for Txn: ${txnRef || pmt.payment_id || 'N/A'}`)
-                    }
-                  ]}
+                <PaymentReceiptCard
+                  key={pmtKey}
+                  pmt={pmt}
+                  idx={idx}
+                  studentFeeId={studentFeeId}
+                  installmentId={instId}
+                  installmentIndex={installmentIndex}
+                  isSynced={isSynced}
+                  isExpanded={isExpanded}
+                  onToggleExpand={() => handleToggleExpand(pmtKey)}
+                  onOpenSyncModal={handleOpenSyncModal}
+                  formatDate={formatDate}
+                  getPaymentMethodIcon={getPaymentMethodIcon}
                 />
               );
             })}
@@ -164,6 +226,15 @@ export const InstallmentDetailPanel = ({ installment, installmentIndex = 1 }) =>
         >
           View Receipt
         </Button>
+      )}
+
+      {/* Stage 2 MoneyTransactionForm Sync Modal Portal */}
+      {syncModalState.isOpen && (
+        <MoneyTransactionForm
+          isOpen={syncModalState.isOpen}
+          onClose={() => setSyncModalState({ isOpen: false, initialData: null })}
+          initialData={syncModalState.initialData}
+        />
       )}
     </div>
   );

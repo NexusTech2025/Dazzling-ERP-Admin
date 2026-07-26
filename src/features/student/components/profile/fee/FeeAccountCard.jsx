@@ -338,6 +338,8 @@ export const FeeAccountCard = ({ enrollment, defaultExpanded = true }) => {
                   <InstallmentDetailPanel
                     installment={selectedInstallmentObj}
                     installmentIndex={selectedIndex + 1}
+                    feeAccount={feeAccount}
+                    enrollment={enrollment}
                   />
                 </div>
               </div>
