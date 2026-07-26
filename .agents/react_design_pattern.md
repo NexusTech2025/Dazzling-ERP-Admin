@@ -125,3 +125,21 @@ This document outlines key performance design patterns that must be followed dur
 ## 6. Robust Single-Pass Block Editing
 
 *   **Rule**: When performing source code edits using file replacing tools, avoid tiny edits that can corrupt surrounding tags. Read a broad block of context (approx. 100 lines) and replace the entire logical node (block, statement, or function) in one single pass.
+
+---
+
+## 7. 2-Layer Composition Modal Architecture
+
+When creating new modal dialogs, always follow the 2-layer composition pattern:
+
+1. **Layer 1 — Abstract Base Container** (`src/components/ui/Modal.jsx`):
+   - Domain-agnostic portal overlay with backdrop, keyboard `Escape` dismissal, responsive `size` props (`sm`, `md`, `lg`, `xl`, `2xl`, `full`), and dark-mode styling.
+   - Exposes compound subcomponents: `Modal.Header`, `Modal.Body`, `Modal.Footer`.
+   - Does NOT encode any domain logic, variant colors, or response formatting.
+
+2. **Layer 2 — Domain-Specific Wrapper** (e.g. `src/components/ui/ResponseModal.jsx`):
+   - Composes on top of `Modal` to encode domain-specific behavior (success/error variants, formatted metrics cards, retry actions).
+   - Accepts semantic props (`variant`, `items`, `errorObj`) and maps them to `Modal` compound subcomponents internally.
+
+*   **Anti-Pattern**: Building a monolithic modal component that mixes portal rendering, domain logic, and response formatting in a single file. This prevents reuse across different domain contexts.
+

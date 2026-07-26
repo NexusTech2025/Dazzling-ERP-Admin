@@ -13,6 +13,10 @@ This directory contains long-term memory and documentation for the Dazzling ERP 
 - [plan_lifecycle.md](./plan_lifecycle.md): Operational standards for plan statuses, directories, and lifecycle management.
 - [core/instructions.md](./core/instructions.md): Core operational standards for plan lifecycle, statuses, and archival rules.
 
+## 🔄 Workflows
+
+- [workflow/student-fee-ledger-sync.md](./workflow/student-fee-ledger-sync.md): Detailed 2-stage student fee payment & MoneyTransaction ledger sync workflow.
+
 ## 🎨 Styling & Design System
 
 - [styling/erp_design_system.md](./styling/erp_design_system.md): Visual design guidelines, colors, and typography.
