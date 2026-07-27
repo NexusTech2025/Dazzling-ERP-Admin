@@ -1,4 +1,5 @@
 ---
+Title: Plan: Fix Deletion ConfirmModal Hang in Teachers List View
 Date: 2026-05-25T20:18:00+05:30
 Status: Approved-Completed
 ---

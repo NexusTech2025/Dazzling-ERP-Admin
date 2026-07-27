@@ -1,4 +1,5 @@
 ---
+Title: Refactoring Implementation Plan - Teacher Salary & Payroll
 Date: 2026-07-10T11:45:00+05:30
 Status: Approved-Completed
 ---

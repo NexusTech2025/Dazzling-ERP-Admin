@@ -1,4 +1,5 @@
 ---
+Title: Implementation Plan - Student Profile Enrollment History Mapping (No Legacy Support)
 Date: 2026-06-19T16:25:00+05:30
 Status: Approved-Completed
 ---

@@ -1,4 +1,5 @@
 ---
+Title: Implementation Plan - "All Batches" Option for Attendance Registers
 Date: 2026-06-15T16:05:00+05:30
 Status: Approved-Completed
 ---

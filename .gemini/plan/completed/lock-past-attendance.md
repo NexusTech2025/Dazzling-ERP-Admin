@@ -1,4 +1,5 @@
 ---
+Title: Implementation Plan - Lock Past Attendance Entries for Non-Superadmins
 Date: 2026-06-16T14:11:40+05:30
 Status: Approved-Completed
 ---

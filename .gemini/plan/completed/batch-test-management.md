@@ -1,6 +1,7 @@
 ---
+Title: Roadmap & Directory Architecture for Batch Test Management Tab
 Date: 2026-07-27T12:09:30+05:30
-Status: Proposed
+Status: Approved-Completed
 ---
 
 # Roadmap & Directory Architecture for Batch Test Management Tab

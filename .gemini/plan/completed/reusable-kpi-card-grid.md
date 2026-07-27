@@ -1,4 +1,5 @@
 ---
+Title: Technical Implementation Plan: Reusable KpiCard & KpiGrid Component System
 Date: 2026-06-22T20:42:00+05:30
 Status: Approved-Completed
 ---

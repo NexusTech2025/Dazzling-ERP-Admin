@@ -1,4 +1,5 @@
 ---
+Title: Student Registration Multi-Enrollment Integration Plan
 Date: 2026-06-01T21:10:00+05:30
 Status: Approved-Completed
 ---

@@ -1,6 +1,7 @@
 ---
+Title: Restructuring Low Density Card: Container Queries & Action Priority Rules
 Date: 2026-06-13T14:47:00+05:30
-Status: Proposed
+Status: Approved-Completed
 ---
 
 # Restructuring Low Density Card: Container Queries & Action Priority Rules

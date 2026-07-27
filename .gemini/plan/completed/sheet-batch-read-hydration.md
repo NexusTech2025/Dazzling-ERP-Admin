@@ -1,4 +1,5 @@
 ---
+Title: Implementation Plan - Sheet Batch Read Hydration Refactoring
 Date: 2026-06-20T19:00:00+05:30
 Status: Approved-Completed
 ---

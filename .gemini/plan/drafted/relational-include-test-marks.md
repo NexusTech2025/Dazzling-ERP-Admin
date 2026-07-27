@@ -1,4 +1,5 @@
 ---
+Title: Implementation Plan: Relational `include: ["marks"]` Query Optimization for Batch Tests
 Date: 2026-07-27T12:48:00+05:30
 Status: Proposed
 ---

@@ -1,4 +1,5 @@
 ---
+Title: Implementation Plan - Curriculum Library Page Redesign & KPIs Integration
 Date: 2026-07-06T00:45:00+05:30
 Status: Approved-Completed
 ---

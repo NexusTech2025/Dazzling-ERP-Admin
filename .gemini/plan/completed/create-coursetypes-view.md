@@ -1,4 +1,5 @@
 ---
+Title: Create CourseType Categories View & Navigation Dropdown
 Date: 2026-05-27T19:55:00+05:30
 Status: Approved-Completed
 ---

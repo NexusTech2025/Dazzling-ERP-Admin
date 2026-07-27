@@ -1,4 +1,5 @@
 ---
+Title: Consolidated Refactoring Plan: Dual-Flow Reconciliation Handshake & Salary Month Formatting
 Date: 2026-07-26T21:01:30+05:30
 Status: Proposed
 ---

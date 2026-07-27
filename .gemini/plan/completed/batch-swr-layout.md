@@ -1,4 +1,5 @@
 ---
+Title: SWR Caching & Localized Skeleton Loading for Batches
 Date: 2026-06-16T03:46:00+05:30
 Status: Approved-Completed
 ---

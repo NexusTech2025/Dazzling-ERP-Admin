@@ -1,4 +1,5 @@
 ---
+Title: Responsive Mobile View with Low-Density Cards for Batches
 Date: 2026-06-16T04:07:00+05:30
 Status: Approved-Completed
 ---

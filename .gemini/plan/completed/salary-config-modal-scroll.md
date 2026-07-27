@@ -1,4 +1,5 @@
 ---
+Title: Implementation Plan - SalaryConfigModal Scroll Optimization
 Date: 2026-07-07T11:27:00+05:30
 Status: Approved-Completed
 ---

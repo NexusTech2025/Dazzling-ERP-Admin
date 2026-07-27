@@ -1,4 +1,5 @@
 ---
+Title: Implementation Plan: Student Directory Cache & Deletion Hardening
 Date: 2026-05-27T20:52:00+05:30
 Status: Approved-Completed
 ---

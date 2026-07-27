@@ -1,4 +1,5 @@
 ---
+Title: Implementation Plan: Integrate Money Transactions Interface
 Date: 2026-06-09T20:53:00+05:30
 Status: Approved-Completed
 ---

@@ -1,4 +1,5 @@
 ---
+Title: Implementation Plan - Decouple Package Queries
 Date: 2026-06-14T20:36:00+05:30
 Status: Approved-Completed
 ---

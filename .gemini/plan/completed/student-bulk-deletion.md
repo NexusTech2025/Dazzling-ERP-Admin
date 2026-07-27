@@ -1,4 +1,5 @@
 ---
+Title: Integrate bulk SelectMany & DeleteMany in Student Directory
 Date: 2026-06-06T13:50:00+05:30
 Status: Approved-Completed
 ---

@@ -1,4 +1,5 @@
 ---
+Title: Restructure TeacherForm layout to use desktop 7:5 two-column grid
 Date: 2026-06-12T01:54:00+05:30
 Status: Approved-Completed
 ---

@@ -1,4 +1,5 @@
 ---
+Title: Technical Implementation Plan: Standardize `RecordTeacherPaymentModal` with `react-hook-form` + `Yup`
 Date: 2026-07-26T18:50:00+05:30
 Status: Approved-Completed
 ---

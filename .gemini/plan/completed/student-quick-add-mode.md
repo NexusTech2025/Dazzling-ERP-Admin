@@ -1,6 +1,7 @@
 ---
-date: 2026-05-22T18:01:25+05:30
-status: Approved
+Title: Omit Batch & Course Names from Student Add Lead Payload
+Date: 2026-05-22T12:31:31.832Z
+Status: Approved-Completed
 ---
 
 # Omit Batch & Course Names from Student Add Lead Payload

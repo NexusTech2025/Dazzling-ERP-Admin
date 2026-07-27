@@ -1,3 +1,9 @@
+---
+Title: Draft Plan: Section Architecture & Documentation Initiative
+Date: 2026-05-27T18:08:22.327Z
+Status: Proposed
+---
+
 # Draft Plan: Section Architecture & Documentation Initiative
 
 This document outlines the blueprint for creating `how_to_add_new_section.md`—a production-grade manual to guide developers and agent sub-modules when adding a new database-backed UI module.

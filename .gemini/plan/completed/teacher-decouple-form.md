@@ -1,4 +1,5 @@
 ---
+Title: Plan: Decouple Teacher Form into Standalone Feature Component
 Date: 2026-05-25T22:12:08+05:30
 Status: Approved-Completed
 ---

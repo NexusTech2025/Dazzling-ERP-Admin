@@ -1,4 +1,5 @@
 ---
+Title: Implementation Plan - Decouple Category (Course Types) Loading from Workspaces
 Date: 2026-06-16T03:27:49+05:30
 Status: Approved-Completed
 ---

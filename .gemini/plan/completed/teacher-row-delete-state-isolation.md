@@ -1,4 +1,5 @@
 ---
+Title: Plan: Isolate Deletion Loading State to Single Rows
 Date: 2026-05-25T20:22:00+05:30
 Status: Approved-Completed
 ---

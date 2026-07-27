@@ -1,4 +1,5 @@
 ---
+Title: Aligning Component API Documentation (`components.md`)
 Date: 2026-07-05T10:25:00+05:30
 Status: Approved-Completed
 ---

@@ -1,4 +1,5 @@
 ---
+Title: Technical Implementation Plan: Finance Dashboard Page Layout Integration
 Date: 2026-06-22T21:43:00+05:30
 Status: Approved-Completed
 ---

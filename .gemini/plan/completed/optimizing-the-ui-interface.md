@@ -1,4 +1,5 @@
 ---
+Title: Optimizing the UI Interface
 Date: 2026-06-10T11:04:00+05:30
 Status: Approved-Completed
 ---

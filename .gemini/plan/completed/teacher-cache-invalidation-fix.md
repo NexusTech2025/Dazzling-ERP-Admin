@@ -1,4 +1,5 @@
 ---
+Title: Plan: Fix Broken Cache Invalidation (Plural vs Singular Query Keys)
 Date: 2026-05-25T20:20:00+05:30
 Status: Approved-Completed
 ---

@@ -1,4 +1,5 @@
 ---
+Title: Implementation Plan - Course Details Overview Dashboard Redesign
 Date: 2026-07-06T01:59:00+05:30
 Status: Approved-Completed
 ---

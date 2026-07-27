@@ -1,4 +1,5 @@
 ---
+Title: Implementation Plan: Optimize BatchCard Relations Usage
 Date: 2026-05-28T17:21:00+05:30
 Status: Approved-Completed
 ---

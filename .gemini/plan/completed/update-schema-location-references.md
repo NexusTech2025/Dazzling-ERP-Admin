@@ -1,4 +1,5 @@
 ---
+Title: Plan: Migrate Database Schema Location References to Decoupled Domain-Grouped Files
 Date: 2026-06-02T00:43:00+05:30
 Status: Approved-Completed
 ---

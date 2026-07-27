@@ -1,4 +1,5 @@
 ---
+Title: Teacher Bulk Deletion
 Date: 2026-06-11T14:15:00+05:30
 Status: Proposed
 ---

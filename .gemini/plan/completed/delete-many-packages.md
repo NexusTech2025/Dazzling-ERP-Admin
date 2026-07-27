@@ -1,4 +1,5 @@
 ---
+Title: Generic SelectMany & DeleteMany Package Management
 Date: 2026-06-06T13:40:00+05:30
 Status: Approved-Completed
 ---

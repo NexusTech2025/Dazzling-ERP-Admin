@@ -1,4 +1,5 @@
 ---
+Title: Technical Implementation Plan: Reusable DataTableV2 Component & Finance Dashboard Integration
 Date: 2026-06-22T20:36:00+05:30
 Status: Approved-Completed
 ---

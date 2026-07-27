@@ -1,4 +1,5 @@
 ---
+Title: Plan: Add Refresh Button to Teacher Detail View
 Date: 2026-05-25T21:27:20+05:30
 Status: Approved-Completed
 ---

@@ -1,6 +1,7 @@
 ---
+Title: Plan: Decouple Batch Form & Split Routing
 Date: 2026-05-24T01:05:23+05:30
-Status: Approved
+Status: Approved-Completed
 ---
 
 # Plan: Decouple Batch Form & Split Routing

@@ -1,4 +1,5 @@
 ---
+Title: Implementation Plan - Enriched Schema Error Aggregation for Validation Alerts
 Date: 2026-06-24T16:56:00+05:30
 Status: Approved-Completed
 ---

@@ -1,4 +1,5 @@
 ---
+Title: Technical Implementation Plan: ResponseModal In-Flight Green Syncing Workflow
 Date: 2026-07-26T21:43:00+05:30
 Status: Proposed
 ---

@@ -1,4 +1,5 @@
 ---
+Title: Technical Implementation Plan: Standard 2-Stage Teacher Payment Transaction & General Ledger Sync
 Date: 2026-07-26T18:00:00+05:30
 Status: Approved-Completed
 ---

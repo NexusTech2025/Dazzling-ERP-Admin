@@ -1,4 +1,5 @@
 ---
+Title: Unified Fluid Layout & Consistent Spacing Standard
 Date: 2026-06-14T13:05:00+05:30
 Status: Approved-Completed
 ---

@@ -1,4 +1,5 @@
 ---
+Title: Refined Implementation Plan - Courses Analytics Stats Aggregations
 Date: 2026-07-06T01:21:00+05:30
 Status: Approved-Completed
 ---

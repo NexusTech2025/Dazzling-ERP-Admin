@@ -1,4 +1,5 @@
 ---
+Title: Technical Implementation Plan: Grouped/Aggregated Student Billing Directory & Side-by-Side Programs View
 Date: 2026-06-22T21:18:00+05:30
 Status: Approved-Completed
 ---

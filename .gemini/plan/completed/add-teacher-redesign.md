@@ -1,4 +1,5 @@
 ---
+Title: Implementation Plan - Teacher Registration Layout Redesign
 Date: 2026-07-07T13:50:00+05:30
 Status: Approved-Completed
 ---

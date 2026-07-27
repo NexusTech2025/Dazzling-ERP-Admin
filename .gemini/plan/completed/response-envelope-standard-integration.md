@@ -1,4 +1,5 @@
 ---
+Title: Implementation Plan - API Response Envelope Standard Integration
 Date: 2026-07-05T18:49:00+05:30
 Status: Approved-Completed
 ---

@@ -1,4 +1,5 @@
 ---
+Title: Add Metadata-Driven Class & Board Filtering to Attendance Manager
 Date: 2026-07-10T01:18:15+05:30
 Status: Approved-Completed
 ---

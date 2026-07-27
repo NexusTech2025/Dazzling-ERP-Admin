@@ -1,4 +1,5 @@
 ---
+Title: Remove Mock Package Catalog Data from Student Registration
 Date: 2026-06-02T00:05:00+05:30
 Status: Approved-Completed
 ---

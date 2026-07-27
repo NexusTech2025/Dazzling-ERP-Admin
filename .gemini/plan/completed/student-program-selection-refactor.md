@@ -1,4 +1,5 @@
 ---
+Title: Student Program Selection Refactor (Step 2)
 Date: 2026-06-03T11:45:00+05:30
 Status: Approved-Completed
 ---

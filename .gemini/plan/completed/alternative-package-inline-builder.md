@@ -1,4 +1,5 @@
 ---
+Title: Quick Build Form Enhancements (Spinners, Dialogs & Existing Course Selection)
 Date: 2026-06-12T00:25:00+05:30
 Status: Approved-Completed
 ---

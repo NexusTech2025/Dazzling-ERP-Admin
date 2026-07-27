@@ -1,6 +1,7 @@
 ---
+Title: Implementation Plan: Optional Payment & Review in Registration Wizard
 Date: 2026-05-28T17:31:00+05:30
-Status: Proposed
+Status: Approved-Completed
 ---
 
 # Implementation Plan: Optional Payment & Review in Registration Wizard

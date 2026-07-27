@@ -1,4 +1,5 @@
 ---
+Title: Technical Implementation Plan: Installments View Page Layout Integration & Overdue Merge
 Date: 2026-06-22T23:36:00+05:30
 Status: Approved-Completed
 ---

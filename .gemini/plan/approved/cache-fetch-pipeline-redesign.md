@@ -1,6 +1,7 @@
 ---
+Title: Redesign Data Fetch Pipeline to a Reusable Cache-First Strategy
 Date: 2026-06-12T18:22:00+05:30
-Status: Approved
+Status: Approved-Completed
 ---
 
 # Redesign Data Fetch Pipeline to a Reusable Cache-First Strategy

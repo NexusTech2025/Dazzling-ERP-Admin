@@ -1,4 +1,5 @@
 ---
+Title: Fix Course Filters in Courses.jsx
 Date: 2026-05-27T17:42:00+05:30
 Status: Approved-Completed
 ---

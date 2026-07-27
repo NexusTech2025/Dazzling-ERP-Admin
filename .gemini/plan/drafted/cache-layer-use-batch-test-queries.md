@@ -1,4 +1,5 @@
 ---
+Title: Cache Layer Integration Implementation Plan: `useBatchTestQueries.js` & `cacheHelper.js`
 Date: 2026-07-27T12:27:00+05:30
 Status: Proposed
 ---

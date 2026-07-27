@@ -1,4 +1,5 @@
 ---
+Title: Implementation Plan - Per-Batch Teacher Attendance Register (Frontend Only)
 Date: 2026-06-15T17:45:15+05:30
 Status: Approved-Completed
 ---

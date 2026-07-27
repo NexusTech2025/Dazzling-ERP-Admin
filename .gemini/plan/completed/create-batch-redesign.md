@@ -1,4 +1,5 @@
 ---
+Title: Create Batch Redesign (Two-Column Layout, Dialog Modals, Branch Selector & Validations)
 Date: 2026-06-12T01:15:00+05:30
 Status: Approved-Completed
 ---

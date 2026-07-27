@@ -1,4 +1,5 @@
 ---
+Title: Resolve Default Punch In/Out Timings from Batch Schedule
 Date: 2026-07-11T12:06:42+05:30
 Status: Approved-Completed
 ---

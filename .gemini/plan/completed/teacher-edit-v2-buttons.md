@@ -1,4 +1,5 @@
 ---
+Title: Plan: Refactor Footer Buttons to V2 Design Tokens
 Date: 2026-05-25T22:08:57+05:30
 Status: Approved-Completed
 ---

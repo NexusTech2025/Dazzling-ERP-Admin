@@ -1,4 +1,5 @@
 ---
+Title: Refactoring Plan: Salary Month Formatting (`July 2026` Format)
 Date: 2026-07-26T20:56:00+05:30
 Status: Proposed
 ---

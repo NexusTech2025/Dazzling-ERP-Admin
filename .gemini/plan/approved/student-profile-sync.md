@@ -1,4 +1,5 @@
 ---
+Title: Student Profile Caching, Schema Sync, and Editing Plan (V3 Schema Sync)
 Date: 2026-05-24T12:49:09+05:30
 Status: Approved
 ---

@@ -1,4 +1,5 @@
 ---
+Title: Refactoring StudentEditModal & Adding Local Cache Resolver
 Date: 2026-05-24T12:45:00+05:30
 Status: Approved-Completed
 ---

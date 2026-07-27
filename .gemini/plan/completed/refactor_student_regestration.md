@@ -1,4 +1,5 @@
 ---
+Title: Refactoring Plan: Student Registration Form & Dynamic Billing
 Date: 2026-05-27T23:50:00+05:30
 Status: Approved-Completed
 ---

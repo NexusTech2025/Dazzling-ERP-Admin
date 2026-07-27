@@ -1,4 +1,5 @@
 ---
+Title: Student Registration Wizard Step 2 Multi-Enrollment Integration Plan
 Date: 2026-05-29T07:54:00+05:30
 Status: Proposed
 ---

@@ -1,4 +1,5 @@
 ---
+Title: Implementation Plan - Course Card Medium Density Design Alignment
 Date: 2026-07-05T19:50:00+05:30
 Status: Approved-Completed
 ---

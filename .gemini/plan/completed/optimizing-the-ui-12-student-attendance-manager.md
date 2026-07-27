@@ -1,4 +1,5 @@
 ---
+Title: Implementation Plan - Attendance UI Layout Upgrades & Dropdown Keyboard Prevention
 Date: 2026-07-09T12:25:00+05:30
 Status: Approved-Completed
 ---

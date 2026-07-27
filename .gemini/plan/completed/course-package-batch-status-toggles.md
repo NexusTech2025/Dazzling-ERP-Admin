@@ -1,4 +1,5 @@
 ---
+Title: Implementation Plan - Course, Package, and Batch Status Toggles
 Date: 2026-07-05T18:39:00+05:30
 Status: Approved-Completed
 ---

@@ -1,4 +1,5 @@
 ---
+Title: Master Plan: 3-Way Teacher Payment & General Ledger Reconciliation Engine Architecture
 Date: 2026-07-26T20:02:00+05:30
 Status: Proposed
 ---

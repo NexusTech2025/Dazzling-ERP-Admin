@@ -1,4 +1,5 @@
 ---
+Title: Implementation Plan - Unrecorded Past Attendance Badges
 Date: 2026-06-16T14:52:00+05:30
 Status: Approved-Completed
 ---

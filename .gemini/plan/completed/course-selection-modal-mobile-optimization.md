@@ -1,4 +1,5 @@
 ---
+Title: Implementation Plan - Responsive Mobile Course Selection Modal
 Date: 2026-06-17T00:05:00+05:30
 Status: Approved-Completed
 ---

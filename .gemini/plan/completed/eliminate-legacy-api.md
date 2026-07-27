@@ -1,4 +1,5 @@
 ---
+Title: Eliminate Legacy `api.js` Module and Migrate to Unified `apiClient.js`
 Date: 2026-05-27T21:16:00+05:30
 Status: Approved-Completed
 ---

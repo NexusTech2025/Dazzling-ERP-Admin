@@ -1,4 +1,5 @@
 ---
+Title: Technical Implementation Plan: Student Class Badge in Aggregated Billing Directory
 Date: 2026-06-22T21:35:00+05:30
 Status: Approved-Completed
 ---

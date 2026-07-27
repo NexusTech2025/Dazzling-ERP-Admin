@@ -1,4 +1,5 @@
 ---
+Title: Optimize Course Form UI & Separate List/Grid View Components
 Date: 2026-05-27T17:36:00+05:30
 Status: Approved-Completed
 ---

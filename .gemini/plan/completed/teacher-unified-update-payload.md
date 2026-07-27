@@ -1,4 +1,5 @@
 ---
+Title: Unified Teacher Update Payload Implementation Plan
 Date: 2026-05-26T19:28:00+05:30
 Status: Approved-Completed
 ---

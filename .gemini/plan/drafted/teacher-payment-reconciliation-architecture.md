@@ -1,4 +1,5 @@
 ---
+Title: Technical Implementation Plan: 3-Way Teacher Payment & General Ledger Reconciliation Engine Architecture
 Date: 2026-07-26T19:57:45+05:30
 Status: Proposed
 ---

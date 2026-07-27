@@ -1,4 +1,5 @@
 ---
+Title: Restructuring Low Density Card: Indicators Component Suite Design
 Date: 2026-06-13T15:02:00+05:30
 Status: Proposed
 ---

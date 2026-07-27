@@ -1,4 +1,5 @@
 ---
+Title: Plan: Fetch & Display Relational Teacher Data in Edit Profile
 Date: 2026-05-25T22:00:55+05:30
 Status: Approved-Completed
 ---

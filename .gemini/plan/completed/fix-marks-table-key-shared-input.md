@@ -1,6 +1,7 @@
 ---
+Title: Implementation Plan: Fix React Key Warning, Shared Input State Bug & Memoize MarksEntryRow
 Date: 2026-07-27T13:30:00+05:30
-Status: Proposed
+Status: Approved-Completed
 ---
 
 # Implementation Plan: Fix React Key Warning, Shared Input State Bug & Memoize MarksEntryRow

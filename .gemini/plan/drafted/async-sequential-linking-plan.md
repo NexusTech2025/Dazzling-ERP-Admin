@@ -1,4 +1,5 @@
 ---
+Title: Technical Implementation Plan: Async Sequential Linking & In-Flight Sync Feedback
 Date: 2026-07-26T21:34:45+05:30
 Status: Proposed
 ---

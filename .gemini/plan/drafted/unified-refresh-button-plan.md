@@ -1,4 +1,5 @@
 ---
+Title: Technical Implementation Plan: Unified Refresh Button for Teacher Payroll
 Date: 2026-07-26T21:46:00+05:30
 Status: Proposed
 ---

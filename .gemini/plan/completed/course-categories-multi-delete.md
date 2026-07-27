@@ -1,4 +1,5 @@
 ---
+Title: Multi-Delete Feature for Course Categories
 Date: 2026-06-11T18:30:00+05:30
 Status: Approved-Completed
 ---

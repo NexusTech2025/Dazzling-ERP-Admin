@@ -1,4 +1,5 @@
 ---
+Title: Implementation Plan - Redesigning Teacher Profile Desktop Layout
 Date: 2026-07-05T17:42:00+05:30
 Status: Approved-Completed
 ---

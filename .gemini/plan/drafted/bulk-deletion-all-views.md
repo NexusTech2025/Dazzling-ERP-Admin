@@ -1,4 +1,5 @@
 ---
+Title: Bulk Deletion Across All List Views (with Simulation Fixes)
 Date: 2026-06-11T14:39:00+05:30
 Status: Proposed
 ---
