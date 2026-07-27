@@ -7,6 +7,7 @@ export default function TestsList({
   studentsCount = 0,
   onEnterMarks,
   onViewReport,
+  onShareWhatsApp,
   onEdit,
   onDelete
 }) {
@@ -48,6 +49,7 @@ export default function TestsList({
           studentsCount={studentsCount}
           onEnterMarks={onEnterMarks}
           onViewReport={onViewReport}
+          onShareWhatsApp={onShareWhatsApp}
           onEdit={onEdit}
           onDelete={onDelete}
         />

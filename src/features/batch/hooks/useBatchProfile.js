@@ -58,7 +58,7 @@ export const useBatchProfile = () => {
   }, []);
 
   const handleViewPerformanceLink = useCallback(() => {
-    console.log('Navigate to Academic Metrics');
+    setActiveTab('Tests');
   }, []);
 
   // Mobile Layout Static Framework Configurations (Memoized to isolate downstream paints)

@@ -9,6 +9,7 @@ export default function TestCard({
   studentsCount = 0,
   onEnterMarks,
   onViewReport,
+  onShareWhatsApp,
   onEdit,
   onDelete
 }) {
@@ -82,7 +83,7 @@ export default function TestCard({
       </Card.Body>
 
       <Card.Footer bg={true} className="flex flex-wrap items-center justify-between gap-2 pt-3">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Button
             variant="contained"
             size="sm"
@@ -100,6 +101,18 @@ export default function TestCard({
           >
             View Report
           </Button>
+
+          {onShareWhatsApp && (
+            <Button
+              variant="outlined"
+              size="sm"
+              startIcon="chat"
+              onClick={() => onShareWhatsApp(test)}
+              className="!text-emerald-600 !border-emerald-500/30 hover:!bg-emerald-500/10"
+            >
+              Share
+            </Button>
+          )}
         </div>
 
         <div className="flex items-center gap-1">

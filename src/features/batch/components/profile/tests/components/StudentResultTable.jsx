@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import TextInput from '../../../../../../components/ui/v2/TextInput';
 import Badge from '../../../../../../components/ui/Badge';
+import Button from '../../../../../../components/ui/v2/Button';
 
 export default function StudentResultTable({
   results = [],
   studentsMap = {},
-  totalMarks = 100
+  totalMarks = 100,
+  onShareWhatsApp
 }) {
   const [query, setQuery] = useState('');
 
@@ -51,12 +53,13 @@ export default function StudentResultTable({
               <th className="px-4 py-3">Percentage</th>
               <th className="px-4 py-3">Grade</th>
               <th className="px-4 py-3 text-center">Status</th>
+              <th className="px-4 py-3 text-right">Actions</th>
             </tr>
           </thead>
           <tbody>
             {filteredResults.length === 0 ? (
               <tr>
-                <td colSpan={6} className="py-8 text-center text-sm text-text-secondary">
+                <td colSpan={7} className="py-8 text-center text-sm text-text-secondary">
                   No records match your query.
                 </td>
               </tr>
@@ -107,6 +110,21 @@ export default function StudentResultTable({
                         <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-500/10 text-amber-500">
                           Failed
                         </span>
+                      )}
+                    </td>
+
+                    <td className="px-4 py-3 text-right">
+                      {onShareWhatsApp && (
+                        <Button
+                          variant="text"
+                          size="sm"
+                          startIcon="chat"
+                          title="Send Marksheet on WhatsApp"
+                          onClick={() => onShareWhatsApp(row)}
+                          className="!text-emerald-600 hover:!bg-emerald-500/10"
+                        >
+                          WhatsApp
+                        </Button>
                       )}
                     </td>
                   </tr>

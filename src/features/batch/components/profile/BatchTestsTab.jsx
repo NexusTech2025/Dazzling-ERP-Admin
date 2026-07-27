@@ -11,6 +11,11 @@ import ConfirmModal from '../../../../components/ui/ConfirmModal';
 import Button from '../../../../components/ui/v2/Button';
 import RefreshButton from '../../../../components/ui/btn/RefreshButton';
 import ResponseModal from '../../../../components/ui/ResponseModal';
+import WhatsAppShareModal from './tests/components/WhatsAppShareModal';
+import {
+  formatTestSummaryWhatsAppMessage,
+  formatStudentMarksheetWhatsAppMessage
+} from './tests/utils/whatsappShareUtils';
 
 import {
   useBatchTestsQuery,
@@ -52,6 +57,18 @@ export default function BatchTestsTab({ batch, batchId }) {
 
   const handleResponseModalClose = () => {
     setResponseModalConfig(prev => ({ ...prev, isOpen: false }));
+  };
+
+  // WhatsApp Preview Modal State
+  const [whatsAppPreviewModalConfig, setWhatsAppPreviewModalConfig] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    phone: ''
+  });
+
+  const handleCloseWhatsAppPreviewModal = () => {
+    setWhatsAppPreviewModalConfig(prev => ({ ...prev, isOpen: false }));
   };
 
   // Bulk marks local state map: { [student_id]: { student_id, obtained_marks, is_absent, remarks } }
@@ -238,6 +255,47 @@ export default function BatchTestsTab({ batch, batchId }) {
     setActiveStage('report');
   };
 
+  const handleOpenTestWhatsAppShare = (testToShare) => {
+    const targetTest = testToShare || selectedTest;
+    if (!targetTest) return;
+
+    // Calculate report data if sharing from list view
+    let targetReport = reportData;
+    if (!targetReport || selectedTest?.id !== targetTest.id) {
+      const testMarks = targetTest.marks || [];
+      targetReport = calculateTestReport(testMarks, targetTest.total_marks, targetTest.passing_marks);
+    }
+
+    const msg = formatTestSummaryWhatsAppMessage(
+      targetTest,
+      batch,
+      targetReport?.kpis || {},
+      targetReport?.toppers || [],
+      studentsMap,
+      targetReport?.studentResults || []
+    );
+
+    setWhatsAppPreviewModalConfig({
+      isOpen: true,
+      title: `Share Report: ${targetTest.title}`,
+      message: msg,
+      phone: ''
+    });
+  };
+
+  const handleOpenStudentWhatsAppShare = (resultRow) => {
+    const studentInfo = studentsMap[resultRow.student_id];
+    const phone = studentInfo?.student?.mobile_number || studentInfo?.mobile || studentInfo?.student?.phone || '';
+    const msg = formatStudentMarksheetWhatsAppMessage(studentInfo, selectedTest, resultRow);
+
+    setWhatsAppPreviewModalConfig({
+      isOpen: true,
+      title: `Share Marksheet: ${studentInfo?.student?.student_name || resultRow.student_id}`,
+      message: msg,
+      phone: phone
+    });
+  };
+
   const handleMarkChange = (studentId, updatedRowData) => {
     setMarksState(prev => ({
       ...prev,
@@ -342,6 +400,14 @@ export default function BatchTestsTab({ batch, batchId }) {
               onRefresh={handleRefresh}
             />
             <Button
+              variant="outlined"
+              startIcon="chat"
+              onClick={() => handleOpenTestWhatsAppShare(selectedTest)}
+              className="!text-emerald-600 !border-emerald-500/30 hover:!bg-emerald-500/10"
+            >
+              Share Report
+            </Button>
+            <Button
               variant="contained"
               startIcon="edit_note"
               onClick={() => setActiveStage('marks_entry')}
@@ -374,6 +440,7 @@ export default function BatchTestsTab({ batch, batchId }) {
                   results={reportData?.studentResults}
                   studentsMap={studentsMap}
                   totalMarks={selectedTest.total_marks}
+                  onShareWhatsApp={handleOpenStudentWhatsAppShare}
                 />
               </div>
             </div>
@@ -389,6 +456,14 @@ export default function BatchTestsTab({ batch, batchId }) {
           items={responseModalConfig.items}
           errorObj={responseModalConfig.errorObj}
           onRetry={responseModalConfig.onRetry}
+        />
+
+        <WhatsAppShareModal
+          isOpen={whatsAppPreviewModalConfig.isOpen}
+          onClose={handleCloseWhatsAppPreviewModal}
+          title={whatsAppPreviewModalConfig.title}
+          message={whatsAppPreviewModalConfig.message}
+          phone={whatsAppPreviewModalConfig.phone}
         />
       </div>
     );
@@ -413,6 +488,7 @@ export default function BatchTestsTab({ batch, batchId }) {
         studentsCount={students.length}
         onEnterMarks={handleEnterMarksOpen}
         onViewReport={handleViewReportOpen}
+        onShareWhatsApp={handleOpenTestWhatsAppShare}
         onEdit={handleEditOpen}
         onDelete={(test) => setDeleteTarget(test)}
       />
@@ -445,6 +521,14 @@ export default function BatchTestsTab({ batch, batchId }) {
         items={responseModalConfig.items}
         errorObj={responseModalConfig.errorObj}
         onRetry={responseModalConfig.onRetry}
+      />
+
+      <WhatsAppShareModal
+        isOpen={whatsAppPreviewModalConfig.isOpen}
+        onClose={handleCloseWhatsAppPreviewModal}
+        title={whatsAppPreviewModalConfig.title}
+        message={whatsAppPreviewModalConfig.message}
+        phone={whatsAppPreviewModalConfig.phone}
       />
     </div>
   );
