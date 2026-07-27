@@ -10,6 +10,7 @@ import StudentResultTable from './tests/components/StudentResultTable';
 import ConfirmModal from '../../../../components/ui/ConfirmModal';
 import Button from '../../../../components/ui/v2/Button';
 import RefreshButton from '../../../../components/ui/btn/RefreshButton';
+import ResponseModal from '../../../../components/ui/ResponseModal';
 
 import {
   useBatchTestsQuery,
@@ -37,6 +38,21 @@ export default function BatchTestsTab({ batch, batchId }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTest, setEditingTest] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+
+  // Response Feedback Modal State
+  const [responseModalConfig, setResponseModalConfig] = useState({
+    isOpen: false,
+    variant: 'success',
+    title: '',
+    subtitle: '',
+    items: [],
+    errorObj: null,
+    onRetry: null
+  });
+
+  const handleResponseModalClose = () => {
+    setResponseModalConfig(prev => ({ ...prev, isOpen: false }));
+  };
 
   // Bulk marks local state map: { [student_id]: { student_id, obtained_marks, is_absent, remarks } }
   const [marksState, setMarksState] = useState({});
@@ -144,16 +160,58 @@ export default function BatchTestsTab({ batch, batchId }) {
           batch_id: currentBatchId,
           ...formData
         });
+
+        setResponseModalConfig({
+          isOpen: true,
+          variant: 'success',
+          title: 'Test Updated Successfully',
+          subtitle: `Changes to test "${formData.title}" have been saved.`,
+          items: [
+            { label: 'Test Title', value: formData.title },
+            { label: 'Total Marks', value: `${formData.total_marks}` },
+            { label: 'Passing Marks', value: `${formData.passing_marks}` },
+            { label: 'Status', value: formData.status || 'Draft', isHighlight: true }
+          ],
+          errorObj: null,
+          onRetry: null
+        });
       } else {
         await createTestMutation.mutateAsync({
           batch_id: currentBatchId,
           ...formData
+        });
+
+        setResponseModalConfig({
+          isOpen: true,
+          variant: 'success',
+          title: 'Test Created Successfully',
+          subtitle: `New test "${formData.title}" has been added to this batch.`,
+          items: [
+            { label: 'Test Title', value: formData.title },
+            { label: 'Total Marks', value: `${formData.total_marks}` },
+            { label: 'Passing Marks', value: `${formData.passing_marks}` },
+            { label: 'Status', value: formData.status || 'Draft', isHighlight: true }
+          ],
+          errorObj: null,
+          onRetry: null
         });
       }
       setIsModalOpen(false);
       setEditingTest(null);
     } catch (err) {
       console.error('[BatchTestsTab] Failed to save test:', err);
+      setResponseModalConfig({
+        isOpen: true,
+        variant: 'error',
+        title: editingTest ? 'Failed to Update Test' : 'Failed to Create Test',
+        subtitle: 'An error occurred while communicating with the backend database.',
+        errorObj: {
+          code: err.code || 'TEST_SAVE_ERROR',
+          message: err.message || 'Unable to save test configuration.'
+        },
+        items: [],
+        onRetry: () => handleModalSubmit(formData)
+      });
     }
   };
 
@@ -189,16 +247,44 @@ export default function BatchTestsTab({ batch, batchId }) {
 
   const handleSaveAllMarks = async () => {
     if (!selectedTest) return;
+    const recordsToSave = Object.values(marksState);
     try {
-      const recordsToSave = Object.values(marksState);
       await saveBulkMarksMutation.mutateAsync({
         test_id: selectedTest.id,
         marksRecords: recordsToSave
       });
+
+      setResponseModalConfig({
+        isOpen: true,
+        variant: 'success',
+        title: 'Student Marks Saved Successfully',
+        subtitle: `Marks records for test "${selectedTest.title}" have been committed to the database.`,
+        items: [
+          { label: 'Test Title', value: selectedTest.title },
+          { label: 'Students Evaluated', value: `${recordsToSave.length}`, isHighlight: true },
+          { label: 'Batch ID', value: currentBatchId, isMono: true },
+          { label: 'Saved At', value: new Date().toLocaleTimeString(), fullWidth: true }
+        ],
+        errorObj: null,
+        onRetry: null
+      });
+
       setActiveStage('list');
       setSelectedTest(null);
     } catch (err) {
       console.error('[BatchTestsTab] Save marks failure:', err);
+      setResponseModalConfig({
+        isOpen: true,
+        variant: 'error',
+        title: 'Failed to Save Student Marks',
+        subtitle: 'An error occurred while committing student test scores.',
+        errorObj: {
+          code: err.code || 'BULK_MARKS_SAVE_ERROR',
+          message: err.message || 'Failed to submit bulk marks payload.'
+        },
+        items: [],
+        onRetry: handleSaveAllMarks
+      });
     }
   };
 
@@ -276,7 +362,11 @@ export default function BatchTestsTab({ batch, batchId }) {
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-1">
-                <TopPerformersCard toppers={reportData?.toppers} totalMarks={selectedTest.total_marks} />
+                <TopPerformersCard
+                  toppers={reportData?.toppers}
+                  studentsMap={studentsMap}
+                  totalMarks={selectedTest.total_marks}
+                />
               </div>
 
               <div className="lg:col-span-2">
@@ -289,6 +379,17 @@ export default function BatchTestsTab({ batch, batchId }) {
             </div>
           </>
         )}
+
+        <ResponseModal
+          isOpen={responseModalConfig.isOpen}
+          onClose={handleResponseModalClose}
+          variant={responseModalConfig.variant}
+          title={responseModalConfig.title}
+          subtitle={responseModalConfig.subtitle}
+          items={responseModalConfig.items}
+          errorObj={responseModalConfig.errorObj}
+          onRetry={responseModalConfig.onRetry}
+        />
       </div>
     );
   }
@@ -333,6 +434,17 @@ export default function BatchTestsTab({ batch, batchId }) {
         confirmText="Delete"
         variant="danger"
         isLoading={deleteTestMutation.isPending}
+      />
+
+      <ResponseModal
+        isOpen={responseModalConfig.isOpen}
+        onClose={handleResponseModalClose}
+        variant={responseModalConfig.variant}
+        title={responseModalConfig.title}
+        subtitle={responseModalConfig.subtitle}
+        items={responseModalConfig.items}
+        errorObj={responseModalConfig.errorObj}
+        onRetry={responseModalConfig.onRetry}
       />
     </div>
   );

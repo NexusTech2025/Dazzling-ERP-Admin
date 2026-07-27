@@ -7,7 +7,7 @@ const BADGE_COLORS = [
   { bg: 'bg-amber-700/10 text-amber-700 border-amber-700/20', icon: 'workspace_premium', label: '3rd Rank' },
 ];
 
-export default function TopPerformersCard({ toppers = [], totalMarks = 100 }) {
+export default function TopPerformersCard({ toppers = [], studentsMap = {}, totalMarks = 100 }) {
   if (!toppers || toppers.length === 0) return null;
 
   return (
@@ -22,6 +22,9 @@ export default function TopPerformersCard({ toppers = [], totalMarks = 100 }) {
       <Card.Body className="p-4 space-y-3">
         {toppers.map((student, idx) => {
           const badgeConfig = BADGE_COLORS[idx] || BADGE_COLORS[2];
+          const studentInfo = studentsMap[student.student_id];
+          const studentName = studentInfo?.student?.student_name || studentInfo?.student_name || student.student_name || `Student ID: ${student.student_id}`;
+
           return (
             <div
               key={student.student_id || idx}
@@ -33,7 +36,7 @@ export default function TopPerformersCard({ toppers = [], totalMarks = 100 }) {
                 </div>
                 <div>
                   <h5 className="text-sm font-semibold text-text-main dark:text-white">
-                    {student.student_name || `Student ID: ${student.student_id}`}
+                    {studentName}
                   </h5>
                   <span className="text-xs text-text-secondary">
                     {badgeConfig.label}
