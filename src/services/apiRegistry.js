@@ -112,5 +112,10 @@ export const API_REGISTRY = {
 
     // Queries daily registry logs or historical profile stats for teacher attendance.
     TEACHER_QUERY: 'staff_query_attendance'
+  },
+  TEST: {
+    CREATE: 'test_create',
+    SAVE_MARKS_BULK: 'test_save_marks_bulk',
+    QUERY_REPORT: 'test_query_report'
   }
 };

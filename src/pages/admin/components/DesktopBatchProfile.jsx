@@ -7,6 +7,7 @@ import BatchUpcomingSchedule from '../../../features/batch/components/profile/Ba
 import BatchActivityLog from '../../../features/batch/components/profile/BatchActivityLog';
 import BatchStudentRoster from '../../../features/batch/components/profile/BatchStudentRoster';
 import AttendanceMatrix from '../../../features/batch/components/profile/AttendanceMatrix';
+import BatchTestsTab from '../../../features/batch/components/profile/BatchTestsTab';
 
 const DesktopBatchProfile = React.memo(({
   batch,
@@ -54,10 +55,8 @@ const DesktopBatchProfile = React.memo(({
       </div>
     ),
     Tests: (
-      <div className="py-20 text-center animate-in fade-in zoom-in-95 bg-surface-light dark:bg-surface-dark rounded-xl border border-border-light dark:border-border-dark shadow-sm">
-        <span className="material-symbols-outlined text-text-secondary/20 text-6xl mb-4">construction</span>
-        <h3 className="text-lg font-bold text-text-main dark:text-white">Tests Section</h3>
-        <p className="text-sm text-text-secondary">This module is currently under development.</p>
+      <div className="animate-in fade-in slide-in-from-right-4 duration-500">
+        <BatchTestsTab batch={batch} batchId={id} />
       </div>
     )
   }), [batch, id]);

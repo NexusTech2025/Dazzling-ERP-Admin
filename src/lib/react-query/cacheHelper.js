@@ -101,6 +101,20 @@ export const ENTITY_CONFIGS = {
     detailKey: (id) => queryKeys.user.detail(id),
     listsKey: () => queryKeys.user.lists(),
     isValidDetail: (data) => data && typeof data === 'object' && 'username' in data
+  },
+  test: {
+    primaryKey: 'id',
+    listKey: (filter = {}) => queryKeys.test.byBatch(filter.batch_id || filter.batchId),
+    listsKey: () => queryKeys.test.all,
+    detailKey: (id) => queryKeys.test.detail(id),
+    isValidDetail: (data) => data && typeof data === 'object' && ('title' in data || 'id' in data)
+  },
+  testMarks: {
+    primaryKey: 'id',
+    listKey: (filter = {}) => queryKeys.test.marks(filter.test_id || filter.testId),
+    listsKey: () => ['test', 'marks'],
+    detailKey: (id) => [...queryKeys.test.all, 'marks', 'detail', id],
+    isValidDetail: (data) => data && typeof data === 'object' && ('student_id' in data || 'id' in data)
   }
 };
 

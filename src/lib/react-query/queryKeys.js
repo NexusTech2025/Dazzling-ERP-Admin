@@ -128,5 +128,12 @@ export const queryKeys = {
     list: (filter = EMPTY_FILTER) => [...queryKeys.user.lists(), { filter }],
     details: () => [...queryKeys.user.all, 'detail'],
     detail: (id) => [...queryKeys.user.details(), id]
+  },
+  test: {
+    all: ['test'],
+    byBatch: (batchId) => [...queryKeys.test.all, 'batch', batchId],
+    detail: (id) => [...queryKeys.test.all, 'detail', id],
+    marks: (testId) => [...queryKeys.test.all, 'marks', testId],
+    report: (testId) => [...queryKeys.test.all, 'report', testId],
   }
 };
