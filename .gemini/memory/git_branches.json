@@ -1,6 +1,6 @@
 {
-  "active_branch": "feature/teacher-payroll-payment",
-  "updated_at": "2026-07-26T16:27:05.543Z",
+  "active_branch": "feat/student-test-management",
+  "updated_at": "2026-07-27T05:43:08.905Z",
   "branches": {
     "package-patches-bugfix": {
       "branch_name": "package-patches-bugfix",
@@ -30,13 +30,13 @@
       "uncommitted_changes_count": 0,
       "commits_count_ahead": 5,
       "created_at": "2026-07-26T11:12:25.484Z",
-      "last_activity_at": "2026-07-26T11:14:46.535Z",
+      "last_activity_at": "2026-07-26T19:18:52.515Z",
       "commits_summary": [
-        "2b3fb6b Merge branch 'package-patches-bugfix'",
-        "671aabb config(skill): add git-branch-status, plan-critique-evaluator, and plan-refiner skills",
-        "1507b18 feat(student,finance): integrate PaymentReceiptCard and single-source-of-truth ledger sync",
-        "89e2720 feat(finance,student): integrate RecordPaymentModal lifecycle, payment API, and LowDensityCard receipt UI",
-        "04cb0d5 feat(student,finance): redesign student fee tab layout with master-detail installment timeline"
+        "054c789 Merge branch 'feature/teacher-payroll-payment'",
+        "a3a41e7 docs(teacher-payroll): add dual-flow reconciliation plans and walkthroughs",
+        "7652295 feat(teacher,finance): implement dual-flow GL reconciliation, UnlinkedGlOutflowsBanner, and async linking workflow",
+        "1a88456 config(memory,plan): record teacher payment plans, RHF memory rules, and branch status logic",
+        "84d7e16 feat(teacher,payroll): integrate RecordTeacherPaymentModal with React Hook Form and ResponseModal sync"
       ],
       "recommendation": "🟢 Ready for Merge / PR: All recent work is committed and working tree is clean. Consider merging into main."
     },
@@ -55,6 +55,19 @@
         "84d7e16 feat(teacher,payroll): integrate RecordTeacherPaymentModal with React Hook Form and ResponseModal sync"
       ],
       "recommendation": "🟡 Active Work in Progress: You have 17 uncommitted file(s). Commit or stash your changes before merging or switching branches."
+    },
+    "feat/student-test-management": {
+      "branch_name": "feat/student-test-management",
+      "parent_branch": "main",
+      "purpose": "Student test scores management, batch test scheduling, marksheets, and academic performance tracking.",
+      "status": "in_progress",
+      "working_tree_clean": false,
+      "uncommitted_changes_count": 1,
+      "commits_count_ahead": 0,
+      "created_at": "2026-07-27T05:43:08.905Z",
+      "last_activity_at": "2026-07-27T05:43:09.001Z",
+      "commits_summary": [],
+      "recommendation": "🟡 Active Work in Progress: You have 1 uncommitted file(s). Commit or stash your changes before merging or switching branches."
     }
   }
 }
