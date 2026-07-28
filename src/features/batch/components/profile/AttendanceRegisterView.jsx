@@ -33,8 +33,8 @@ const RemarksInput = React.memo(({ student, onChange }) => {
   };
 
   return (
-    <input 
-      type="text" 
+    <input
+      type="text"
       value={localRemarks}
       placeholder="e.g. Doctor appointment, late check-in"
       onChange={(e) => setLocalRemarks(e.target.value)}
@@ -137,9 +137,9 @@ ActionCell.propTypes = {
 ActionCell.displayName = 'ActionCell';
 
 /**
- * AttendanceRegisterMatrix Component: Decoupled daily attendance registry form logic.
+ * AttendanceRegisterView Component: Decoupled daily attendance registry form logic.
  */
-const AttendanceRegisterMatrix = ({ batchId }) => {
+const AttendanceRegisterView = ({ batchId }) => {
   const isMobile = useIsMobile(768);
   const [activeMobileEditingRowId, setActiveMobileEditingRowId] = useState(null);
   const [selectedDate, setSelectedDate] = useState(() => new Date().toLocaleDateString('sv-SE'));
@@ -322,7 +322,7 @@ const AttendanceRegisterMatrix = ({ batchId }) => {
 
       {/* Main Roster Panel Sheet */}
       <div className="bg-surface-light dark:bg-[#122131] border border-border-light dark:border-white/8 rounded-2xl shadow-sm backdrop-blur-md overflow-hidden flex flex-col justify-between min-h-[400px]">
-        
+
         {/* Table Panel Header */}
         <div className="p-6 border-b border-border-light dark:border-white/8 flex items-center justify-between flex-wrap gap-4">
           <div className="flex items-center gap-3">
@@ -334,13 +334,13 @@ const AttendanceRegisterMatrix = ({ batchId }) => {
           </div>
 
           <div className="flex items-center gap-3 flex-wrap">
-            <input 
-              type="date" 
+            <input
+              type="date"
               value={selectedDate}
               onChange={(e) => handleDateChange(e.target.value)}
               className="bg-white dark:bg-[#0a1420] border border-border-light dark:border-white/8 rounded-xl px-4 py-2 text-xs font-bold text-text-main dark:text-white outline-none focus:border-indigo-500 transition-all cursor-pointer"
             />
-            <Button 
+            <Button
               onClick={handleMarkAllPresent}
               disabled={isLoading || studentsList.length === 0}
               variant="outlined"
@@ -370,7 +370,7 @@ const AttendanceRegisterMatrix = ({ batchId }) => {
                 You have unsaved changes in your staging workspace.
               </span>
             </div>
-            
+
             <div className="flex items-center gap-3">
               <Button
                 variant="outlined"
@@ -405,8 +405,8 @@ const AttendanceRegisterMatrix = ({ batchId }) => {
   );
 };
 
-AttendanceRegisterMatrix.propTypes = {
+AttendanceRegisterView.propTypes = {
   batchId: PropTypes.string.isRequired
 };
 
-export default AttendanceRegisterMatrix;
+export default AttendanceRegisterView;

@@ -4,7 +4,7 @@ import MobileBaseLayout from '../../../../components/layout/MobileBaseLayout';
 import MobilePunchEditorDrawer from '../../../../components/domain/MobilePunchEditorDrawer';
 import Button from '../../../../components/ui/v2/Button';
 import TimePill from '../../../../components/ui/v2/TimePill';
-import { StatusCell } from './AttendanceRegisterMatrix';
+import { StatusCell } from './AttendanceRegisterView';
 
 export const MobileBatchAttendanceView = ({
   studentsList,
@@ -40,7 +40,7 @@ export const MobileBatchAttendanceView = ({
           </button>
         }
         renderRight={
-          <Button 
+          <Button
             onClick={handleMarkAllPresent}
             disabled={isLoading || studentsList.length === 0}
             variant="outlined"
@@ -82,8 +82,8 @@ export const MobileBatchAttendanceView = ({
       <MobileBaseLayout.FilterSlot>
         <div className="flex items-center justify-between w-full">
           <span className="text-xs font-bold text-text-secondary dark:text-slate-400">Registry Date:</span>
-          <input 
-            type="date" 
+          <input
+            type="date"
             value={selectedDate}
             onChange={(e) => handleDateChange(e.target.value)}
             className="bg-white dark:bg-[#0a1420] border border-border-light dark:border-white/8 rounded-xl px-4 py-2 text-xs font-bold text-text-main dark:text-white outline-none focus:border-indigo-500 transition-all cursor-pointer"
@@ -114,7 +114,7 @@ export const MobileBatchAttendanceView = ({
                   updateStageField={updateStageField}
                 />
               </div>
-              
+
               <div className="flex items-center justify-between text-[11px] text-text-secondary pt-2 border-t border-slate-100 dark:border-white/5">
                 <div className="flex items-center gap-2">
                   <TimePill
@@ -128,10 +128,10 @@ export const MobileBatchAttendanceView = ({
                     variant="info"
                   />
                 </div>
-                <Button 
-                  variant="text" 
-                  size="sm" 
-                  startIcon="edit" 
+                <Button
+                  variant="text"
+                  size="sm"
+                  startIcon="edit"
                   onClick={() => setActiveMobileEditingRowId(row.student_id)}
                   className="text-[10px]"
                 >

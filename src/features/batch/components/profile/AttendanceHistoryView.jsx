@@ -3,10 +3,10 @@ import { DateDisplay } from '../../../../components/ui/presets/DateDisplay';
 import Card from '../../../../components/ui/Card';
 import Badge from '../../../../components/ui/Badge';
 import TextInput from '../../../../components/ui/v2/TextInput';
-import { useBatchAttendanceMatrixQuery } from '../../hooks/useAttendanceQueries';
+import { useBatchAttendanceMatrixQuery as useBatchAttendanceViewQuery } from '../../hooks/useAttendanceQueries';
 
-const AttendanceHistoryMatrix = ({ batchId }) => {
-  const { data, isLoading } = useBatchAttendanceMatrixQuery(batchId, 15);
+const AttendanceHistoryView = ({ batchId }) => {
+  const { data, isLoading } = useBatchAttendanceViewQuery(batchId, 15);
   const [searchQuery, setSearchQuery] = useState('');
 
   if (isLoading) {
@@ -153,4 +153,4 @@ const AttendanceHistoryMatrix = ({ batchId }) => {
   );
 };
 
-export default AttendanceHistoryMatrix;
+export default AttendanceHistoryView;

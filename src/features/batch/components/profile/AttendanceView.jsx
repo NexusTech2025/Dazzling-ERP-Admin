@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
-import AttendanceRegisterMatrix from './AttendanceRegisterMatrix';
-import AttendanceHistoryMatrix from './AttendanceHistoryMatrix';
+import AttendanceRegisterView from './AttendanceRegisterView';
+import AttendanceHistoryView from './AttendanceHistoryView';
 import Button from '../../../../components/ui/v2/Button';
 
 /**
- * AttendanceMatrix Component: Tab router managing daily registry updates and history views.
+ * AttendanceView Component: Tab router managing daily registry updates and history views.
  */
-const AttendanceMatrix = ({ batchId }) => {
+const AttendanceView = ({ batchId }) => {
   const [activeSubTab, setActiveSubTab] = useState('Registry'); // 'Registry' or 'Matrix'
 
   return (
@@ -33,18 +33,18 @@ const AttendanceMatrix = ({ batchId }) => {
       </div>
 
       {activeSubTab === 'Registry' ? (
-        <AttendanceRegisterMatrix batchId={batchId} />
+        <AttendanceRegisterView batchId={batchId} />
       ) : (
         <div className="animate-in fade-in slide-in-from-right-4 duration-500">
-          <AttendanceHistoryMatrix batchId={batchId} />
+          <AttendanceHistoryView batchId={batchId} />
         </div>
       )}
     </div>
   );
 };
 
-AttendanceMatrix.propTypes = {
+AttendanceView.propTypes = {
   batchId: PropTypes.string.isRequired
 };
 
-export default AttendanceMatrix;
+export default AttendanceView;
