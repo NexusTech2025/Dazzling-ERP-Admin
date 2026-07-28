@@ -9,7 +9,8 @@ export default function TestsList({
   onViewReport,
   onShareWhatsApp,
   onEdit,
-  onDelete
+  onDelete,
+  onStatusChange
 }) {
   if (isLoading) {
     return (
@@ -44,7 +45,7 @@ export default function TestsList({
     <div className="space-y-4">
       {tests.map((test) => (
         <TestCard
-          key={test.id}
+          key={test.id || test.test_id}
           test={test}
           studentsCount={studentsCount}
           onEnterMarks={onEnterMarks}
@@ -52,6 +53,7 @@ export default function TestsList({
           onShareWhatsApp={onShareWhatsApp}
           onEdit={onEdit}
           onDelete={onDelete}
+          onStatusChange={onStatusChange}
         />
       ))}
     </div>

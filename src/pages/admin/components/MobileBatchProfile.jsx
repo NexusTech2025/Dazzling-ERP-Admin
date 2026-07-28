@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import ScrollableTabSegment from '../../../features/batch/components/profile/ScrollableTabSegment';
 import BatchOverviewTab from '../../../features/batch/components/profile/BatchOverviewTab';
 import BatchStudentRoster from '../../../features/batch/components/profile/BatchStudentRoster';
-import AttendanceMatrix from '../../../features/batch/components/profile/AttendanceMatrix';
+import AttendanceView from '../../../features/batch/components/profile/AttendanceView';
 import BatchTestsTab from '../../../features/batch/components/profile/BatchTestsTab';
 import ProfileHero from '../../../components/domain/ProfileHero';
 import NavHeader from '../../../components/domain/NavHeader';
@@ -123,7 +123,7 @@ const MobileBatchProfile = React.memo(({
     ),
     Attendance: (
       <div className="animate-in fade-in duration-300">
-        <AttendanceMatrix batchId={id} />
+        <AttendanceView batchId={id} />
       </div>
     ),
     Tests: (

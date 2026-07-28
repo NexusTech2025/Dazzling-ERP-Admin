@@ -4,15 +4,18 @@ import Badge from '../../../../../../components/ui/Badge';
 import Button from '../../../../../../components/ui/v2/Button';
 import { parseISO, format } from 'date-fns';
 
-export default function TestCard({
-  test,
-  studentsCount = 0,
-  onEnterMarks,
-  onViewReport,
-  onShareWhatsApp,
-  onEdit,
-  onDelete
-}) {
+const STATUS_OPTIONS = [
+  { value: 'Draft', label: 'Draft', variant: 'default' },
+  { value: 'Published', label: 'Published', variant: 'success' },
+  { value: 'Completed', label: 'Completed', variant: 'info' }
+];
+
+function TestStatusDropdown({ test, onStatusChange }) {
+  const [isOpen, setIsOpen] = React.useState(false);
+  const [isUpdating, setIsUpdating] = React.useState(false);
+
+  const currentStatus = test.status || 'Draft';
+
   const getBadgeVariant = (status) => {
     switch (status) {
       case 'Published': return 'success';
@@ -21,6 +24,88 @@ export default function TestCard({
     }
   };
 
+  const handleSelectStatus = async (newStatus) => {
+    if (newStatus === currentStatus || isUpdating) {
+      setIsOpen(false);
+      return;
+    }
+    setIsOpen(false);
+    setIsUpdating(true);
+    try {
+      if (onStatusChange) {
+        await onStatusChange(test.id || test.test_id, newStatus);
+      }
+    } catch (err) {
+      console.error('[TestStatusDropdown] Failed to update test status:', err);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  return (
+    <div className="relative inline-block text-left">
+      <button
+        type="button"
+        disabled={isUpdating}
+        onClick={() => setIsOpen(!isOpen)}
+        className={`flex items-center gap-1.5 focus:outline-none transition-all ${
+          isUpdating ? 'opacity-70 pointer-events-none' : 'hover:scale-105'
+        }`}
+      >
+        <Badge variant={getBadgeVariant(currentStatus)} className="cursor-pointer flex items-center gap-1">
+          {isUpdating ? (
+            <>
+              <span className="material-symbols-outlined text-[13px] animate-spin">progress_activity</span>
+              <span>Updating...</span>
+            </>
+          ) : (
+            <>
+              <span>{currentStatus}</span>
+              <span className="material-symbols-outlined text-[14px]">expand_more</span>
+            </>
+          )}
+        </Badge>
+      </button>
+
+      {isOpen && !isUpdating && (
+        <>
+          <div
+            className="fixed inset-0 z-30"
+            onClick={() => setIsOpen(false)}
+          />
+          <div className="absolute right-0 mt-1.5 w-36 rounded-xl bg-white dark:bg-slate-800 border border-border-light dark:border-border-dark shadow-lg z-40 py-1 text-xs font-semibold animate-in fade-in duration-150">
+            {STATUS_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => handleSelectStatus(opt.value)}
+                className={`w-full text-left px-3 py-1.5 flex items-center justify-between hover:bg-slate-100 dark:hover:bg-slate-700/60 transition-colors ${
+                  currentStatus === opt.value ? 'text-primary font-bold' : 'text-text-main dark:text-white'
+                }`}
+              >
+                <span>{opt.label}</span>
+                {currentStatus === opt.value && (
+                  <span className="material-symbols-outlined text-[14px] text-primary">check</span>
+                )}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+export default function TestCard({
+  test,
+  studentsCount = 0,
+  onEnterMarks,
+  onViewReport,
+  onShareWhatsApp,
+  onEdit,
+  onDelete,
+  onStatusChange
+}) {
   const formattedDate = React.useMemo(() => {
     if (!test.test_date) return 'N/A';
     try {
@@ -43,9 +128,10 @@ export default function TestCard({
             </p>
           )}
         </div>
-        <Badge variant={getBadgeVariant(test.status)}>
-          {test.status || 'Draft'}
-        </Badge>
+        <TestStatusDropdown
+          test={test}
+          onStatusChange={onStatusChange}
+        />
       </Card.Header>
 
       <Card.Body className="py-4">

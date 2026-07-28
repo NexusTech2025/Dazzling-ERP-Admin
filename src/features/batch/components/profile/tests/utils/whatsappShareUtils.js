@@ -140,6 +140,48 @@ export function formatTestSummaryWhatsAppMessage(test, batch, kpis = {}, toppers
 }
 
 /**
+ * Formats a WhatsApp broadcast report for the consolidated batch marksheet.
+ * @param {Object} batch - Batch entity record.
+ * @param {Object} matrixData - Calculated matrix payload output by calculateConsolidatedBatchMarksheet.
+ * @returns {string} Formatted WhatsApp Markdown broadcast message string.
+ */
+export function formatConsolidatedMarksheetWhatsAppMessage(batch = {}, matrixData = {}) {
+  const { studentRows = [], testColumns = [], batchKPIs = {} } = matrixData;
+  const batchName = batch?.batch_name || batch?.name || 'Batch';
+
+  let msg = `*📢 DAZZLING ACADEMY — CONSOLIDATED BATCH MARKSHEET REPORT*\n`;
+  msg += `*Batch:* ${batchName}\n`;
+  msg += `*Total Tests Conducted:* ${batchKPIs.totalTestsConducted || 0} | *Enrolled Students:* ${batchKPIs.totalStudents || 0}\n\n`;
+
+  msg += `*📊 Overall Batch Performance:*\n`;
+  msg += `• Class Cumulative Average: ${batchKPIs.overallClassAvg || 0}%\n`;
+  msg += `• Batch Topper: 🏆 ${batchKPIs.batchTopperName || '-'} (${batchKPIs.batchTopperScore || '0%'})\n\n`;
+
+  if (studentRows && studentRows.length > 0) {
+    msg += `*📋 Cumulative Student Rankings:*\n`;
+
+    const columns = [
+      { key: 'rank', label: 'Rank', minWidth: 4, maxWidth: 5, align: 'right' },
+      { key: 'name', label: 'Student Name', minWidth: 12, maxWidth: 18, align: 'left' },
+      { key: 'score', label: 'Marks', minWidth: 7, maxWidth: 9, align: 'right' },
+      { key: 'percentage', label: 'Percentage', minWidth: 8, maxWidth: 9, align: 'right' }
+    ];
+
+    const tableRows = studentRows.map(s => ({
+      rank: s.batchRank === 1 ? '1st' : s.batchRank === 2 ? '2nd' : s.batchRank === 3 ? '3rd' : `${s.batchRank}th`,
+      name: s.studentName,
+      score: `${s.totalObtained}/${s.totalMaxPossible}`,
+      percentage: `${s.cumulativePercentage}%`
+    }));
+
+    msg += generateAsciiTable(columns, tableRows) + `\n\n`;
+  }
+
+  msg += `_Generated via Dazzling ERP Admin_`;
+  return msg;
+}
+
+/**
  * Formats an individual student's test score card for direct parent notification.
  * @param {Object} student - Student record object.
  * @param {Object} test - Test entity record.

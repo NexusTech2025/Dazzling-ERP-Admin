@@ -6,7 +6,7 @@ import BatchDetailsCard from '../../../features/batch/components/profile/BatchDe
 import BatchUpcomingSchedule from '../../../features/batch/components/profile/BatchUpcomingSchedule';
 import BatchActivityLog from '../../../features/batch/components/profile/BatchActivityLog';
 import BatchStudentRoster from '../../../features/batch/components/profile/BatchStudentRoster';
-import AttendanceMatrix from '../../../features/batch/components/profile/AttendanceMatrix';
+import AttendanceView from '../../../features/batch/components/profile/AttendanceView';
 import BatchTestsTab from '../../../features/batch/components/profile/BatchTestsTab';
 
 const DesktopBatchProfile = React.memo(({
@@ -44,7 +44,7 @@ const DesktopBatchProfile = React.memo(({
     ),
     Attendance: (
       <div className="animate-in fade-in slide-in-from-right-4 duration-500">
-        <AttendanceMatrix batchId={id} />
+        <AttendanceView batchId={id} />
       </div>
     ),
     Schedule: (

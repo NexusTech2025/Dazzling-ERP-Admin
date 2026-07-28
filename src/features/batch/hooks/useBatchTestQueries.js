@@ -98,7 +98,10 @@ export function useCreateTestMutation() {
       return response.data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.test.byBatch(variables.batch_id) });
+      if (variables.batch_id) {
+        queryClient.invalidateQueries({ queryKey: queryKeys.test.byBatch(variables.batch_id) });
+      }
+      queryClient.invalidateQueries({ queryKey: queryKeys.test.all });
     }
   });
 }
@@ -125,13 +128,24 @@ export function useUpdateTestMutation() {
       if (!response.success) {
         throw new Error(response.message || 'Failed to update test');
       }
-      return response.data;
+      return { id, batch_id, updates, data: response.data };
     },
-    onSuccess: (_, variables) => {
+    onSuccess: (result, variables) => {
       if (variables.batch_id) {
+        // 1. Direct RAM Cache Update for 0ms Instant UI Response
+        queryClient.setQueryData(queryKeys.test.byBatch(variables.batch_id), (oldTests = []) => {
+          return oldTests.map(t => {
+            if (t.id === variables.id || t.test_id === variables.id) {
+              return { ...t, ...variables.updates, ...(result.data || {}) };
+            }
+            return t;
+          });
+        });
+
         queryClient.invalidateQueries({ queryKey: queryKeys.test.byBatch(variables.batch_id) });
       }
       queryClient.invalidateQueries({ queryKey: queryKeys.test.detail(variables.id) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.test.all });
     }
   });
 }
@@ -163,6 +177,7 @@ export function useDeleteTestMutation() {
       if (variables.batch_id) {
         queryClient.invalidateQueries({ queryKey: queryKeys.test.byBatch(variables.batch_id) });
       }
+      queryClient.invalidateQueries({ queryKey: queryKeys.test.all });
     }
   });
 }

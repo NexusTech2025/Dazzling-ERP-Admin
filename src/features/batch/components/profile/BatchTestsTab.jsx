@@ -12,10 +12,18 @@ import Button from '../../../../components/ui/v2/Button';
 import RefreshButton from '../../../../components/ui/btn/RefreshButton';
 import ResponseModal from '../../../../components/ui/ResponseModal';
 import WhatsAppShareModal from './tests/components/WhatsAppShareModal';
+import ConsolidatedMarksheetKPIs from './tests/components/ConsolidatedMarksheetKPIs';
+import ConsolidatedMarksheetTable from './tests/components/ConsolidatedMarksheetTable';
+import FlashAlert from '../../../../components/ui/v2/FlashAlert';
 import {
   formatTestSummaryWhatsAppMessage,
-  formatStudentMarksheetWhatsAppMessage
+  formatStudentMarksheetWhatsAppMessage,
+  formatConsolidatedMarksheetWhatsAppMessage
 } from './tests/utils/whatsappShareUtils';
+import {
+  exportConsolidatedMarksheetPDF,
+  shareConsolidatedMarksheetPDFToWhatsApp
+} from './tests/utils/pdfExporterUtils';
 
 import {
   useBatchTestsQuery,
@@ -27,6 +35,7 @@ import {
 } from '../../hooks/useBatchTestQueries';
 import { useBatchStudentsQuery } from '../../hooks/useBatchQueries';
 import { calculateTestReport } from './tests/utils/testCalculators';
+import { calculateConsolidatedBatchMarksheet } from './tests/utils/marksheetCalculators';
 
 export default function BatchTestsTab({ batch, batchId }) {
   const currentBatchId = batchId || batch?.id;
@@ -34,6 +43,9 @@ export default function BatchTestsTab({ batch, batchId }) {
   // View state: 'list' | 'marks_entry' | 'report'
   const [activeStage, setActiveStage] = useState('list');
   const [selectedTest, setSelectedTest] = useState(null);
+
+  // View mode switcher: 'list' | 'marksheet'
+  const [viewMode, setViewMode] = useState('list');
 
   // List filters
   const [searchQuery, setSearchQuery] = useState('');
@@ -70,6 +82,15 @@ export default function BatchTestsTab({ batch, batchId }) {
   const handleCloseWhatsAppPreviewModal = () => {
     setWhatsAppPreviewModalConfig(prev => ({ ...prev, isOpen: false }));
   };
+
+  // Flash Alert State for status responses & feedback notifications
+  const [flashAlertConfig, setFlashAlertConfig] = useState({
+    isOpen: false,
+    variant: 'success',
+    title: '',
+    description: '',
+    autoDismissMs: 3500
+  });
 
   // Bulk marks local state map: { [student_id]: { student_id, obtained_marks, is_absent, remarks } }
   const [marksState, setMarksState] = useState({});
@@ -157,6 +178,86 @@ export default function BatchTestsTab({ batch, batchId }) {
     if (!selectedTest) return null;
     return calculateTestReport(testMarksRecords, selectedTest.total_marks, selectedTest.passing_marks);
   }, [selectedTest, testMarksRecords]);
+
+  // Consolidated Batch Marksheet Calculations
+  const consolidatedMarksheetData = useMemo(() => {
+    return calculateConsolidatedBatchMarksheet(tests, students);
+  }, [tests, students]);
+
+  const handleOpenConsolidatedWhatsAppShare = () => {
+    const msg = formatConsolidatedMarksheetWhatsAppMessage(batch, consolidatedMarksheetData);
+    setWhatsAppPreviewModalConfig({
+      isOpen: true,
+      title: `Share Consolidated Marksheet: ${batch?.batch_name || 'Batch'}`,
+      message: msg,
+      phone: ''
+    });
+  };
+
+  const handleExportConsolidatedPDF = () => {
+    try {
+      exportConsolidatedMarksheetPDF(batch, consolidatedMarksheetData);
+      setFlashAlertConfig({
+        isOpen: true,
+        variant: 'success',
+        title: 'PDF Downloaded',
+        description: 'Consolidated marksheet PDF report generated successfully.',
+        autoDismissMs: 3500
+      });
+    } catch (err) {
+      console.error('[BatchTestsTab] Failed to generate PDF:', err);
+      setFlashAlertConfig({
+        isOpen: true,
+        variant: 'error',
+        title: 'PDF Generation Failed',
+        description: err.message || 'Unable to generate PDF document.',
+        autoDismissMs: 5000
+      });
+    }
+  };
+
+  const handleSharePDFWhatsApp = () => {
+    try {
+      shareConsolidatedMarksheetPDFToWhatsApp(batch, consolidatedMarksheetData, setFlashAlertConfig);
+    } catch (err) {
+      console.error('[BatchTestsTab] Failed to share PDF to WhatsApp:', err);
+      setFlashAlertConfig({
+        isOpen: true,
+        variant: 'error',
+        title: 'Share Failed',
+        description: err.message || 'Unable to share PDF document.',
+        autoDismissMs: 5000
+      });
+    }
+  };
+
+  // Handle direct status change from TestCard dropdown with FlashAlert feedback
+  const handleStatusChange = async (testId, newStatus) => {
+    try {
+      await updateTestMutation.mutateAsync({
+        id: testId,
+        batch_id: currentBatchId,
+        status: newStatus
+      });
+
+      setFlashAlertConfig({
+        isOpen: true,
+        variant: 'success',
+        title: 'Test Status Updated',
+        description: `Test status successfully changed to "${newStatus}".`,
+        autoDismissMs: 3500
+      });
+    } catch (err) {
+      console.error('[BatchTestsTab] Failed to update test status:', err);
+      setFlashAlertConfig({
+        isOpen: true,
+        variant: 'error',
+        title: 'Status Update Failed',
+        description: err.message || 'Unable to update test status on backend database.',
+        autoDismissMs: 5000
+      });
+    }
+  };
 
   // Actions
   const handleCreateOpen = () => {
@@ -469,7 +570,7 @@ export default function BatchTestsTab({ batch, batchId }) {
     );
   }
 
-  // Stage 1: Tests List View (Default)
+  // Stage 1: Tests View (Default)
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       <TestsToolbar
@@ -480,18 +581,37 @@ export default function BatchTestsTab({ batch, batchId }) {
         onCreateClick={handleCreateOpen}
         onRefresh={handleRefresh}
         isRefreshing={isRefreshing}
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
       />
 
-      <TestsList
-        tests={filteredTests}
-        isLoading={isTestsLoading}
-        studentsCount={students.length}
-        onEnterMarks={handleEnterMarksOpen}
-        onViewReport={handleViewReportOpen}
-        onShareWhatsApp={handleOpenTestWhatsAppShare}
-        onEdit={handleEditOpen}
-        onDelete={(test) => setDeleteTarget(test)}
-      />
+      {viewMode === 'marksheet' ? (
+        <>
+          <ConsolidatedMarksheetKPIs
+            batchKPIs={consolidatedMarksheetData.batchKPIs}
+          />
+          <ConsolidatedMarksheetTable
+            studentRows={consolidatedMarksheetData.studentRows}
+            testColumns={consolidatedMarksheetData.testColumns}
+            isLoading={isTestsLoading}
+            onShareWhatsApp={handleOpenConsolidatedWhatsAppShare}
+            onExportPDF={handleExportConsolidatedPDF}
+            onSharePDFWhatsApp={handleSharePDFWhatsApp}
+          />
+        </>
+      ) : (
+        <TestsList
+          tests={filteredTests}
+          isLoading={isTestsLoading}
+          studentsCount={students.length}
+          onEnterMarks={handleEnterMarksOpen}
+          onViewReport={handleViewReportOpen}
+          onShareWhatsApp={handleOpenTestWhatsAppShare}
+          onEdit={handleEditOpen}
+          onDelete={(test) => setDeleteTarget(test)}
+          onStatusChange={handleStatusChange}
+        />
+      )}
 
       <TestFormModal
         isOpen={isModalOpen}
@@ -530,6 +650,18 @@ export default function BatchTestsTab({ batch, batchId }) {
         message={whatsAppPreviewModalConfig.message}
         phone={whatsAppPreviewModalConfig.phone}
       />
+
+      {/* Floating Top-Right FlashAlert Toast Container */}
+      <div className="fixed top-20 right-6 z-50 pointer-events-auto">
+        <FlashAlert
+          isOpen={flashAlertConfig.isOpen}
+          variant={flashAlertConfig.variant}
+          title={flashAlertConfig.title}
+          description={flashAlertConfig.description}
+          autoDismissMs={flashAlertConfig.autoDismissMs}
+          onClose={() => setFlashAlertConfig(prev => ({ ...prev, isOpen: false }))}
+        />
+      </div>
     </div>
   );
 }
