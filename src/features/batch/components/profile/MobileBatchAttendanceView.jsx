@@ -111,6 +111,7 @@ export const MobileBatchAttendanceView = ({
                 <StatusCell
                   studentId={row.student_id}
                   status={row.status}
+                  student={row}
                   updateStageField={updateStageField}
                 />
               </div>
