@@ -33,16 +33,17 @@ Update the active branch object inside `git_branches.json` with:
 - **`purpose`**: Short description of the feature or bugfix scope.
 - **`status`**: State enum: `active` | `in_progress` | `ready_for_merge` | `merged` | `stale`.
 
-### Step 3: Compute Branch Lifecycle Recommendations
+### Step 3: Compute Branch Lifecycle Recommendations & Merged Verification
 
-Evaluate the branch state against these rules and generate actionable recommendations:
+Evaluate all tracked branch states against Git upstream status (`git branch --merged main`) and apply the standardized visual badge matrix:
 
-| Branch Condition | Status Assessment | Actionable Recommendation |
-| :--- | :--- | :--- |
-| `working_tree_clean` is `true` AND all feature goals committed | **`ready_for_merge`** | 🟢 **Ready for Merge / PR**: All changes committed. Suggest merging into `main` and closing the branch (`git checkout main && git merge <branch> && git branch -d <branch>`). |
-| `uncommitted_changes_count` > 0 | **`in_progress`** | 🟡 **Active Work in Progress**: Staged/unstaged changes exist. Suggest staging & committing before switching branches. |
-| Branch inactive for > 7 days OR commit merged into `main` | **`stale`** / **`merged`** | 🔴 **Ready for Pruning**: Branch has been merged upstream or abandoned. Suggest deleting local branch (`git branch -d <branch>`). |
-| User editing files outside current branch's declared `purpose` | **Scope Expansion** | 🔵 **New Branch Suggested**: Suggest stashing/committing current work and creating a new feature branch (`git checkout -b feature/<new-scope>`). |
+| Status Enum | Badge & Emoji | Condition & Criteria | Actionable Lifecycle Recommendation |
+| :--- | :---: | :--- | :--- |
+| **`merged`** | 🔵 **Blue** | Commits are merged upstream into `main` / parent branch. | 🔵 **Merged Upstream**: Branch merged into `main`. Safe to delete locally (`git branch -d <branch>`). |
+| **`ready_for_merge`** | 🟢 **Green** | `working_tree_clean` is `true` AND commits exist ahead of parent. | 🟢 **Ready for Merge / PR**: All changes committed and tree clean. Merge into `main` and delete branch. |
+| **`in_progress`** | 🟡 **Orange** | `uncommitted_changes_count` > 0 (modified or untracked files). | 🟡 **Active Work in Progress**: Staged/unstaged changes exist. Commit or stash before switching branches. |
+| **`active`** | ⚪ **Grey** | `working_tree_clean` is `true` with zero new commits ahead yet. | ⚪ **Clean & Ready**: Fresh branch with clean working tree. Ready for active development. |
+| **`stale`** | 🔴 **Red** | Inactive for > 14 days or out of sync with base branch. | 🔴 **Stale / Outdated**: Branch is out of sync with `main`. Consider syncing or deleting. |
 
 ### Step 4: Present Structured Report to User
 Output a clean, Github-formatted report containing:

@@ -40,6 +40,12 @@ function updateBranchStatus() {
     }
   }
 
+  // Query merged branches against main
+  const mergedOutput = runCmd('git branch --merged main');
+  const mergedBranchesList = mergedOutput
+    ? mergedOutput.split('\n').map(b => b.replace(/^\*?\s*/, '').trim()).filter(Boolean)
+    : [];
+
   // Update active branch metadata
   memoryStore.active_branch = currentBranch;
   memoryStore.updated_at = new Date().toISOString();
@@ -54,7 +60,7 @@ function updateBranchStatus() {
   const logOutput = runCmd(logCmd);
   const recentCommits = logOutput ? logOutput.split('\n').filter(Boolean) : [];
 
-  // Determine branch status & lifecycle recommendation
+  // Determine branch status & lifecycle recommendation for active branch
   let status = 'active';
   let recommendation = '';
 
@@ -64,7 +70,7 @@ function updateBranchStatus() {
       recommendation = `🟢 Ready for Merge / PR: All recent work is committed and working tree is clean. Consider merging into main.`;
     } else {
       status = 'active';
-      recommendation = `ℹ️ Clean working tree with no commits yet. Ready for development.`;
+      recommendation = `⚪ Clean & Ready: Clean working tree with no pending commits yet. Ready for active development.`;
     }
   } else {
     status = 'in_progress';
@@ -84,6 +90,15 @@ function updateBranchStatus() {
     commits_summary: recentCommits,
     recommendation
   };
+
+  // Re-evalute merged status for tracked non-active, non-main branches
+  Object.keys(memoryStore.branches).forEach(bName => {
+    if (bName !== 'main' && bName !== currentBranch && mergedBranchesList.includes(bName)) {
+      memoryStore.branches[bName].status = 'merged';
+      memoryStore.branches[bName].working_tree_clean = true;
+      memoryStore.branches[bName].recommendation = `🔵 Merged Upstream: This branch has been merged upstream into main. Safe to delete locally using 'git branch -d ${bName}'.`;
+    }
+  });
 
   // Write back to memory store
   fs.writeFileSync(MEMORY_FILE, JSON.stringify(memoryStore, null, 2), 'utf8');

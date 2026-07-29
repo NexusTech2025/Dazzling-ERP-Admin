@@ -9,6 +9,7 @@ import Button from '../../../../components/ui/v2/Button';
 import KpiGrid from '../../../../components/ui/v2/KpiGrid';
 import KpiCard from '../../../../components/ui/v2/KpiCard';
 import DataTable from '../../../../components/ui/DataTable';
+import ConfirmModal from '../../../../components/ui/ConfirmModal';
 
 const ATTENDANCE_CONFIG = [
   { label: 'P', value: 'P', activeClass: 'bg-emerald-500 text-white shadow-emerald-500/20' },
@@ -18,6 +19,7 @@ const ATTENDANCE_CONFIG = [
 
 /**
  * RemarksInput: Memoized component for Remarks input cell to prevent keystroke lag.
+ * Updates local state and propagates object staging payload on every change to eliminate save race conditions.
  */
 const RemarksInput = React.memo(({ student, onChange }) => {
   const [localRemarks, setLocalRemarks] = useState(student.remarks || '');
@@ -25,6 +27,12 @@ const RemarksInput = React.memo(({ student, onChange }) => {
   React.useEffect(() => {
     setLocalRemarks(student.remarks || '');
   }, [student.remarks]);
+
+  const handleChange = (e) => {
+    const val = e.target.value;
+    setLocalRemarks(val);
+    onChange(student.student_id, val);
+  };
 
   const handleBlur = () => {
     if (localRemarks !== student.remarks) {
@@ -37,7 +45,7 @@ const RemarksInput = React.memo(({ student, onChange }) => {
       type="text"
       value={localRemarks}
       placeholder="e.g. Doctor appointment, late check-in"
-      onChange={(e) => setLocalRemarks(e.target.value)}
+      onChange={handleChange}
       onBlur={handleBlur}
       className="w-full bg-white dark:bg-[#0a1420] border border-border-light dark:border-white/8 rounded-lg px-3 py-1.5 text-xs text-text-main dark:text-white placeholder-slate-400 dark:placeholder-slate-600 outline-none focus:border-indigo-500 transition-all"
     />
@@ -52,12 +60,30 @@ RemarksInput.propTypes = {
 RemarksInput.displayName = 'RemarksInput';
 
 /**
- * StatusCell: Memoized cell wrapper for StateSelector to avoid recreation of handler references.
+ * StatusCell: Memoized cell wrapper for StateSelector using object payload staging.
+ * Auto-injects default punch times when toggling to Present/Leave from Absent/NR.
  */
-export const StatusCell = React.memo(({ studentId, status, updateStageField }) => {
-  const handleChange = useCallback((val) => {
-    updateStageField(studentId, 'status', val);
-  }, [studentId, updateStageField]);
+export const StatusCell = React.memo(({ studentId, status, student = {}, updateStageField }) => {
+  const handleChange = useCallback((newStatus) => {
+    const entryTime = student?.entry_time || null;
+    const exitTime = student?.exit_time || null;
+
+    if ((newStatus === 'P' || newStatus === 'L') && (!entryTime || !exitTime)) {
+      updateStageField(studentId, {
+        status: newStatus,
+        entry_time: entryTime || '08:00',
+        exit_time: exitTime || '13:00'
+      });
+    } else if (newStatus === 'A') {
+      updateStageField(studentId, {
+        status: 'A',
+        entry_time: null,
+        exit_time: null
+      });
+    } else {
+      updateStageField(studentId, { status: newStatus });
+    }
+  }, [studentId, student, updateStageField]);
 
   return (
     <StateSelector
@@ -71,17 +97,18 @@ export const StatusCell = React.memo(({ studentId, status, updateStageField }) =
 StatusCell.propTypes = {
   studentId: PropTypes.string.isRequired,
   status: PropTypes.string.isRequired,
+  student: PropTypes.object.isRequired,
   updateStageField: PropTypes.func.isRequired
 };
 
 StatusCell.displayName = 'StatusCell';
 
 /**
- * TimeCell: Memoized cell wrapper for TimeFieldInput to avoid recreation of handler references.
+ * TimeCell: Memoized cell wrapper for TimeFieldInput using object payload staging.
  */
 const TimeCell = React.memo(({ studentId, field, value, disabled, updateStageField }) => {
   const handleChange = useCallback((val) => {
-    updateStageField(studentId, field, val);
+    updateStageField(studentId, { [field]: val });
   }, [studentId, field, updateStageField]);
 
   return (
@@ -97,7 +124,7 @@ const TimeCell = React.memo(({ studentId, field, value, disabled, updateStageFie
 TimeCell.propTypes = {
   studentId: PropTypes.string.isRequired,
   field: PropTypes.string.isRequired,
-  value: PropTypes.string.isRequired,
+  value: PropTypes.string,
   disabled: PropTypes.bool.isRequired,
   updateStageField: PropTypes.func.isRequired
 };
@@ -143,6 +170,8 @@ const AttendanceRegisterView = ({ batchId }) => {
   const isMobile = useIsMobile(768);
   const [activeMobileEditingRowId, setActiveMobileEditingRowId] = useState(null);
   const [selectedDate, setSelectedDate] = useState(() => new Date().toLocaleDateString('sv-SE'));
+  const [pendingDate, setPendingDate] = useState(null);
+  const [showDateConfirmModal, setShowDateConfirmModal] = useState(false);
 
   // 1. Consume the Consolidated State Selector Hook
   const {
@@ -162,16 +191,39 @@ const AttendanceRegisterView = ({ batchId }) => {
   const handleMarkAllPresent = useCallback(() => {
     studentsList.forEach(rec => {
       if (rec.status !== 'P') {
-        updateStageField(rec.student_id, 'status', 'P');
+        updateStageField(rec.student_id, {
+          status: 'P',
+          entry_time: rec.entry_time || '08:00',
+          exit_time: rec.exit_time || '13:00'
+        });
       }
     });
   }, [studentsList, updateStageField]);
 
-  // Wipes staging buffer on calendar date changes
+  // Intercepts date changes when unsaved edits exist in staging workspace
   const handleDateChange = useCallback((newDateStr) => {
+    if (isDirty) {
+      setPendingDate(newDateStr);
+      setShowDateConfirmModal(true);
+      return;
+    }
     handleReset();
     setSelectedDate(newDateStr);
-  }, [handleReset, setSelectedDate]);
+  }, [isDirty, handleReset, setSelectedDate]);
+
+  const handleConfirmDateSwitch = useCallback(() => {
+    if (pendingDate) {
+      handleReset();
+      setSelectedDate(pendingDate);
+    }
+    setShowDateConfirmModal(false);
+    setPendingDate(null);
+  }, [pendingDate, handleReset, setSelectedDate]);
+
+  const handleCancelDateSwitch = useCallback(() => {
+    setShowDateConfirmModal(false);
+    setPendingDate(null);
+  }, []);
 
   // DataTable column configurations
   const columns = useMemo(() => [
@@ -197,6 +249,7 @@ const AttendanceRegisterView = ({ batchId }) => {
         <StatusCell
           studentId={row.student_id}
           status={row.status}
+          student={row}
           updateStageField={updateStageField}
         />
       )
@@ -236,7 +289,7 @@ const AttendanceRegisterView = ({ batchId }) => {
       render: (row) => (
         <RemarksInput
           student={row}
-          onChange={(id, val) => updateStageField(id, 'remarks', val)}
+          onChange={(id, val) => updateStageField(id, { remarks: val })}
         />
       )
     },
@@ -279,8 +332,8 @@ const AttendanceRegisterView = ({ batchId }) => {
         activeMobileEditingRowId={activeMobileEditingRowId}
         setActiveMobileEditingRowId={setActiveMobileEditingRowId}
         activeMobileEditingRow={activeMobileEditingRow}
-        onTimeChange={updateStageField}
-        onRemarksChange={(id, val) => updateStageField(id, 'remarks', val)}
+        onTimeChange={(id, field, val) => updateStageField(id, { [field]: val })}
+        onRemarksChange={(id, val) => updateStageField(id, { remarks: val })}
         onBack={() => window.history.back()}
       />
     );
@@ -399,6 +452,17 @@ const AttendanceRegisterView = ({ batchId }) => {
             </div>
           </div>
         )}
+
+        {/* Confirm Modal for Date Switching Guard */}
+        <ConfirmModal
+          isOpen={showDateConfirmModal}
+          onClose={handleCancelDateSwitch}
+          onConfirm={handleConfirmDateSwitch}
+          title="Unsaved Staged Edits"
+          message="You have unsaved attendance edits in your workspace for this date. Switching dates will discard all uncommitted changes. Do you want to proceed?"
+          confirmText="Discard & Switch Date"
+          cancelText="Keep Editing"
+        />
 
       </div>
     </div>

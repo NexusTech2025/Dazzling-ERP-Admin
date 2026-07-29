@@ -33,17 +33,25 @@ export const ATTENDANCE_DOMAINS = {
         },
         transformPayload: (rawUpdates, filterState, roster) => {
             const { selectedBatchId, selectedDate, commitMode = 'delta' } = filterState;
-            const records = rawUpdates.map(update => {
-                const consolidatedRow = roster.find(r => r.id === update.id) || {};
-                const isAbsent = consolidatedRow.status === 'A' || consolidatedRow.status === 'NR';
-                return {
-                    student_id: update.id,
-                    status: consolidatedRow.status === 'NR' ? null : consolidatedRow.status,
-                    entry_time: isAbsent ? null : parseTimeToStructured(consolidatedRow.entry_time),
-                    exit_time: isAbsent ? null : parseTimeToStructured(consolidatedRow.exit_time),
-                    remarks: consolidatedRow.remarks || null
-                };
-            });
+            const records = rawUpdates
+                .map(update => {
+                    const consolidatedRow = roster.find(r => r.id === update.id) || {};
+                    const status = consolidatedRow.status;
+
+                    // Omit unmarked ('NR') students from payload records
+                    if (!status || status === 'NR') return null;
+
+                    const isAbsent = status === 'A';
+                    return {
+                        student_id: update.id,
+                        status: status,
+                        entry_time: isAbsent ? null : parseTimeToStructured(consolidatedRow.entry_time),
+                        exit_time: isAbsent ? null : parseTimeToStructured(consolidatedRow.exit_time),
+                        remarks: consolidatedRow.remarks || null
+                    };
+                })
+                .filter(Boolean);
+
             return {
                 batch_id: selectedBatchId,
                 attendance_date: selectedDate,
