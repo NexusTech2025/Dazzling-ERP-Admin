@@ -45,6 +45,7 @@ import FinanceDashboard from '../features/finance/FinanceDashboard';
 import Installments from '../features/finance/Installments';
 import FeePlanWizard from '../features/finance/FeePlanWizard';
 import MoneyTransactions from '../features/finance/transactions/MoneyTransactions';
+import RescheduleInstallmentsView from '../features/finance/RescheduleInstallmentsView';
 
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated } = useAuth();
@@ -127,6 +128,8 @@ const AppRoutes = () => {
         {/* Finance Management */}
         <Route path="finance" element={<FinanceDashboard />} />
         <Route path="finance/installments" element={<Installments />} />
+        <Route path="finance/reschedule" element={<RescheduleInstallmentsView />} />
+        <Route path="finance/reschedule/:id" element={<RescheduleInstallmentsView />} />
         <Route path="finance/fee-plan" element={<FeePlanWizard />} />
         <Route path="finance/transactions" element={<MoneyTransactions />} />
 
