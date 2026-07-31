@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../../context/AuthContextCore';
 import { queryKeys } from '../../../lib/react-query/queryKeys';
@@ -87,20 +88,19 @@ export const useOverdueAccountsQuery = (filter = {}) => {
  * Hook for fetching individual student fee overview
  */
 export const useStudentFeeOverviewQuery = (studentId) => {
-  const { token } = useAuth();
+  const { data: accountingData, isLoading, error } = useAccountingDataQuery();
 
-  return useQuery({
-    queryKey: queryKeys.finance.installment.student(studentId),
-    queryFn: async ({ signal }) => {
-      const response = await fetchStudentFeeOverview(token, studentId, { signal });
-      if (!response.success) {
-        throw new Error(response.error?.message || response.message || 'Failed to fetch student fee overview');
-      }
-      return response.data?.data || []; // Note: changed from response.data to response.data.data based on mock structure
-    },
-    enabled: !!token && !!studentId,
-    staleTime: 1000 * 60 * 10, // 10 minutes
-  });
+  const studentInstallments = useMemo(() => {
+    if (!accountingData || !studentId) return [];
+    const installments = accountingData.installments || Array.isArray(accountingData) ? accountingData : [];
+    return Array.isArray(installments) ? installments.filter(inst => inst && (inst.student_id === studentId || inst.studentId === studentId)) : [];
+  }, [accountingData, studentId]);
+
+  return {
+    data: studentInstallments,
+    isLoading,
+    error
+  };
 };
 
 /**

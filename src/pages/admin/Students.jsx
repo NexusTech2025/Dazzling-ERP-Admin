@@ -18,11 +18,30 @@ import useSelection from '../../hooks/useSelection';
 import useDeleteManyMutation from '../../hooks/useDeleteManyMutation';
 import SelectionActionBar from '../../components/ui/v2/SelectionActionBar';
 import { API_REGISTRY } from '../../services/apiRegistry';
+import useIsMobile from '../../hooks/useIsMobile';
+import { EMPTY_FILTER } from '../../lib/react-query/queryKeys';
+
+/**
+ * Helper to evaluate if the student list needs relational hydration (allocations / enrollments).
+ */
+function isStudentListIncomplete(studentsList) {
+  if (!Array.isArray(studentsList) || studentsList.length === 0) return false;
+  const sample = studentsList[0];
+  const hasAllocations = (Array.isArray(sample.allocations) && sample.allocations.length > 0) || (Array.isArray(sample.BatchAllocation) && sample.BatchAllocation.length > 0);
+  const hasEnrollments = Array.isArray(sample.enrollments) && sample.enrollments.length > 0;
+  return !hasAllocations && !hasEnrollments;
+}
 
 const Students = () => {
   const { token } = useAuth();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
+
+  // Conditional Hydration State
+  const [needsRefetch, setNeedsRefetch] = useState(false);
+  const hasRefetchedRef = React.useRef(false);
+  const wasFetchingRef = React.useRef(false);
 
   // Modal State
   const [deleteModal, setDeleteModal] = useState({
@@ -41,8 +60,32 @@ const Students = () => {
   const [blockedParentId, setBlockedParentId] = useState('');
   const [blockedParentName, setBlockedParentName] = useState('');
 
-  // 1. Fetch raw data from server
-  const { data: students = [], isLoading, isFetching, error } = useStudentsQuery();
+  // 1. Fetch data with conditional forceRefetch
+  const { data: students = [], isLoading, isFetching, error } = useStudentsQuery(undefined, {
+    forceRefetch: needsRefetch
+  });
+
+  // Detect incomplete hydration and trigger single imperative refetch
+  React.useEffect(() => {
+    if (hasRefetchedRef.current || needsRefetch || isFetching) return;
+    if (isStudentListIncomplete(students)) {
+      console.log('🔄 [Students] Incomplete student list hydration detected — setting forceRefetch = true');
+      hasRefetchedRef.current = true;
+      queryClient.invalidateQueries({ queryKey: queryKeys.student.list(EMPTY_FILTER) });
+      setNeedsRefetch(true);
+    }
+  }, [students, needsRefetch, isFetching, queryClient]);
+
+  // Reset refetch flag after fetch completes
+  React.useEffect(() => {
+    if (isFetching) {
+      wasFetchingRef.current = true;
+    } else if (needsRefetch && wasFetchingRef.current) {
+      console.log('✅ [Students] List hydration settled — resetting forceRefetch');
+      setNeedsRefetch(false);
+      wasFetchingRef.current = false;
+    }
+  }, [needsRefetch, isFetching]);
   const updateMutation = useUpdateStudentMutation();
 
   const {
@@ -284,85 +327,16 @@ const Students = () => {
 
   return (
     <>
-      {/* Mobile Viewport Layout */}
-      <div className="md:hidden flex flex-col gap-6 animate-in fade-in duration-300 px-2 pt-6 pb-24">
-        {/* Header Block */}
-        <div className="flex flex-col gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-text-main dark:text-white">Student Directory</h1>
-            <p className="text-xs text-text-secondary">Manage student enrollment and academic records</p>
-          </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <RefreshButton
-              isFetching={isFetching}
-              onRefresh={() => queryClient.invalidateQueries({ queryKey: queryKeys.student.all })}
-            />
-            <button className="flex items-center gap-2 rounded-lg border border-border-light dark:border-border-dark bg-surface-light dark:bg-surface-dark px-4 py-2 text-sm font-medium text-text-main dark:text-white hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-              <span className="material-symbols-outlined text-lg">download</span>
-              Export
-            </button>
-            <Link to="/admin/students/add" className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary-dark transition-colors ml-auto">
-              <span className="material-symbols-outlined text-lg">add</span>
-              Add Student
-            </Link>
-          </div>
-        </div>
-
-        {/* Filters Block */}
-        {filters && (
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-4 rounded-xl border border-border-light dark:border-border-dark bg-surface-light dark:bg-surface-dark p-4 shadow-sm">
-            {filters}
-          </div>
-        )}
-
-        {/* Loading/Error/List Block */}
-        {isLoading ? (
-          <div className="py-20 text-center">
-            <span className="size-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin inline-block"></span>
-            <p className="text-xs text-text-secondary mt-2">Loading students...</p>
-          </div>
-        ) : error ? (
-          <div className="py-10 text-center bg-rose-50 dark:bg-rose-900/10 rounded-xl border border-rose-100 dark:border-rose-900/20 text-rose-600">
-            <p className="text-sm font-bold">{error.message || 'Failed to load student data'}</p>
-            <button onClick={() => queryClient.invalidateQueries({ queryKey: queryKeys.student.all })} className="text-xs text-primary font-bold underline mt-2">
-              Retry
-            </button>
-          </div>
-        ) : filteredStudents.length === 0 ? (
-          <div className="py-20 text-center border-2 border-dashed border-border-light dark:border-border-dark rounded-xl bg-surface-light dark:bg-surface-dark">
-            <span className="material-symbols-outlined text-text-secondary/20 text-5xl mb-2">person_off</span>
-            <p className="text-sm font-bold text-text-main dark:text-white">No students found matching your filters.</p>
-          </div>
-        ) : (
-          <StudentsMobileView
-            students={filteredStudents}
-            selectedIds={selectedIds}
-            onSelectRow={toggleSelect}
-            handlers={handlers}
-          />
-        )}
-      </div>
-
-      {/* Desktop view */}
-      <div className="hidden md:block">
-        <DataTable
-          title="Student Directory"
-          subtitle="Manage student enrollment and academic records"
-          columns={columns}
-          data={filteredStudents}
-          isLoading={isLoading}
-          error={error}
-          onRetry={() => queryClient.invalidateQueries({ queryKey: queryKeys.student.all })}
-          emptyMessage="No students found matching your filters."
-          filters={filters}
-          primaryAction={
-            <Link to="/admin/students/add" className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary-dark transition-colors">
-              <span className="material-symbols-outlined text-lg">add</span>
-              Add Student
-            </Link>
-          }
-          secondaryAction={
-            <>
+      {isMobile ? (
+        /* Mobile Viewport Layout */
+        <div className="flex flex-col gap-6 animate-in fade-in duration-300 px-2 pt-6 pb-24">
+          {/* Header Block */}
+          <div className="flex flex-col gap-4">
+            <div>
+              <h1 className="text-2xl font-bold text-text-main dark:text-white">Student Directory</h1>
+              <p className="text-xs text-text-secondary">Manage student enrollment and academic records</p>
+            </div>
+            <div className="flex items-center gap-2 flex-wrap">
               <RefreshButton
                 isFetching={isFetching}
                 onRefresh={() => queryClient.invalidateQueries({ queryKey: queryKeys.student.all })}
@@ -371,10 +345,81 @@ const Students = () => {
                 <span className="material-symbols-outlined text-lg">download</span>
                 Export
               </button>
-            </>
-          }
-        />
-      </div>
+              <Link to="/admin/students/add" className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary-dark transition-colors ml-auto">
+                <span className="material-symbols-outlined text-lg">add</span>
+                Add Student
+              </Link>
+            </div>
+          </div>
+
+          {/* Filters Block */}
+          {filters && (
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-4 rounded-xl border border-border-light dark:border-border-dark bg-surface-light dark:bg-surface-dark p-4 shadow-sm">
+              {filters}
+            </div>
+          )}
+
+          {/* Loading/Error/List Block */}
+          {isLoading ? (
+            <div className="py-20 text-center">
+              <span className="size-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin inline-block"></span>
+              <p className="text-xs text-text-secondary mt-2">Loading students...</p>
+            </div>
+          ) : error ? (
+            <div className="py-10 text-center bg-rose-50 dark:bg-rose-900/10 rounded-xl border border-rose-100 dark:border-rose-900/20 text-rose-600">
+              <p className="text-sm font-bold">{error.message || 'Failed to load student data'}</p>
+              <button onClick={() => queryClient.invalidateQueries({ queryKey: queryKeys.student.all })} className="text-xs text-primary font-bold underline mt-2">
+                Retry
+              </button>
+            </div>
+          ) : filteredStudents.length === 0 ? (
+            <div className="py-20 text-center border-2 border-dashed border-border-light dark:border-border-dark rounded-xl bg-surface-light dark:bg-surface-dark">
+              <span className="material-symbols-outlined text-text-secondary/20 text-5xl mb-2">person_off</span>
+              <p className="text-sm font-bold text-text-main dark:text-white">No students found matching your filters.</p>
+            </div>
+          ) : (
+            <StudentsMobileView
+              students={filteredStudents}
+              selectedIds={selectedIds}
+              onSelectRow={toggleSelect}
+              handlers={handlers}
+            />
+          )}
+        </div>
+      ) : (
+        /* Desktop view */
+        <div>
+          <DataTable
+            title="Student Directory"
+            subtitle="Manage student enrollment and academic records"
+            columns={columns}
+            data={filteredStudents}
+            isLoading={isLoading}
+            error={error}
+            onRetry={() => queryClient.invalidateQueries({ queryKey: queryKeys.student.all })}
+            emptyMessage="No students found matching your filters."
+            filters={filters}
+            primaryAction={
+              <Link to="/admin/students/add" className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary-dark transition-colors">
+                <span className="material-symbols-outlined text-lg">add</span>
+                Add Student
+              </Link>
+            }
+            secondaryAction={
+              <>
+                <RefreshButton
+                  isFetching={isFetching}
+                  onRefresh={() => queryClient.invalidateQueries({ queryKey: queryKeys.student.all })}
+                />
+                <button className="flex items-center gap-2 rounded-lg border border-border-light dark:border-border-dark bg-surface-light dark:bg-surface-dark px-4 py-2 text-sm font-medium text-text-main dark:text-white hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                  <span className="material-symbols-outlined text-lg">download</span>
+                  Export
+                </button>
+              </>
+            }
+          />
+        </div>
+      )}
 
       {/* Floating Selection Action Bar */}
       <SelectionActionBar
@@ -404,49 +449,57 @@ const Students = () => {
         }}
       />
 
-      <ConfirmModal
-        isOpen={deleteModal.isOpen}
-        onClose={handleCloseModal}
-        onConfirm={handleConfirmDelete}
-        status={deleteModal.status}
-        resultMessage={deleteModal.resultMessage}
-        title={deleteModal.type === 'bulk_student' ? 'Delete Multiple Students' : 'Delete Student'}
-        message={
-          deleteModal.type === 'bulk_student'
-            ? `Are you sure you want to permanently delete ${deleteModal.name}? This will cascadingly delete associated addresses, contacts, and education records. This action cannot be undone.`
-            : `Are you sure you want to permanently delete ${deleteModal.name}? This action cannot be undone.`
-        }
-        isProcessing={deleteModal.type === 'bulk_student' ? deleteManyStudentsMutation.isPending : deleteMutation.isPending}
-      />
+      {deleteModal.isOpen && (
+        <ConfirmModal
+          isOpen={deleteModal.isOpen}
+          onClose={handleCloseModal}
+          onConfirm={handleConfirmDelete}
+          status={deleteModal.status}
+          resultMessage={deleteModal.resultMessage}
+          title={deleteModal.type === 'bulk_student' ? 'Delete Multiple Students' : 'Delete Student'}
+          message={
+            deleteModal.type === 'bulk_student'
+              ? `Are you sure you want to permanently delete ${deleteModal.name}? This will cascadingly delete associated addresses, contacts, and education records. This action cannot be undone.`
+              : `Are you sure you want to permanently delete ${deleteModal.name}? This action cannot be undone.`
+          }
+          isProcessing={deleteModal.type === 'bulk_student' ? deleteManyStudentsMutation.isPending : deleteMutation.isPending}
+        />
+      )}
 
-      <StudentDetailModal
-        isOpen={!!selectedStudentForView}
-        onClose={() => setSelectedStudentForView(null)}
-        student={selectedStudentForView}
-      />
+      {selectedStudentForView && (
+        <StudentDetailModal
+          isOpen={!!selectedStudentForView}
+          onClose={() => setSelectedStudentForView(null)}
+          student={selectedStudentForView}
+        />
+      )}
 
-      <StudentEditModal
-        isOpen={!!selectedStudentForEdit}
-        onClose={() => setSelectedStudentForEdit(null)}
-        student={selectedStudentForEdit}
-        onSave={handleSaveStudent}
-      />
+      {selectedStudentForEdit && (
+        <StudentEditModal
+          isOpen={!!selectedStudentForEdit}
+          onClose={() => setSelectedStudentForEdit(null)}
+          student={selectedStudentForEdit}
+          onSave={handleSaveStudent}
+        />
+      )}
 
-      <DeleteDependencyModal
-        isOpen={isDependencyModalOpen}
-        onClose={() => {
-          setIsDependencyModalOpen(false);
-          setDependencyViolations([]);
-        }}
-        errorPayload={dependencyViolations}
-        parentId={blockedParentId}
-        parentName={blockedParentName}
-        onResolve={() => {
-          setIsDependencyModalOpen(false);
-          setDependencyViolations([]);
-          navigate('/admin/finance');
-        }}
-      />
+      {isDependencyModalOpen && (
+        <DeleteDependencyModal
+          isOpen={isDependencyModalOpen}
+          onClose={() => {
+            setIsDependencyModalOpen(false);
+            setDependencyViolations([]);
+          }}
+          errorPayload={dependencyViolations}
+          parentId={blockedParentId}
+          parentName={blockedParentName}
+          onResolve={() => {
+            setIsDependencyModalOpen(false);
+            setDependencyViolations([]);
+            navigate('/admin/finance');
+          }}
+        />
+      )}
     </>
   );
 };

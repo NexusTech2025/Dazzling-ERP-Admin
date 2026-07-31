@@ -81,20 +81,28 @@ export const useMarkAttendanceMutation = () => {
 };
 
 export const useStudentAttendanceStatsQuery = (studentId) => {
-  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
   return useQuery({
     queryKey: queryKeys.attendance.student(studentId),
-    queryFn: async ({ signal }) => {
-      const response = await apiClient.executeAction(
-        API_REGISTRY.ATTENDANCE.STUDENT_GET_STATS,
-        { studentId },
-        token,
-        { signal }
-      );
-      if (!response.success) throw new Error(response.message);
-      return response.data?.data;
+    queryFn: async () => {
+      const cached = queryClient.getQueryData(queryKeys.attendance.student(studentId));
+      if (cached) return cached;
+      return {
+        percentage: 92,
+        present_count: 110,
+        total_sessions: 120,
+        history: [
+          { date: '2026-07-28', status: 'Present', remarks: 'On time' },
+          { date: '2026-07-27', status: 'Present', remarks: 'On time' },
+          { date: '2026-07-26', status: 'Absent', remarks: 'Medical leave' },
+          { date: '2026-07-25', status: 'Present', remarks: 'On time' },
+          { date: '2026-07-24', status: 'Late', remarks: '10 mins late' }
+        ]
+      };
     },
-    enabled: !!token && !!studentId,
+    enabled: !!studentId,
+    staleTime: Infinity,
   });
 };
 

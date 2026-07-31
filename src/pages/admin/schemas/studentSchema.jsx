@@ -1,5 +1,6 @@
 import React from 'react';
 import { ProfileCell, BadgeCell, ActionCell } from '../../../components/ui/table/cells';
+import Badge from '../../../components/ui/Badge';
 
 /**
  * Creates the column schema for the Student table.
@@ -29,9 +30,37 @@ export const createStudentColumns = ({ onView, onEdit, onDelete, isDeleting } = 
       className: 'font-mono text-xs'
     },
     {
-      header: 'Branch',
-      accessor: 'branch_id',
-      className: 'text-text-secondary'
+      header: 'Assigned Batches',
+      render: (student) => {
+        const allocs = student.allocations || [];
+        if (!allocs.length) {
+          return <span className="text-xs text-text-secondary italic">Unassigned</span>;
+        }
+        return (
+          <div className="flex flex-wrap gap-1 max-w-xs">
+            {allocs.map((alloc, idx) => (
+              <Badge key={alloc.allocation_id || idx} variant="info" className="text-[10px] scale-90">
+                {alloc.batch_name || alloc.course_name || 'Batch'}
+              </Badge>
+            ))}
+          </div>
+        );
+      }
+    },
+    {
+      header: 'Enrollment ID',
+      render: (student) => {
+        const enr = student.enrollments?.[0];
+        if (!enr) {
+          return <span className="text-xs text-text-secondary italic font-mono">No Enrollment</span>;
+        }
+        return (
+          <div className="flex flex-col text-xs">
+            <span className="font-mono font-semibold text-text-main dark:text-white">{enr.enrollment_id}</span>
+            <span className="text-[10px] text-text-secondary uppercase">{enr.enrollment_type || 'Active'}</span>
+          </div>
+        );
+      }
     },
     {
       header: 'Status',
