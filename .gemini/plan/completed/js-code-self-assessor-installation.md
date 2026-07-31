@@ -1,4 +1,5 @@
 ---
+Title: JavaScript Code Self-Assessor Skill Installation Plan
 Date: 2026-07-29T00:23:15+05:30
 Status: Approved-Completed
 ---
