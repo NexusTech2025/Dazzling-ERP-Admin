@@ -12,6 +12,7 @@
 
 import { queryKeys, EMPTY_FILTER } from './queryKeys.js';
 import { validateRecordSchema } from './validationEngine.js';
+import { enrollmentRepo } from '../../features/student/utils/enrollmentCacheHelper.js';
 
 // --- UTILITY PARSERS ---
 
@@ -435,11 +436,32 @@ export function hydrateStudentProfile(queryClient, studentId) {
 
   // Resolve enrollments (prioritizing embedded include.enrollments)
   const enrollmentsList = queryClient.getQueryData(queryKeys.enrollment?.all || ['enrollment']) || [];
-  const studentEnrollments = Array.isArray(rawStudent.enrollments)
+  const rawEnrollments = Array.isArray(rawStudent.enrollments)
     ? rawStudent.enrollments
     : (Array.isArray(enrollmentsList)
       ? enrollmentsList.filter(e => e && e.student_id === studentId)
       : []);
+
+  const studentEnrollments = rawEnrollments.map(enr => {
+    const enrId = enr.enrollment_id || enr.id;
+    const repoEnr = enrollmentRepo.getByEnrollmentId(enrId);
+    const linkedCourse = Array.isArray(courses) ? courses.find(c => c && (c.course_id === enr.item_id || c.id === enr.item_id)) : null;
+    const linkedFeeAccounts = (enr.studentfeeaccounts && enr.studentfeeaccounts.length > 0)
+      ? enr.studentfeeaccounts
+      : (enr.StudentFeeAccount && enr.StudentFeeAccount.length > 0)
+        ? enr.StudentFeeAccount
+        : (repoEnr?.studentfeeaccounts || repoEnr?.StudentFeeAccount || []);
+    const linkedAllocations = studentAllocations.filter(a => a && a.enrollment_id === enrId);
+
+    return {
+      ...enr,
+      enrollment_id: enrId,
+      course_name: linkedCourse?.name || linkedCourse?.course_name || (linkedAllocations[0]?.course_name) || enr.course_name || null,
+      course: linkedCourse,
+      studentfeeaccounts: linkedFeeAccounts,
+      allocations: linkedAllocations
+    };
+  });
 
   console.log('📋 Final allocations:', studentAllocations.length, '| batches:', studentBatches.length, '| courses:', studentCourses.length);
   console.log('📋 Final enrollments count:', studentEnrollments.length);

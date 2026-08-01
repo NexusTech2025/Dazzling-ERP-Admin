@@ -64,9 +64,12 @@ function Identity({ idText, className = '' }) {
 
 // 4. Meta Elements Layout Grouping Slot
 function MetaGroup({ children, variant = 'chips', className = '' }) {
-  const layoutClass = variant === 'chips' 
-    ? 'flex flex-wrap gap-2 pt-0.5' 
-    : 'flex flex-col gap-1.5 pt-0.5';
+  let layoutClass = 'flex flex-wrap gap-2 pt-0.5';
+  if (variant === 'grid') {
+    layoutClass = 'grid grid-cols-2 gap-2 pt-0.5';
+  } else if (variant === 'list') {
+    layoutClass = 'flex flex-col gap-1.5 pt-0.5';
+  }
   return (
     <div className={`${layoutClass} ${className}`}>
       {children}
@@ -165,6 +168,15 @@ function HeaderActions({ children }) {
   );
 }
 
+// 8. KPI Cards Grid Container Slot
+function KpiGrid({ children, className = '' }) {
+  return (
+    <div className={`grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1 ${className}`}>
+      {children}
+    </div>
+  );
+}
+
 // Assign Sub-Component Namespaces
 ProfileHero.Header = Header;
 ProfileHero.Title = Title;
@@ -173,3 +185,4 @@ ProfileHero.MetaGroup = MetaGroup;
 ProfileHero.MetaItem = MetaItem;
 ProfileHero.Actions = Actions;
 ProfileHero.HeaderActions = HeaderActions;
+ProfileHero.KpiGrid = KpiGrid;

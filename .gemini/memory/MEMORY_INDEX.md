@@ -22,6 +22,7 @@ This file serves as the central directory map for the project's architectural me
 | `knowledge/slot_classes_guide.md` | Comprehensive guide on the extensible slotClass design system pattern. | 2026-06-14 |
 | `knowledge/main_layout_integration_guide.md` | Form integration and scroll containment conventions using MainLayout. | 2026-06-14 |
 | `knowledge/page_layout_protocol.md` | Spacing, alignment, and max-width layout standards inside AdminLayout. | 2026-06-14 |
+| `K-Graphs/student_data_profile_architecture.md` | Architectural index & Knowledge Graph of Student Data Profile & domain subcomponents. | 2026-07-30 |
 
 ## Recent Session Updates
 

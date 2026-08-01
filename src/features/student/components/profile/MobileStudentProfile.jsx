@@ -14,7 +14,74 @@ import { Timeline } from '../../../../components/ui/v2/Timeline';
 import { StickyHeader } from '../../../../components/ui/v2/StickyHeader';
 import IconButton from '../../../../components/ui/v2/IconButton';
 
+import { parseISO, format, isValid } from 'date-fns';
+import { enrollmentRepo } from '../../utils/enrollmentCacheHelper';
+import { studentRepo } from '../../utils/studentCacheHelper';
+
 const VALID_TABS = ['Overview', 'Attendance', 'Fees', 'Performance', 'Documents'];
+
+function safeFormatDate(dateStr, formatPattern = 'MMM d, yyyy') {
+  if (!dateStr) return 'N/A';
+  try {
+    const parsed = parseISO(dateStr);
+    if (!isValid(parsed)) return 'N/A';
+    return format(parsed, formatPattern);
+  } catch {
+    return 'N/A';
+  }
+}
+
+function extractEnrollmentFeeSummary(enr) {
+  const enrId = enr.enrollment_id || enr.id;
+  const repoEnr = enrollmentRepo.getByEnrollmentId(enrId);
+  const feeAccounts = (enr.studentfeeaccounts && enr.studentfeeaccounts.length > 0)
+    ? enr.studentfeeaccounts
+    : (enr.StudentFeeAccount && enr.StudentFeeAccount.length > 0)
+      ? enr.StudentFeeAccount
+      : (repoEnr?.studentfeeaccounts || repoEnr?.StudentFeeAccount || []);
+
+  if (!Array.isArray(feeAccounts) || feeAccounts.length === 0) {
+    return null;
+  }
+  let totalDue = 0;
+  feeAccounts.forEach((acc) => {
+    totalDue += Number(acc.balance_due || 0);
+  });
+  return {
+    totalDue,
+    isPaid: totalDue === 0,
+    label: totalDue === 0 ? 'Paid in Full' : `₹${totalDue.toLocaleString()} Due`
+  };
+}
+
+function extractOverallFeeSummary(student) {
+  if (!student || !Array.isArray(student.enrollments) || student.enrollments.length === 0) {
+    return null;
+  }
+  let totalDue = 0;
+  let hasAccounts = false;
+  student.enrollments.forEach((enr) => {
+    const enrId = enr.enrollment_id || enr.id;
+    const repoEnr = enrollmentRepo.getByEnrollmentId(enrId);
+    const feeAccounts = (enr.studentfeeaccounts && enr.studentfeeaccounts.length > 0)
+      ? enr.studentfeeaccounts
+      : (enr.StudentFeeAccount && enr.StudentFeeAccount.length > 0)
+        ? enr.StudentFeeAccount
+        : (repoEnr?.studentfeeaccounts || repoEnr?.StudentFeeAccount || []);
+
+    feeAccounts.forEach((acc) => {
+      hasAccounts = true;
+      totalDue += Number(acc.balance_due || 0);
+    });
+  });
+
+  if (!hasAccounts) return null;
+  return {
+    totalDue,
+    isPaid: totalDue === 0,
+    label: totalDue === 0 ? 'Paid' : `₹${totalDue.toLocaleString()}`
+  };
+}
 
 /**
  * MobileStudentProfile: Pure presentation component for mobile viewport student profiles.
@@ -29,7 +96,36 @@ export default function MobileStudentProfile({
   tabRegistry
 }) {
   if (!student) return null;
-  console.log("studentdata: ", student, profileData)
+
+  // 1. Dynamic Active Enrollments Count
+  const activeEnrollmentsCount = Array.isArray(profileData?.enrollments)
+    ? profileData.enrollments.filter(e => (e.status || '').toLowerCase() === 'active').length
+    : (profileData?.allocations?.length || 0);
+
+  // 2. Dynamic Attendance Percentage from StudentRepo
+  const attSummary = studentRepo.calculateSummarizedAttendanceScore(student);
+  const attPercentage = attSummary.percentage !== null ? `${attSummary.percentage}%` : 'N/A';
+  const attVariant = attSummary.percentage === null
+    ? 'default'
+    : attSummary.percentage >= 75
+      ? 'success'
+      : 'warning';
+
+  // 3. Dynamic Qualification / CGPA from Education Records
+  const topEdu = profileData?.education?.[0];
+  const eduGrade = topEdu
+    ? (topEdu.percentage_or_cgpa
+      ? (Number(topEdu.percentage_or_cgpa) <= 1 && Number(topEdu.percentage_or_cgpa) > 0
+        ? `${Math.round(Number(topEdu.percentage_or_cgpa) * 100)}%`
+        : topEdu.percentage_or_cgpa)
+      : topEdu.highest_qualification || 'N/A')
+    : 'N/A';
+
+  // 4. Dynamic Fee Status & Balance Due from EnrollmentRepo
+  const feeSummary = extractOverallFeeSummary(student);
+  const feeLabel = feeSummary ? feeSummary.label : 'N/A';
+  const feeVariant = feeSummary ? (feeSummary.isPaid ? 'success' : 'warning') : 'default';
+
   return (
     <div className="space-y-6 pb-10 px-4 md:px-0">
       {/* Predefined Sticky Navigation Header */}
@@ -46,9 +142,9 @@ export default function MobileStudentProfile({
         </StickyHeader.SideSlot>
       </StickyHeader>
 
-      {/* Profile Hero Section */}
-      <ProfileHero>
-        {/* Header Row (Top Tier) */}
+      {/* Slotted Profile Hero Section */}
+      <ProfileHero className="shadow-md rounded-2xl p-5">
+        {/* Tier 1: Identity & Avatar Slot */}
         <ProfileHero.Header>
           <Avatar
             src={student.avatarUrl}
@@ -56,35 +152,128 @@ export default function MobileStudentProfile({
             size="lg"
             status={student.status === 'active' ? 'online' : 'offline'}
           />
-          <div className="flex flex-col min-w-0 flex-1">
-            <div className="flex items-center gap-2 flex-wrap">
-              <ProfileHero.Title className="text-lg font-bold text-slate-900 dark:text-white">
-                {student.student_name}
-              </ProfileHero.Title>
-              <Badge variant={student.status === 'active' ? 'success' : 'default'} className="uppercase">
-                {student.status || 'ACTIVE'}
-              </Badge>
+          <div className="flex flex-col min-w-0 flex-1 gap-1">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 flex-wrap">
+                <ProfileHero.Title className="text-lg font-bold text-slate-900 dark:text-white">
+                  {student.student_name}
+                </ProfileHero.Title>
+                <Badge variant={student.status === 'active' ? 'success' : 'default'} className="uppercase">
+                  {student.status || 'ACTIVE'}
+                </Badge>
+              </div>
+              <span className="material-symbols-outlined text-slate-400 hover:text-primary text-xl transition-colors shrink-0">
+                chevron_right
+              </span>
             </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              ID: {student.student_id} • Roll #: {profileData?.enrollments?.[0]?.roll_number || 'N/A'}
-            </p>
+            <div className="flex flex-col gap-0.5">
+              <ProfileHero.Identity idText={`STU-${student.student_id || student.id} • Student ID`} />
+              {profileData?.enrollments?.[0]?.enrollment_id && (
+                <ProfileHero.Identity idText={`ENR-${profileData.enrollments[0].enrollment_id} • Enrollment ID`} />
+              )}
+            </div>
           </div>
         </ProfileHero.Header>
 
-        {/* Action Footer (Bottom Tier) */}
-        <ProfileHero.Actions className="border-t-0 mt-0 pt-0 flex flex-row gap-3 w-full">
-          <Button size="sm" variant="outlined" startIcon="edit" onClick={onOpenEdit} className="flex-1 rounded-xl h-11 border-primary text-primary hover:bg-primary/5">Edit</Button>
-          <Button size="sm" variant="outlined" startIcon="chat" className="flex-1 rounded-xl h-11 border-primary text-primary hover:bg-primary/5">Message</Button>
+        {/* Tier 2: Metadata Grid Slot (2x2 Grid) */}
+        <ProfileHero.MetaGroup variant="grid" className="grid grid-cols-2 gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+          <ProfileHero.MetaItem
+            icon="school"
+            text={profileData?.enrollments?.[0]?.course_name || profileData?.allocations?.[0]?.course_name || 'Class 11 Physics (CBSE)'}
+            iconColorClass="text-blue-500"
+          />
+          <ProfileHero.MetaItem
+            icon="groups"
+            text={profileData?.allocations?.[0]?.batch_name ? `${profileData.allocations[0].batch_name} • Morning` : 'Batch A • Morning Shift'}
+            iconColorClass="text-indigo-500"
+          />
+          {/* <ProfileHero.MetaItem
+            icon="bookmark"
+            text={student.center_name || (profileData?.address?.city ? `${profileData.address.city} Center` : 'Jaipur Center')}
+            iconColorClass="text-emerald-500"
+          /> */}
+
+        </ProfileHero.MetaGroup>
+
+        {/* Tier 3: 4-KPI Metric Grid Slot */}
+        <ProfileHero.KpiGrid className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-3 border-t border-slate-100 dark:border-slate-800">
+          <KpiCard
+            label="Attendance"
+            value={attPercentage}
+            icon="analytics"
+            variant={attVariant}
+            size="sm"
+          />
+          <KpiCard
+            label="Fee Status"
+            value={feeLabel}
+            icon="account_balance_wallet"
+            variant={feeVariant}
+            size="sm"
+          />
+          <KpiCard
+            label="Next Due"
+            value="10 Aug, 2026"
+            icon="calendar_month"
+            variant="info"
+            size="sm"
+          />
+          <KpiCard
+            label="Performance"
+            value={eduGrade}
+            icon="star"
+            variant="primary"
+            size="sm"
+          />
+        </ProfileHero.KpiGrid>
+
+        {/* Tier 4: Quick Action Triggers Bar (5 Actions) */}
+        <ProfileHero.Actions className="flex items-center justify-between gap-1.5 pt-3 border-t border-slate-100 dark:border-slate-800">
+          <Button
+            size="sm"
+            variant="outlined"
+            startIcon="call"
+            href={`tel:${student.phone || profileData?.contact?.mobile_number || ''}`}
+            className="flex-1 rounded-xl text-xs h-10 border-slate-200 dark:border-slate-800"
+          >
+            Call
+          </Button>
+          <Button
+            size="sm"
+            variant="outlined"
+            startIcon="chat"
+            href={`https://wa.me/91${(student.phone || profileData?.contact?.mobile_number || '').replace(/\D/g, '')}`}
+            className="flex-1 rounded-xl text-xs h-10 border-slate-200 dark:border-slate-800"
+          >
+            WhatsApp
+          </Button>
+          <Button
+            size="sm"
+            variant="outlined"
+            startIcon="edit"
+            onClick={onOpenEdit}
+            className="flex-1 rounded-xl text-xs h-10 border-slate-200 dark:border-slate-800"
+          >
+            Edit
+          </Button>
+          <Button
+            size="sm"
+            variant="outlined"
+            startIcon="folder"
+            onClick={() => onTabChange('Documents')}
+            className="flex-1 rounded-xl text-xs h-10 border-slate-200 dark:border-slate-800"
+          >
+            Docs
+          </Button>
+          <Button
+            size="sm"
+            variant="outlined"
+            startIcon="more_horiz"
+            onClick={() => onTabChange('More')}
+            className="w-10 shrink-0 rounded-xl h-10 px-0 border-slate-200 dark:border-slate-800"
+          />
         </ProfileHero.Actions>
       </ProfileHero>
-
-      {/* Metric Ribbon */}
-      <ScrollableRibbon>
-        <KpiCard label="ACTIVE ENROLLMENT" value={profileData?.enrollments?.length || profileData?.allocations?.length || 1} icon="person" isCount size="sm" />
-        <KpiCard label="ATTENDANCE" value="92%" icon="calendar_today" isCount variant="warning" size="sm" />
-        <KpiCard label="CGPA/GRADE" value="9.24" icon="star" isCount variant="info" size="sm" />
-        <KpiCard label="FEE STATUS" value="Paid" icon="payments" isCount variant="success" size="sm" />
-      </ScrollableRibbon>
 
       {/* Tabs Swipe Ribbon */}
       <ScrollableRibbon className="border-b border-slate-100 dark:border-slate-800 pb-0">
@@ -148,17 +337,33 @@ export default function MobileStudentProfile({
 
             {/* Active Enrollments Slotted Cards */}
             {profileData?.enrollments && profileData.enrollments.length > 0 ? (
-              profileData.enrollments.map((enr, idx) => (
-                <SlottedEntityCard
-                  key={enr.enrollment_id || idx}
-                  icon="menu_book"
-                  iconColor="text-primary"
-                  title={enr.course_name || enr.enrollment_type || 'Active Enrollment'}
-                  subtitle={`Roll #: ${enr.roll_number || 'N/A'}`}
-                  metaText={`Enrolled: ${enr.enrollment_date ? new Date(enr.enrollment_date).toLocaleDateString() : 'N/A'}`}
-                  badge={<Badge variant="success">{(enr.status || 'ACTIVE').toUpperCase()}</Badge>}
-                />
-              ))
+              profileData.enrollments.map((enr, idx) => {
+                const enrId = enr.enrollment_id || enr.id || `ENR-${idx}`;
+                const feeSummary = extractEnrollmentFeeSummary(enr);
+
+                return (
+                  <SlottedEntityCard
+                    key={enrId}
+                    icon="menu_book"
+                    iconColor="text-primary"
+                    title={enr.course_name || enr.enrollment_type || 'Active Enrollment'}
+                    subtitle={`ID: ${enrId}`}
+                    metaText={`Enrolled: ${safeFormatDate(enr.enrollment_date)}`}
+                    badge={
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        {feeSummary && (
+                          <Badge variant={feeSummary.isPaid ? 'success' : 'warning'}>
+                            {feeSummary.label}
+                          </Badge>
+                        )}
+                        <Badge variant={(enr.status || '').toLowerCase() === 'active' ? 'success' : 'default'}>
+                          {(enr.status || 'ACTIVE').toUpperCase()}
+                        </Badge>
+                      </div>
+                    }
+                  />
+                );
+              })
             ) : null}
 
             {/* Course & Batch Allocations (Placed below Active Enrollments) */}

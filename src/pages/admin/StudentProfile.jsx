@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useStudentById } from '../../features/student/hooks/useStudentById';
 import { useStudentFeeOverviewQuery } from '../../features/finance/hooks/useFinanceQueries';
+import { useEnrollmentsQuery } from '../../features/student/hooks/useEnrollmentQueries';
 import { useUpdateStudentMutation } from '../../features/student/hooks/useStudentQueries';
 import useIsMobile from '../../hooks/useIsMobile';
 
@@ -30,6 +31,9 @@ const StudentProfile = () => {
   const isMobile = useIsMobile();
   const [searchParams, setSearchParams] = useSearchParams();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
+  // Pre-warm enrollments repository & fee accounts cache
+  useEnrollmentsQuery();
 
   // Derive active tab directly from URL to preserve a single source of truth
   const activeTab = useMemo(() => {
