@@ -1,19 +1,26 @@
 {
   "active_branch": "refactor/student-views-optimization",
-  "updated_at": "2026-07-30T20:56:30.000Z",
+  "updated_at": "2026-08-01T15:25:59.290Z",
   "branches": {
     "refactor/student-views-optimization": {
       "branch_name": "refactor/student-views-optimization",
       "parent_branch": "main",
       "purpose": "Optimize student views (list view, detailed view) and eliminate static/mock data fallbacks.",
-      "status": "active",
-      "working_tree_clean": true,
-      "uncommitted_changes_count": 0,
-      "commits_count_ahead": 0,
+      "status": "in_progress",
+      "working_tree_clean": false,
+      "uncommitted_changes_count": 9,
+      "commits_count_ahead": 6,
       "created_at": "2026-07-30T20:56:00.000Z",
-      "last_activity_at": "2026-07-30T20:56:00.000Z",
-      "commits_summary": [],
-      "recommendation": "⚪ Clean & Ready: Fresh branch with clean working tree. Ready for active development."
+      "last_activity_at": "2026-08-01T15:25:59.410Z",
+      "commits_summary": [
+        "6c3b30b docs(memory): add student_hydrated_data.md memory documentation",
+        "607629e fix(student): resolve student attendance calculation, fee status display, and batch allocation badges",
+        "b5a1a2a docs(plan): audit implementation plans and sync completed status tags across .gemini/plan/",
+        "2a022f7 feat(student): display hydrated batch & enrollment data on student list views and fix mobile card render bugs",
+        "3b1b34c feat(finance,reschedule): implement RescheduleInstallmentsView & atomic schedule restructuring mutation",
+        "8d218fa feat(student,cache): integrate EnrollmentRepo O(1) RAM cache sync & reschedule triggers"
+      ],
+      "recommendation": "🟡 Active Work in Progress: You have 9 uncommitted file(s). Commit or stash your changes before merging or switching branches."
     },
     "feature/student-enrollment-updates": {
       "branch_name": "feature/student-enrollment-updates",
@@ -57,7 +64,6 @@
       "status": "merged",
       "working_tree_clean": true,
       "uncommitted_changes_count": 0,
-      "uncommitted_changes_count": 0,
       "commits_count_ahead": 5,
       "created_at": "2026-07-26T09:43:07.895Z",
       "last_activity_at": "2026-07-26T11:06:51.625Z",
@@ -68,7 +74,7 @@
         "db709f8 feat(student,course): integrate enrollment relational hydration layer and package filter query system",
         "70de7c2 feat(student): integrate enrollment queries and relational hydration layer"
       ],
-      "recommendation": "🔵 Merged Upstream: Safe to delete locally ('git branch -d package-patches-bugfix')."
+      "recommendation": "🔵 Merged Upstream: This branch has been merged upstream into main. Safe to delete locally using 'git branch -d package-patches-bugfix'."
     },
     "feature/teacher-payroll-payment": {
       "branch_name": "feature/teacher-payroll-payment",
@@ -77,7 +83,6 @@
       "status": "merged",
       "working_tree_clean": true,
       "uncommitted_changes_count": 0,
-      "uncommitted_changes_count": 0,
       "commits_count_ahead": 2,
       "created_at": "2026-07-26T12:41:31.237Z",
       "last_activity_at": "2026-07-26T16:27:05.635Z",
@@ -85,7 +90,7 @@
         "1a88456 config(memory,plan): record teacher payment plans, RHF memory rules, and branch status logic",
         "84d7e16 feat(teacher,payroll): integrate RecordTeacherPaymentModal with React Hook Form and ResponseModal sync"
       ],
-      "recommendation": "🔵 Merged Upstream: Safe to delete locally ('git branch -d feature/teacher-payroll-payment')."
+      "recommendation": "🔵 Merged Upstream: This branch has been merged upstream into main. Safe to delete locally using 'git branch -d feature/teacher-payroll-payment'."
     },
     "feat/student-test-management": {
       "branch_name": "feat/student-test-management",
@@ -93,7 +98,6 @@
       "purpose": "Student test scores management, batch test scheduling, marksheets, and academic performance tracking.",
       "status": "merged",
       "working_tree_clean": true,
-      "uncommitted_changes_count": 0,
       "uncommitted_changes_count": 0,
       "commits_count_ahead": 8,
       "created_at": "2026-07-27T05:43:08.905Z",
@@ -108,7 +112,7 @@
         "8da8eeb docs(batch-test): add technical implementation plans, walkthroughs, and branch memory update",
         "2ba4694 feat(batch,test): integrate BatchTestsTab UI, relational includes, and test marks entry subsystem"
       ],
-      "recommendation": "🔵 Merged Upstream: Safe to delete locally ('git branch -d feat/student-test-management')."
+      "recommendation": "🔵 Merged Upstream: This branch has been merged upstream into main. Safe to delete locally using 'git branch -d feat/student-test-management'."
     },
     "bugfix/batch-attendance-marking": {
       "branch_name": "bugfix/batch-attendance-marking",
