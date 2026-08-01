@@ -12,6 +12,7 @@
 
 import { queryKeys, EMPTY_FILTER } from './queryKeys.js';
 import { validateRecordSchema } from './validationEngine.js';
+import { enrollmentRepo } from '../../features/student/utils/enrollmentCacheHelper.js';
 
 // --- UTILITY PARSERS ---
 
@@ -305,6 +306,181 @@ export function hydrateEnrollment(enrollment, queryClient) {
 }
 
 
+/**
+ * Normalizes a raw Student record to guarantee canonical schema properties.
+ * Maps legacy/alias keys (id -> student_id, name -> student_name) and establishes primary defaults.
+ * 
+ * @param {Object} student - Raw student payload from API or cache.
+ * @returns {Object|null} Normalized student record.
+ */
+export function normalizeStudent(student) {
+  if (!student) return null;
+
+  const student_id = student.student_id ?? student.id ?? null;
+  const student_name = student.student_name ?? student.name ?? 'Anonymous Student';
+  const email = student.email ?? student.contact?.email ?? null;
+  const phone = student.phone ?? student.mobile_number ?? student.contact?.mobile_number ?? null;
+
+  return {
+    student_id,
+    student_name,
+    email,
+    phone,
+    gender: student.gender || null,
+    dob: student.dob || null,
+    father_name: student.father_name || null,
+    mother_name: student.mother_name || null,
+    avatarUrl: student.avatarUrl || null,
+    status: (student.status || 'active').toLowerCase(),
+    // Preserve child tables returned in server include payload:
+    ...(student.Address && { Address: student.Address }),
+    ...(student.ContactInfo && { ContactInfo: student.ContactInfo }),
+    ...(student.Education && { Education: student.Education }),
+    ...(student.BatchAllocation && { BatchAllocation: student.BatchAllocation }),
+    ...(student.address && { address: student.address }),
+    ...(student.contact && { contact: student.contact }),
+    ...(student.education && { education: student.education }),
+    ...(student.allocations && { allocations: student.allocations }),
+    ...(student.enrollments && { enrollments: student.enrollments }),
+    ...(student.studentattendance && { studentattendance: student.studentattendance })
+  };
+}
+
+/**
+ * Hydrates Student relations by resolving linked contact, address, education, and enrollment sub-entities.
+ * 
+ * @param {Object} student - Normalized student record.
+ * @param {QueryClient} queryClient - TanStack Query client.
+ * @returns {Object|null} Hydrated student record.
+ */
+export function hydrateStudent(student, queryClient) {
+  if (!student) return null;
+  return normalizeStudent(student);
+}
+
+/**
+ * Hydrates a complete student profile (biological info, residency address, emergency contact, 
+ * qualifications, active enrollments, and active batch/course allocations) directly from RAM cache with zero network calls.
+ * 
+ * @param {QueryClient} queryClient - TanStack Query client.
+ * @param {string} studentId - Unique student identifier.
+ * @returns {Object|null} Hydrated student profile containing basic student object and profileData payload.
+ */
+export function hydrateStudentProfile(queryClient, studentId) {
+  if (!studentId || !queryClient) return null;
+
+  console.groupCollapsed(`🔬 [hydrateStudentProfile] Resolving: ${studentId}`);
+
+  // 1. Resolve raw student record from directory list cache
+  const listData = queryClient.getQueryData(queryKeys.student.list(EMPTY_FILTER)) || [];
+  console.log('📦 Cache listData count:', listData.length);
+  console.log('📦 Cache queryKey used:', JSON.stringify(queryKeys.student.list(EMPTY_FILTER)));
+
+  const rawStudent = listData.find(s => s && (s.student_id === studentId || s.id === studentId));
+  if (!rawStudent) {
+    console.warn('❌ Student NOT found in list cache for ID:', studentId);
+    console.groupEnd();
+    return null;
+  }
+
+  console.log('✅ Raw student found. Keys:', Object.keys(rawStudent));
+  console.log('🔑 Has address?', !!rawStudent.address || Array.isArray(rawStudent.Address), '| Has contact?', !!rawStudent.contact || Array.isArray(rawStudent.ContactInfo));
+  console.log('🔑 Has education?', Array.isArray(rawStudent.education) || Array.isArray(rawStudent.Education), '| Has allocations?', Array.isArray(rawStudent.allocations) || Array.isArray(rawStudent.BatchAllocation));
+  console.log('🔑 Has enrollments?', Array.isArray(rawStudent.enrollments));
+
+  const student = normalizeStudent(rawStudent);
+
+  // 2. Extract child tables (prioritizing embedded lowercase payload properties from backend include)
+  const address = rawStudent.address || (Array.isArray(rawStudent.Address) ? (rawStudent.Address[0] || null) : null);
+  const contact = rawStudent.contact || (Array.isArray(rawStudent.ContactInfo) ? (rawStudent.ContactInfo[0] || null) : null);
+  const education = Array.isArray(rawStudent.education)
+    ? rawStudent.education
+    : (Array.isArray(rawStudent.Education) ? rawStudent.Education : []);
+
+  console.log('📍 Resolved address:', address ? 'present' : 'null');
+  console.log('📞 Resolved contact:', contact ? 'present' : 'null');
+  console.log('🎓 Resolved education count:', education.length);
+
+  // 3. Resolve ALL allocations, batches, courses, and enrollments for this student
+  const allocationsList = queryClient.getQueryData(queryKeys.batch_allocation?.all || ['batch_allocation']) || [];
+  const rawAllocations = Array.isArray(rawStudent.allocations)
+    ? rawStudent.allocations
+    : (Array.isArray(rawStudent.BatchAllocation)
+      ? rawStudent.BatchAllocation
+      : (Array.isArray(allocationsList) ? allocationsList.filter(a => a && a.student_id === studentId) : []));
+
+  console.log('🗂️ Allocation source:', Array.isArray(rawStudent.allocations) ? 'embedded (include.allocations)' : (Array.isArray(rawStudent.BatchAllocation) ? 'embedded (include.BatchAllocation)' : 'global cache fallback'));
+  console.log('🗂️ Raw allocations count:', rawAllocations.length, rawAllocations);
+
+  const batches = queryClient.getQueryData(queryKeys.batch.list(EMPTY_FILTER)) || [];
+  const courses = queryClient.getQueryData(queryKeys.course.list(EMPTY_FILTER)) || [];
+
+  console.log('📚 Global batches cache count:', batches.length, '| key:', JSON.stringify(queryKeys.batch.list(EMPTY_FILTER)));
+  console.log('📚 Global courses cache count:', courses.length, '| key:', JSON.stringify(queryKeys.course.list(EMPTY_FILTER)));
+
+  // Map each allocation to its resolved batch and course entities
+  const studentAllocations = rawAllocations.map(alloc => {
+    const linkedBatch = Array.isArray(batches) ? batches.find(b => b && b.batch_id === alloc.batch_id) : null;
+    const linkedCourse = Array.isArray(courses) ? courses.find(c => c && c.course_id === alloc.course_id) : null;
+    return {
+      ...alloc,
+      batch_name: linkedBatch?.batch_name || alloc.batch_id || 'Unassigned Batch',
+      course_name: linkedCourse?.name || linkedCourse?.course_name || alloc.course_id || 'Unassigned Course',
+      batch: linkedBatch,
+      course: linkedCourse
+    };
+  });
+
+  const studentBatches = studentAllocations.map(a => a.batch).filter(Boolean);
+  const studentCourses = studentAllocations.map(a => a.course).filter(Boolean);
+
+  // Resolve enrollments (prioritizing embedded include.enrollments)
+  const enrollmentsList = queryClient.getQueryData(queryKeys.enrollment?.all || ['enrollment']) || [];
+  const rawEnrollments = Array.isArray(rawStudent.enrollments)
+    ? rawStudent.enrollments
+    : (Array.isArray(enrollmentsList)
+      ? enrollmentsList.filter(e => e && e.student_id === studentId)
+      : []);
+
+  const studentEnrollments = rawEnrollments.map(enr => {
+    const enrId = enr.enrollment_id || enr.id;
+    const repoEnr = enrollmentRepo.getByEnrollmentId(enrId);
+    const linkedCourse = Array.isArray(courses) ? courses.find(c => c && (c.course_id === enr.item_id || c.id === enr.item_id)) : null;
+    const linkedFeeAccounts = (enr.studentfeeaccounts && enr.studentfeeaccounts.length > 0)
+      ? enr.studentfeeaccounts
+      : (enr.StudentFeeAccount && enr.StudentFeeAccount.length > 0)
+        ? enr.StudentFeeAccount
+        : (repoEnr?.studentfeeaccounts || repoEnr?.StudentFeeAccount || []);
+    const linkedAllocations = studentAllocations.filter(a => a && a.enrollment_id === enrId);
+
+    return {
+      ...enr,
+      enrollment_id: enrId,
+      course_name: linkedCourse?.name || linkedCourse?.course_name || (linkedAllocations[0]?.course_name) || enr.course_name || null,
+      course: linkedCourse,
+      studentfeeaccounts: linkedFeeAccounts,
+      allocations: linkedAllocations
+    };
+  });
+
+  console.log('📋 Final allocations:', studentAllocations.length, '| batches:', studentBatches.length, '| courses:', studentCourses.length);
+  console.log('📋 Final enrollments count:', studentEnrollments.length);
+  console.groupEnd();
+
+  return {
+    student,
+    profileData: {
+      address,
+      contact,
+      education,
+      enrollments: studentEnrollments,
+      allocations: studentAllocations,
+      batches: studentBatches,
+      courses: studentCourses
+    }
+  };
+}
+
 // --- GLOBAL STRATEGY ROUTERS ---
 
 const NORMALIZERS = {
@@ -312,14 +488,16 @@ const NORMALIZERS = {
   batch: normalizeBatch,
   package: normalizePackage,
   coursetype: normalizeCourseType,
-  enrollment: normalizeEnrollment
+  enrollment: normalizeEnrollment,
+  student: normalizeStudent
 };
 
 const HYDRATORS = {
   course: hydrateCourse,
   batch: hydrateBatch,
   package: hydratePackage,
-  enrollment: hydrateEnrollment
+  enrollment: hydrateEnrollment,
+  student: hydrateStudent
 };
 
 /**

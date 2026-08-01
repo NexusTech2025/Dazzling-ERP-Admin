@@ -117,6 +117,26 @@ export class EnrollmentRepo {
   }
 
   /**
+   * Repository method to extract allocation view models from a hydrated Enrollment entity (Legacy / Direct Enrollment views).
+   * 
+   * @param {Object} enrollment - Hydrated Enrollment record.
+   * @returns {Array<Object>} List of allocation view models [{ allocationId, batchId, batchName, courseId, courseName, status }].
+   */
+  getAllocationsViewModel(enrollment) {
+    if (!enrollment || !Array.isArray(enrollment.allocations) || enrollment.allocations.length === 0) {
+      return [];
+    }
+    return enrollment.allocations.map(alloc => ({
+      allocationId: alloc.allocation_id,
+      batchId: alloc.batch?.batch_id || alloc.batch_id,
+      batchName: alloc.batch?.batch_name || alloc.batch_name || 'Unassigned Batch',
+      courseId: alloc.course?.course_id || alloc.course_id,
+      courseName: alloc.course?.name || alloc.course_name || 'Unassigned Course',
+      status: (alloc.status || 'active').toLowerCase()
+    }));
+  }
+
+  /**
    * Triggers silent background invalidation of enrollment & finance queries.
    * @param {import('@tanstack/react-query').QueryClient} queryClient - Active QueryClient instance.
    */
@@ -124,6 +144,62 @@ export class EnrollmentRepo {
     queryClient.invalidateQueries({ queryKey: queryKeys.enrollment.all });
     queryClient.invalidateQueries({ queryKey: queryKeys.finance.all });
   }
+}
+
+import { batchRepo } from '../../batch/utils/batchCacheHelper';
+
+/**
+ * Extracts normalized batch allocation view models directly from a hydrated Student object (useStudentsQuery),
+ * delegating relational joining of BatchAllocation junction records to batchRepo.
+ * 
+ * @param {Object} student - Hydrated student record from useStudentsQuery.
+ * @param {Array<Object>|Map<string, Object>} [batches=[]] - Cached batches list or lookup map.
+ * @param {Array<Object>|Map<string, Object>} [courses=[]] - Cached courses list or lookup map.
+ * @returns {Array<Object>} List of allocation view models [{ allocationId, batchId, batchName, courseId, courseName, status }].
+ */
+export function getStudentAllocationsViewModel(student, batches = [], courses = [], courseTypes = []) {
+  return batchRepo.getStudentAllocations(student, batches, courses, courseTypes);
+}
+
+/**
+ * Computes frequency counts of CourseTypes across a student's allocations.
+ * Sorts categories from highest to lowest count and prepares badge models.
+ * 
+ * @param {Array<Object>} allocations - Array of allocation objects from BatchRepo/getStudentAllocationsViewModel.
+ * @returns {{ badges: Array<{ type: string, count: number, label: string }>, overflowCount: number }}
+ */
+export function getCourseTypeSummary(allocations = []) {
+  if (!Array.isArray(allocations) || allocations.length === 0) {
+    return { badges: [], overflowCount: 0 };
+  }
+
+  const freqMap = new Map();
+  allocations.forEach(alloc => {
+    const type = alloc.courseTypeName || 'REGULAR';
+    freqMap.set(type, (freqMap.get(type) || 0) + 1);
+  });
+
+  const sorted = Array.from(freqMap.entries())
+    .map(([type, count]) => ({ type, count }))
+    .sort((a, b) => b.count - a.count);
+
+  const totalCategories = sorted.length;
+
+  if (totalCategories > 3) {
+    const visible = sorted.slice(0, 2).map(item => ({
+      ...item,
+      label: item.count > 1 ? `${item.type} (${item.count})` : item.type
+    }));
+    const overflowCount = totalCategories - 2;
+    return { badges: visible, overflowCount };
+  }
+
+  const visible = sorted.map(item => ({
+    ...item,
+    label: item.count > 1 ? `${item.type} (${item.count})` : item.type
+  }));
+
+  return { badges: visible, overflowCount: 0 };
 }
 
 // Export singleton instance

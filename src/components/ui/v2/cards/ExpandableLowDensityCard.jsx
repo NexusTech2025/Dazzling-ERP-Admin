@@ -17,7 +17,7 @@ import CardContainer from './CardContainer';
  * @param {string} [props.className] - Container layout style overrides.
  * @returns {React.JSX.Element} Low-density expandable card component.
  */
-export const ExpandableLowDensityCard = ({
+const ExpandableLowDensityCardComponent = ({
   isChecked,
   onSelect,
   isExpanded,
@@ -62,7 +62,7 @@ export const ExpandableLowDensityCard = ({
           <button
             onClick={(e) => {
               e.stopPropagation();
-              onToggleExpand(e);
+              onToggleExpand && onToggleExpand(e);
             }}
             className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-colors text-text-secondary dark:text-slate-400"
           >
@@ -86,4 +86,5 @@ export const ExpandableLowDensityCard = ({
   );
 };
 
+export const ExpandableLowDensityCard = React.memo(ExpandableLowDensityCardComponent);
 export default ExpandableLowDensityCard;

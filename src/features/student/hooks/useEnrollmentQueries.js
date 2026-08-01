@@ -27,14 +27,14 @@ export const useEnrollmentsQuery = (filter = EMPTY_FILTER, options = {}) => {
   return useQuery({
     // 🔒 Stable queryKey without dynamic filter to prevent cache fragmentation
     queryKey: queryKeys.enrollment.list(EMPTY_FILTER),
-    queryFn: async ({ signal }) => {
+    queryFn: async () => {
       // 🚀 resolveList checks cache via getCachedList + strategy, or fetches network if missing
       return resolveList(
         queryClient,
         'enrollment',
         filter,
         async () => {
-          const response = await fetchEnrollments(token, EMPTY_FILTER, { signal });
+          const response = await fetchEnrollments(token, EMPTY_FILTER);
           if (!response.success) {
             throw new Error(response.error?.message || response.message || 'Failed to fetch enrollments');
           }
