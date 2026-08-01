@@ -318,6 +318,43 @@ export class StudentRepo {
       return { totalSessions: 0, presentCount: 0, absentCount: 0, lateCount: 0, percentage: null, batchScores: [] };
     }
   }
+
+  /**
+   * Evaluates student account status.
+   * 
+   * @param {Object} student - Student entity record.
+   * @returns {{ isActive: boolean, isInactive: boolean, status: string }}
+   */
+  evaluateStatus(student) {
+    if (!student || typeof student !== 'object') {
+      return { isActive: false, isInactive: false, status: 'unknown' };
+    }
+    const statusStr = String(student.status || '').toLowerCase();
+    const isActive = statusStr === 'active';
+    const isInactive = statusStr === 'inactive' || statusStr === 'suspended';
+    return { isActive, isInactive, status: statusStr };
+  }
+
+  /**
+   * Evaluates student attendance summary score against a threshold.
+   * 
+   * @param {Object} student - Student entity record.
+   * @param {number} [threshold=75] - Minimum acceptable score percentage.
+   * @returns {{ isLowAttendance: boolean, percentage: number|null }}
+   */
+  evaluateAttendance(student, threshold = 75) {
+    if (!student || typeof student !== 'object') {
+      return { isLowAttendance: false, percentage: null };
+    }
+    try {
+      const attn = this.calculateSummarizedAttendanceScore(student);
+      const isLowAttendance = attn.percentage != null && attn.percentage < threshold;
+      return { isLowAttendance, percentage: attn.percentage };
+    } catch (err) {
+      console.warn('[StudentRepo:evaluateAttendance] Error:', err);
+      return { isLowAttendance: false, percentage: null };
+    }
+  }
 }
 
 // Export singleton instance

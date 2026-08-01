@@ -25,12 +25,15 @@ export default function MobileBaseLayout({ children }) {
  * @param {React.ReactNode} [props.renderRight] - Custom right action button (e.g. "+ New").
  * @returns {React.ReactElement} Sticky header segment.
  */
-MobileBaseLayout.Header = function({ renderLeft, title, renderRight }) {
+MobileBaseLayout.Header = function({ renderLeft, title, renderRight, children }) {
   return (
-    <header className="flex items-center justify-between h-14 px-4 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-10 shrink-0">
+    <header className="flex items-center justify-between min-h-14 px-4 py-2 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-10 shrink-0">
       <div className="flex items-center space-x-3 truncate">
         {renderLeft && <div className="flex items-center shrink-0">{renderLeft}</div>}
-        <h1 className="text-base font-black text-slate-800 dark:text-white truncate">{title}</h1>
+        <div className="flex flex-col truncate justify-center">
+          <h1 className="text-base font-black text-slate-800 dark:text-white truncate leading-tight">{title}</h1>
+          {children}
+        </div>
       </div>
       {renderRight && <div className="flex items-center space-x-2 shrink-0">{renderRight}</div>}
     </header>

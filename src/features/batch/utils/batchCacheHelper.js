@@ -123,6 +123,31 @@ export class BatchRepo {
 
     return rawAllocs.map(alloc => this.resolveAllocation(alloc));
   }
+
+  /**
+   * Evaluates student batch allocations and determines assignment state.
+   * 
+   * @param {Object} student - Student entity record.
+   * @param {Array<Object>} [batches=[]] - Optional fallback batch array.
+   * @param {Array<Object>} [courses=[]] - Optional fallback course array.
+   * @param {Array<Object>} [courseTypes=[]] - Optional fallback courseTypes array.
+   * @returns {{ isUnassigned: boolean, allocations: Array<Object> }}
+   */
+  evaluateAllocations(student, batches = [], courses = [], courseTypes = []) {
+    if (!student || typeof student !== 'object') {
+      return { isUnassigned: true, allocations: [] };
+    }
+    try {
+      const allocations = this.getStudentAllocations(student, batches, courses, courseTypes);
+      return {
+        isUnassigned: allocations.length === 0,
+        allocations
+      };
+    } catch (err) {
+      console.warn('[BatchRepo:evaluateAllocations] Error:', err);
+      return { isUnassigned: true, allocations: [] };
+    }
+  }
 }
 
 // Export singleton instance

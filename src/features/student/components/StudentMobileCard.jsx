@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import ExpandableLowDensityCard from '../../../components/ui/v2/cards/ExpandableLowDensityCard';
 import Badge from '../../../components/ui/Badge';
 import AllocatedBatchesBadgeGroup from './AllocatedBatchesBadgeGroup';
@@ -24,65 +24,24 @@ export function formatCurrency(value, fallback = 'N/A') {
 }
 
 /**
- * Extracts fee accounting summary metrics for a student without hardcoded mock fallbacks.
- * Resolves fully hydrated enrollment & StudentFeeAccount records via enrollmentRepo cache lookups.
+ * Extracts fee accounting summary metrics for a student by delegating to enrollmentRepo.extractFeeSummary.
  */
 function extractStudentFeeSummary(student) {
+  const summary = enrollmentRepo.extractFeeSummary(student);
   const enrollments = student?.enrollments || student?.Enrollment || [];
-  
-  let feeAcc = null;
-  let enr = enrollments[0];
-
-  // Resolve hydrated enrollment & fee account records from enrollmentRepo O(1) cache
-  for (const rawEnr of enrollments) {
-    const enrId = rawEnr?.enrollment_id || rawEnr?.id;
-    const hydrated = enrId ? enrollmentRepo.getByEnrollmentId(enrId) : null;
-    const targetEnr = hydrated || rawEnr;
-
-    const feeAccounts = Array.isArray(targetEnr?.studentfeeaccounts)
-      ? targetEnr.studentfeeaccounts
-      : (Array.isArray(targetEnr?.StudentFeeAccount) ? targetEnr.StudentFeeAccount : []);
-    
-    if (feeAccounts.length > 0) {
-      feeAcc = feeAccounts[0];
-      enr = targetEnr;
-      break;
-    }
-  }
-
-  if (!feeAcc && enr) {
-    const feeAccounts = Array.isArray(enr?.studentfeeaccounts)
-      ? enr.studentfeeaccounts
-      : (Array.isArray(enr?.StudentFeeAccount) ? enr.StudentFeeAccount : []);
-    feeAcc = feeAccounts[0] || enr?.feeAccount || enr?.student_fee_account || null;
-  }
-
-  const totalFees = feeAcc?.total_amount != null ? Number(feeAcc.total_amount) : (feeAcc?.agreed_amount != null ? Number(feeAcc.agreed_amount) : null);
-  const paidAmount = feeAcc?.paid_amount != null ? Number(feeAcc.paid_amount) : null;
-  const balanceDue = feeAcc?.balance_due != null
-    ? Number(feeAcc.balance_due)
-    : (feeAcc?.balance_amount != null
-      ? Number(feeAcc.balance_amount)
-      : (totalFees != null && paidAmount != null ? Math.max(0, totalFees - paidAmount) : null));
-
-  let nextDueDate = feeAcc?.next_due_date || null;
-  let nextDueAmount = null;
-
-  if (Array.isArray(feeAcc?.installments) && feeAcc.installments.length > 0) {
-    const pending = feeAcc.installments
-      .filter(i => i.status === 'pending' || i.status === 'partially_paid')
-      .sort((a, b) => new Date(a.due_date) - new Date(b.due_date));
-    if (pending.length > 0) {
-      nextDueDate = pending[0].due_date || nextDueDate;
-      nextDueAmount = pending[0].amount != null ? Number(pending[0].amount) : null;
-    }
-  }
-
+  const enr = enrollments[0];
   const admissionDate = enr?.enrollment_date
     ? new Date(enr.enrollment_date).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })
     : 'N/A';
 
-  return { totalFees, paidAmount, balanceDue, nextDueDate, nextDueAmount, admissionDate };
+  return {
+    totalFees: summary.totalFees,
+    paidAmount: summary.paidAmount,
+    balanceDue: summary.balanceDue,
+    nextDueDate: summary.nextDueDate,
+    nextDueAmount: null,
+    admissionDate
+  };
 }
 
 /**
@@ -130,6 +89,10 @@ function formatDueSummary(dueAmount, nextDueDate) {
  */
 const StudentMobileCardItem = ({
   student,
+  batches = [],
+  courses = [],
+  courseTypes = [],
+  enrollmentsList = [],
   isChecked,
   isExpanded,
   isSelectionMode,
@@ -138,6 +101,18 @@ const StudentMobileCardItem = ({
   onOpenAllocationsModal,
   handlers
 }) => {
+  const [hasImageError, setHasImageError] = useState(false);
+
+  const avatarUrl = useMemo(() => {
+    const url = student.avatarUrl || student.profile_picture_url || student.avatar_url || student.photo_url || student.image_url;
+    if (!url || url === 'null' || url === 'undefined' || url === '') {
+      return student.gender?.toLowerCase() === 'female' || student.gender?.toLowerCase() === 'f'
+        ? 'https://img.icons8.com/color/150/girl.png'
+        : 'https://img.icons8.com/color/150/boy.png';
+    }
+    return url;
+  }, [student.avatarUrl, student.profile_picture_url, student.avatar_url, student.photo_url, student.image_url, student.gender]);
+
   const initials = useMemo(() => {
     return (student.student_name || student.name || 'ST')
       .split(' ')
@@ -146,11 +121,6 @@ const StudentMobileCardItem = ({
       .substring(0, 2)
       .toUpperCase();
   }, [student.student_name, student.name]);
-
-  const { data: batches = [] } = useBatchesQuery();
-  const { data: courses = [] } = useCoursesQuery();
-  const { data: courseTypes = [] } = useCourseTypesQuery();
-  const { data: enrollmentsList = [] } = useEnrollmentsQuery();
 
   const allocations = useMemo(() => getStudentAllocationsViewModel(student, batches, courses, courseTypes), [student, batches, courses, courseTypes]);
   const courseTypeSummary = useMemo(() => getCourseTypeSummary(allocations), [allocations]);
@@ -178,6 +148,13 @@ const StudentMobileCardItem = ({
             className="rounded border-border-light dark:border-border-dark text-primary focus:ring-primary w-4 h-4 cursor-pointer"
           />
         </div>
+      ) : avatarUrl && !hasImageError ? (
+        <img
+          src={avatarUrl}
+          alt={student.student_name || 'Student'}
+          onError={() => setHasImageError(true)}
+          className="size-8 rounded-full object-cover border border-slate-200 dark:border-slate-700 shadow-sm"
+        />
       ) : (
         <div className="absolute inset-0 size-8 rounded-full bg-primary/10 hover:bg-primary/20 text-primary flex items-center justify-center font-bold text-xs transition-colors">
           {initials}
@@ -371,6 +348,10 @@ const StudentMobileCardItem = ({
 export const StudentMobileCard = React.memo(StudentMobileCardItem, (prev, next) => {
   return (
     prev.student === next.student &&
+    prev.batches === next.batches &&
+    prev.courses === next.courses &&
+    prev.courseTypes === next.courseTypes &&
+    prev.enrollmentsList === next.enrollmentsList &&
     prev.isChecked === next.isChecked &&
     prev.isExpanded === next.isExpanded &&
     prev.isSelectionMode === next.isSelectionMode &&

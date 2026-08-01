@@ -4,7 +4,7 @@ import Modal from '../../../components/ui/Modal';
 import Badge from '../../../components/ui/Badge';
 import { getStudentAllocationsViewModel } from '../utils/enrollmentCacheHelper';
 import { useBatchesQuery } from '../../batch/hooks/useBatchQueries';
-import { useCoursesQuery } from '../../course/hooks/useCourseQueries';
+import { useCoursesQuery, useCourseTypesQuery } from '../../course/hooks/useCourseQueries';
 import { useEnrollmentsQuery } from '../hooks/useEnrollmentQueries';
 
 /**
@@ -14,9 +14,6 @@ import { useEnrollmentsQuery } from '../hooks/useEnrollmentQueries';
  * @param {Array<string>} props.selectedIds - List of checked row IDs.
  * @param {Function} props.onSelectRow - Checkbox toggle callback.
  * @param {Object} props.handlers - User event trigger handler callbacks.
- * @param {Function} props.handlers.onView - Navigation callback to profile page.
- * @param {Function} props.handlers.onEdit - Edit modal trigger callback.
- * @param {Function} props.handlers.onDelete - Deletion trigger callback.
  * @returns {React.JSX.Element} Low-density mobile-optimized student card list.
  */
 export function StudentsMobileView({
@@ -30,6 +27,7 @@ export function StudentsMobileView({
 
   const { data: batches = [] } = useBatchesQuery();
   const { data: courses = [] } = useCoursesQuery();
+  const { data: courseTypes = [] } = useCourseTypesQuery();
   const { data: enrollments = [] } = useEnrollmentsQuery();
 
   const toggleExpand = useCallback((e, id) => {
@@ -46,7 +44,7 @@ export function StudentsMobileView({
 
   const isSelectionMode = selectedIds.length > 0;
   const activeAllocations = activeModalStudent 
-    ? getStudentAllocationsViewModel(activeModalStudent, batches, courses) 
+    ? getStudentAllocationsViewModel(activeModalStudent, batches, courses, courseTypes) 
     : [];
 
   return (
@@ -55,6 +53,10 @@ export function StudentsMobileView({
         <StudentMobileCard
           key={student.student_id}
           student={student}
+          batches={batches}
+          courses={courses}
+          courseTypes={courseTypes}
+          enrollmentsList={enrollments}
           isChecked={selectedIds.includes(student.student_id)}
           isExpanded={!!expandedIds[student.student_id]}
           isSelectionMode={isSelectionMode}

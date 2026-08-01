@@ -23,6 +23,13 @@ const StudentCard = ({
   const id = student.student_id || student.id || 'STU-000';
   const initials = name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
 
+  const rawUrl = student.avatar || student.avatarUrl || student.profile_picture_url || student.avatar_url || student.photo_url || student.image_url;
+  const resolvedAvatarUrl = (!rawUrl || rawUrl === 'null' || rawUrl === 'undefined' || rawUrl === '')
+    ? (student.gender?.toLowerCase() === 'female' || student.gender?.toLowerCase() === 'f'
+        ? 'https://img.icons8.com/color/150/girl.png'
+        : 'https://img.icons8.com/color/150/boy.png')
+    : rawUrl;
+
   // Low Density
   if (density === 'low') {
     const isSelectionActive = !!icon;
@@ -84,7 +91,7 @@ const StudentCard = ({
 
     return (
       <LowDensityCard
-        avatar={isSelectionActive ? null : student.avatar || student.avatarUrl}
+        avatar={isSelectionActive ? null : resolvedAvatarUrl}
         avatarText={isSelectionActive ? null : initials}
         icon={icon}
         title={titleElement}
@@ -112,7 +119,7 @@ const StudentCard = ({
 
     return (
       <MediumDensityCard
-        avatar={student.avatar}
+        avatar={resolvedAvatarUrl}
         title={name}
         subtitle={student.email || student.phone || 'No Contact Info'}
         tags={tags}

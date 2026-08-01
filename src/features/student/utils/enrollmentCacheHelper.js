@@ -137,6 +137,106 @@ export class EnrollmentRepo {
   }
 
   /**
+   * Safely extracts fee accounting metrics for a student by querying embedded fee accounts or enrollmentRepo O(1) cache.
+   * 
+   * @param {Object} student - Student entity record.
+   * @returns {{ totalFees: number|null, paidAmount: number|null, balanceDue: number, nextDueDate: string|null, isOverdue: boolean, isPaidFull: boolean, isFeeDue: boolean }}
+   */
+  extractFeeSummary(student) {
+    if (!student || typeof student !== 'object') {
+      return { totalFees: null, paidAmount: null, balanceDue: 0, nextDueDate: null, isOverdue: false, isPaidFull: false, isFeeDue: false };
+    }
+
+    try {
+      const enrollments = Array.isArray(student.enrollments) 
+        ? student.enrollments 
+        : (Array.isArray(student.Enrollment) ? student.Enrollment : []);
+      
+      let feeAcc = null;
+      let enr = enrollments[0];
+
+      for (const rawEnr of enrollments) {
+        const enrId = rawEnr?.enrollment_id || rawEnr?.id;
+        const hydrated = enrId ? this.getByEnrollmentId(enrId) : null;
+        const targetEnr = hydrated || rawEnr;
+
+        const feeAccounts = Array.isArray(targetEnr?.studentfeeaccounts)
+          ? targetEnr.studentfeeaccounts
+          : (Array.isArray(targetEnr?.StudentFeeAccount) ? targetEnr.StudentFeeAccount : []);
+        
+        if (feeAccounts.length > 0) {
+          feeAcc = feeAccounts[0];
+          enr = targetEnr;
+          break;
+        }
+      }
+
+      if (!feeAcc && enr) {
+        const feeAccounts = Array.isArray(enr?.studentfeeaccounts)
+          ? enr.studentfeeaccounts
+          : (Array.isArray(enr?.StudentFeeAccount) ? enr.StudentFeeAccount : []);
+        feeAcc = feeAccounts[0] || enr?.feeAccount || enr?.student_fee_account || null;
+      }
+
+      const totalFees = feeAcc?.total_amount != null ? Number(feeAcc.total_amount) : (feeAcc?.agreed_amount != null ? Number(feeAcc.agreed_amount) : null);
+      const paidAmount = feeAcc?.paid_amount != null ? Number(feeAcc.paid_amount) : null;
+      const balanceDue = feeAcc?.balance_due != null
+        ? Number(feeAcc.balance_due)
+        : (feeAcc?.balance_amount != null
+          ? Number(feeAcc.balance_amount)
+          : (totalFees != null && paidAmount != null ? Math.max(0, totalFees - paidAmount) : 0));
+
+      let nextDueDate = feeAcc?.next_due_date || null;
+
+      if (Array.isArray(feeAcc?.installments) && feeAcc.installments.length > 0) {
+        const pending = feeAcc.installments
+          .filter(i => i.status === 'pending' || i.status === 'partially_paid')
+          .sort((a, b) => new Date(a.due_date) - new Date(b.due_date));
+        if (pending.length > 0) {
+          nextDueDate = pending[0].due_date || nextDueDate;
+        }
+      }
+
+      const isFeeDue = balanceDue > 0;
+      const isOverdue = !!(nextDueDate && new Date(nextDueDate) < new Date() && isFeeDue);
+      const isPaidFull = balanceDue === 0 && enrollments.length > 0;
+
+      return { totalFees, paidAmount, balanceDue, nextDueDate, isOverdue, isPaidFull, isFeeDue };
+    } catch (err) {
+      console.warn('[EnrollmentRepo:extractFeeSummary] Error:', err);
+      return { totalFees: null, paidAmount: null, balanceDue: 0, nextDueDate: null, isOverdue: false, isPaidFull: false, isFeeDue: false };
+    }
+  }
+
+  /**
+   * Evaluates student enrollment date against lookback threshold.
+   * 
+   * @param {Object} student - Student entity record.
+   * @param {number} [daysThreshold=30] - Lookback window in days.
+   * @returns {{ isNewAdmission: boolean, admissionDate: string|null }}
+   */
+  evaluateAdmissionDate(student, daysThreshold = 30) {
+    if (!student || typeof student !== 'object') {
+      return { isNewAdmission: false, admissionDate: null };
+    }
+    try {
+      const enrollments = Array.isArray(student.enrollments) ? student.enrollments : (Array.isArray(student.Enrollment) ? student.Enrollment : []);
+      const enrDate = enrollments[0]?.enrollment_date || null;
+      if (!enrDate) return { isNewAdmission: false, admissionDate: null };
+
+      const thresholdDate = new Date();
+      thresholdDate.setDate(thresholdDate.getDate() - daysThreshold);
+      const parsed = new Date(enrDate);
+      const isNewAdmission = !isNaN(parsed.getTime()) && parsed >= thresholdDate;
+
+      return { isNewAdmission, admissionDate: enrDate };
+    } catch (err) {
+      console.warn('[EnrollmentRepo:evaluateAdmissionDate] Error:', err);
+      return { isNewAdmission: false, admissionDate: null };
+    }
+  }
+
+  /**
    * Triggers silent background invalidation of enrollment & finance queries.
    * @param {import('@tanstack/react-query').QueryClient} queryClient - Active QueryClient instance.
    */
