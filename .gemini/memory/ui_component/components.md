@@ -2841,3 +2841,46 @@ import SlottedEntityCard from 'src/components/ui/v2/cards/SlottedEntityCard';
   onClick={() => console.log('Go to course')}
 />
 ```
+
+---
+
+## MobileListView
+**Location:** `src/components/ui/v2/MobileListView.jsx`
+
+### Description
+A production-grade, headless compound component for mobile entity directory views. It functions as a data lifecycle controller and slot dispatcher delegating directly to `MobileBaseLayout` sub-components (`Header`, `HeroSlot`, `FilterSlot`, `ListSlot`, `ActionBarSlot`, `FloatingActionSlot`).
+
+### Usage Guidelines
+Wrap mobile entity directory views (Students, Teachers, Users, Batches) inside `MobileListView`. It manages list lifecycle states (`isLoading`, `error`, `isEmpty`, `selectedIds`, `isSelectionMode`) via context while delegating physical layout bounds to `MobileBaseLayout`.
+
+### Sub-Components API
+| Sub-Component | Props | Description |
+| :--- | :--- | :--- |
+| `<MobileListView>` | `isLoading`, `error`, `isEmpty`, `selectedIds`, `onClearSelection` | Headless provider shell wrapping `MobileBaseLayout`. |
+| `<MobileListView.Header>` | `title`, `renderLeft`, `renderRight`, `children` | Identity header bar delegating to `MobileBaseLayout.Header`. |
+| `<MobileListView.Hero>` | `children` | Summary / metric banner delegating to `MobileBaseLayout.HeroSlot`. |
+| `<MobileListView.Filter>` | `children` | Search & filter controls delegating to `MobileBaseLayout.FilterSlot`. |
+| `<MobileListView.List>` | `children`, `renderLoading`, `renderError`, `renderEmptyState`, `emptyMessage` | Scrollable body handling loading/error/empty boundaries. |
+| `<MobileListView.ActionBar>` | `children` | Selection action bar delegating to `MobileBaseLayout.ActionBarSlot`. |
+| `<MobileListView.FAB>` | `children` | Floating Action Button delegating to `MobileBaseLayout.FloatingActionSlot`. |
+
+### Implementation Example
+```jsx
+import MobileListView from 'src/components/ui/v2/MobileListView';
+
+<MobileListView
+  isLoading={isLoading}
+  error={error}
+  isEmpty={students.length === 0}
+  selectedIds={selectedIds}
+>
+  <MobileListView.Header title="Student Directory" renderRight={<RefreshButton />} />
+  <MobileListView.Hero><KpiGrid cols={2}><KpiCard label="Active" value={100} isCount /></KpiGrid></MobileListView.Hero>
+  <MobileListView.Filter><SearchInput value={search} onChange={setSearch} /></MobileListView.Filter>
+  <MobileListView.List emptyMessage="No students match filter">
+    {students.map(s => <StudentCard key={s.id} student={s} />)}
+  </MobileListView.List>
+  <MobileListView.FAB><AddStudentButton /></MobileListView.FAB>
+</MobileListView>
+```
+

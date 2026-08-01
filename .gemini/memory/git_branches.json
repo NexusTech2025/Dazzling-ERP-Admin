@@ -1,6 +1,6 @@
 {
-  "active_branch": "refactor/student-views-optimization",
-  "updated_at": "2026-08-01T15:25:59.290Z",
+  "active_branch": "integration/student-features-v2.0.1",
+  "updated_at": "2026-08-01T19:19:42.367Z",
   "branches": {
     "refactor/student-views-optimization": {
       "branch_name": "refactor/student-views-optimization",
@@ -8,11 +8,13 @@
       "purpose": "Optimize student views (list view, detailed view) and eliminate static/mock data fallbacks.",
       "status": "in_progress",
       "working_tree_clean": false,
-      "uncommitted_changes_count": 9,
-      "commits_count_ahead": 6,
+      "uncommitted_changes_count": 2,
+      "commits_count_ahead": 8,
       "created_at": "2026-07-30T20:56:00.000Z",
-      "last_activity_at": "2026-08-01T15:25:59.410Z",
+      "last_activity_at": "2026-08-01T15:52:10.778Z",
       "commits_summary": [
+        "a7e1a09 docs(memory): update git_branches memory store and session 1 memory index",
+        "cdfdb72 feat(student-profile): refactor MobileStudentProfile with Slotted ProfileHero compound pattern and dynamic metrics",
         "6c3b30b docs(memory): add student_hydrated_data.md memory documentation",
         "607629e fix(student): resolve student attendance calculation, fee status display, and batch allocation badges",
         "b5a1a2a docs(plan): audit implementation plans and sync completed status tags across .gemini/plan/",
@@ -20,7 +22,7 @@
         "3b1b34c feat(finance,reschedule): implement RescheduleInstallmentsView & atomic schedule restructuring mutation",
         "8d218fa feat(student,cache): integrate EnrollmentRepo O(1) RAM cache sync & reschedule triggers"
       ],
-      "recommendation": "🟡 Active Work in Progress: You have 9 uncommitted file(s). Commit or stash your changes before merging or switching branches."
+      "recommendation": "🟡 Active Work in Progress: You have 2 uncommitted file(s). Commit or stash your changes before merging or switching branches."
     },
     "feature/student-enrollment-updates": {
       "branch_name": "feature/student-enrollment-updates",
@@ -129,6 +131,30 @@
         "c1bdb10 fix(batch,attendance): resolve student status staging, null punch times, and payload schema validation bugs"
       ],
       "recommendation": "🔵 Merged Upstream: Safe to delete locally ('git branch -d bugfix/batch-attendance-marking')."
+    },
+    "integration/student-features-v2.0.1": {
+      "branch_name": "integration/student-features-v2.0.1",
+      "parent_branch": "main",
+      "purpose": "Feature/bugfix work on integration/student-features-v2.0.1",
+      "status": "in_progress",
+      "working_tree_clean": false,
+      "uncommitted_changes_count": 23,
+      "commits_count_ahead": 10,
+      "created_at": "2026-08-01T16:01:57.224Z",
+      "last_activity_at": "2026-08-01T19:19:42.598Z",
+      "commits_summary": [
+        "ec9c837 merge(student-views): merge refactor/student-views-optimization into integration/student-features-v2.0.1",
+        "231b088 merge(enrollment): merge feature/student-enrollment-updates into integration/student-features-v2.0.1",
+        "a7e1a09 docs(memory): update git_branches memory store and session 1 memory index",
+        "cdfdb72 feat(student-profile): refactor MobileStudentProfile with Slotted ProfileHero compound pattern and dynamic metrics",
+        "6c3b30b docs(memory): add student_hydrated_data.md memory documentation",
+        "607629e fix(student): resolve student attendance calculation, fee status display, and batch allocation badges",
+        "b5a1a2a docs(plan): audit implementation plans and sync completed status tags across .gemini/plan/",
+        "2a022f7 feat(student): display hydrated batch & enrollment data on student list views and fix mobile card render bugs",
+        "3b1b34c feat(finance,reschedule): implement RescheduleInstallmentsView & atomic schedule restructuring mutation",
+        "8d218fa feat(student,cache): integrate EnrollmentRepo O(1) RAM cache sync & reschedule triggers"
+      ],
+      "recommendation": "🟡 Active Work in Progress: You have 23 uncommitted file(s). Commit or stash your changes before merging or switching branches."
     }
   }
 }
