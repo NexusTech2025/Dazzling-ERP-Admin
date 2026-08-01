@@ -29,7 +29,8 @@ export const fetchStudents = (token, filter = {}, options = {}) =>
         contact: {},
         education: {},
         allocations: {},
-        enrollments: {}
+        enrollments: {},
+        studentattendance: {}
       }
     },
     token,

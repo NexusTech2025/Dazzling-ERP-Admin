@@ -10,8 +10,11 @@ const Badge = ({ children, variant = 'default', className = '' }) => {
     info: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
   };
 
+  const hasCustomFontSize = /\btext-(xs|sm|base|lg|xl|2xl|3xl|4xl|\[[\w\d%._-]+\])/.test(className);
+  const defaultFontSize = hasCustomFontSize ? '' : 'text-[10px]';
+
   return (
-    <span className={`px-2 py-0.5 rounded text-[10px] uppercase tracking-wide inline-flex items-center justify-center ${variants[variant]} ${className}`}>
+    <span className={`px-2 py-0.5 rounded ${defaultFontSize} uppercase tracking-wide inline-flex items-center justify-center ${variants[variant]} ${className}`}>
       {children}
     </span>
   );

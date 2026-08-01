@@ -340,7 +340,8 @@ export function normalizeStudent(student) {
     ...(student.contact && { contact: student.contact }),
     ...(student.education && { education: student.education }),
     ...(student.allocations && { allocations: student.allocations }),
-    ...(student.enrollments && { enrollments: student.enrollments })
+    ...(student.enrollments && { enrollments: student.enrollments }),
+    ...(student.studentattendance && { studentattendance: student.studentattendance })
   };
 }
 
@@ -391,8 +392,8 @@ export function hydrateStudentProfile(queryClient, studentId) {
   // 2. Extract child tables (prioritizing embedded lowercase payload properties from backend include)
   const address = rawStudent.address || (Array.isArray(rawStudent.Address) ? (rawStudent.Address[0] || null) : null);
   const contact = rawStudent.contact || (Array.isArray(rawStudent.ContactInfo) ? (rawStudent.ContactInfo[0] || null) : null);
-  const education = Array.isArray(rawStudent.education) 
-    ? rawStudent.education 
+  const education = Array.isArray(rawStudent.education)
+    ? rawStudent.education
     : (Array.isArray(rawStudent.Education) ? rawStudent.Education : []);
 
   console.log('📍 Resolved address:', address ? 'present' : 'null');

@@ -1,6 +1,8 @@
 import React from 'react';
 import { ProfileCell, BadgeCell, ActionCell } from '../../../components/ui/table/cells';
 import Badge from '../../../components/ui/Badge';
+import AllocatedBatchesBadgeGroup from '../../../features/student/components/AllocatedBatchesBadgeGroup';
+import { getStudentAllocationsViewModel } from '../../../features/student/utils/enrollmentCacheHelper';
 
 /**
  * Creates the column schema for the Student table.
@@ -32,19 +34,8 @@ export const createStudentColumns = ({ onView, onEdit, onDelete, isDeleting } = 
     {
       header: 'Assigned Batches',
       render: (student) => {
-        const allocs = student.allocations || [];
-        if (!allocs.length) {
-          return <span className="text-xs text-text-secondary italic">Unassigned</span>;
-        }
-        return (
-          <div className="flex flex-wrap gap-1 max-w-xs">
-            {allocs.map((alloc, idx) => (
-              <Badge key={alloc.allocation_id || idx} variant="info" className="text-[10px] scale-90">
-                {alloc.batch_name || alloc.course_name || 'Batch'}
-              </Badge>
-            ))}
-          </div>
-        );
+        const allocations = getStudentAllocationsViewModel(student);
+        return <AllocatedBatchesBadgeGroup allocations={allocations} />;
       }
     },
     {

@@ -1,35 +1,118 @@
 import React, { useMemo } from 'react';
 import ExpandableLowDensityCard from '../../../components/ui/v2/cards/ExpandableLowDensityCard';
+import Badge from '../../../components/ui/Badge';
+import AllocatedBatchesBadgeGroup from './AllocatedBatchesBadgeGroup';
+import { enrollmentRepo, getStudentAllocationsViewModel, getCourseTypeSummary } from '../utils/enrollmentCacheHelper';
+import { studentRepo } from '../utils/studentCacheHelper';
+import { useBatchesQuery } from '../../batch/hooks/useBatchQueries';
+import { useCoursesQuery, useCourseTypesQuery } from '../../course/hooks/useCourseQueries';
+import { useEnrollmentsQuery } from '../hooks/useEnrollmentQueries';
 
 /**
- * Extracts fee accounting summary metrics for a student.
+ * Safely formats numbers into localized Indian Rupee currency strings (e.g. ₹24,000) or a fallback.
+ * Guarantees zero crashes when values are null, undefined, or non-numeric.
+ * 
+ * @param {number|string|null|undefined} value - Numeric value to format.
+ * @param {string} [fallback='N/A'] - Fallback string if value is null/non-numeric.
+ * @returns {string} Formatted currency string or fallback.
+ */
+export function formatCurrency(value, fallback = 'N/A') {
+  if (value == null || value === '' || isNaN(Number(value))) {
+    return fallback;
+  }
+  return `₹${Number(value).toLocaleString()}`;
+}
+
+/**
+ * Extracts fee accounting summary metrics for a student without hardcoded mock fallbacks.
+ * Resolves fully hydrated enrollment & StudentFeeAccount records via enrollmentRepo cache lookups.
  */
 function extractStudentFeeSummary(student) {
-  const enr = student?.enrollments?.[0];
-  const feeAcc = Array.isArray(enr?.studentfeeaccounts) ? enr.studentfeeaccounts[0] : (enr?.feeAccount || null);
+  const enrollments = student?.enrollments || student?.Enrollment || [];
   
-  const totalFees = Number(feeAcc?.total_amount || feeAcc?.agreed_amount || 64000);
-  const paidAmount = Number(feeAcc?.paid_amount || 40000);
-  const balanceDue = Number(feeAcc?.balance_due || feeAcc?.balance_amount || Math.max(0, totalFees - paidAmount));
-  
-  let nextDueDate = feeAcc?.next_due_date ? new Date(feeAcc.next_due_date).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : '15 Aug 2026';
-  let nextDueAmount = 12000;
+  let feeAcc = null;
+  let enr = enrollments[0];
 
-  if (Array.isArray(feeAcc?.installments)) {
+  // Resolve hydrated enrollment & fee account records from enrollmentRepo O(1) cache
+  for (const rawEnr of enrollments) {
+    const enrId = rawEnr?.enrollment_id || rawEnr?.id;
+    const hydrated = enrId ? enrollmentRepo.getByEnrollmentId(enrId) : null;
+    const targetEnr = hydrated || rawEnr;
+
+    const feeAccounts = Array.isArray(targetEnr?.studentfeeaccounts)
+      ? targetEnr.studentfeeaccounts
+      : (Array.isArray(targetEnr?.StudentFeeAccount) ? targetEnr.StudentFeeAccount : []);
+    
+    if (feeAccounts.length > 0) {
+      feeAcc = feeAccounts[0];
+      enr = targetEnr;
+      break;
+    }
+  }
+
+  if (!feeAcc && enr) {
+    const feeAccounts = Array.isArray(enr?.studentfeeaccounts)
+      ? enr.studentfeeaccounts
+      : (Array.isArray(enr?.StudentFeeAccount) ? enr.StudentFeeAccount : []);
+    feeAcc = feeAccounts[0] || enr?.feeAccount || enr?.student_fee_account || null;
+  }
+
+  const totalFees = feeAcc?.total_amount != null ? Number(feeAcc.total_amount) : (feeAcc?.agreed_amount != null ? Number(feeAcc.agreed_amount) : null);
+  const paidAmount = feeAcc?.paid_amount != null ? Number(feeAcc.paid_amount) : null;
+  const balanceDue = feeAcc?.balance_due != null
+    ? Number(feeAcc.balance_due)
+    : (feeAcc?.balance_amount != null
+      ? Number(feeAcc.balance_amount)
+      : (totalFees != null && paidAmount != null ? Math.max(0, totalFees - paidAmount) : null));
+
+  let nextDueDate = feeAcc?.next_due_date || null;
+  let nextDueAmount = null;
+
+  if (Array.isArray(feeAcc?.installments) && feeAcc.installments.length > 0) {
     const pending = feeAcc.installments
       .filter(i => i.status === 'pending' || i.status === 'partially_paid')
       .sort((a, b) => new Date(a.due_date) - new Date(b.due_date));
     if (pending.length > 0) {
-      nextDueDate = pending[0].due_date ? new Date(pending[0].due_date).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : nextDueDate;
-      nextDueAmount = Number(pending[0].amount || nextDueAmount);
+      nextDueDate = pending[0].due_date || nextDueDate;
+      nextDueAmount = pending[0].amount != null ? Number(pending[0].amount) : null;
     }
   }
 
-  const admissionDate = enr?.enrollment_date 
+  const admissionDate = enr?.enrollment_date
     ? new Date(enr.enrollment_date).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })
-    : '25 Jun 2026';
+    : 'N/A';
 
   return { totalFees, paidAmount, balanceDue, nextDueDate, nextDueAmount, admissionDate };
+}
+
+/**
+ * Formats due amount and next payment date into combined right header pill label.
+ * Format: [due_amount | next_payment_date] or [due_amount | DUE] if date has passed.
+ */
+function formatDueSummary(dueAmount, nextDueDate) {
+  if (dueAmount == null) {
+    return { label: 'No Fee Data', isOverdue: false, isPaid: false, isMissing: true };
+  }
+
+  if (dueAmount <= 0) {
+    return { label: 'Paid in Full', isOverdue: false, isPaid: true };
+  }
+
+  const formattedAmount = formatCurrency(dueAmount);
+
+  if (!nextDueDate) {
+    return { label: `${formattedAmount} | DUE`, isOverdue: true, isPaid: false };
+  }
+
+  const dueDateObj = new Date(nextDueDate);
+  const isPassed = !isNaN(dueDateObj.getTime()) && dueDateObj < new Date();
+
+  if (isPassed) {
+    return { label: `${formattedAmount} | DUE`, isOverdue: true, isPaid: false };
+  }
+
+  const shortDate = dueDateObj.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+  return { label: `${formattedAmount} | ${shortDate}`, isOverdue: false, isPaid: false };
 }
 
 /**
@@ -52,6 +135,7 @@ const StudentMobileCardItem = ({
   isSelectionMode,
   onSelectRow,
   onToggleExpand,
+  onOpenAllocationsModal,
   handlers
 }) => {
   const initials = useMemo(() => {
@@ -63,16 +147,21 @@ const StudentMobileCardItem = ({
       .toUpperCase();
   }, [student.student_name, student.name]);
 
-  const studentClass = student.allocations?.[0]?.course_name 
-    || student.allocations?.[0]?.batch_name 
-    || student.current_class 
-    || student.current_course;
+  const { data: batches = [] } = useBatchesQuery();
+  const { data: courses = [] } = useCoursesQuery();
+  const { data: courseTypes = [] } = useCourseTypesQuery();
+  const { data: enrollmentsList = [] } = useEnrollmentsQuery();
 
-  const feeSummary = useMemo(() => extractStudentFeeSummary(student), [student]);
+  const allocations = useMemo(() => getStudentAllocationsViewModel(student, batches, courses, courseTypes), [student, batches, courses, courseTypes]);
+  const courseTypeSummary = useMemo(() => getCourseTypeSummary(allocations), [allocations]);
+  const attendanceScore = useMemo(() => studentRepo.calculateSummarizedAttendanceScore(student), [student]);
+
+  const feeSummary = useMemo(() => extractStudentFeeSummary(student), [student, enrollmentsList]);
+  const dueSummary = useMemo(() => formatDueSummary(feeSummary.balanceDue, feeSummary.nextDueDate), [feeSummary]);
 
   // Memoize Avatar Section JSX
   const avatarSection = (
-    <div 
+    <div
       onClick={(e) => {
         e.stopPropagation();
         onSelectRow(student.student_id);
@@ -97,65 +186,96 @@ const StudentMobileCardItem = ({
     </div>
   );
 
-  // Left Header Slot: Student Name + Glowing Status Dot + Class Chip + ID / Enrolled Date
+  // Left Header Slot: Row 1 = Name + Glowing Dot + CourseType Badges | Row 2 = Assigned Batches Badge Group directly below name
   const leftHeader = (
     <div className="flex items-center gap-3 min-w-0 flex-1">
       {avatarSection}
-      <div className="flex flex-col min-w-0 flex-1">
-        <div className="flex items-center gap-2 min-w-0 flex-wrap">
+      <div className="flex flex-col min-w-0 flex-1 space-y-0.5">
+        <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
           <span className="font-bold text-text-main dark:text-white text-xs truncate flex items-center gap-1.5">
             <span>{student.student_name || 'Anonymous Student'}</span>
             {/* Glowing Status Dot directly after student name */}
             <span
               title={student.status || 'active'}
-              className={`inline-block size-2 rounded-full shrink-0 ${
-                student.status === 'active'
-                  ? 'bg-emerald-500 shadow-[0_0_8px_#10b981]'
-                  : student.status === 'inactive' || student.status === 'suspended'
+              className={`inline-block size-2 rounded-full shrink-0 ${student.status === 'active'
+                ? 'bg-emerald-500 shadow-[0_0_8px_#10b981]'
+                : student.status === 'inactive' || student.status === 'suspended'
                   ? 'bg-rose-500 shadow-[0_0_8px_#f43f5e]'
                   : 'bg-amber-500 shadow-[0_0_8px_#f59e0b]'
-              }`}
+                }`}
             />
           </span>
-          {studentClass && (
-            <span className="flex-shrink-0 px-1.5 py-0.5 rounded text-[8px] font-black uppercase bg-primary/10 text-primary border border-primary/20">
-              {studentClass}
-            </span>
+          {courseTypeSummary.badges.map((b, idx) => (
+            <Badge key={b.type || idx} variant="primary" className="text-[7px] py-0.5 px-1.5 font-bold uppercase tracking-wider shrink-0">
+              {b.label}
+            </Badge>
+          ))}
+          {courseTypeSummary.overflowCount > 0 && (
+            <Badge variant="default" className="text-[7px] py-0.5 px-1.5 font-bold uppercase tracking-wider shrink-0">
+              +{courseTypeSummary.overflowCount}
+            </Badge>
           )}
         </div>
-        <span className="text-[10px] text-text-secondary dark:text-on-surface-variant font-medium">
-          ID: {student.student_id} • Enrolled: {feeSummary.admissionDate}
-        </span>
+
+        {/* Assigned Batches Badge Group directly below student name */}
+        <AllocatedBatchesBadgeGroup
+          allocations={allocations}
+          onOpenModal={() => onOpenAllocationsModal && onOpenAllocationsModal(student)}
+        />
       </div>
     </div>
   );
 
-  // Right Header Slot: Quick Due Balance Pill
+  // Right Header Slot: Attendance % KPI Badge + Combined Due Pill
+  const attendancePct = attendanceScore?.percentage;
   const rightHeader = (
-    <div className="flex flex-col items-end gap-0.5 flex-shrink-0">
-      <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400">Balance</span>
-      <span className={`text-[11px] font-black font-mono ${feeSummary.balanceDue > 0 ? 'text-rose-500' : 'text-emerald-500'}`}>
-        ₹{feeSummary.balanceDue.toLocaleString()}
+    <div className="flex flex-col items-end gap-1 flex-shrink-0">
+      {/* Top Line: Attendance KPI Badge */}
+      <span
+        className={`text-[9px] font-extrabold font-mono px-1.5 py-0.25 rounded ${attendancePct == null
+          ? 'bg-slate-100 text-slate-500 dark:bg-slate-800/80 dark:text-slate-400 border border-slate-200/80 dark:border-slate-700/80'
+          : attendancePct >= 85
+            ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/60'
+            : attendancePct >= 70
+              ? 'bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400 border border-amber-200/60 dark:border-amber-800/60'
+              : 'bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400 border border-rose-200/60 dark:border-rose-800/60'
+          }`}
+      >
+        {attendancePct != null ? `${attendancePct}% Attendance` : 'N/A Attendance'}
+      </span>
+
+      {/* Bottom Line: Combined Due Summary Pill */}
+      <span
+        className={`px-2 py-0.5 rounded-full text-[10px] font-black font-mono tracking-tight border transition-all ${dueSummary.isMissing
+          ? 'bg-slate-100 text-slate-500 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700'
+          : dueSummary.isPaid
+            ? 'bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800'
+            : dueSummary.isOverdue
+              ? 'bg-rose-50 text-rose-600 border-rose-200 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-800'
+              : 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800'
+          }`}
+      >
+        {dueSummary.label}
       </span>
     </div>
   );
 
-  // Expanded Content Panel: Fee Metrics Tile + Schedule Tile + Collapsible Contacts & Actions
+  // Expanded Content Panel: Fee Metrics Tile + Schedule Tile + Collapsible Student ID, Enrolled Date & Contacts
   const expandedContent = (
     <div className="space-y-3 pt-1">
       {/* 💰 Fee Accounting Summary Grid Tile */}
       <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 grid grid-cols-3 gap-2 text-center">
         <div>
           <span className="text-[8px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 block">Total Fees</span>
-          <span className="text-xs font-black font-mono text-slate-800 dark:text-white">₹{feeSummary.totalFees.toLocaleString()}</span>
+          <span className="text-xs font-black font-mono text-slate-800 dark:text-white">{formatCurrency(feeSummary.totalFees)}</span>
         </div>
         <div>
           <span className="text-[8px] font-black uppercase tracking-wider text-emerald-500 block">Paid</span>
-          <span className="text-xs font-black font-mono text-emerald-600 dark:text-emerald-400">₹{feeSummary.paidAmount.toLocaleString()}</span>
+          <span className="text-xs font-black font-mono text-emerald-600 dark:text-emerald-400">{formatCurrency(feeSummary.paidAmount)}</span>
         </div>
         <div>
           <span className="text-[8px] font-black uppercase tracking-wider text-rose-500 block">Due Balance</span>
-          <span className="text-xs font-black font-mono text-rose-600 dark:text-rose-400">₹{feeSummary.balanceDue.toLocaleString()}</span>
+          <span className="text-xs font-black font-mono text-rose-600 dark:text-rose-400">{formatCurrency(feeSummary.balanceDue)}</span>
         </div>
       </div>
 
@@ -168,15 +288,27 @@ const StudentMobileCardItem = ({
         <div>
           <span className="text-[8px] font-black uppercase tracking-wider text-amber-500 block">Next Due Date</span>
           <span className="text-[11px] font-semibold text-slate-800 dark:text-white font-mono">
-            {feeSummary.nextDueDate} {feeSummary.nextDueAmount > 0 ? `(₹${feeSummary.nextDueAmount.toLocaleString()})` : ''}
+            {dueSummary.isPaid
+              ? 'Paid'
+              : feeSummary.nextDueDate
+                ? `${feeSummary.nextDueDate}${feeSummary.nextDueAmount != null ? ` (${formatCurrency(feeSummary.nextDueAmount)})` : ''}`
+                : 'N/A'}
           </span>
         </div>
       </div>
 
-      {/* Collapsible Details & Action Buttons */}
+      {/* Collapsible Details (Student ID, Enrolled Date, Phone, Enrollment ID) */}
       <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-text-secondary dark:text-on-surface-variant text-[10px] pt-1">
         <div>
-          <span className="font-bold block text-[8px] uppercase tracking-wider text-text-secondary/70">Phone Number</span>
+          <span className="font-bold block text-[8px] uppercase tracking-wider text-text-secondary/70">Student Identifier</span>
+          <span className="font-semibold text-text-main dark:text-white font-mono">{student.student_id}</span>
+        </div>
+        <div>
+          <span className="font-bold block text-[8px] uppercase tracking-wider text-text-secondary/70">Enrolled Date</span>
+          <span className="font-semibold text-text-main dark:text-white">{feeSummary.admissionDate}</span>
+        </div>
+        <div>
+          <span className="font-bold block text-[8px] uppercase tracking-wider text-text-secondary/70">Contact Phone</span>
           <span className="font-semibold text-text-main dark:text-white">{student.phone || 'N/A'}</span>
         </div>
         <div>
@@ -184,20 +316,6 @@ const StudentMobileCardItem = ({
           <span className="font-semibold text-text-main dark:text-white font-mono text-[10px]">
             {student.enrollments?.[0]?.enrollment_id || 'No active enrollment'}
           </span>
-        </div>
-        <div className="col-span-2 space-y-1">
-          <span className="font-bold block text-[8px] uppercase tracking-wider text-text-secondary/70">Assigned Batches & Courses</span>
-          {student.allocations && student.allocations.length > 0 ? (
-            <div className="flex flex-wrap gap-1">
-              {student.allocations.map((alloc, idx) => (
-                <span key={alloc.allocation_id || idx} className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700">
-                  {alloc.batch_name || alloc.course_name || 'Batch'}
-                </span>
-              ))}
-            </div>
-          ) : (
-            <span className="font-semibold text-text-main dark:text-white">Unassigned</span>
-          )}
         </div>
       </div>
 
@@ -258,6 +376,7 @@ export const StudentMobileCard = React.memo(StudentMobileCardItem, (prev, next) 
     prev.isSelectionMode === next.isSelectionMode &&
     prev.onSelectRow === next.onSelectRow &&
     prev.onToggleExpand === next.onToggleExpand &&
+    prev.onOpenAllocationsModal === next.onOpenAllocationsModal &&
     prev.handlers === next.handlers
   );
 });

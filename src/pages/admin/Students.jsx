@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../context/AuthContextCore';
 import { useStudentsQuery, useUpdateStudentMutation, useDeleteStudentMutation } from '../../features/student/hooks/useStudentQueries';
-import { queryKeys } from '../../lib/react-query/queryKeys';
+import { queryKeys, EMPTY_FILTER } from '../../lib/react-query/queryKeys';
 import { useFilteredStudents } from '../../hooks/useFilteredStudents';
 import DataTable from '../../components/ui/DataTable';
 import { SearchInput, SelectFilter } from '../../components/ui/filters';
@@ -19,7 +19,9 @@ import useDeleteManyMutation from '../../hooks/useDeleteManyMutation';
 import SelectionActionBar from '../../components/ui/v2/SelectionActionBar';
 import { API_REGISTRY } from '../../services/apiRegistry';
 import useIsMobile from '../../hooks/useIsMobile';
-import { EMPTY_FILTER } from '../../lib/react-query/queryKeys';
+import { useBatchesQuery } from '../../features/batch/hooks/useBatchQueries';
+import { useCoursesQuery, useCourseTypesQuery } from '../../features/course/hooks/useCourseQueries';
+import { batchRepo } from '../../features/batch/utils/batchCacheHelper';
 
 /**
  * Helper to evaluate if the student list needs relational hydration (allocations / enrollments).
@@ -37,6 +39,16 @@ const Students = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+
+  // Pre-fetch relational lookup datasets (Batches, Courses, CourseTypes) for batchRepo
+  const { data: batches = [] } = useBatchesQuery();
+  const { data: courses = [] } = useCoursesQuery();
+  const { data: courseTypes = [] } = useCourseTypesQuery();
+
+  // Prime batchRepo singleton whenever batches, courses, or courseTypes change
+  React.useEffect(() => {
+    batchRepo.prime(batches, courses, courseTypes);
+  }, [batches, courses, courseTypes]);
 
   // Conditional Hydration State
   const [needsRefetch, setNeedsRefetch] = useState(false);
