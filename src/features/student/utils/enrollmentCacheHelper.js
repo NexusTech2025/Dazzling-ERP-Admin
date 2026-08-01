@@ -1,0 +1,306 @@
+/**
+ * @file enrollmentCacheHelper.js
+ * Normalized Enrollment Repository utility with O(1) Hashmaps (enrollmentMap, feeAccountMap).
+ * Provides fast lookups, direct RAM cache updates on queryKeys.enrollment.list, and
+ * background query invalidation.
+ */
+
+import { queryKeys, EMPTY_FILTER } from '../../../lib/react-query/queryKeys';
+
+/**
+ * Enterprise Repository for Hydrated Enrollment Cache wrangling and O(1) Hashmap lookups.
+ */
+export class EnrollmentRepo {
+  constructor() {
+    /** @type {Map<string, Object>} Map of enrollment_id -> hydrated Enrollment record */
+    this.enrollmentMap = new Map();
+
+    /** @type {Map<string, Object>} Map of student_fee_id -> { feeAccount, enrollmentId, parentEnrollment } */
+    this.feeAccountMap = new Map();
+  }
+
+  /**
+   * Normalizes an array of hydrated enrollments into O(1) lookup maps.
+   * @param {Array<Object>} enrollments - List of hydrated enrollment records.
+   * @returns {Object} Hashmaps reference { enrollmentMap, feeAccountMap }.
+   */
+  normalize(enrollments = []) {
+    this.enrollmentMap.clear();
+    this.feeAccountMap.clear();
+
+    if (!Array.isArray(enrollments)) return { enrollmentMap: this.enrollmentMap, feeAccountMap: this.feeAccountMap };
+
+    for (let i = 0; i < enrollments.length; i++) {
+      const enr = enrollments[i];
+      const enrId = enr.enrollment_id || enr.id;
+
+      if (enrId) {
+        this.enrollmentMap.set(enrId, enr);
+      }
+
+      if (Array.isArray(enr.studentfeeaccounts)) {
+        for (let j = 0; j < enr.studentfeeaccounts.length; j++) {
+          const sfa = enr.studentfeeaccounts[j];
+          if (sfa?.student_fee_id) {
+            this.feeAccountMap.set(sfa.student_fee_id, {
+              feeAccount: sfa,
+              enrollmentId: enrId,
+              parentEnrollment: enr
+            });
+          }
+        }
+      }
+    }
+
+    return { enrollmentMap: this.enrollmentMap, feeAccountMap: this.feeAccountMap };
+  }
+
+  /**
+   * O(1) Lookup: Get enrollment by enrollment_id.
+   * @param {string} enrollmentId - Target enrollment identifier.
+   * @returns {Object|null} Hydrated enrollment record or null.
+   */
+  getByEnrollmentId(enrollmentId) {
+    return this.enrollmentMap.get(enrollmentId) || null;
+  }
+
+  /**
+   * O(1) Lookup: Get fee account & parent enrollment by student_fee_id.
+   * @param {string} studentFeeId - Target fee account identifier ("SFA-xxx").
+   * @returns {Object|null} Hash mapping { feeAccount, enrollmentId, parentEnrollment } or null.
+   */
+  getByFeeAccountId(studentFeeId) {
+    return this.feeAccountMap.get(studentFeeId) || null;
+  }
+
+  /**
+   * O(1) Lookup: Get installments array for a specific student_fee_id.
+   * @param {string} studentFeeId - Target fee account identifier.
+   * @returns {Array<Object>} List of installment objects.
+   */
+  getInstallmentsByFeeId(studentFeeId) {
+    const entry = this.getByFeeAccountId(studentFeeId);
+    return entry?.feeAccount?.installments || [];
+  }
+
+  /**
+   * Performs an O(1) targeted mutation on queryKeys.enrollment.list(EMPTY_FILTER) in React Query RAM cache.
+   * 
+   * @param {import('@tanstack/react-query').QueryClient} queryClient - Active QueryClient instance.
+   * @param {string} studentFeeId - Target student_fee_id ("SFA-xxx").
+   * @param {Object} updateData - Updated attributes { balance_due, next_due_date, account_status, status }.
+   */
+  updateFeeAccountCache(queryClient, studentFeeId, updateData = {}) {
+    const listKey = queryKeys.enrollment.list(EMPTY_FILTER);
+    const cachedList = queryClient.getQueryData(listKey) || [];
+
+    // Ensure maps are primed
+    this.normalize(cachedList);
+
+    const targetEntry = this.getByFeeAccountId(studentFeeId);
+    if (!targetEntry) {
+      console.warn(`[EnrollmentRepo] Fee Account ${studentFeeId} not found in cache for fast update.`);
+      return;
+    }
+
+    // Direct object mutation in cached list
+    const { feeAccount } = targetEntry;
+    if (updateData.balance_due !== undefined) feeAccount.balance_due = updateData.balance_due;
+    if (updateData.next_due_date !== undefined) feeAccount.next_due_date = updateData.next_due_date;
+    if (updateData.account_status || updateData.status) {
+      feeAccount.status = updateData.account_status || updateData.status;
+    }
+
+    // Write back updated dataset & re-prime maps
+    queryClient.setQueryData(listKey, [...cachedList]);
+    this.normalize(cachedList);
+  }
+
+  /**
+   * Repository method to extract allocation view models from a hydrated Enrollment entity (Legacy / Direct Enrollment views).
+   * 
+   * @param {Object} enrollment - Hydrated Enrollment record.
+   * @returns {Array<Object>} List of allocation view models [{ allocationId, batchId, batchName, courseId, courseName, status }].
+   */
+  getAllocationsViewModel(enrollment) {
+    if (!enrollment || !Array.isArray(enrollment.allocations) || enrollment.allocations.length === 0) {
+      return [];
+    }
+    return enrollment.allocations.map(alloc => ({
+      allocationId: alloc.allocation_id,
+      batchId: alloc.batch?.batch_id || alloc.batch_id,
+      batchName: alloc.batch?.batch_name || alloc.batch_name || 'Unassigned Batch',
+      courseId: alloc.course?.course_id || alloc.course_id,
+      courseName: alloc.course?.name || alloc.course_name || 'Unassigned Course',
+      status: (alloc.status || 'active').toLowerCase()
+    }));
+  }
+
+  /**
+   * Safely extracts fee accounting metrics for a student by querying embedded fee accounts or enrollmentRepo O(1) cache.
+   * 
+   * @param {Object} student - Student entity record.
+   * @returns {{ totalFees: number|null, paidAmount: number|null, balanceDue: number, nextDueDate: string|null, isOverdue: boolean, isPaidFull: boolean, isFeeDue: boolean }}
+   */
+  extractFeeSummary(student) {
+    if (!student || typeof student !== 'object') {
+      return { totalFees: null, paidAmount: null, balanceDue: 0, nextDueDate: null, isOverdue: false, isPaidFull: false, isFeeDue: false };
+    }
+
+    try {
+      const enrollments = Array.isArray(student.enrollments) 
+        ? student.enrollments 
+        : (Array.isArray(student.Enrollment) ? student.Enrollment : []);
+      
+      let feeAcc = null;
+      let enr = enrollments[0];
+
+      for (const rawEnr of enrollments) {
+        const enrId = rawEnr?.enrollment_id || rawEnr?.id;
+        const hydrated = enrId ? this.getByEnrollmentId(enrId) : null;
+        const targetEnr = hydrated || rawEnr;
+
+        const feeAccounts = Array.isArray(targetEnr?.studentfeeaccounts)
+          ? targetEnr.studentfeeaccounts
+          : (Array.isArray(targetEnr?.StudentFeeAccount) ? targetEnr.StudentFeeAccount : []);
+        
+        if (feeAccounts.length > 0) {
+          feeAcc = feeAccounts[0];
+          enr = targetEnr;
+          break;
+        }
+      }
+
+      if (!feeAcc && enr) {
+        const feeAccounts = Array.isArray(enr?.studentfeeaccounts)
+          ? enr.studentfeeaccounts
+          : (Array.isArray(enr?.StudentFeeAccount) ? enr.StudentFeeAccount : []);
+        feeAcc = feeAccounts[0] || enr?.feeAccount || enr?.student_fee_account || null;
+      }
+
+      const totalFees = feeAcc?.total_amount != null ? Number(feeAcc.total_amount) : (feeAcc?.agreed_amount != null ? Number(feeAcc.agreed_amount) : null);
+      const paidAmount = feeAcc?.paid_amount != null ? Number(feeAcc.paid_amount) : null;
+      const balanceDue = feeAcc?.balance_due != null
+        ? Number(feeAcc.balance_due)
+        : (feeAcc?.balance_amount != null
+          ? Number(feeAcc.balance_amount)
+          : (totalFees != null && paidAmount != null ? Math.max(0, totalFees - paidAmount) : 0));
+
+      let nextDueDate = feeAcc?.next_due_date || null;
+
+      if (Array.isArray(feeAcc?.installments) && feeAcc.installments.length > 0) {
+        const pending = feeAcc.installments
+          .filter(i => i.status === 'pending' || i.status === 'partially_paid')
+          .sort((a, b) => new Date(a.due_date) - new Date(b.due_date));
+        if (pending.length > 0) {
+          nextDueDate = pending[0].due_date || nextDueDate;
+        }
+      }
+
+      const isFeeDue = balanceDue > 0;
+      const isOverdue = !!(nextDueDate && new Date(nextDueDate) < new Date() && isFeeDue);
+      const isPaidFull = balanceDue === 0 && enrollments.length > 0;
+
+      return { totalFees, paidAmount, balanceDue, nextDueDate, isOverdue, isPaidFull, isFeeDue };
+    } catch (err) {
+      console.warn('[EnrollmentRepo:extractFeeSummary] Error:', err);
+      return { totalFees: null, paidAmount: null, balanceDue: 0, nextDueDate: null, isOverdue: false, isPaidFull: false, isFeeDue: false };
+    }
+  }
+
+  /**
+   * Evaluates student enrollment date against lookback threshold.
+   * 
+   * @param {Object} student - Student entity record.
+   * @param {number} [daysThreshold=30] - Lookback window in days.
+   * @returns {{ isNewAdmission: boolean, admissionDate: string|null }}
+   */
+  evaluateAdmissionDate(student, daysThreshold = 30) {
+    if (!student || typeof student !== 'object') {
+      return { isNewAdmission: false, admissionDate: null };
+    }
+    try {
+      const enrollments = Array.isArray(student.enrollments) ? student.enrollments : (Array.isArray(student.Enrollment) ? student.Enrollment : []);
+      const enrDate = enrollments[0]?.enrollment_date || null;
+      if (!enrDate) return { isNewAdmission: false, admissionDate: null };
+
+      const thresholdDate = new Date();
+      thresholdDate.setDate(thresholdDate.getDate() - daysThreshold);
+      const parsed = new Date(enrDate);
+      const isNewAdmission = !isNaN(parsed.getTime()) && parsed >= thresholdDate;
+
+      return { isNewAdmission, admissionDate: enrDate };
+    } catch (err) {
+      console.warn('[EnrollmentRepo:evaluateAdmissionDate] Error:', err);
+      return { isNewAdmission: false, admissionDate: null };
+    }
+  }
+
+  /**
+   * Triggers silent background invalidation of enrollment & finance queries.
+   * @param {import('@tanstack/react-query').QueryClient} queryClient - Active QueryClient instance.
+   */
+  invalidate(queryClient) {
+    queryClient.invalidateQueries({ queryKey: queryKeys.enrollment.all });
+    queryClient.invalidateQueries({ queryKey: queryKeys.finance.all });
+  }
+}
+
+import { batchRepo } from '../../batch/utils/batchCacheHelper';
+
+/**
+ * Extracts normalized batch allocation view models directly from a hydrated Student object (useStudentsQuery),
+ * delegating relational joining of BatchAllocation junction records to batchRepo.
+ * 
+ * @param {Object} student - Hydrated student record from useStudentsQuery.
+ * @param {Array<Object>|Map<string, Object>} [batches=[]] - Cached batches list or lookup map.
+ * @param {Array<Object>|Map<string, Object>} [courses=[]] - Cached courses list or lookup map.
+ * @returns {Array<Object>} List of allocation view models [{ allocationId, batchId, batchName, courseId, courseName, status }].
+ */
+export function getStudentAllocationsViewModel(student, batches = [], courses = [], courseTypes = []) {
+  return batchRepo.getStudentAllocations(student, batches, courses, courseTypes);
+}
+
+/**
+ * Computes frequency counts of CourseTypes across a student's allocations.
+ * Sorts categories from highest to lowest count and prepares badge models.
+ * 
+ * @param {Array<Object>} allocations - Array of allocation objects from BatchRepo/getStudentAllocationsViewModel.
+ * @returns {{ badges: Array<{ type: string, count: number, label: string }>, overflowCount: number }}
+ */
+export function getCourseTypeSummary(allocations = []) {
+  if (!Array.isArray(allocations) || allocations.length === 0) {
+    return { badges: [], overflowCount: 0 };
+  }
+
+  const freqMap = new Map();
+  allocations.forEach(alloc => {
+    const type = alloc.courseTypeName || 'REGULAR';
+    freqMap.set(type, (freqMap.get(type) || 0) + 1);
+  });
+
+  const sorted = Array.from(freqMap.entries())
+    .map(([type, count]) => ({ type, count }))
+    .sort((a, b) => b.count - a.count);
+
+  const totalCategories = sorted.length;
+
+  if (totalCategories > 3) {
+    const visible = sorted.slice(0, 2).map(item => ({
+      ...item,
+      label: item.count > 1 ? `${item.type} (${item.count})` : item.type
+    }));
+    const overflowCount = totalCategories - 2;
+    return { badges: visible, overflowCount };
+  }
+
+  const visible = sorted.map(item => ({
+    ...item,
+    label: item.count > 1 ? `${item.type} (${item.count})` : item.type
+  }));
+
+  return { badges: visible, overflowCount: 0 };
+}
+
+// Export singleton instance
+export const enrollmentRepo = new EnrollmentRepo();

@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import Card from '../../../../../components/ui/Card';
 import Badge from '../../../../../components/ui/Badge';
 import Button from '../../../../../components/ui/v2/Button';
@@ -103,6 +104,16 @@ export const FeeAccountCard = ({ enrollment, defaultExpanded = true }) => {
         </div>
 
         <div className="flex items-center gap-3 shrink-0">
+          {feeAccount?.student_fee_id && (
+            <Link
+              to={`/admin/finance/reschedule/${feeAccount.student_fee_id}`}
+              className="px-3 py-1.5 bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-blue-700 dark:text-blue-300 text-xs font-bold rounded-xl border border-blue-200 dark:border-blue-800 transition-all flex items-center gap-1.5"
+              title="Reschedule Installment Schedule"
+            >
+              <span className="material-symbols-outlined text-base">edit_calendar</span>
+              <span className="hidden sm:inline">Reschedule Schedule</span>
+            </Link>
+          )}
           <Badge variant={enrollmentStatus === 'active' ? 'success' : 'neutral'}>
             {enrollmentStatus.toUpperCase()}
           </Badge>

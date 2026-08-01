@@ -19,14 +19,14 @@ const KpiCard = ({
   // Sizing definitions mapping to Tailwind utility classes
   const sizeConfig = {
     sm: {
-      cardHeight: 'h-14',
-      cardWidth: 'max-w-[140px]',
+      cardHeight: 'min-h-[52px]',
+      cardWidth: 'w-full',
       padding: 'py-1.5 px-2',
       borderRadius: 'rounded-lg',
-      labelSize: 'text-[7px]',
+      labelSize: 'text-[9px]',
       valueSize: 'text-xs',
       iconContainer: 'p-0.5 rounded',
-      iconSize: 'text-[10px]'
+      iconSize: 'text-[12px]'
     },
     md: {
       cardHeight: 'h-18',

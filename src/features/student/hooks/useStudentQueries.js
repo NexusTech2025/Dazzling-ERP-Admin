@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../../context/AuthContextCore';
 import { queryKeys, EMPTY_FILTER } from '../../../lib/react-query/queryKeys';
-import { getCachedRecord, resolveRecord } from '../../../lib/react-query/cacheHelper';
+import { getCachedRecord, resolveRecord, resolveList } from '../../../lib/react-query/cacheHelper';
 import {
   fetchStudents,
   modifyStudent,
@@ -12,25 +12,56 @@ import {
 } from '../api/student.api';
 
 /**
- * Hook for fetching all students with optional filtering
+ * Hook for fetching all students with zero query key fragmentation.
+ * Ephemeral filters are excluded from queryKey; all student records are cached under EMPTY_FILTER
+ * and resolved via resolveList with normalizeStudent.
+ *
+ * @param {Object} [filter=EMPTY_FILTER] - Ephemeral filter for server-side narrowing (not encoded in queryKey).
+ * @param {Object} [options={}] - Additional hook configuration options.
+ * @param {Function} [options.onSuccess] - Callback invoked with data after a successful fetch.
+ * @param {Function} [options.onError] - Callback invoked with error after a failed fetch.
+ * @param {boolean} [options.strictSearch=false] - When true, passes the filter for server-side strict matching.
+ * @param {boolean} [options.forceRefetch=false] - When true, overrides staleTime to force a fresh network fetch.
  */
-export const useStudentsQuery = (filter = EMPTY_FILTER) => {
+export const useStudentsQuery = (filter = EMPTY_FILTER, options = {}) => {
   const { token } = useAuth();
+  const queryClient = useQueryClient();
+  const { onSuccess, onError, strictSearch = false, forceRefetch = false } = options;
 
-  return useQuery({
-    queryKey: queryKeys.student.list(filter),
-    queryFn: async ({ signal }) => {
-      const response = await fetchStudents(token, filter, { signal });
-      if (!response.success) {
-        throw new Error(response.error?.message || response.message || 'Failed to fetch students');
-      }
-      return response.data?.data || [];
+  const activeFilter = strictSearch ? filter : EMPTY_FILTER;
+
+  const query = useQuery({
+    queryKey: queryKeys.student.list(EMPTY_FILTER),
+    queryFn: async () => {
+      return resolveList(
+        queryClient,
+        'student',
+        activeFilter,
+        async () => {
+          const response = await fetchStudents(token, activeFilter);
+          if (!response.success) {
+            throw new Error(response.error?.message || response.message || 'Failed to fetch students');
+          }
+          return response.data?.data || [];
+        },
+        { forceRefetch }
+      );
     },
     enabled: !!token,
-    staleTime: Infinity,
-    refetchOnMount: false,
+    staleTime: forceRefetch ? 0 : Infinity,
+    refetchOnMount: forceRefetch ? 'always' : false,
     refetchOnWindowFocus: false,
   });
+
+  // Invoke lifecycle callbacks when query state settles
+  if (query.isSuccess && onSuccess) {
+    onSuccess(query.data);
+  }
+  if (query.isError && onError) {
+    onError(query.error);
+  }
+
+  return query;
 };
 
 /**
@@ -149,9 +180,9 @@ export const useDeleteStudentMutation = () => {
       if (!id) {
         throw new Error('Student ID is required for deletion.');
       }
-      
+
       console.log('[useDeleteStudentMutation] Initiating deletion for Student ID:', id);
-      
+
       try {
         const response = await removeStudent(token, id, options);
         console.log('[useDeleteStudentMutation] API Response:', response);

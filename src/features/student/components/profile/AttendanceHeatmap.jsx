@@ -50,7 +50,7 @@ const AttendanceHeatmap = ({ studentId }) => {
               </tr>
             </thead>
             <tbody className="divide-y divide-border-light dark:divide-border-dark text-sm">
-              {stats.history.length > 0 ? stats.history.map((record, idx) => (
+              {stats?.history && stats.history.length > 0 ? stats.history.map((record, idx) => (
                 <tr key={idx} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors">
                   <td className="px-6 py-4 font-bold text-text-main dark:text-white">
                     {new Date(record.date).toLocaleDateString(undefined, { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}

@@ -439,6 +439,11 @@
       "title": "FlashAlert",
       "line": 2980,
       "location": "src/components/ui/v2/FlashAlert.jsx"
+    },
+    {
+      "title": "MobileListView",
+      "line": 2848,
+      "location": "src/components/ui/v2/MobileListView.jsx"
     }
   ]
 }

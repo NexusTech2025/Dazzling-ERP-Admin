@@ -1,14 +1,71 @@
 {
-  "active_branch": "bugfix/batch-attendance-marking",
-  "updated_at": "2026-07-28T19:31:33.205Z",
+  "active_branch": "integration/student-features-v2.0.1",
+  "updated_at": "2026-08-01T19:19:42.367Z",
   "branches": {
+    "refactor/student-views-optimization": {
+      "branch_name": "refactor/student-views-optimization",
+      "parent_branch": "main",
+      "purpose": "Optimize student views (list view, detailed view) and eliminate static/mock data fallbacks.",
+      "status": "in_progress",
+      "working_tree_clean": false,
+      "uncommitted_changes_count": 2,
+      "commits_count_ahead": 8,
+      "created_at": "2026-07-30T20:56:00.000Z",
+      "last_activity_at": "2026-08-01T15:52:10.778Z",
+      "commits_summary": [
+        "a7e1a09 docs(memory): update git_branches memory store and session 1 memory index",
+        "cdfdb72 feat(student-profile): refactor MobileStudentProfile with Slotted ProfileHero compound pattern and dynamic metrics",
+        "6c3b30b docs(memory): add student_hydrated_data.md memory documentation",
+        "607629e fix(student): resolve student attendance calculation, fee status display, and batch allocation badges",
+        "b5a1a2a docs(plan): audit implementation plans and sync completed status tags across .gemini/plan/",
+        "2a022f7 feat(student): display hydrated batch & enrollment data on student list views and fix mobile card render bugs",
+        "3b1b34c feat(finance,reschedule): implement RescheduleInstallmentsView & atomic schedule restructuring mutation",
+        "8d218fa feat(student,cache): integrate EnrollmentRepo O(1) RAM cache sync & reschedule triggers"
+      ],
+      "recommendation": "🟡 Active Work in Progress: You have 2 uncommitted file(s). Commit or stash your changes before merging or switching branches."
+    },
+    "feature/student-enrollment-updates": {
+      "branch_name": "feature/student-enrollment-updates",
+      "parent_branch": "main",
+      "purpose": "Student enrollment updates, RAM cache sync, RescheduleInstallmentsView & atomic schedule restructuring mutation.",
+      "status": "in_progress",
+      "working_tree_clean": true,
+      "uncommitted_changes_count": 0,
+      "commits_count_ahead": 2,
+      "created_at": "2026-07-29T20:03:25.315Z",
+      "last_activity_at": "2026-07-30T20:49:00.000Z",
+      "commits_summary": [
+        "3b1b34c feat(finance,reschedule): implement RescheduleInstallmentsView & atomic schedule restructuring mutation",
+        "8d218fa feat(student,cache): integrate EnrollmentRepo O(1) RAM cache sync & reschedule triggers"
+      ],
+      "recommendation": "🟡 Stashed Work in Progress: Uncommitted changes were stashed. Commit or restore stashed changes when returning."
+    },
+    "main": {
+      "branch_name": "main",
+      "parent_branch": "main",
+      "purpose": "Main base production branch",
+      "status": "active",
+      "working_tree_clean": true,
+      "uncommitted_changes_count": 0,
+      "commits_count_ahead": 0,
+      "created_at": "2026-07-26T11:12:25.484Z",
+      "last_activity_at": "2026-07-29T20:01:55.791Z",
+      "commits_summary": [
+        "bb76a3c merge(skills): merge test/smart-merge-demo into main",
+        "bb9bf58 feat(skills): integrate smart-branch-merge skill and approved plan artifact",
+        "ea5b747 merge(attendance): merge bugfix/batch-attendance-marking into main",
+        "5941ec7 docs(attendance,skills): add teacher attendance architecture manual, resolved bug reports BUG-0009 to BUG-0014, and git branch skill enhancements",
+        "c1bdb10 fix(batch,attendance): resolve student status staging, null punch times, and payload schema validation bugs"
+      ],
+      "recommendation": "⚪ Clean & Ready: Main base production branch."
+    },
     "package-patches-bugfix": {
       "branch_name": "package-patches-bugfix",
       "parent_branch": "main",
       "purpose": "Package filter bugfixes, enrollment query hydration, teacher attendance strategy refactoring, and Student Fee Tab / RecordPaymentModal redesign.",
       "status": "merged",
       "working_tree_clean": true,
-      "uncommitted_changes_count": 10,
+      "uncommitted_changes_count": 0,
       "commits_count_ahead": 5,
       "created_at": "2026-07-26T09:43:07.895Z",
       "last_activity_at": "2026-07-26T11:06:51.625Z",
@@ -21,32 +78,13 @@
       ],
       "recommendation": "🔵 Merged Upstream: This branch has been merged upstream into main. Safe to delete locally using 'git branch -d package-patches-bugfix'."
     },
-    "main": {
-      "branch_name": "main",
-      "parent_branch": "main",
-      "purpose": "Feature/bugfix work on main",
-      "status": "ready_for_merge",
-      "working_tree_clean": true,
-      "uncommitted_changes_count": 0,
-      "commits_count_ahead": 5,
-      "created_at": "2026-07-26T11:12:25.484Z",
-      "last_activity_at": "2026-07-26T19:18:52.515Z",
-      "commits_summary": [
-        "054c789 Merge branch 'feature/teacher-payroll-payment'",
-        "a3a41e7 docs(teacher-payroll): add dual-flow reconciliation plans and walkthroughs",
-        "7652295 feat(teacher,finance): implement dual-flow GL reconciliation, UnlinkedGlOutflowsBanner, and async linking workflow",
-        "1a88456 config(memory,plan): record teacher payment plans, RHF memory rules, and branch status logic",
-        "84d7e16 feat(teacher,payroll): integrate RecordTeacherPaymentModal with React Hook Form and ResponseModal sync"
-      ],
-      "recommendation": "🟢 Ready for Merge / PR: All recent work is committed and working tree is clean. Consider merging into main."
-    },
     "feature/teacher-payroll-payment": {
       "branch_name": "feature/teacher-payroll-payment",
       "parent_branch": "main",
       "purpose": "Teacher salary/stipend payment recording, RecordTeacherPaymentModal, and general ledger transaction sync.",
       "status": "merged",
       "working_tree_clean": true,
-      "uncommitted_changes_count": 17,
+      "uncommitted_changes_count": 0,
       "commits_count_ahead": 2,
       "created_at": "2026-07-26T12:41:31.237Z",
       "last_activity_at": "2026-07-26T16:27:05.635Z",
@@ -62,7 +100,7 @@
       "purpose": "Student test scores management, batch test scheduling, marksheets, and academic performance tracking.",
       "status": "merged",
       "working_tree_clean": true,
-      "uncommitted_changes_count": 21,
+      "uncommitted_changes_count": 0,
       "commits_count_ahead": 8,
       "created_at": "2026-07-27T05:43:08.905Z",
       "last_activity_at": "2026-07-28T19:23:45.342Z",
@@ -81,15 +119,42 @@
     "bugfix/batch-attendance-marking": {
       "branch_name": "bugfix/batch-attendance-marking",
       "parent_branch": "main",
-      "purpose": "Feature/bugfix work on bugfix/batch-attendance-marking",
+      "purpose": "Batch attendance status staging, null punch times fix, payload schema validation, & attendance architecture manual.",
+      "status": "merged",
+      "working_tree_clean": true,
+      "uncommitted_changes_count": 0,
+      "commits_count_ahead": 2,
+      "created_at": "2026-07-28T19:28:08.137Z",
+      "last_activity_at": "2026-07-2923:36:00.000Z",
+      "commits_summary": [
+        "5941ec7 docs(attendance,skills): add teacher attendance architecture manual, resolved bug reports BUG-0009 to BUG-0014, and git branch skill enhancements",
+        "c1bdb10 fix(batch,attendance): resolve student status staging, null punch times, and payload schema validation bugs"
+      ],
+      "recommendation": "🔵 Merged Upstream: Safe to delete locally ('git branch -d bugfix/batch-attendance-marking')."
+    },
+    "integration/student-features-v2.0.1": {
+      "branch_name": "integration/student-features-v2.0.1",
+      "parent_branch": "main",
+      "purpose": "Feature/bugfix work on integration/student-features-v2.0.1",
       "status": "in_progress",
       "working_tree_clean": false,
-      "uncommitted_changes_count": 22,
-      "commits_count_ahead": 0,
-      "created_at": "2026-07-28T19:28:08.137Z",
-      "last_activity_at": "2026-07-28T19:31:33.293Z",
-      "commits_summary": [],
-      "recommendation": "🟡 Active Work in Progress: You have 22 uncommitted file(s). Commit or stash your changes before merging or switching branches."
+      "uncommitted_changes_count": 23,
+      "commits_count_ahead": 10,
+      "created_at": "2026-08-01T16:01:57.224Z",
+      "last_activity_at": "2026-08-01T19:19:42.598Z",
+      "commits_summary": [
+        "ec9c837 merge(student-views): merge refactor/student-views-optimization into integration/student-features-v2.0.1",
+        "231b088 merge(enrollment): merge feature/student-enrollment-updates into integration/student-features-v2.0.1",
+        "a7e1a09 docs(memory): update git_branches memory store and session 1 memory index",
+        "cdfdb72 feat(student-profile): refactor MobileStudentProfile with Slotted ProfileHero compound pattern and dynamic metrics",
+        "6c3b30b docs(memory): add student_hydrated_data.md memory documentation",
+        "607629e fix(student): resolve student attendance calculation, fee status display, and batch allocation badges",
+        "b5a1a2a docs(plan): audit implementation plans and sync completed status tags across .gemini/plan/",
+        "2a022f7 feat(student): display hydrated batch & enrollment data on student list views and fix mobile card render bugs",
+        "3b1b34c feat(finance,reschedule): implement RescheduleInstallmentsView & atomic schedule restructuring mutation",
+        "8d218fa feat(student,cache): integrate EnrollmentRepo O(1) RAM cache sync & reschedule triggers"
+      ],
+      "recommendation": "🟡 Active Work in Progress: You have 23 uncommitted file(s). Commit or stash your changes before merging or switching branches."
     }
   }
 }

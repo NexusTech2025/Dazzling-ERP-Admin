@@ -3,8 +3,8 @@ import PropTypes from 'prop-types';
 
 // --- Shared Design System CSS Token Variables ---
 const SHARED_ICON_CLASSES = "material-symbols-outlined text-text-secondary leading-none select-none";
-const SHARED_VALUE_CLASSES = "font-semibold text-text-main dark:text-white truncate";
-const SHARED_LABEL_CLASSES = "font-bold tracking-wider text-text-secondary uppercase select-none";
+const SHARED_VALUE_CLASSES = "text-xs font-semibold text-slate-800 dark:text-slate-100 truncate";
+const SHARED_LABEL_CLASSES = "text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider select-none";
 
 /**
  * Sub-Component: KeyValuePairIcon
@@ -70,7 +70,7 @@ const KeyValuePair = ({
   icon,
   fallback = "—",
   layout = "vertical",
-  sizeProp = "14px",
+  sizeProp = "10px",
   minWidth,
   maxWidth,
   className = ""
@@ -131,4 +131,4 @@ KeyValuePair.propTypes = {
 };
 
 export default KeyValuePair;
-
+

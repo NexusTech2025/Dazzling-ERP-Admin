@@ -19,7 +19,23 @@ import { API_REGISTRY } from '../../../services/apiRegistry';
  * @returns {Promise<object>} Standard response envelope with an array of matching student records.
  */
 export const fetchStudents = (token, filter = {}, options = {}) =>
-  executeAction(API_REGISTRY.DATA.QUERY, { target: 'Student', where: filter }, token, options);
+  executeAction(
+    API_REGISTRY.DATA.QUERY,
+    {
+      target: 'Student',
+      where: filter,
+      include: {
+        address: {},
+        contact: {},
+        education: {},
+        allocations: {},
+        enrollments: {},
+        studentattendance: {}
+      }
+    },
+    token,
+    options
+  );
 
 /**
  * Registers a student with basic profile credentials under the legacy single-row model.

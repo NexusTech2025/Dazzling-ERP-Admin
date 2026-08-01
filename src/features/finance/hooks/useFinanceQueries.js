@@ -1,6 +1,8 @@
+import { useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../../context/AuthContextCore';
 import { queryKeys } from '../../../lib/react-query/queryKeys';
+import { enrollmentRepo } from '../../student/utils/enrollmentCacheHelper';
 import { useDeleteManyMutation } from '../../../hooks/useDeleteManyMutation';
 import {
   fetchInstallments,
@@ -18,7 +20,8 @@ import {
   updateExpenseCategory,
   deleteExpenseCategory,
   fetchStaffMembers,
-  fetchAccountingData
+  fetchAccountingData,
+  rescheduleInstallments
 } from '../api/finance.api';
 
 /**
@@ -85,20 +88,19 @@ export const useOverdueAccountsQuery = (filter = {}) => {
  * Hook for fetching individual student fee overview
  */
 export const useStudentFeeOverviewQuery = (studentId) => {
-  const { token } = useAuth();
+  const { data: accountingData, isLoading, error } = useAccountingDataQuery();
 
-  return useQuery({
-    queryKey: queryKeys.finance.installment.student(studentId),
-    queryFn: async ({ signal }) => {
-      const response = await fetchStudentFeeOverview(token, studentId, { signal });
-      if (!response.success) {
-        throw new Error(response.error?.message || response.message || 'Failed to fetch student fee overview');
-      }
-      return response.data?.data || []; // Note: changed from response.data to response.data.data based on mock structure
-    },
-    enabled: !!token && !!studentId,
-    staleTime: 1000 * 60 * 10, // 10 minutes
-  });
+  const studentInstallments = useMemo(() => {
+    if (!accountingData || !studentId) return [];
+    const installments = accountingData.installments || Array.isArray(accountingData) ? accountingData : [];
+    return Array.isArray(installments) ? installments.filter(inst => inst && (inst.student_id === studentId || inst.studentId === studentId)) : [];
+  }, [accountingData, studentId]);
+
+  return {
+    data: studentInstallments,
+    isLoading,
+    error
+  };
 };
 
 /**
@@ -323,3 +325,33 @@ export const useAccountingDataQuery = () => {
     staleTime: 1000 * 60 * 10, // 10 minutes
   });
 };
+
+/**
+ * Hook for executing installment rescheduling mutations with cache invalidation & O(1) RAM sync.
+ */
+export const useRescheduleInstallmentsMutation = () => {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload) => rescheduleInstallments(token, payload),
+    onSuccess: (response) => {
+      if (response.success && response.data) {
+        const { student_fee_id, balance_due, next_due_date, account_status } = response.data;
+
+        // 1. O(1) Instant RAM Cache Sync on queryKeys.enrollment.list(EMPTY_FILTER)
+        if (student_fee_id) {
+          enrollmentRepo.updateFeeAccountCache(queryClient, student_fee_id, {
+            balance_due,
+            next_due_date,
+            account_status
+          });
+        }
+
+        // 2. Silent background invalidation for enrollment & finance query keys
+        enrollmentRepo.invalidate(queryClient);
+      }
+    }
+  });
+};
+

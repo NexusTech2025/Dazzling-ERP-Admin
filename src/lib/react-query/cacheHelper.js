@@ -346,25 +346,25 @@ export async function resolveList(queryClient, entity, filter = {}, fetchFn, opt
   const query = queryClient.getQueryCache().find({ queryKey: targetKey });
   const isStale = query ? query.isStale() : true;
 
+  console.groupCollapsed(`🌊 [resolveList] Resolving ${entity.toUpperCase()}`);
+  console.log('🎯 Target QueryKey:', JSON.stringify(targetKey));
+  console.log('📊 Cache state -> exists:', !!query, '| isStale:', isStale, '| forceRefetch:', forceRefetch);
+
   // 1. Check cache first (unless forceRefetch is enabled or query is marked as stale)
   if (!forceRefetch && !isStale) {
     try {
       const cachedData = getCachedList(queryClient, entity, filter, options);
       if (cachedData) {
-        console.log(`[CacheHelper:ListSuccess] Resolved list from Cache.`, {
-          entity,
-          filter,
-          count: cachedData.length,
-          timestamp: new Date().toISOString()
-        });
+        console.log(`✅ [resolveList] Resolved ${entity} from CACHE (${cachedData.length} items).`);
+        if (cachedData.length > 0) {
+          console.log('🔑 First item keys in cache:', Object.keys(cachedData[0]));
+        }
+        console.groupEnd();
         if (onSuccess) onSuccess(cachedData);
         return cachedData;
       }
     } catch (cacheError) {
-      console.warn(`[CacheHelper:ListWarning] Cache lookup failed. Failsafe to fetch.`, {
-        entity,
-        error: cacheError.message
-      });
+      console.warn(`⚠️ [resolveList] Cache lookup failed for ${entity}. Failsafe to network fetch.`, cacheError.message);
     }
   }
 
@@ -372,11 +372,12 @@ export async function resolveList(queryClient, entity, filter = {}, fetchFn, opt
   const filterKeyStr = JSON.stringify(filter);
   const reqKey = `${entity}:list:${filterKeyStr}`;
   if (activeRequests.has(reqKey)) {
-    console.log(`[CacheHelper:Deduplication] Reusing active fetch request for list.`, { entity, filter });
+    console.log(`🔁 [resolveList] Reusing active fetch request for ${entity}.`);
+    console.groupEnd();
     return activeRequests.get(reqKey);
   }
 
-  console.log(`[CacheHelper:CacheMiss] Fetching list from network...`, { entity, filter });
+  console.log(`🌐 [resolveList] Fetching ${entity} from NETWORK...`);
   const fetchPromise = (async () => {
     try {
       const rawData = await fetchFn();
@@ -384,32 +385,50 @@ export async function resolveList(queryClient, entity, filter = {}, fetchFn, opt
         throw new Error(`Expected array payload, got: ${typeof rawData}`);
       }
 
+      console.log(`📡 [resolveList] Raw network payload received for ${entity}:`, rawData.length, 'records.');
+      if (rawData.length > 0) {
+        console.log('🔑 First raw network item keys:', Object.keys(rawData[0]));
+        const sample = rawData[0];
+        if (entity === 'student') {
+          console.log('🔑 Server child tables in raw response:', {
+            Address: Array.isArray(sample.Address),
+            ContactInfo: Array.isArray(sample.ContactInfo),
+            Education: Array.isArray(sample.Education),
+            BatchAllocation: Array.isArray(sample.BatchAllocation)
+          });
+        }
+      }
+
       // Normalize records before validation and cache updates
       const data = normalizeRecord(entity, rawData);
 
+      if (data.length > 0 && entity === 'student') {
+        console.log('✨ First normalized student item keys:', Object.keys(data[0]));
+        console.log('✨ Preserved child tables in normalized student:', {
+          Address: Array.isArray(data[0].Address),
+          ContactInfo: Array.isArray(data[0].ContactInfo),
+          Education: Array.isArray(data[0].Education),
+          BatchAllocation: Array.isArray(data[0].BatchAllocation)
+        });
+      }
+
       // For registered entities, execute a batch verification on all items in the list.
-      // This validates each record against the schema registry using 'lazy' failMode
-      // and 'read' context, which aggregates validation violations to the developer
-      // console as non-blocking warnings, preventing a broken application shell.
       const failedViolationsList = [];
       if (hasSchema(entity)) {
         const schema = getSchema(entity);
         data.forEach(record => {
-          // Run validation engine to keep developer console logs active
           validateRecordSchema(entity, record, {
             failMode: 'lazy',
             context: 'read',
             suppressAlert: true
           });
 
-          // Check for Unknown Fields
           Object.keys(record).forEach(key => {
             if (!schema.fields[key]) {
               failedViolationsList.push({ field: key, type: 'unknown_field' });
             }
           });
 
-          // Check for Field Policy Rules
           Object.entries(schema.fields).forEach(([fieldName, rules]) => {
             const value = record[fieldName];
             const isPresent = fieldName in record;
@@ -417,13 +436,11 @@ export async function resolveList(queryClient, entity, filter = {}, fetchFn, opt
             if (rules.required && (!isPresent || value === null || value === undefined || value === '')) {
               failedViolationsList.push({ field: fieldName, type: 'required' });
             } else if (isPresent && value !== null && value !== undefined) {
-              // Simple type verification hook
               let valid = true;
               if (rules.type === 'string' && typeof value !== 'string') valid = false;
               if (rules.type === 'number' && typeof value !== 'number') valid = false;
               if (!valid) failedViolationsList.push({ field: fieldName, type: 'type_mismatch' });
 
-              // Choices verification hook
               if (rules.choices && !rules.choices.includes(value)) {
                 failedViolationsList.push({ field: fieldName, type: 'invalid_choice' });
               }
@@ -432,19 +449,17 @@ export async function resolveList(queryClient, entity, filter = {}, fetchFn, opt
         });
       }
 
-      // Fire consolidated alerts based on collected data points
       if (failedViolationsList.length > 0) {
         failedViolationsList.forEach(violation => {
           alertStore.addAlert({
             variant: 'warning',
             title: `Bulk Schema Violation: ${entity.toUpperCase()}`,
-            signature: `${entity}:bulk_list_failure`, // Unified component wrapper key
+            signature: `${entity}:bulk_list_failure`,
             metaField: violation.field,
             metaType: violation.type
           });
         });
       }
-
 
       // Update centralized list cache key
       const targetKey = config.listKey(filter);
@@ -473,28 +488,23 @@ export async function resolveList(queryClient, entity, filter = {}, fetchFn, opt
         });
       }
 
-      console.log(`[CacheHelper:ListSuccess] Resolved list from Network. Cache updated.`, {
-        entity,
-        listCount: data.length,
-        seededDetails: seedCount,
-        timestamp: new Date().toISOString()
-      });
+      console.log(`💾 [resolveList] Successfully saved ${data.length} ${entity} records into RAM cache. Seeded ${seedCount} detail keys.`);
+      console.groupEnd();
 
       if (onSuccess) onSuccess(data);
       return data;
     } catch (fetchError) {
+      if (fetchError.name === 'AbortError' || fetchError.message?.includes('aborted')) {
+        console.warn(`🛑 [resolveList] Fetch aborted for ${entity} (Query invalidation or unmount signal).`);
+        console.groupEnd();
+        return getCachedList(queryClient, entity, filter) || [];
+      }
+      console.error(`❌ [resolveList] Network fetch or cache update failed for ${entity}:`, fetchError.message);
+      console.groupEnd();
       const contextError = new CacheLayerError(
         `Failed resolving list for ${entity}: ${fetchError.message}`,
         { entity, filter, originalError: fetchError }
       );
-
-      console.error(`[CacheHelper:ListError] Network fetch or cache update failed.`, {
-        entity,
-        filter,
-        error: fetchError.message || fetchError,
-        stack: fetchError.stack
-      });
-
       if (onFailure) onFailure(contextError);
       throw contextError;
     } finally {

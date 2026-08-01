@@ -274,6 +274,20 @@ const Installments = () => {
             {row.status}
           </span>
         )
+      },
+      {
+        header: 'Action',
+        align: 'center',
+        width: '120px',
+        cell: (row) => (
+          <Link
+            to={row.student_fee_id ? `/admin/finance/reschedule/${row.student_fee_id}` : `/admin/finance/reschedule`}
+            className="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 text-[9px] font-black uppercase tracking-widest rounded-lg border border-blue-200 transition-all active:scale-[0.98] inline-flex items-center gap-1"
+          >
+            <span className="material-symbols-outlined text-[13px]">edit_calendar</span>
+            Reschedule
+          </Link>
+        )
       }
     ];
   }, [activeTab]);
@@ -346,6 +360,13 @@ const Installments = () => {
               </p>
             </div>
             <div className="flex items-center gap-3">
+              <Link
+                to="/admin/finance/reschedule"
+                className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg shadow-sm flex items-center gap-1.5 transition-colors"
+              >
+                <span className="material-symbols-outlined text-sm">edit_calendar</span>
+                Reschedule Builder
+              </Link>
               <div className="flex bg-slate-100 p-0.5 rounded-lg text-xs font-bold">
                 <button
                   onClick={() => { setActiveTab('all'); setSearchQuery(''); setStatusFilter('All'); }}

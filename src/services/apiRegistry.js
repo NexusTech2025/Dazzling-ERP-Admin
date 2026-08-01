@@ -34,7 +34,8 @@ export const API_REGISTRY = {
     RECORD_PAYMENT: 'recordpayment',
     GENERATE_FEE_PLAN: 'generatefeeplan',
     PREVIEW_FEE: 'finance_preview_fee',
-    GET_ACCOUNTING_DATA: 'sheet_get_accounting_data'
+    GET_ACCOUNTING_DATA: 'sheet_get_accounting_data',
+    RESCHEDULE_INSTALLMENTS: 'finance_reschedule_installments'
   },
   ACADEMIC: {
     CREATE_COURSE_TYPE: 'academic_create_course_type',

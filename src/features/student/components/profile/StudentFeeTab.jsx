@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Button from '../../../../components/ui/v2/Button';
 import { useEnrollmentsQuery } from '../../hooks/useEnrollmentQueries';
 import FeeAccountCard from './fee/FeeAccountCard';
@@ -13,6 +14,7 @@ import RecordPaymentModal from '../../../finance/RecordPaymentModal';
  * @returns {JSX.Element} Student Fee Tab layout.
  */
 export const StudentFeeTab = ({ studentId }) => {
+  const navigate = useNavigate();
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
 
   const { data: enrollments = [], isLoading, error } = useEnrollmentsQuery(
@@ -67,6 +69,24 @@ export const StudentFeeTab = ({ studentId }) => {
             className="shadow-md shadow-primary/20 rounded-xl text-xs font-bold"
           >
             Record Payment
+          </Button>
+
+          <Button
+            variant="outlined"
+            size="sm"
+            startIcon="edit_calendar"
+            disabled={enrollments.length === 0}
+            onClick={() => {
+              const feeAccountId = enrollments[0]?.studentfeeaccounts?.[0]?.student_fee_id;
+              if (feeAccountId) {
+                navigate(`/admin/finance/reschedule/${feeAccountId}`);
+              } else {
+                navigate('/admin/finance/reschedule');
+              }
+            }}
+            className="rounded-xl text-xs font-bold"
+          >
+            Reschedule Installments
           </Button>
 
           <Button
