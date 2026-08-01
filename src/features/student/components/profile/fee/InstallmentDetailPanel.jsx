@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import Badge from '../../../../../components/ui/Badge';
 import Button from '../../../../../components/ui/v2/Button';
 import PaymentReceiptCard from './PaymentReceiptCard';
@@ -134,7 +135,17 @@ export const InstallmentDetailPanel = ({
         <h4 className="font-bold text-slate-900 dark:text-white text-sm">
           Installment #{installmentIndex} Details
         </h4>
-        {getStatusBadge()}
+        <div className="flex items-center gap-2">
+          <Link
+            to={feeAccount?.student_fee_id ? `/admin/finance/reschedule/${feeAccount.student_fee_id}` : '/admin/finance/reschedule'}
+            className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+            title="Reschedule Installment Schedule"
+          >
+            <span className="material-symbols-outlined text-sm">edit_calendar</span>
+            Reschedule
+          </Link>
+          {getStatusBadge()}
+        </div>
       </div>
 
       {/* Financial Key Value Breakdown */}

@@ -176,4 +176,18 @@ export const fetchStaffMembers = (token, filter = {}, options = {}) =>
 export const fetchAccountingData = (token, options = {}) =>
   executeAction(API_REGISTRY.FINANCE.GET_ACCOUNTING_DATA, {}, token, options);
 
+/**
+ * Submits an atomic schedule restructuring payload for a target Student Fee Account.
+ * 
+ * @async
+ * @function rescheduleInstallments
+ * @param {string} token - Active authorization session token.
+ * @param {Object} payload - Enveloped action arguments ({ student_fee_id, update_installments, delete_installment_ids, add_installments, remarks }).
+ * @param {Object} [options={}] - HTTP configuration options (AbortController signal).
+ * @returns {Promise<Object>} Standard response containing updated fee account and schedule counts.
+ */
+export const rescheduleInstallments = (token, payload, options = {}) =>
+  executeAction(API_REGISTRY.FINANCE.RESCHEDULE_INSTALLMENTS, payload, token, options);
+
+
 

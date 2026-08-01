@@ -5,6 +5,7 @@ import { getCachedList, resolveList } from '../../../lib/react-query/cacheHelper
 import { hydrateRecord } from '../../../lib/react-query/hydrate.js';
 import { resolveEnrollmentList } from '../../../lib/react-query/cacheStrategies.js';
 import { fetchEnrollments } from '../api/student.api.js';
+import { enrollmentRepo } from '../utils/enrollmentCacheHelper.js';
 
 /**
  * Custom TanStack Query hook to load dynamic nested enrollment records.
@@ -44,7 +45,11 @@ export const useEnrollmentsQuery = (filter = EMPTY_FILTER, options = {}) => {
     select: (data) => {
       // 1. Relational hydration & schema validation
       const hydrated = hydrateRecord('enrollment', data, queryClient);
-      // 2. Filter dataset using strategy callback if filter is provided
+
+      // 2. Prime O(1) Hashmaps in enrollmentRepo
+      enrollmentRepo.normalize(hydrated);
+
+      // 3. Filter dataset using strategy callback if filter is provided
       if (!filter || filter === EMPTY_FILTER || Object.keys(filter).length === 0) {
         return hydrated;
       }
