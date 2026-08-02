@@ -105,11 +105,19 @@ export class EnrollmentRepo {
 
     // Direct object mutation in cached list
     const { feeAccount } = targetEntry;
-    if (updateData.balance_due !== undefined) feeAccount.balance_due = updateData.balance_due;
+    if (updateData.total_fee !== undefined) feeAccount.total_fee = Number(updateData.total_fee);
+    if (updateData.discount !== undefined) feeAccount.discount = Number(updateData.discount);
+    if (updateData.final_fee !== undefined) feeAccount.final_fee = Number(updateData.final_fee);
+    if (updateData.amount_paid !== undefined) feeAccount.amount_paid = Number(updateData.amount_paid);
+    if (updateData.balance_due !== undefined) feeAccount.balance_due = Number(updateData.balance_due);
     if (updateData.next_due_date !== undefined) feeAccount.next_due_date = updateData.next_due_date;
     if (updateData.account_status || updateData.status) {
       feeAccount.status = updateData.account_status || updateData.status;
     }
+    if (updateData.adjustment_type !== undefined) feeAccount.adjustment_type = updateData.adjustment_type;
+    if (updateData.coupon_code !== undefined) feeAccount.coupon_code = updateData.coupon_code;
+    if (updateData.remarks !== undefined) feeAccount.remarks = updateData.remarks;
+    if (Array.isArray(updateData.installments)) feeAccount.installments = updateData.installments;
 
     // Write back updated dataset & re-prime maps
     queryClient.setQueryData(listKey, [...cachedList]);

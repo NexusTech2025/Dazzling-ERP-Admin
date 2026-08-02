@@ -21,7 +21,9 @@ import {
   deleteExpenseCategory,
   fetchStaffMembers,
   fetchAccountingData,
-  rescheduleInstallments
+  rescheduleInstallments,
+  updateFeeAccount,
+  adjustFee
 } from '../api/finance.api';
 
 /**
@@ -354,4 +356,53 @@ export const useRescheduleInstallmentsMutation = () => {
     }
   });
 };
+
+/**
+ * Hook for executing Student Fee Account update mutations with O(1) RAM cache sync.
+ */
+export const useUpdateFeeAccountMutation = () => {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload) => updateFeeAccount(token, payload),
+    onSuccess: (response, payload) => {
+      const resData = response.data?.data || response.data;
+      if (response.success && resData) {
+        const studentFeeId = payload?.student_fee_id || resData.student_fee_id;
+
+        if (studentFeeId) {
+          enrollmentRepo.updateFeeAccountCache(queryClient, studentFeeId, resData);
+        }
+
+        enrollmentRepo.invalidate(queryClient);
+      }
+    }
+  });
+};
+
+/**
+ * Hook for executing Fee Adjustment mutations with O(1) RAM cache sync.
+ */
+export const useApplyFeeAdjustmentMutation = () => {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload) => adjustFee(token, payload),
+    onSuccess: (response, payload) => {
+      const resData = response.data?.data || response.data;
+      if (response.success && resData) {
+        const studentFeeId = payload?.student_fee_id || resData.student_fee_id;
+
+        if (studentFeeId) {
+          enrollmentRepo.updateFeeAccountCache(queryClient, studentFeeId, resData);
+        }
+
+        enrollmentRepo.invalidate(queryClient);
+      }
+    }
+  });
+};
+
 

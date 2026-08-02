@@ -3,12 +3,12 @@ import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useStudentById } from '../../features/student/hooks/useStudentById';
 import { useStudentFeeOverviewQuery } from '../../features/finance/hooks/useFinanceQueries';
 import { useEnrollmentsQuery } from '../../features/student/hooks/useEnrollmentQueries';
-import { useUpdateStudentMutation } from '../../features/student/hooks/useStudentQueries';
+import { useUpdateStudentMutation, useUpdateStudentProfileMutation } from '../../features/student/hooks/useStudentQueries';
 import useIsMobile from '../../hooks/useIsMobile';
 
 // Shared Layout UI Primitives
 import Button from '../../components/ui/v2/Button';
-import StudentEditModal from '../../features/student/components/StudentEditModal';
+import StudentUpdateProfileForm from '../../features/student/components/profile/StudentUpdateProfileForm';
 
 // Viewport Component Controllers
 import MobileStudentProfile from '../../features/student/components/profile/MobileStudentProfile';
@@ -50,12 +50,13 @@ const StudentProfile = () => {
   };
 
   const updateMutation = useUpdateStudentMutation();
+  const updateProfileMutation = useUpdateStudentProfileMutation();
   const { student, profileData, isLoading, error } = useStudentById(id);
   const { data: installments = [] } = useStudentFeeOverviewQuery(id);
-  // console.log("studentdata: ", student, profileData)
-  const handleSaveStudent = (updatedData) => {
-    updateMutation.mutate(
-      { id: updatedData.student_id, data: updatedData },
+
+  const handleSaveStudent = (payload) => {
+    updateProfileMutation.mutate(
+      { payload },
       {
         onSuccess: () => {
           setIsEditModalOpen(false);
@@ -82,7 +83,7 @@ const StudentProfile = () => {
               student={student}
               address={profileData?.address}
               contact={profileData?.contact}
-              onEdit={() => setIsEditModalOpen(true)}
+              onEdit={() => navigate(`/admin/students/${id}/edit`)}
             />
             <GuardianInfo student={student} contact={profileData?.contact} />
             <EnrollmentDetails enrollments={profileData?.enrollments} allocations={profileData?.allocations} />
@@ -93,43 +94,58 @@ const StudentProfile = () => {
               studentId={id}
               education={profileData?.education}
               enrollments={profileData?.enrollments}
+              installments={installments}
             />
           </div>
         </div>
       ),
       Attendance: (
-        <div className="animate-in fade-in slide-in-from-right-4 duration-500">
+        <div className="animate-in fade-in duration-300">
           <AttendanceHeatmap studentId={id} />
         </div>
       ),
       Fees: (
-        <div className="animate-in fade-in slide-in-from-right-4 duration-500">
+        <div className="animate-in fade-in duration-300">
           <StudentFeeTab studentId={id} />
         </div>
-      )
+      ),
+      Performance: (
+        <div className="p-8 text-center bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-xl animate-in fade-in">
+          <span className="material-symbols-outlined text-4xl text-text-secondary mb-2">analytics</span>
+          <h3 className="text-sm font-bold text-text-main dark:text-white">Performance Analytics Coming Soon</h3>
+          <p className="text-xs text-text-secondary mt-1">Detailed exam marks and tracking report cards will appear here.</p>
+        </div>
+      ),
+      Documents: (
+        <div className="p-8 text-center bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-xl animate-in fade-in">
+          <span className="material-symbols-outlined text-4xl text-text-secondary mb-2">folder_open</span>
+          <h3 className="text-sm font-bold text-text-main dark:text-white">Document Vault Coming Soon</h3>
+          <p className="text-xs text-text-secondary mt-1">Uploaded certificates, ID proofs, and admission forms will be managed here.</p>
+        </div>
+      ),
     };
-  }, [student, profileData, installments, id]);
+  }, [student, profileData, installments, id, navigate]);
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="size-12 border-4 border-primary/30 border-t-primary rounded-full animate-spin"></div>
+      <div className="p-8 text-center text-text-secondary">
+        <span className="material-symbols-outlined animate-spin text-3xl text-primary mb-2">sync</span>
+        <p className="text-xs font-bold">Loading Student Profile...</p>
       </div>
     );
   }
 
   if (error || !student) {
     return (
-      <div className="text-center py-20">
-        <h2 className="text-2xl font-bold text-text-main dark:text-white">Student not found</h2>
-        <p className="text-text-secondary mt-2">{error?.message || "The requested student could not be located."}</p>
-        <Button
-          variant="contained"
+      <div className="p-8 text-center text-text-secondary">
+        <p className="text-sm font-bold text-danger">Failed to load student profile.</p>
+        <button
+          type="button"
           onClick={() => navigate('/admin/students')}
-          className="mt-6 shadow-lg shadow-primary/20"
+          className="mt-3 px-4 py-2 bg-primary text-white text-xs font-bold rounded-xl"
         >
-          Back to Directory
-        </Button>
+          Return to Students List
+        </button>
       </div>
     );
   }
@@ -142,7 +158,7 @@ const StudentProfile = () => {
           profileData={profileData}
           activeTab={activeTab}
           onTabChange={handleTabChange}
-          onOpenEdit={() => setIsEditModalOpen(true)}
+          onOpenEdit={() => navigate(`/admin/students/${id}/edit`)}
           onNavigateBack={() => navigate('/admin/students')}
           tabRegistry={tabRegistry}
         />
@@ -152,19 +168,9 @@ const StudentProfile = () => {
           profileData={profileData}
           activeTab={activeTab}
           onTabChange={handleTabChange}
-          onOpenEdit={() => setIsEditModalOpen(true)}
+          onOpenEdit={() => navigate(`/admin/students/${id}/edit`)}
           breadcrumbItems={breadcrumbItems}
           tabRegistry={tabRegistry}
-        />
-      )}
-
-      {/* Shared Edit Modal */}
-      {isEditModalOpen && (
-        <StudentEditModal
-          isOpen={isEditModalOpen}
-          onClose={() => setIsEditModalOpen(false)}
-          student={student}
-          onSave={handleSaveStudent}
         />
       )}
     </>

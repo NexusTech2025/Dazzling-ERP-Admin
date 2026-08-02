@@ -7,6 +7,7 @@ import ProgressBar from '../../../../../components/ui/v2/ProgressBar';
 import InstallmentStepperTimeline from './InstallmentStepperTimeline';
 import InstallmentDetailPanel from './InstallmentDetailPanel';
 import RecordPaymentModal from '../../../../finance/RecordPaymentModal';
+import UpdateFeeAccountModal from './UpdateFeeAccountModal';
 
 /**
  * Self-contained financial account card for a single student enrollment.
@@ -19,6 +20,7 @@ import RecordPaymentModal from '../../../../finance/RecordPaymentModal';
 export const FeeAccountCard = ({ enrollment, defaultExpanded = true }) => {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
   const [modalTargetInstallment, setModalTargetInstallment] = useState(null);
 
   const feeAccount = enrollment?.studentfeeaccounts?.[0];
@@ -105,14 +107,25 @@ export const FeeAccountCard = ({ enrollment, defaultExpanded = true }) => {
 
         <div className="flex items-center gap-3 shrink-0">
           {feeAccount?.student_fee_id && (
-            <Link
-              to={`/admin/finance/reschedule/${feeAccount.student_fee_id}`}
-              className="px-3 py-1.5 bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-blue-700 dark:text-blue-300 text-xs font-bold rounded-xl border border-blue-200 dark:border-blue-800 transition-all flex items-center gap-1.5"
-              title="Reschedule Installment Schedule"
-            >
-              <span className="material-symbols-outlined text-base">edit_calendar</span>
-              <span className="hidden sm:inline">Reschedule Schedule</span>
-            </Link>
+            <>
+              <button
+                type="button"
+                onClick={() => setIsUpdateModalOpen(true)}
+                className="px-3 py-1.5 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 text-xs font-bold rounded-xl border border-emerald-200 dark:border-emerald-800 transition-all flex items-center gap-1.5"
+                title="Update Student Fee Account & Baseline Discount"
+              >
+                <span className="material-symbols-outlined text-base">edit</span>
+                <span className="hidden sm:inline">Update Account</span>
+              </button>
+              <Link
+                to={`/admin/finance/reschedule/${feeAccount.student_fee_id}`}
+                className="px-3 py-1.5 bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-blue-700 dark:text-blue-300 text-xs font-bold rounded-xl border border-blue-200 dark:border-blue-800 transition-all flex items-center gap-1.5"
+                title="Reschedule Installment Schedule"
+              >
+                <span className="material-symbols-outlined text-base">edit_calendar</span>
+                <span className="hidden sm:inline">Reschedule Schedule</span>
+              </Link>
+            </>
           )}
           <Badge variant={enrollmentStatus === 'active' ? 'success' : 'neutral'}>
             {enrollmentStatus.toUpperCase()}
@@ -370,6 +383,16 @@ export const FeeAccountCard = ({ enrollment, defaultExpanded = true }) => {
           enrollment={enrollment}
           feeAccount={feeAccount}
           installment={modalTargetInstallment || selectedInstallmentObj}
+        />
+      )}
+
+      {/* Update Fee Account Modal Portal */}
+      {isUpdateModalOpen && feeAccount && (
+        <UpdateFeeAccountModal
+          isOpen={isUpdateModalOpen}
+          onClose={() => setIsUpdateModalOpen(false)}
+          enrollment={enrollment}
+          feeAccount={feeAccount}
         />
       )}
     </Card>

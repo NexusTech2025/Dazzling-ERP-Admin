@@ -5,6 +5,7 @@ import { useAuth } from '../../../context/AuthContextCore';
 import {
   useStudentsQuery,
   useUpdateStudentMutation,
+  useUpdateStudentProfileMutation,
   useDeleteStudentMutation
 } from './useStudentQueries';
 import { useBatchesQuery } from '../../batch/hooks/useBatchQueries';
@@ -112,6 +113,7 @@ export function useStudentListView() {
 
   // Mutations
   const updateMutation = useUpdateStudentMutation();
+  const updateProfileMutation = useUpdateStudentProfileMutation();
   const deleteMutation = useDeleteStudentMutation();
   const deleteManyMutation = useDeleteManyMutation(
     'Student',
@@ -127,7 +129,7 @@ export function useStudentListView() {
   // Navigation and Action Handlers
   const handlers = useMemo(() => ({
     onView: (student) => navigate(`/admin/students/${student.student_id}`),
-    onEdit: (student) => setSelectedStudentForEdit(student),
+    onEdit: (student) => navigate(`/admin/students/${student.student_id}/edit`),
     onDelete: (id, name) => {
       setDeleteModal({
         isOpen: true,
@@ -255,14 +257,13 @@ export function useStudentListView() {
     setDeleteModal({ isOpen: false, id: null, name: '', type: 'student', status: 'idle', resultMessage: null });
   }, []);
 
-  const handleSaveStudent = useCallback((updatedData) => {
-    updateMutation.mutate({
-      id: updatedData.student_id,
-      data: updatedData
+  const handleSaveStudent = useCallback((payload) => {
+    updateProfileMutation.mutate({
+      payload
     }, {
       onSuccess: () => setSelectedStudentForEdit(null)
     });
-  }, [updateMutation]);
+  }, [updateProfileMutation]);
 
   return {
     data: {
@@ -304,6 +305,7 @@ export function useStudentListView() {
       handlers,
       handleRefresh,
       updateMutation,
+      updateProfileMutation,
       deleteMutation,
       deleteManyMutation
     }

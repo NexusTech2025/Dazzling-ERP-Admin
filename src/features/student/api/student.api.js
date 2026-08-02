@@ -103,6 +103,20 @@ export const modifyStudent = (token, id, data, options = {}) =>
   executeAction(API_REGISTRY.STUDENT.UPDATE, { id, data }, token, options);
 
 /**
+ * Updates a student profile composite payload (profile, address, contact, education)
+ * using the student_update_profile backend RPC endpoint.
+ *
+ * @async
+ * @function updateStudentProfile
+ * @param {string} token - The active user authorization session token.
+ * @param {object} payload - Composite payload envelope containing { student_id, profile, contact, address, education }.
+ * @param {object} [options={}] - HTTP fetch configuration options.
+ * @returns {Promise<object>} Standard response envelope confirming modification state.
+ */
+export const updateStudentProfile = (token, payload, options = {}) =>
+  executeAction(API_REGISTRY.STUDENT.UPDATE_PROFILE, payload, token, options);
+
+/**
  * Deletes a student and cleans up related address, contact, and enrollment rows.
  * Uses a specific relational deletion controller to prevent orphan rows.
  * 

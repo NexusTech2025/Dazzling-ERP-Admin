@@ -189,5 +189,32 @@ export const fetchAccountingData = (token, options = {}) =>
 export const rescheduleInstallments = (token, payload, options = {}) =>
   executeAction(API_REGISTRY.FINANCE.RESCHEDULE_INSTALLMENTS, payload, token, options);
 
+/**
+ * Updates a Student Fee Account's baseline tuition fee, discount, coupon code, or remarks.
+ * 
+ * @async
+ * @function updateFeeAccount
+ * @param {string} token - Active authorization session token.
+ * @param {Object} payload - Action arguments ({ student_fee_id, total_fee, discount, adjustment_type, coupon_code, remarks, adjustment }).
+ * @param {Object} [options={}] - HTTP configuration options.
+ * @returns {Promise<Object>} Standard response containing recalculated fee account fields.
+ */
+export const updateFeeAccount = (token, payload, options = {}) =>
+  executeAction(API_REGISTRY.FINANCE.UPDATE_FEE_ACCOUNT, payload, token, options);
+
+/**
+ * Applies a post-enrollment fee adjustment (scholarship, coupon, referral, manual) to a Student Fee Account.
+ * 
+ * @async
+ * @function adjustFee
+ * @param {string} token - Active authorization session token.
+ * @param {Object} payload - Action arguments ({ student_fee_id, adjustment_type, amount, reason }).
+ * @param {Object} [options={}] - HTTP configuration options.
+ * @returns {Promise<Object>} Standard response containing audit record and updated account values.
+ */
+export const adjustFee = (token, payload, options = {}) =>
+  executeAction(API_REGISTRY.FINANCE.ADJUST_FEE, payload, token, options);
+
+
 
 
