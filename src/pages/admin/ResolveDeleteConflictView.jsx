@@ -4,6 +4,7 @@ import { useQueryClient, useMutation } from '@tanstack/react-query';
 import { useAuth } from '../../context/AuthContextCore';
 import { apiClient } from '../../services/apiClient';
 import { API_REGISTRY } from '../../services/apiRegistry';
+import { getCachedRecord } from '../../lib/react-query/cacheHelper';
 import MainLayout from '../../components/layout/MainLayout';
 import Breadcrumbs from '../../components/ui/Breadcrumbs';
 import { ResolveDeleteConflict } from '../../components/ui/ResolveDeleteConflict';
@@ -135,73 +136,15 @@ const ResolveDeleteConflictView = () => {
   // Query cache crawler to look up entity name by primary key
   const getParentNameFromCache = (type, id) => {
     try {
-      if (type === 'Student') {
-        const cache = queryClient.getQueriesData({ queryKey: ['student', 'list'] });
-        for (const [key, list] of cache) {
-          if (Array.isArray(list)) {
-            const match = list.find(item => item.student_id === id);
-            if (match) return match.student_name;
-          }
-        }
+      const typeLower = type.toLowerCase();
+      const match = getCachedRecord(queryClient, typeLower, id);
+      if (match) {
+        return match.student_name || match.full_name || match.batch_name || match.branch_name || match.segment_name || match.name;
       }
-      if (type === 'Course') {
-        const cache = queryClient.getQueriesData({ queryKey: ['course', 'list'] });
-        for (const [key, list] of cache) {
-          if (Array.isArray(list)) {
-            const match = list.find(item => item.course_id === id);
-            if (match) return match.name;
-          }
-        }
-      }
-      if (type === 'Batch') {
-        const cache = queryClient.getQueriesData({ queryKey: ['batch', 'list'] });
-        for (const [key, list] of cache) {
-          if (Array.isArray(list)) {
-            const match = list.find(item => item.batch_id === id);
-            if (match) return match.batch_name;
-          }
-        }
-      }
-      if (type === 'CourseType') {
-        const cache = queryClient.getQueriesData({ queryKey: ['course-type', 'list'] });
-        for (const [key, list] of cache) {
-          if (Array.isArray(list)) {
-            const match = list.find(item => item.segment_id === id);
-            if (match) return match.segment_name;
-          }
-        }
-      }
-      if (type === 'Package') {
-        const cache = queryClient.getQueriesData({ queryKey: ['package', 'list'] });
-        for (const [key, list] of cache) {
-          if (Array.isArray(list)) {
-            const match = list.find(item => item.package_id === id);
-            if (match) return match.name;
-          }
-        }
-      }
-      if (type === 'Teacher') {
-        const cache = queryClient.getQueriesData({ queryKey: ['teacher', 'list'] });
-        for (const [key, list] of cache) {
-          if (Array.isArray(list)) {
-            const match = list.find(item => item.teacher_id === id);
-            if (match) return match.full_name;
-          }
-        }
-      }
-      if (type === 'Branch') {
-        const cache = queryClient.getQueriesData({ queryKey: ['branch', 'list'] });
-        for (const [key, list] of cache) {
-          if (Array.isArray(list)) {
-            const match = list.find(item => item.branch_id === id);
-            if (match) return match.branch_name;
-          }
-        }
-      }
-    } catch (err) {
-      console.warn('[ResolveDeleteConflictView] Cache lookup error:', err);
+    } catch (e) {
+      console.warn('[getParentNameFromCache] Cache lookup failed:', e);
     }
-    return '';
+    return null;
   };
 
   // Derive unique parent target records from blockers

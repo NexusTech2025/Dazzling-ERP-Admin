@@ -54,14 +54,14 @@ export const ENTITY_CONFIGS = {
   },
   teacherSalaryConfig: {
     primaryKey: 'salary_config_id',
-    listKey: (filter) => [...queryKeys.teacher.detail(filter.teacherId), 'salaryConfigs'],
+    listKey: () => ['teacher', 'salaryConfig', 'list', { filter: EMPTY_FILTER }],
     listsKey: () => ['teacher', 'detail'],
     detailKey: (id) => ['teacher', 'salaryConfig', id],
     isValidDetail: (data) => data && typeof data === 'object' && 'contract_status' in data
   },
   teacherPaymentTransaction: {
     primaryKey: 'transaction_id',
-    listKey: (filter) => [...queryKeys.teacher.detail(filter.teacherId), 'paymentTransactions'],
+    listKey: () => ['teacher', 'paymentTransaction', 'list', { filter: EMPTY_FILTER }],
     listsKey: () => ['teacher', 'detail'],
     detailKey: (id) => ['teacher', 'paymentTransaction', id],
     isValidDetail: (data) => data && typeof data === 'object' && 'transaction_id' in data
@@ -73,6 +73,41 @@ export const ENTITY_CONFIGS = {
     detailKey: (id) => ['course-type', 'detail', id],
     isValidDetail: (data) => data && typeof data === 'object' && 'type_name' in data
   },
+  packageItem: {
+    primaryKey: 'item_id',
+    listKey: () => ['packageItem', 'list', { filter: EMPTY_FILTER }],
+    listsKey: () => ['packageItem'],
+    detailKey: (id) => ['packageItem', 'detail', id],
+    isValidDetail: (data) => data && typeof data === 'object' && 'item_id' in data
+  },
+  packagePerk: {
+    primaryKey: 'perk_id',
+    listKey: () => ['packagePerk', 'list', { filter: EMPTY_FILTER }],
+    listsKey: () => ['packagePerk'],
+    detailKey: (id) => ['packagePerk', 'detail', id],
+    isValidDetail: (data) => data && typeof data === 'object' && 'perk_id' in data
+  },
+  teacherSubject: {
+    primaryKey: 'teacher_subject_id',
+    listKey: () => ['teacherSubject', 'list', { filter: EMPTY_FILTER }],
+    listsKey: () => ['teacherSubject'],
+    detailKey: (id) => ['teacherSubject', 'detail', id],
+    isValidDetail: (data) => data && typeof data === 'object' && 'teacher_subject_id' in data
+  },
+  studentAttendance: {
+    primaryKey: 'attendance_id',
+    listKey: () => ['studentAttendance', 'list', { filter: EMPTY_FILTER }],
+    listsKey: () => ['studentAttendance'],
+    detailKey: (id) => ['studentAttendance', 'detail', id],
+    isValidDetail: (data) => data && typeof data === 'object' && 'attendance_id' in data
+  },
+  teacherAttendance: {
+    primaryKey: 'attendance_id',
+    listKey: () => ['teacherAttendance', 'list', { filter: EMPTY_FILTER }],
+    listsKey: () => ['teacherAttendance'],
+    detailKey: (id) => ['teacherAttendance', 'detail', id],
+    isValidDetail: (data) => data && typeof data === 'object' && 'attendance_id' in data
+  },
   batchAllocation: {
     primaryKey: 'allocation_id',
     listKey: () => queryKeys.batch_allocation.list(EMPTY_FILTER),
@@ -83,7 +118,7 @@ export const ENTITY_CONFIGS = {
   },
   batchAttendance: {
     primaryKey: 'attendance_id',
-    listKey: (filter) => queryKeys.attendance.batch(filter.batchId, filter.date || 'all'),
+    listKey: () => queryKeys.attendance.all,
     listsKey: () => queryKeys.attendance.all,
     detailKey: (id) => [...queryKeys.attendance.all, 'detail', id],
     isValidDetail: (data) => data && typeof data === 'object' && 'attendance_id' in data
@@ -130,6 +165,83 @@ export const ENTITY_CONFIGS = {
     listsKey: () => queryKeys.finance.installment.all,
     isValidDetail: (data) => data && typeof data === 'object' && ('installment_id' in data || 'amount' in data)
   },
+  payment: {
+    primaryKey: 'payment_id',
+    listKey: () => queryKeys.finance.payment.list(EMPTY_FILTER),
+    detailKey: (id) => [...queryKeys.finance.payment.all, 'detail', id],
+    listsKey: () => queryKeys.finance.payment.all,
+    isValidDetail: (data) => data && typeof data === 'object' && ('payment_id' in data || 'amount' in data)
+  },
+  studentFeeAccount: {
+    primaryKey: 'fee_account_id',
+    listKey: () => ['studentFeeAccount', 'list', { filter: EMPTY_FILTER }],
+    listsKey: () => ['studentFeeAccount'],
+    detailKey: (id) => ['studentFeeAccount', 'detail', id],
+    isValidDetail: (data) => data && typeof data === 'object' && 'fee_account_id' in data
+  },
+  feeAdjustment: {
+    primaryKey: 'adjustment_id',
+    listKey: () => ['feeAdjustment', 'list', { filter: EMPTY_FILTER }],
+    listsKey: () => ['feeAdjustment'],
+    detailKey: (id) => ['feeAdjustment', 'detail', id],
+    isValidDetail: (data) => data && typeof data === 'object' && 'adjustment_id' in data
+  },
+  feePlan: {
+    primaryKey: 'plan_id',
+    listKey: () => ['feePlan', 'list', { filter: EMPTY_FILTER }],
+    listsKey: () => ['feePlan'],
+    detailKey: (id) => ['feePlan', 'detail', id],
+    isValidDetail: (data) => data && typeof data === 'object' && 'plan_id' in data
+  },
+  promoCode: {
+    primaryKey: 'promo_id',
+    listKey: () => ['promoCode', 'list', { filter: EMPTY_FILTER }],
+    listsKey: () => ['promoCode'],
+    detailKey: (id) => ['promoCode', 'detail', id],
+    isValidDetail: (data) => data && typeof data === 'object' && 'promo_id' in data
+  },
+  teacherDocument: {
+    primaryKey: 'document_id',
+    listKey: () => ['teacherDocument', 'list', { filter: EMPTY_FILTER }],
+    listsKey: () => ['teacherDocument'],
+    detailKey: (id) => ['teacherDocument', 'detail', id],
+    isValidDetail: (data) => data && typeof data === 'object' && 'document_id' in data
+  },
+  address: {
+    primaryKey: 'address_id',
+    listKey: () => ['address', 'list', { filter: EMPTY_FILTER }],
+    listsKey: () => ['address'],
+    detailKey: (id) => ['address', 'detail', id],
+    isValidDetail: (data) => data && typeof data === 'object' && 'address_id' in data
+  },
+  contactInfo: {
+    primaryKey: 'contact_id',
+    listKey: () => ['contactInfo', 'list', { filter: EMPTY_FILTER }],
+    listsKey: () => ['contactInfo'],
+    detailKey: (id) => ['contactInfo', 'detail', id],
+    isValidDetail: (data) => data && typeof data === 'object' && 'contact_id' in data
+  },
+  education: {
+    primaryKey: 'education_id',
+    listKey: () => ['education', 'list', { filter: EMPTY_FILTER }],
+    listsKey: () => ['education'],
+    detailKey: (id) => ['education', 'detail', id],
+    isValidDetail: (data) => data && typeof data === 'object' && 'education_id' in data
+  },
+  testPaper: {
+    primaryKey: 'paper_id',
+    listKey: () => ['testPaper', 'list', { filter: EMPTY_FILTER }],
+    listsKey: () => ['testPaper'],
+    detailKey: (id) => ['testPaper', 'detail', id],
+    isValidDetail: (data) => data && typeof data === 'object' && 'paper_id' in data
+  },
+  session: {
+    primaryKey: 'session_id',
+    listKey: () => ['session', 'list', { filter: EMPTY_FILTER }],
+    listsKey: () => ['session'],
+    detailKey: (id) => ['session', 'detail', id],
+    isValidDetail: (data) => data && typeof data === 'object' && 'session_id' in data
+  },
   overdue: {
     primaryKey: 'installment_id',
     listKey: () => queryKeys.finance.overdue(EMPTY_FILTER),
@@ -153,14 +265,14 @@ export const ENTITY_CONFIGS = {
   },
   test: {
     primaryKey: 'id',
-    listKey: (filter = {}) => queryKeys.test.byBatch(filter.batch_id || filter.batchId),
+    listKey: () => queryKeys.test.all,
     listsKey: () => queryKeys.test.all,
     detailKey: (id) => queryKeys.test.detail(id),
     isValidDetail: (data) => data && typeof data === 'object' && ('title' in data || 'id' in data)
   },
   testMarks: {
     primaryKey: 'id',
-    listKey: (filter = {}) => queryKeys.test.marks(filter.test_id || filter.testId),
+    listKey: () => ['test', 'marks', 'list', { filter: EMPTY_FILTER }],
     listsKey: () => ['test', 'marks'],
     detailKey: (id) => [...queryKeys.test.all, 'marks', 'detail', id],
     isValidDetail: (data) => data && typeof data === 'object' && ('student_id' in data || 'id' in data)
@@ -181,17 +293,12 @@ export function getCachedRecord(queryClient, entity, id) {
     return cachedDetail;
   }
 
-  // 2. Fallback: Scan list queries
-  const listsKey = typeof config.listsKey === 'function' ? config.listsKey() : config.listsKey;
-  const listQueries = queryClient.getQueriesData({ queryKey: listsKey });
-
-  for (const [_, listData] of listQueries) {
-    if (Array.isArray(listData)) {
-      const item = listData.find(e => e && e[config.primaryKey] === id);
-      if (item && config.isValidDetail(item)) {
-        return item;
-      }
-    }
+  // 2. Fallback: Search in list queries
+  const targetKey = config.listKey(EMPTY_FILTER);
+  const listData = queryClient.getQueryData(targetKey);
+  if (Array.isArray(listData)) {
+    const found = listData.find(item => String(item[config.primaryKey]) === String(id));
+    if (found) return found;
   }
 
   return undefined;
@@ -329,8 +436,14 @@ export function getCachedList(queryClient, entity, filter = {}, options = {}) {
   const targetKey = config.listKey(filter);
   const cachedList = queryClient.getQueryData(targetKey);
   if (Array.isArray(cachedList) && cachedList.length > 0) {
-    console.log(`[CacheHelper:ListHit] Found exact list in cache for ${entity}.`, { filter });
-    return cachedList;
+    if (!filter || filter === EMPTY_FILTER || Object.keys(filter).length === 0) {
+      console.log(`[CacheHelper:ListHit] Found exact global list in cache for ${entity}.`);
+      return cachedList;
+    }
+    const strategyFn = CACHE_RESOLVER_STRATEGIES[entity] || resolveGenericList;
+    const resolved = strategyFn(cachedList, filter);
+    console.log(`[CacheHelper:ListHit] Resolved filtered subset from RAM cache for ${entity}.`, { filter, count: resolved.length });
+    return resolved;
   }
 
   // 2. Resolve via Strategy Callback (Strategy Pattern)
@@ -514,8 +627,10 @@ export async function resolveList(queryClient, entity, filter = {}, fetchFn, opt
       const targetKey = config.listKey(filter);
       queryClient.setQueryData(targetKey, data);
       queryClient.setQueryDefaults(targetKey, {
-        staleTime: Infinity,
-        gcTime: Infinity
+        staleTime: 1000 * 60 * 60,
+        gcTime: Infinity,
+        refetchOnMount: false,
+        refetchOnWindowFocus: false,
       });
 
       // SEED DETAILED RECORDS: Prime the detail caches to avoid sub-query spinners

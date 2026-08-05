@@ -145,7 +145,7 @@ export const useErpHydration = () => {
           // Mirror the resolveList pattern in cacheHelper.js (setQueryData + setQueryDefaults)
           // so the seeded entry is treated as fresh by any hook with staleTime: Infinity.
           queryClient.setQueryData(listKey, records, { updatedAt: now });
-          queryClient.setQueryDefaults(listKey, { staleTime: Infinity, gcTime: Infinity });
+          queryClient.setQueryDefaults(listKey, { staleTime: Infinity, gcTime: Infinity, refetchOnMount: false, refetchOnWindowFocus: false });
         } else {
           console.warn(`⚠️ No records found in response for Category: ${category}, Sheet: ${sheet}. Data structure:`, result);
         }
@@ -156,6 +156,7 @@ export const useErpHydration = () => {
     enabled: !!token,
     staleTime: Infinity,
     gcTime: Infinity,
+    refetchOnMount: false,
     refetchOnWindowFocus: false,
   });
 };

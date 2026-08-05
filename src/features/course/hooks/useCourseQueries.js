@@ -150,6 +150,8 @@ export const useCourseDetailQuery = (id) => {
     initialData: () => getCachedRecord(queryClient, 'course', id),
     initialDataUpdatedAt: () => queryClient.getQueryState(queryKeys.course.detail(id))?.dataUpdatedAt,
     staleTime: 1000 * 60 * 60,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 };
 
@@ -224,6 +226,8 @@ export const useCourseTeachersQuery = (courseId) => {
     },
     enabled: !!token && !!courseId,
     staleTime: 1000 * 60 * 60,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 };
 
@@ -249,7 +253,9 @@ export const useCourseAllocationsQuery = (courseId) => {
       return response.data?.data || [];
     },
     enabled: !!token && !!courseId,
-    staleTime: 1000 * 60 * 5,
+    staleTime: 1000 * 60 * 60,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 };
 

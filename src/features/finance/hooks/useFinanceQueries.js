@@ -42,6 +42,8 @@ export const useRevenueSummaryQuery = () => {
     },
     enabled: !!token,
     staleTime: 1000 * 60 * 60, // 60 minutes
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 };
 
@@ -70,6 +72,8 @@ export const useInstallmentsQuery = (filter = EMPTY_FILTER) => {
     },
     enabled: !!token,
     staleTime: 1000 * 60 * 60, // 60 minutes
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 };
 
@@ -98,6 +102,8 @@ export const useOverdueAccountsQuery = (filter = EMPTY_FILTER) => {
     },
     enabled: !!token,
     staleTime: 1000 * 60 * 60, // 60 minutes
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 };
 
@@ -179,6 +185,8 @@ export const useMoneyTransactionsQuery = (filter = EMPTY_FILTER) => {
     },
     enabled: !!token,
     staleTime: 1000 * 60 * 60, // 60 minutes
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 };
 
@@ -367,6 +375,8 @@ export const useAccountingDataQuery = () => {
     },
     enabled: !!token,
     staleTime: 1000 * 60 * 60, // 60 minutes
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 };
 

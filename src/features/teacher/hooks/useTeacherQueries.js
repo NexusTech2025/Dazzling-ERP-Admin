@@ -71,6 +71,8 @@ export const useTeacherDetailQuery = (id) => {
     initialData: () => getCachedRecord(queryClient, 'teacher', id),
     initialDataUpdatedAt: () => queryClient.getQueryState(queryKeys.teacher.detail(id))?.dataUpdatedAt,
     staleTime: 1000 * 60 * 60,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 };
 
@@ -104,6 +106,7 @@ export const useTeacherAttendanceQuery = (teacherId) => {
     },
     enabled: !!token && !!teacherId,
     staleTime: 1000 * 60 * 60, // 60 minutes
+    refetchOnMount: false,
     refetchOnWindowFocus: false,
   });
 };
@@ -138,6 +141,7 @@ export const useTeacherAttendanceListQuery = (date) => {
     },
     enabled: !!token && !!date,
     staleTime: 1000 * 60 * 60, // 60 minutes
+    refetchOnMount: false,
     refetchOnWindowFocus: false,
   });
 };
@@ -286,6 +290,8 @@ export const useTeacherSubjectsQuery = (teacherId) => {
     },
     enabled: !!token && !!teacherId,
     staleTime: 1000 * 60 * 60,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 };
 
@@ -405,6 +411,8 @@ export const useTeacherDocumentsQuery = (teacherId) => {
     },
     enabled: !!token && !!teacherId,
     staleTime: 1000 * 60 * 60,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 };
 

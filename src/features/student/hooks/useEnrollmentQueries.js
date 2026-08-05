@@ -64,6 +64,7 @@ export const useEnrollmentsQuery = (filter = EMPTY_FILTER, options = {}) => {
     initialData: () => getCachedList(queryClient, 'enrollment', filter),
     initialDataUpdatedAt: () => queryClient.getQueryState(queryKeys.enrollment.list(EMPTY_FILTER))?.dataUpdatedAt,
     staleTime: 1000 * 60 * 60, // 60 minutes cache stale window
+    refetchOnMount: false,
     refetchOnWindowFocus: false
   });
 };

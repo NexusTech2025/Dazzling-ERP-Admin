@@ -130,6 +130,8 @@ export const usePackageDetailQuery = (id) => {
     initialDataUpdatedAt: () => queryClient.getQueryState(queryKeys.course.package.detail(id))?.dataUpdatedAt,
     select: (data) => hydrateRecord('package', data, queryClient),
     staleTime: 1000 * 60 * 60,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 };
 
@@ -256,6 +258,7 @@ export const usePackageFeeAccountsQuery = (packageId) => {
     },
     enabled: !!token && !!packageId,
     staleTime: 1000 * 60 * 60,
+    refetchOnMount: false,
     refetchOnWindowFocus: false,
   });
 };
