@@ -33,7 +33,7 @@ export const useCourseTypesQuery = () => {
       return response.data?.data || [];
     },
     enabled: !!token,
-    staleTime: 1000 * 60 * 2.5, // 2.5 Minute Grace Window
+    staleTime: 1000 * 60 * 60, // 60 Minute Grace Window
     refetchOnMount: true,       // Background revalidation once stale
     refetchOnWindowFocus: false,
   });
@@ -107,7 +107,7 @@ export const useCoursesQuery = (filter = EMPTY_FILTER) => {
     enabled: !!token,
     initialData: () => getCachedList(queryClient, 'course', filter),
     initialDataUpdatedAt: () => queryClient.getQueryState(queryKeys.course.list(filter))?.dataUpdatedAt,
-    staleTime: 1000 * 60 * 2.5, // 2.5 Minute Grace Window
+    staleTime: 1000 * 60 * 60, // 60 Minute Grace Window
     refetchOnMount: true,       // Background revalidation once stale
     refetchOnWindowFocus: false,
   });
@@ -140,7 +140,7 @@ export const useCourseDetailQuery = (id) => {
     select: (data) => hydrateRecord('course', data, queryClient),
     initialData: () => getCachedRecord(queryClient, 'course', id),
     initialDataUpdatedAt: () => queryClient.getQueryState(queryKeys.course.detail(id))?.dataUpdatedAt,
-    staleTime: 1000 * 60 * 5,
+    staleTime: 1000 * 60 * 60,
   });
 };
 
@@ -214,7 +214,7 @@ export const useCourseTeachersQuery = (courseId) => {
       return response.data?.data || [];
     },
     enabled: !!token && !!courseId,
-    staleTime: 1000 * 60 * 5,
+    staleTime: 1000 * 60 * 60,
   });
 };
 

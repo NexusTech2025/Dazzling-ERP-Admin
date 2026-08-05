@@ -19,7 +19,7 @@ export const useBranchesQuery = (filter = EMPTY_FILTER) => {
         API_REGISTRY.DATA.QUERY,
         { target: 'Branch', where: filter },
         token,
-        { signal }
+        { timeout: 'STANDARD', signal }
       );
       return response.data?.data || [];
     },
@@ -43,7 +43,8 @@ export const useCreateBranchMutation = () => {
           table: 'Branch', 
           data: branchData 
         },
-        token
+        token,
+        { timeout: 'DATA_MUTATION' }
       ),
     onSuccess: (response) => {
       if (response.success) {
@@ -70,7 +71,8 @@ export const useUpdateBranchMutation = () => {
           id: id, 
           data 
         },
-        token
+        token,
+        { timeout: 'DATA_MUTATION' }
       ),
     onSuccess: (response) => {
       if (response.success) {
@@ -96,7 +98,8 @@ export const useDeleteBranchMutation = () => {
           table: 'Branch', 
           id: id 
         },
-        token
+        token,
+        { timeout: 'DATA_MUTATION' }
       ),
     onSuccess: (response) => {
       if (response.success) {

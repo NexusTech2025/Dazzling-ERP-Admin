@@ -26,13 +26,18 @@ import {
 export const useStudentsQuery = (filter = EMPTY_FILTER, options = {}) => {
   const { token } = useAuth();
   const queryClient = useQueryClient();
-  const { onSuccess, onError, strictSearch = false, forceRefetch = false } = options;
+  const { onSuccess, onError, strictSearch = false, forceRefetch = false, delayMs = 0 } = options;
 
   const activeFilter = strictSearch ? filter : EMPTY_FILTER;
 
   const query = useQuery({
     queryKey: queryKeys.student.list(EMPTY_FILTER),
     queryFn: async () => {
+      // ⏳ Stagger delay to prevent V8 container collisions on app startup
+      if (delayMs > 0) {
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+      }
+
       return resolveList(
         queryClient,
         'student',
@@ -47,7 +52,7 @@ export const useStudentsQuery = (filter = EMPTY_FILTER, options = {}) => {
         { forceRefetch }
       );
     },
-    enabled: !!token,
+    enabled: !!token && (options.enabled !== undefined ? options.enabled : true),
     staleTime: forceRefetch ? 0 : Infinity,
     refetchOnMount: forceRefetch ? 'always' : false,
     refetchOnWindowFocus: false,

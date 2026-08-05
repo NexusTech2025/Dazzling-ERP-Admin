@@ -91,7 +91,7 @@ export const usePackagesQuery = (filter = EMPTY_FILTER) => {
       return cached;
     },
     initialDataUpdatedAt: () => queryClient.getQueryState(queryKeys.course.package.list(filter))?.dataUpdatedAt,
-    staleTime: 1000 * 60 * 2.5, // 2.5 Minute Grace Window
+    staleTime: 1000 * 60 * 60, // 60 Minute Grace Window
     refetchOnMount: true,       // Background revalidation once stale
     refetchOnWindowFocus: false,
   });
@@ -129,7 +129,7 @@ export const usePackageDetailQuery = (id) => {
     initialData: () => getCachedRecord(queryClient, 'package', id),
     initialDataUpdatedAt: () => queryClient.getQueryState(queryKeys.course.package.detail(id))?.dataUpdatedAt,
     select: (data) => hydrateRecord('package', data, queryClient),
-    staleTime: 1000 * 60 * 5,
+    staleTime: 1000 * 60 * 60,
   });
 };
 
@@ -255,7 +255,7 @@ export const usePackageFeeAccountsQuery = (packageId) => {
       return response.data?.data || [];
     },
     enabled: !!token && !!packageId,
-    staleTime: 1000 * 60 * 5,
+    staleTime: 1000 * 60 * 60,
     refetchOnWindowFocus: false,
   });
 };

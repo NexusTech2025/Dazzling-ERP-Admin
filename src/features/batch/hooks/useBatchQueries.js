@@ -124,7 +124,7 @@ export const useBatchesQuery = (filter = EMPTY_FILTER, options = {}) => {
     select: selectFn,
     initialData: () => getCachedList(queryClient, 'batch', filter, { strict: true }),
     initialDataUpdatedAt: () => queryClient.getQueryState(queryKeys.batch.list(filter))?.dataUpdatedAt,
-    staleTime: 1000 * 60 * 2.5,
+    staleTime: 1000 * 60 * 60,
     refetchOnMount: true,
     refetchOnWindowFocus: false,
   });
@@ -171,7 +171,7 @@ export const useBatchDetailQuery = (id) => {
     select: (data) => hydrateRecord('batch', data, queryClient),
     initialData: () => getCachedRecord(queryClient, 'batch', id),
     initialDataUpdatedAt: () => queryClient.getQueryState(queryKeys.batch.detail(id))?.dataUpdatedAt,
-    staleTime: 1000 * 60 * 5,
+    staleTime: 1000 * 60 * 60,
   });
 };
 
@@ -327,7 +327,7 @@ export const useBatchAllocationsQuery = (filter = EMPTY_FILTER, options = {}) =>
     initialData: () => getCachedList(queryClient, 'batchAllocation', filter, { strict: true }),
     initialDataUpdatedAt: () =>
       queryClient.getQueryState(queryKeys.batch_allocation.list(filter))?.dataUpdatedAt,
-    staleTime: 1000 * 60 * 5,
+    staleTime: 1000 * 60 * 60,
     refetchOnMount: false,
     refetchOnWindowFocus: false,
   });

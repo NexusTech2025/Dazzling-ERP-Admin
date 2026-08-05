@@ -1,19 +1,33 @@
 import React from 'react';
 import { useErpHydration } from '../../hooks/useErpHydration';
+import { useStudentsQuery } from '../../features/student/hooks/useStudentQueries';
 import { useEnrollmentsQuery } from '../../features/student/hooks/useEnrollmentQueries';
+import { EMPTY_FILTER } from '../../lib/react-query/queryKeys';
 import FullScreenSplash from '../ui/v2/loaders/FullScreenSplash';
 
 /**
  * HydrationGuard: App Initialization Guard
- * Runs initial ERP batch read and standalone nested Enrollments query in parallel.
+ * Sequentially triggers ERP master lookup, hydrated student query (+1s), and enrollment query (+2s).
  */
 const HydrationGuard = ({ children }) => {
-  const { isLoading: isErpLoading, isError: isErpError, error: erpError } = useErpHydration();
-  const { isLoading: isEnrollmentsLoading, isError: isEnrollmentsError, error: enrollmentsError } = useEnrollmentsQuery();
+  // 1. Initial Master Lookup Hydration
+  const { isLoading: isErpLoading, isSuccess: isErpSuccess, isError: isErpError, error: erpError } = useErpHydration();
 
-  const isLoading = isErpLoading || isEnrollmentsLoading;
-  const isError = isErpError || isEnrollmentsError;
-  const error = erpError || enrollmentsError;
+  // 2. Hydrated Students Query (1-second queue delay after master lookup succeeds)
+  const { isLoading: isStudentsLoading, isError: isStudentsError, error: studentsError } = useStudentsQuery(
+    EMPTY_FILTER,
+    { enabled: isErpSuccess, delayMs: 1000 }
+  );
+
+  // 3. Hydrated Enrollments Query (2-second queue delay after master lookup succeeds)
+  const { isLoading: isEnrollmentsLoading, isError: isEnrollmentsError, error: enrollmentsError } = useEnrollmentsQuery(
+    EMPTY_FILTER,
+    { enabled: isErpSuccess, delayMs: 2000 }
+  );
+
+  const isLoading = isErpLoading || isStudentsLoading || isEnrollmentsLoading;
+  const isError = isErpError || isStudentsError || isEnrollmentsError;
+  const error = erpError || studentsError || enrollmentsError;
 
   // 1. Loading State: Show the Splash Screen
   if (isLoading) {

@@ -40,14 +40,14 @@ export const fetchProfileDetails = async (token, studentId, options = {}) => {
       allocationsRes,
       packagesRes
     ] = await Promise.all([
-      apiClient.executeAction(API_REGISTRY.DATA.QUERY, { target: 'Address', where: { student_id: studentId } }, token, options),
-      apiClient.executeAction(API_REGISTRY.DATA.QUERY, { target: 'ContactInfo', where: { student_id: studentId } }, token, options),
-      apiClient.executeAction(API_REGISTRY.DATA.QUERY, { target: 'Education', where: { student_id: studentId } }, token, options),
-      apiClient.executeAction(API_REGISTRY.DATA.QUERY, { target: 'Enrollment', where: { student_id: studentId } }, token, options),
-      apiClient.executeAction(API_REGISTRY.DATA.QUERY, { target: 'Course', where: {} }, token, options),
-      apiClient.executeAction(API_REGISTRY.DATA.QUERY, { target: 'Batch', where: {} }, token, options),
-      apiClient.executeAction(API_REGISTRY.DATA.QUERY, { target: 'BatchAllocation', where: { student_id: studentId } }, token, options),
-      apiClient.executeAction(API_REGISTRY.DATA.QUERY, { target: 'Package', where: {} }, token, options)
+      apiClient.executeAction(API_REGISTRY.DATA.QUERY, { target: 'Address', where: { student_id: studentId } }, token, { timeout: 'HYDRATED_QUERY', ...options }),
+      apiClient.executeAction(API_REGISTRY.DATA.QUERY, { target: 'ContactInfo', where: { student_id: studentId } }, token, { timeout: 'HYDRATED_QUERY', ...options }),
+      apiClient.executeAction(API_REGISTRY.DATA.QUERY, { target: 'Education', where: { student_id: studentId } }, token, { timeout: 'HYDRATED_QUERY', ...options }),
+      apiClient.executeAction(API_REGISTRY.DATA.QUERY, { target: 'Enrollment', where: { student_id: studentId } }, token, { timeout: 'HYDRATED_QUERY', ...options }),
+      apiClient.executeAction(API_REGISTRY.DATA.QUERY, { target: 'Course', where: {} }, token, { timeout: 'HYDRATED_QUERY', ...options }),
+      apiClient.executeAction(API_REGISTRY.DATA.QUERY, { target: 'Batch', where: {} }, token, { timeout: 'HYDRATED_QUERY', ...options }),
+      apiClient.executeAction(API_REGISTRY.DATA.QUERY, { target: 'BatchAllocation', where: { student_id: studentId } }, token, { timeout: 'HYDRATED_QUERY', ...options }),
+      apiClient.executeAction(API_REGISTRY.DATA.QUERY, { target: 'Package', where: {} }, token, { timeout: 'HYDRATED_QUERY', ...options })
     ]);
 
     if (

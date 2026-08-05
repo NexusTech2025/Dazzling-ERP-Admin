@@ -54,6 +54,12 @@ export const useErpHydration = () => {
     'Package': { query_key: queryKeys.course.package, category: 'Academic', sheet: 'Package' },
     'PackageItem': { query_key: queryKeys.course.packageItem, category: 'Academic', sheet: 'PackageItem' },
     'PackagePerk': { query_key: queryKeys.course.packagePerk, category: 'Academic', sheet: 'PackagePerk' },
+    'BatchAllocation': { query_key: queryKeys.batch_allocation, category: 'Academic', sheet: 'BatchAllocation' },
+    'StaffMember': { query_key: queryKeys.staff, category: 'Staff', sheet: 'StaffMember' },
+    'TeacherSubject': { query_key: { list: (filter = EMPTY_FILTER) => ['teacher-subject', 'list', { filter }] }, category: 'Staff', sheet: 'TeacherSubject' },
+    'StudentLead': { query_key: queryKeys.lead, category: 'Students', sheet: 'StudentLead' },
+    'ExpenseCategory': { query_key: queryKeys.finance.category, category: 'Finance', sheet: 'ExpenseCategory' },
+    'User': { query_key: queryKeys.user, category: 'Auth', sheet: 'User' },
   };
 
   const HYDRATION_TARGETS = Object.keys(HYDRATION_CONFIG);
@@ -66,19 +72,27 @@ export const useErpHydration = () => {
       const payload = [
         {
           spreadsheetId: 'Students',
-          sheets: ['Student']
+          sheets: ['Student', 'StudentLead']
         },
         {
           spreadsheetId: 'Academic',
-          sheets: ['Course', 'Batch', 'Package', 'PackageItem', 'PackagePerk', 'CourseType']
+          sheets: ['Course', 'Batch', 'Package', 'PackageItem', 'PackagePerk', 'CourseType', 'BatchAllocation']
         },
         {
           spreadsheetId: 'Staff',
-          sheets: ['Teacher']
+          sheets: ['Teacher', 'StaffMember', 'TeacherSubject']
         },
         {
           spreadsheetId: 'Core',
           sheets: ['Branch']
+        },
+        {
+          spreadsheetId: 'Finance',
+          sheets: ['ExpenseCategory']
+        },
+        {
+          spreadsheetId: 'Auth',
+          sheets: ['User']
         }
       ];
 
@@ -87,6 +101,7 @@ export const useErpHydration = () => {
         payload,
         token,
         {
+          timeout: 'SHEET_BATCH', // 45s semantic timeout profile for startup batch hydration
           actionOptions: {
             responseKey: 'NAME',
             driverType: 'ADVANCED'

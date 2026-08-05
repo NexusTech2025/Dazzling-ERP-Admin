@@ -144,7 +144,7 @@ export const useBatchMonthlyAttendanceQuery = (batchId) => {
       return { months, dates };
     },
     enabled: !!token && !!batchId,
-    staleTime: 1000 * 60 * 5, // 5 minutes cache lifetime
+    staleTime: 1000 * 60 * 60, // 60 minutes cache lifetime
   });
 };
 

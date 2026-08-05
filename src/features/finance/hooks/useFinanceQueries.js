@@ -40,7 +40,7 @@ export const useRevenueSummaryQuery = () => {
       return response.data?.data?.[0] || null;
     },
     enabled: !!token,
-    staleTime: 1000 * 60 * 10, // 10 minutes
+    staleTime: 1000 * 60 * 60, // 60 minutes
   });
 };
 
@@ -60,7 +60,7 @@ export const useInstallmentsQuery = (filter = {}) => {
       return response.data?.data || [];
     },
     enabled: !!token,
-    staleTime: 1000 * 60 * 10, // 10 minutes
+    staleTime: 1000 * 60 * 60, // 60 minutes
   });
 };
 
@@ -80,7 +80,7 @@ export const useOverdueAccountsQuery = (filter = {}) => {
       return response.data?.data || [];
     },
     enabled: !!token,
-    staleTime: 1000 * 60 * 10, // 10 minutes
+    staleTime: 1000 * 60 * 60, // 60 minutes
   });
 };
 
@@ -153,7 +153,7 @@ export const useMoneyTransactionsQuery = (filter = {}) => {
       return response.data?.data || [];
     },
     enabled: !!token,
-    staleTime: 1000 * 60 * 10, // 10 minutes
+    staleTime: 1000 * 60 * 60, // 60 minutes
   });
 };
 
@@ -232,7 +232,7 @@ export const useExpenseCategoriesQuery = (filter = {}) => {
       return response.data?.data || [];
     },
     enabled: !!token,
-    staleTime: 1000 * 60 * 10, // 10 minutes
+    staleTime: 1000 * 60 * 60, // 60 minutes
   });
 };
 
@@ -322,7 +322,7 @@ export const useAccountingDataQuery = () => {
       return response.data || { studentFeeAccounts: [], installments: [], payments: [], feeAdjustments: [] };
     },
     enabled: !!token,
-    staleTime: 1000 * 60 * 10, // 10 minutes
+    staleTime: 1000 * 60 * 60, // 60 minutes
   });
 };
 
