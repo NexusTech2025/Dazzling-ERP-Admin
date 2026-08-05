@@ -86,7 +86,7 @@ const StudentProfile = () => {
               onEdit={() => navigate(`/admin/students/${id}/edit`)}
             />
             <GuardianInfo student={student} contact={profileData?.contact} />
-            <EnrollmentDetails enrollments={profileData?.enrollments} allocations={profileData?.allocations} />
+            <EnrollmentDetails enrollments={profileData?.enrollments} allocations={profileData?.allocations} studentId={id} />
             <AcademicBackground education={profileData?.education} />
           </div>
           <div className="lg:col-span-1">

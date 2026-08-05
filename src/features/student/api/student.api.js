@@ -173,3 +173,45 @@ export const fetchEnrollments = (token, filter = {}, options = {}) => {
   };
   return executeAction(API_REGISTRY.DATA.QUERY, payload, token, { signal });
 };
+
+/**
+ * Updates an enrollment contract and its child batch seating allocations
+ * using the academic_update_enrollment backend action controller.
+ * 
+ * @async
+ * @function updateEnrollment
+ * @param {string} token - Active user authorization session token.
+ * @param {object} payload - Action parameters { enrollment_id, roll_number, enrollment_date, status, academic_status, metadata, allocations }.
+ * @param {object} [options={}] - HTTP fetch configuration options.
+ * @returns {Promise<object>} Standard response envelope with updated enrollment and allocations.
+ */
+export const updateEnrollment = (token, payload, options = {}) =>
+  executeAction(API_REGISTRY.ACADEMIC.UPDATE_ENROLLMENT, payload, token, options);
+
+/**
+ * Discards an enrollment contract and settles the financial account.
+ * 
+ * @async
+ * @function discardEnrollment
+ * @param {string} token - Active user authorization session token.
+ * @param {object} payload - Action parameters { enrollment_id, discard_mode: "refund"|"no_refund", remarks }.
+ * @param {object} [options={}] - HTTP fetch configuration options.
+ * @returns {Promise<object>} Standard response envelope with discard outcome data.
+ */
+export const discardEnrollment = (token, payload, options = {}) =>
+  executeAction(API_REGISTRY.ACADEMIC.DISCARD_ENROLLMENT, payload, token, options);
+
+/**
+ * Migrates a student from one enrollment to a new course/package contract.
+ * 
+ * @async
+ * @function migrateEnrollment
+ * @param {string} token - Active user authorization session token.
+ * @param {object} payload - Action parameters { enrollment_id, target_type, target_id, rollover_payments, new_fee, batch_assignments, installment_plan, remarks }.
+ * @param {object} [options={}] - HTTP fetch configuration options.
+ * @returns {Promise<object>} Standard response envelope with old_contract and new_contract data.
+ */
+export const migrateEnrollment = (token, payload, options = {}) =>
+  executeAction(API_REGISTRY.ACADEMIC.MIGRATE_ENROLLMENT, payload, token, options);
+
+

@@ -50,7 +50,10 @@ export const API_REGISTRY = {
     DELETE_MANY_PACKAGES: 'academic_delete_many_packages',
     DELETE_MANY_COURSES: 'academic_delete_many_courses',
     DELETE_MANY_COURSE_TYPES: 'academic_delete_many_course_types',
-    ENROLL_STUDENT: 'academic_enroll_student'
+    ENROLL_STUDENT: 'academic_enroll_student',
+    UPDATE_ENROLLMENT: 'academic_update_enrollment',
+    DISCARD_ENROLLMENT: 'academic_discard_enrollment',
+    MIGRATE_ENROLLMENT: 'academic_migrate_enrollment'
   },
   DATA: {
     QUERY: 'data_query',
