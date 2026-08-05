@@ -11,17 +11,25 @@ import { toLocalDate, formatToKey } from '../../../lib/dateUtils';
  */
 export const useTeachersQuery = (filter = EMPTY_FILTER) => {
   const { token } = useAuth();
+  const queryClient = useQueryClient();
 
   return useQuery({
-    queryKey: queryKeys.teacher.list(filter),
+    queryKey: queryKeys.teacher.list(EMPTY_FILTER),
     queryFn: async ({ signal }) => {
-      const response = await apiClient.executeAction(
-        API_REGISTRY.DATA.QUERY,
-        { target: 'Teacher', where: filter },
-        token,
-        { signal }
+      return resolveList(
+        queryClient,
+        'teacher',
+        filter,
+        async () => {
+          const response = await apiClient.executeAction(
+            API_REGISTRY.DATA.QUERY,
+            { target: 'Teacher', where: filter },
+            token,
+            { signal }
+          );
+          return response.data?.data || [];
+        }
       );
-      return response.data?.data || [];
     },
     enabled: !!token,
     staleTime: Infinity,
@@ -356,8 +364,8 @@ export const useTeacherSalaryConfigsQuery = (teacherId, options = {}) => {
     },
     enabled: !!token && !!teacherId,
     staleTime: 1000 * 60 * 60, // 60 minutes cache freshness constraint
-    refetchOnMount: true,
-    refetchOnReconnect: true,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
     initialData: () => {
       return getCachedList(queryClient, 'teacherSalaryConfig', { teacherId });
     },

@@ -3,6 +3,7 @@ import { useAuth } from '../../../context/AuthContextCore';
 import { queryKeys, EMPTY_FILTER } from '../../../lib/react-query/queryKeys';
 import { apiClient } from '../../../services/apiClient';
 import { API_REGISTRY } from '../../../services/apiRegistry';
+import { resolveList } from '../../../lib/react-query/cacheHelper';
 
 /**
  * Hook for fetching all branches from Real API
@@ -11,19 +12,30 @@ import { API_REGISTRY } from '../../../services/apiRegistry';
  */
 export const useBranchesQuery = (filter = EMPTY_FILTER) => {
   const { token } = useAuth();
+  const queryClient = useQueryClient();
 
   return useQuery({
-    queryKey: queryKeys.branch.list(filter),
+    queryKey: queryKeys.branch.list(EMPTY_FILTER),
     queryFn: async ({ signal }) => {
-      const response = await apiClient.executeAction(
-        API_REGISTRY.DATA.QUERY,
-        { target: 'Branch', where: filter },
-        token,
-        { timeout: 'STANDARD', signal }
+      return resolveList(
+        queryClient,
+        'branch',
+        filter,
+        async () => {
+          const response = await apiClient.executeAction(
+            API_REGISTRY.DATA.QUERY,
+            { target: 'Branch', where: filter },
+            token,
+            { timeout: 'STANDARD', signal }
+          );
+          return response.data?.data || [];
+        }
       );
-      return response.data?.data || [];
     },
     enabled: !!token,
+    staleTime: 1000 * 60 * 60, // 60 Minute Grace Window
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 };
 

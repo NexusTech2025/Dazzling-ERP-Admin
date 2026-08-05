@@ -54,7 +54,7 @@ export const usePackagesQuery = (filter = EMPTY_FILTER) => {
   const queryClient = useQueryClient();
 
   return useQuery({
-    queryKey: queryKeys.course.package.list(filter),
+    queryKey: queryKeys.course.package.list(EMPTY_FILTER),
     queryFn: async ({ signal }) => {
       await ensurePackageRelations(queryClient, token);
       return resolveList(
@@ -90,9 +90,9 @@ export const usePackagesQuery = (filter = EMPTY_FILTER) => {
       }
       return cached;
     },
-    initialDataUpdatedAt: () => queryClient.getQueryState(queryKeys.course.package.list(filter))?.dataUpdatedAt,
+    initialDataUpdatedAt: () => queryClient.getQueryState(queryKeys.course.package.list(EMPTY_FILTER))?.dataUpdatedAt,
     staleTime: 1000 * 60 * 60, // 60 Minute Grace Window
-    refetchOnMount: true,       // Background revalidation once stale
+    refetchOnMount: false,
     refetchOnWindowFocus: false,
   });
 };

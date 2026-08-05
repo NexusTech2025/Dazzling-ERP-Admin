@@ -24,11 +24,11 @@ const BASE_URL = isTestMode
  * Centralized Semantic Timeout Profiles
  */
 export const TIMEOUT_PROFILES = {
-  FAST: 15000,            // Auth checks, fast point lookups (15s)
-  STANDARD: 30000,        // Standard single-table read queries (30s)
-  SHEET_BATCH: 45000,     // Multi-file batch queries (sheet_batch_read) (45s)
-  HYDRATED_QUERY: 70000,  // Deep relational joins with 3+ includes (70s)
-  DATA_MUTATION: 90000    // All write operations (Create, Update, Delete, Record) (90s)
+  FAST: 35000,            // Auth checks, fast point lookups (35s)
+  STANDARD: 50000,        // Standard single-table read queries (50s)
+  SHEET_BATCH: 65000,     // Multi-file batch queries (sheet_batch_read) (65s)
+  HYDRATED_QUERY: 90000,  // Deep relational joins with 3+ includes (90s)
+  DATA_MUTATION: 110000   // All write operations (Create, Update, Delete, Record) (110s)
 };
 
 /**

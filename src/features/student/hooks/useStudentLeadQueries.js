@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../../context/AuthContextCore';
 import { queryKeys, EMPTY_FILTER } from '../../../lib/react-query/queryKeys';
+import { resolveList } from '../../../lib/react-query/cacheHelper';
 import {
   fetchStudentLeads,
   fetchStudentLeadDetail,
@@ -13,15 +14,23 @@ import {
  */
 export const useStudentLeadsQuery = (filter = EMPTY_FILTER) => {
   const { token } = useAuth();
+  const queryClient = useQueryClient();
 
   return useQuery({
-    queryKey: queryKeys.lead.list(filter),
+    queryKey: queryKeys.lead.list(EMPTY_FILTER),
     queryFn: async ({ signal }) => {
-      const response = await fetchStudentLeads(token, filter, { signal });
-      if (!response.success) {
-        throw new Error(response.error?.message || response.message || 'Failed to fetch student leads');
-      }
-      return response.data?.data || [];
+      return resolveList(
+        queryClient,
+        'lead',
+        filter,
+        async () => {
+          const response = await fetchStudentLeads(token, filter, { signal });
+          if (!response.success) {
+            throw new Error(response.error?.message || response.message || 'Failed to fetch student leads');
+          }
+          return response.data?.data || [];
+        }
+      );
     },
     enabled: !!token,
     staleTime: Infinity,

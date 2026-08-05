@@ -1,9 +1,9 @@
-import { queryKeys } from './queryKeys.js';
+import { queryKeys, EMPTY_FILTER } from './queryKeys.js';
 import { hasSchema, getSchema } from './schemaRegistry.js';
 import { validateRecordSchema } from './validationEngine.js';
 import { normalizeRecord } from './hydrate.js';
 import { alertStore } from './alertStore.js';
-import { CACHE_RESOLVER_STRATEGIES } from './cacheStrategies.js';
+import { CACHE_RESOLVER_STRATEGIES, resolveGenericList } from './cacheStrategies.js';
 
 
 export class CacheLayerError extends Error {
@@ -19,35 +19,35 @@ export class CacheLayerError extends Error {
 export const ENTITY_CONFIGS = {
   student: {
     primaryKey: 'student_id',
-    listKey: (filter) => queryKeys.student.list(filter),
+    listKey: () => queryKeys.student.list(EMPTY_FILTER),
     detailKey: (id) => queryKeys.student.detail(id),
     listsKey: () => queryKeys.student.lists(),
     isValidDetail: (data) => data && typeof data === 'object' && ('student_name' in data || 'email' in data)
   },
   teacher: {
     primaryKey: 'teacher_id',
-    listKey: (filter) => queryKeys.teacher.list(filter),
+    listKey: () => queryKeys.teacher.list(EMPTY_FILTER),
     detailKey: (id) => queryKeys.teacher.detail(id),
     listsKey: () => queryKeys.teacher.lists(),
     isValidDetail: (data) => data && typeof data === 'object' && ('full_name' in data || 'mobile_number' in data)
   },
   batch: {
     primaryKey: 'batch_id',
-    listKey: (filter) => queryKeys.batch.list(filter),
+    listKey: () => queryKeys.batch.list(EMPTY_FILTER),
     detailKey: (id) => queryKeys.batch.detail(id),
     listsKey: () => queryKeys.batch.lists(),
     isValidDetail: (data) => data && typeof data === 'object' && 'batch_name' in data
   },
   course: {
     primaryKey: 'course_id',
-    listKey: (filter) => queryKeys.course.list(filter),
+    listKey: () => queryKeys.course.list(EMPTY_FILTER),
     detailKey: (id) => queryKeys.course.detail(id),
     listsKey: () => queryKeys.course.lists(),
     isValidDetail: (data) => data && typeof data === 'object' && 'name' in data
   },
   package: {
     primaryKey: 'package_id',
-    listKey: (filter) => queryKeys.course.package.list(filter),
+    listKey: () => queryKeys.course.package.list(EMPTY_FILTER),
     detailKey: (id) => queryKeys.course.package.detail(id),
     listsKey: () => queryKeys.course.package.all,
     isValidDetail: (data) => data && typeof data === 'object' && 'package_fee' in data
@@ -75,7 +75,7 @@ export const ENTITY_CONFIGS = {
   },
   batchAllocation: {
     primaryKey: 'allocation_id',
-    listKey: (filter) => queryKeys.batch_allocation.list(filter),
+    listKey: () => queryKeys.batch_allocation.list(EMPTY_FILTER),
     listsKey: () => queryKeys.batch_allocation.all,
     detailKey: (id) => queryKeys.batch_allocation.detail(id),
     isValidDetail: (data) =>
@@ -90,17 +90,66 @@ export const ENTITY_CONFIGS = {
   },
   enrollment: {
     primaryKey: 'enrollment_id',
-    listKey: (filter) => queryKeys.enrollment.list(filter),
+    listKey: () => queryKeys.enrollment.list(EMPTY_FILTER),
     detailKey: (id) => queryKeys.enrollment.detail(id),
     listsKey: () => queryKeys.enrollment.all,
     isValidDetail: (data) => data && typeof data === 'object' && 'enrollment_id' in data
   },
   user: {
     primaryKey: 'user_id',
-    listKey: (filter) => queryKeys.user.list(filter),
+    listKey: () => queryKeys.user.list(EMPTY_FILTER),
     detailKey: (id) => queryKeys.user.detail(id),
     listsKey: () => queryKeys.user.lists(),
     isValidDetail: (data) => data && typeof data === 'object' && 'username' in data
+  },
+  lead: {
+    primaryKey: 'lead_id',
+    listKey: () => queryKeys.lead.list(EMPTY_FILTER),
+    detailKey: (id) => queryKeys.lead.detail(id),
+    listsKey: () => queryKeys.lead.lists(),
+    isValidDetail: (data) => data && typeof data === 'object' && ('lead_id' in data || 'student_name' in data)
+  },
+  branch: {
+    primaryKey: 'branch_id',
+    listKey: () => queryKeys.branch.list(EMPTY_FILTER),
+    detailKey: (id) => queryKeys.branch.detail(id),
+    listsKey: () => queryKeys.branch.all,
+    isValidDetail: (data) => data && typeof data === 'object' && ('branch_id' in data || 'branch_name' in data)
+  },
+  staff: {
+    primaryKey: 'staff_id',
+    listKey: () => queryKeys.staff.list(EMPTY_FILTER),
+    detailKey: (id) => ['staff', 'detail', id],
+    listsKey: () => queryKeys.staff.lists(),
+    isValidDetail: (data) => data && typeof data === 'object' && ('staff_id' in data || 'full_name' in data || 'name' in data)
+  },
+  installment: {
+    primaryKey: 'installment_id',
+    listKey: () => queryKeys.finance.installment.list(EMPTY_FILTER),
+    detailKey: (id) => [...queryKeys.finance.installment.all, 'detail', id],
+    listsKey: () => queryKeys.finance.installment.all,
+    isValidDetail: (data) => data && typeof data === 'object' && ('installment_id' in data || 'amount' in data)
+  },
+  overdue: {
+    primaryKey: 'installment_id',
+    listKey: () => queryKeys.finance.overdue(EMPTY_FILTER),
+    detailKey: (id) => [...queryKeys.finance.all, 'overdue', id],
+    listsKey: () => queryKeys.finance.all,
+    isValidDetail: (data) => data && typeof data === 'object' && ('installment_id' in data || 'student_id' in data)
+  },
+  transaction: {
+    primaryKey: 'transaction_id',
+    listKey: () => queryKeys.finance.transaction.list(EMPTY_FILTER),
+    detailKey: (id) => [...queryKeys.finance.transaction.all, 'detail', id],
+    listsKey: () => queryKeys.finance.transaction.all,
+    isValidDetail: (data) => data && typeof data === 'object' && ('transaction_id' in data || 'amount' in data)
+  },
+  category: {
+    primaryKey: 'category_id',
+    listKey: () => queryKeys.finance.category.list(EMPTY_FILTER),
+    detailKey: (id) => [...queryKeys.finance.category.all, 'detail', id],
+    listsKey: () => queryKeys.finance.category.all,
+    isValidDetail: (data) => data && typeof data === 'object' && ('category_id' in data || 'category_name' in data || 'name' in data)
   },
   test: {
     primaryKey: 'id',
@@ -285,7 +334,7 @@ export function getCachedList(queryClient, entity, filter = {}, options = {}) {
   }
 
   // 2. Resolve via Strategy Callback (Strategy Pattern)
-  const strategyFn = CACHE_RESOLVER_STRATEGIES[entity];
+  const strategyFn = CACHE_RESOLVER_STRATEGIES[entity] || resolveGenericList;
   if (typeof strategyFn === 'function') {
     const listsKey = typeof config.listsKey === 'function' ? config.listsKey() : config.listsKey;
     const listQueries = queryClient.getQueriesData({ queryKey: listsKey });
