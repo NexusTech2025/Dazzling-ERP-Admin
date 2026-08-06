@@ -1,6 +1,6 @@
 {
-  "active_branch": "integration/student-features-v2.0.1",
-  "updated_at": "2026-08-01T19:19:42.367Z",
+  "active_branch": "main",
+  "updated_at": "2026-08-06T06:21:26.223Z",
   "branches": {
     "refactor/student-views-optimization": {
       "branch_name": "refactor/student-views-optimization",
@@ -44,20 +44,20 @@
       "branch_name": "main",
       "parent_branch": "main",
       "purpose": "Main base production branch",
-      "status": "active",
-      "working_tree_clean": true,
-      "uncommitted_changes_count": 0,
-      "commits_count_ahead": 0,
+      "status": "in_progress",
+      "working_tree_clean": false,
+      "uncommitted_changes_count": 4,
+      "commits_count_ahead": 5,
       "created_at": "2026-07-26T11:12:25.484Z",
-      "last_activity_at": "2026-07-29T20:01:55.791Z",
+      "last_activity_at": "2026-08-06T06:21:26.354Z",
       "commits_summary": [
-        "bb76a3c merge(skills): merge test/smart-merge-demo into main",
-        "bb9bf58 feat(skills): integrate smart-branch-merge skill and approved plan artifact",
-        "ea5b747 merge(attendance): merge bugfix/batch-attendance-marking into main",
-        "5941ec7 docs(attendance,skills): add teacher attendance architecture manual, resolved bug reports BUG-0009 to BUG-0014, and git branch skill enhancements",
-        "c1bdb10 fix(batch,attendance): resolve student status staging, null punch times, and payload schema validation bugs"
+        "3b408ee merge(api,cache)!: merge feature/request-manager into main",
+        "2901f39 refactor(cache,query-keys): standardize canonical query keys, RAM filtering, and ENTITY_CONFIGS",
+        "c173ba1 feat(cache,query-keys): implement zero-refetch policy and transaction cache entity",
+        "3a7725c feat(api,cache): integrate query merger strategy, benchmark tests, and canonical cache keys",
+        "0aab9f9 merge(release): merge integration/student-features-v2.0.1 into main (V2 mobile list view, student profile refactoring, and RAM cache hydration)"
       ],
-      "recommendation": "⚪ Clean & Ready: Main base production branch."
+      "recommendation": "🟡 Active Work in Progress: You have 4 uncommitted file(s). Commit or stash your changes before merging or switching branches."
     },
     "package-patches-bugfix": {
       "branch_name": "package-patches-bugfix",
@@ -155,6 +155,23 @@
         "8d218fa feat(student,cache): integrate EnrollmentRepo O(1) RAM cache sync & reschedule triggers"
       ],
       "recommendation": "🟡 Active Work in Progress: You have 23 uncommitted file(s). Commit or stash your changes before merging or switching branches."
+    },
+    "feature/request-manager": {
+      "branch_name": "feature/request-manager",
+      "parent_branch": "main",
+      "purpose": "Feature/bugfix work on feature/request-manager",
+      "status": "merged",
+      "working_tree_clean": true,
+      "uncommitted_changes_count": 4,
+      "commits_count_ahead": 3,
+      "created_at": "2026-08-05T20:19:23.290Z",
+      "last_activity_at": "2026-08-06T06:15:26.040Z",
+      "commits_summary": [
+        "2901f39 refactor(cache,query-keys): standardize canonical query keys, RAM filtering, and ENTITY_CONFIGS",
+        "c173ba1 feat(cache,query-keys): implement zero-refetch policy and transaction cache entity",
+        "3a7725c feat(api,cache): integrate query merger strategy, benchmark tests, and canonical cache keys"
+      ],
+      "recommendation": "🔵 Merged Upstream: This branch has been merged upstream into main. Safe to delete locally using 'git branch -d feature/request-manager'."
     }
   }
 }
