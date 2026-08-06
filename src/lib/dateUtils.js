@@ -220,3 +220,36 @@ export const formatToKey = (dateObj) => {
   const day = String(dateObj.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
 };
+
+/**
+ * Timezone-safe local calendar date parser using date-fns.
+ * Extracts YYYY-MM-DD date components before parsing with parseISO to guarantee local midnight boundary
+ * and prevent UTC timezone offset shifts (e.g. 2026-08-01T00:00:00Z shifting back to 2026-07-31).
+ * 
+ * @param {string|Date} dateVal - Target raw date string or Date object.
+ * @returns {{ date: Date, dateKey: string, monthKey: string }|null} Mapped date-fns structure.
+ */
+export const toLocalCalendarDate = (dateVal) => {
+  if (!dateVal) return null;
+
+  try {
+    let cleanStr = '';
+    if (dateVal instanceof Date) {
+      cleanStr = format(dateVal, 'yyyy-MM-dd');
+    } else {
+      cleanStr = String(dateVal).trim().slice(0, 10);
+    }
+
+    const parsedDate = parseISO(cleanStr);
+    if (!isValid(parsedDate)) return null;
+
+    return {
+      date: parsedDate,
+      dateKey: format(parsedDate, 'yyyy-MM-dd'),
+      monthKey: format(parsedDate, 'yyyy-MM')
+    };
+  } catch (err) {
+    console.error('[toLocalCalendarDate] Failed to parse date with date-fns:', dateVal, err);
+    return null;
+  }
+};

@@ -6,6 +6,7 @@
 
 import { parseTimeToStructured, formatStructuredToTime, isPastLocalDate, toLocalDate, formatToKey } from '../../../lib/dateUtils.js';
 import { queryKeys } from '../../../lib/react-query/queryKeys.js';
+import { batchRepo } from '../../batch/utils/batchCacheHelper.js';
 
 /**
  * Standardized contracts detailing domain boundaries for Attendance tracking.
@@ -19,7 +20,7 @@ export const ATTENDANCE_DOMAINS = {
         mutationAction: 'STUDENT_SAVE_BATCH_ATTENDANCE',
         cachePrefix: 'batch-students',
         resolveId: (row) => row?.student_id || row?.id || '',
-        resolveName: (row) => row?.student_name || row?.displayName || 'Unknown Student',
+        resolveName: (row) => row?.student_name || row?.full_name || row?.displayName || 'Unknown Student',
         supportedFilters: ['date', 'batch', 'search', 'status'],
         hasTimeCapture: true,
         defaultEntryTime: '08:00',
@@ -243,7 +244,7 @@ export function transformServerToClientRoster(serverRegistry, draftDeltas, domai
                 rawStatus = 'NR';
             }
 
-            const isAbsentOrNR = rawStatus === 'A' || rawStatus === 'NR';
+            const isAbsent = rawStatus === 'A';
 
             // Standardize time mapping structures
             let defaultEntryTime = hasTimeCapture ? (row.entry_time || null) : null;
@@ -262,8 +263,10 @@ export function transformServerToClientRoster(serverRegistry, draftDeltas, domai
                 displayName: resolveName(row),
                 status: rawStatus,
                 remarks: delta?.remarks !== undefined ? delta.remarks : (row.remarks || ''),
-                entry_time: isAbsentOrNR ? null : (hasTimeCapture && delta?.entry_time !== undefined ? delta.entry_time : defaultEntryTime),
-                exit_time: isAbsentOrNR ? null : (hasTimeCapture && delta?.exit_time !== undefined ? delta.exit_time : defaultExitTime),
+                entry_time: isAbsent ? null : (hasTimeCapture && delta?.entry_time !== undefined ? delta.entry_time : defaultEntryTime),
+                exit_time: isAbsent ? null : (hasTimeCapture && delta?.exit_time !== undefined ? delta.exit_time : defaultExitTime),
+                defaultEntryTime,
+                defaultExitTime,
                 isEdited: !!delta,
                 isRowDirty: !!delta
             };
@@ -355,37 +358,9 @@ export function validateTimeFormat(timeString) {
  * @returns {Array<Object>} Daily baseline array.
  */
 export function buildStudentBaselineRegistry(batchStudents, recordedEntries, selectedDate, start_time, end_time) {
-    if (!Array.isArray(batchStudents)) return [];
-    const records = Array.isArray(recordedEntries) ? recordedEntries : [];
-
-    return batchStudents.map((student) => {
-        const recorded = records.find(r => r.student_id === (student.student_id || student.id));
-        if (recorded) {
-            let entryTime = recorded.entry_time || start_time || '08:00';
-            let exitTime = recorded.exit_time || end_time || '13:00';
-            if (entryTime && typeof entryTime === 'object') entryTime = formatStructuredToTime(entryTime);
-            if (exitTime && typeof exitTime === 'object') exitTime = formatStructuredToTime(exitTime);
-
-            return {
-                ...recorded,
-                student_name: recorded.student_name || student.student_name || student.full_name,
-                roll_number: recorded.roll_number || student.roll_number,
-                entry_time: entryTime,
-                exit_time: exitTime,
-                status: recorded.status || 'NR'
-            };
-        }
-
-        return {
-            attendance_id: null,
-            student_id: student.student_id || student.id,
-            student_name: student.student_name || student.full_name,
-            roll_number: student.roll_number,
-            status: 'NR',
-            entry_time: start_time || '08:00',
-            exit_time: end_time || '13:00',
-            remarks: ''
-        };
+    return batchRepo.resolveAttendanceBaseline(batchStudents, recordedEntries, selectedDate, {
+        start_time: start_time || '08:00',
+        end_time: end_time || '13:00'
     });
 }
 

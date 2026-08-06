@@ -118,10 +118,20 @@ export const ENTITY_CONFIGS = {
   },
   batchAttendance: {
     primaryKey: 'attendance_id',
-    listKey: () => queryKeys.attendance.all,
+    listKey: (filter = EMPTY_FILTER) => {
+      if (filter && typeof filter === 'object') {
+        if (filter.batchId && filter.date && filter.date !== 'all') {
+          return queryKeys.attendance.batch(filter.batchId, filter.date);
+        }
+        if (filter.batchId) {
+          return queryKeys.attendance.batchAll(filter.batchId);
+        }
+      }
+      return queryKeys.attendance.all;
+    },
     listsKey: () => queryKeys.attendance.all,
     detailKey: (id) => [...queryKeys.attendance.all, 'detail', id],
-    isValidDetail: (data) => data && typeof data === 'object' && 'attendance_id' in data
+    isValidDetail: (data) => data && typeof data === 'object' && ('attendance_id' in data || 'student_id' in data)
   },
   enrollment: {
     primaryKey: 'enrollment_id',

@@ -81,6 +81,8 @@ export const queryKeys = {
   attendance: {
     all: ['attendance'],
     batch: (batchId, date) => [...queryKeys.attendance.all, 'batch', batchId, date],
+    batchAll: (batchId) => [...queryKeys.attendance.all, 'batch-all', batchId],
+    batchMonth: (batchId, yearMonth) => [...queryKeys.attendance.all, 'batch-month', batchId, yearMonth],
     matrix: (batchId, days) => [...queryKeys.attendance.all, 'matrix', batchId, days],
     student: (studentId) => [...queryKeys.attendance.all, 'student', studentId],
   },
