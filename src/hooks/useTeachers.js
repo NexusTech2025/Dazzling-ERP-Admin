@@ -1,24 +1,8 @@
-import { useQuery } from '@tanstack/react-query';
-import { useAuth } from '../context/AuthContextCore';
-import { apiClient } from '../services/apiClient';
-import { API_REGISTRY } from '../services/apiRegistry';
+import { useTeachersQuery } from '../features/teacher/hooks/useTeacherQueries';
 
 /**
- * Custom hook to manage teacher data fetching using React Query
+ * Custom hook to manage teacher data fetching using React Query (Delegates to canonical useTeachersQuery).
  */
 export const useTeachers = (filter = {}) => {
-  const { token } = useAuth();
-
-  return useQuery({
-    queryKey: ['teachers', filter],
-    queryFn: async () => {
-      const response = await apiClient.executeAction(
-        API_REGISTRY.DATA.QUERY,
-        { target: 'Teacher', where: filter },
-        token
-      );
-      return response.data?.data || [];
-    },
-    enabled: !!token,
-  });
+  return useTeachersQuery(filter);
 };

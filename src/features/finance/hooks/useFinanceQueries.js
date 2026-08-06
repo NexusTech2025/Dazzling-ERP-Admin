@@ -1,7 +1,8 @@
 import { useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../../context/AuthContextCore';
-import { queryKeys } from '../../../lib/react-query/queryKeys';
+import { queryKeys, EMPTY_FILTER } from '../../../lib/react-query/queryKeys';
+import { resolveList } from '../../../lib/react-query/cacheHelper';
 import { enrollmentRepo } from '../../student/utils/enrollmentCacheHelper';
 import { useDeleteManyMutation } from '../../../hooks/useDeleteManyMutation';
 import {
@@ -40,47 +41,69 @@ export const useRevenueSummaryQuery = () => {
       return response.data?.data?.[0] || null;
     },
     enabled: !!token,
-    staleTime: 1000 * 60 * 10, // 10 minutes
+    staleTime: 1000 * 60 * 60, // 60 minutes
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 };
 
 /**
  * Hook for fetching all installments
  */
-export const useInstallmentsQuery = (filter = {}) => {
+export const useInstallmentsQuery = (filter = EMPTY_FILTER) => {
   const { token } = useAuth();
+  const queryClient = useQueryClient();
 
   return useQuery({
-    queryKey: queryKeys.finance.installment.list(filter),
+    queryKey: queryKeys.finance.installment.list(EMPTY_FILTER),
     queryFn: async ({ signal }) => {
-      const response = await fetchInstallments(token, filter, { signal });
-      if (!response.success) {
-        throw new Error(response.error?.message || response.message || 'Failed to fetch installments');
-      }
-      return response.data?.data || [];
+      return resolveList(
+        queryClient,
+        'installment',
+        filter,
+        async () => {
+          const response = await fetchInstallments(token, filter, { signal });
+          if (!response.success) {
+            throw new Error(response.error?.message || response.message || 'Failed to fetch installments');
+          }
+          return response.data?.data || [];
+        }
+      );
     },
     enabled: !!token,
-    staleTime: 1000 * 60 * 10, // 10 minutes
+    staleTime: 1000 * 60 * 60, // 60 minutes
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 };
 
 /**
  * Hook for fetching overdue accounts (Overdue installments)
  */
-export const useOverdueAccountsQuery = (filter = {}) => {
+export const useOverdueAccountsQuery = (filter = EMPTY_FILTER) => {
   const { token } = useAuth();
+  const queryClient = useQueryClient();
 
   return useQuery({
-    queryKey: queryKeys.finance.overdue(filter),
+    queryKey: queryKeys.finance.overdue(EMPTY_FILTER),
     queryFn: async ({ signal }) => {
-      const response = await fetchOverdueAccounts(token, filter, { signal });
-      if (!response.success) {
-        throw new Error(response.error?.message || response.message || 'Failed to fetch overdue accounts');
-      }
-      return response.data?.data || [];
+      return resolveList(
+        queryClient,
+        'overdue',
+        filter,
+        async () => {
+          const response = await fetchOverdueAccounts(token, filter, { signal });
+          if (!response.success) {
+            throw new Error(response.error?.message || response.message || 'Failed to fetch overdue accounts');
+          }
+          return response.data?.data || [];
+        }
+      );
     },
     enabled: !!token,
-    staleTime: 1000 * 60 * 10, // 10 minutes
+    staleTime: 1000 * 60 * 60, // 60 minutes
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 };
 
@@ -140,20 +163,30 @@ export const useGenerateFeePlanMutation = () => {
 /**
  * Hook for fetching money transactions
  */
-export const useMoneyTransactionsQuery = (filter = {}) => {
+export const useMoneyTransactionsQuery = (filter = EMPTY_FILTER) => {
   const { token } = useAuth();
+  const queryClient = useQueryClient();
 
   return useQuery({
-    queryKey: queryKeys.finance.transaction.list(filter),
+    queryKey: queryKeys.finance.transaction.list(EMPTY_FILTER),
     queryFn: async ({ signal }) => {
-      const response = await fetchMoneyTransactions(token, filter, { signal });
-      if (!response.success) {
-        throw new Error(response.error?.message || response.message || 'Failed to fetch money transactions');
-      }
-      return response.data?.data || [];
+      return resolveList(
+        queryClient,
+        'transaction',
+        filter,
+        async () => {
+          const response = await fetchMoneyTransactions(token, filter, { signal });
+          if (!response.success) {
+            throw new Error(response.error?.message || response.message || 'Failed to fetch money transactions');
+          }
+          return response.data?.data || [];
+        }
+      );
     },
     enabled: !!token,
-    staleTime: 1000 * 60 * 10, // 10 minutes
+    staleTime: 1000 * 60 * 60, // 60 minutes
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 };
 
@@ -219,20 +252,28 @@ export const useDeleteManyMoneyTransactionsMutation = () => {
 /**
  * Hook for fetching expense categories
  */
-export const useExpenseCategoriesQuery = (filter = {}) => {
+export const useExpenseCategoriesQuery = (filter = EMPTY_FILTER) => {
   const { token } = useAuth();
+  const queryClient = useQueryClient();
 
   return useQuery({
-    queryKey: queryKeys.finance.category.list(filter),
+    queryKey: queryKeys.finance.category.list(EMPTY_FILTER),
     queryFn: async ({ signal }) => {
-      const response = await fetchExpenseCategories(token, filter, { signal });
-      if (!response.success) {
-        throw new Error(response.error?.message || response.message || 'Failed to fetch expense categories');
-      }
-      return response.data?.data || [];
+      return resolveList(
+        queryClient,
+        'category',
+        filter,
+        async () => {
+          const response = await fetchExpenseCategories(token, filter, { signal });
+          if (!response.success) {
+            throw new Error(response.error?.message || response.message || 'Failed to fetch expense categories');
+          }
+          return response.data?.data || [];
+        }
+      );
     },
     enabled: !!token,
-    staleTime: 1000 * 60 * 10, // 10 minutes
+    staleTime: 1000 * 60 * 60, // 60 minutes
   });
 };
 
@@ -290,19 +331,30 @@ export const useDeleteExpenseCategoryMutation = () => {
 /**
  * Hook for fetching support staff members
  */
-export const useStaffMembersQuery = (filter = {}) => {
+export const useStaffMembersQuery = (filter = EMPTY_FILTER) => {
   const { token } = useAuth();
+  const queryClient = useQueryClient();
 
   return useQuery({
-    queryKey: queryKeys.staff.list(filter),
+    queryKey: queryKeys.staff.list(EMPTY_FILTER),
     queryFn: async ({ signal }) => {
-      const response = await fetchStaffMembers(token, filter, { signal });
-      if (!response.success) {
-        throw new Error(response.error?.message || response.message || 'Failed to fetch staff members');
-      }
-      return response.data?.data || [];
+      return resolveList(
+        queryClient,
+        'staff',
+        filter,
+        async () => {
+          const response = await fetchStaffMembers(token, filter, { signal });
+          if (!response.success) {
+            throw new Error(response.error?.message || response.message || 'Failed to fetch staff members');
+          }
+          return response.data?.data || [];
+        }
+      );
     },
     enabled: !!token,
+    staleTime: 1000 * 60 * 60, // 60 minutes
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 };
 
@@ -322,7 +374,9 @@ export const useAccountingDataQuery = () => {
       return response.data || { studentFeeAccounts: [], installments: [], payments: [], feeAdjustments: [] };
     },
     enabled: !!token,
-    staleTime: 1000 * 60 * 10, // 10 minutes
+    staleTime: 1000 * 60 * 60, // 60 minutes
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 };
 

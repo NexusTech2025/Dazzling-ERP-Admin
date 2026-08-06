@@ -18,7 +18,7 @@ import { executeAction } from '../../../services/apiClient';
  * @throws {ApiError} If backend returns success: false or validation fails.
  */
 export const registerUser = (token, payload, options = {}) => {
-  return executeAction('AUTH.REGISTER', payload, token, options);
+  return executeAction('AUTH.REGISTER', payload, token, { timeout: 'DATA_MUTATION', ...options });
 };
 
 /**
@@ -29,7 +29,7 @@ export const registerUser = (token, payload, options = {}) => {
  * @returns {Promise<object>} Standard response envelope with user data count and matching list.
  */
 export const fetchUsers = (token, payload = {}, options = {}) => {
-  return executeAction('USER.QUERY', payload, token, options);
+  return executeAction('USER.QUERY', payload, token, { timeout: 'STANDARD', ...options });
 };
 
 /**
@@ -41,7 +41,7 @@ export const fetchUsers = (token, payload = {}, options = {}) => {
  * @returns {Promise<object>} Standard response envelope confirming update status and target record.
  */
 export const updateUser = (token, userId, data, options = {}) => {
-  return executeAction('USER.UPDATE', { user_id: userId, data }, token, options);
+  return executeAction('USER.UPDATE', { user_id: userId, data }, token, { timeout: 'DATA_MUTATION', ...options });
 };
 
 /**
@@ -52,5 +52,5 @@ export const updateUser = (token, userId, data, options = {}) => {
  * @returns {Promise<object>} Standard response envelope confirming deletion status.
  */
 export const deleteUser = (token, userId, options = {}) => {
-  return executeAction('USER.DELETE', { user_id: userId }, token, options);
+  return executeAction('USER.DELETE', { user_id: userId }, token, { timeout: 'DATA_MUTATION', ...options });
 };

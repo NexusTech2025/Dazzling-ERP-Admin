@@ -17,6 +17,8 @@ import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { executeAction } from '../../services/apiClient';
 import { useAuth } from '../../context/AuthContextCore';
 
+import { useEnrollmentsQuery } from '../student/hooks/useEnrollmentQueries';
+
 /**
  * Global Installment & Overdue Tracking Page.
  * Renders cross-student billing schedules with switchable tabs, overdue KPI stats, and MainLayout.
@@ -39,16 +41,7 @@ const Installments = () => {
   const { data: students = [], isLoading: isStudentsLoading } = useStudentsQuery();
   const { data: courses = [], isLoading: isCoursesLoading } = useCoursesQuery();
   const { data: packages = [], isLoading: isPackagesLoading } = usePackagesQuery();
-
-  // Fetch Enrollments for relation mapping
-  const { data: enrollments = [], isLoading: isEnrollmentsLoading } = useQuery({
-    queryKey: ['finance', 'installments-enrollments'],
-    queryFn: async () => {
-      const res = await executeAction('data_query', { target: 'Enrollment' }, token);
-      return res.data?.data || [];
-    },
-    enabled: !!token
-  });
+  const { data: enrollments = [], isLoading: isEnrollmentsLoading } = useEnrollmentsQuery();
 
   const { studentFeeAccounts = [], installments: rawInstallments = [] } = accountingData || {};
 

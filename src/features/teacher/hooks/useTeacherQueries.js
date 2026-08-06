@@ -11,17 +11,25 @@ import { toLocalDate, formatToKey } from '../../../lib/dateUtils';
  */
 export const useTeachersQuery = (filter = EMPTY_FILTER) => {
   const { token } = useAuth();
+  const queryClient = useQueryClient();
 
   return useQuery({
-    queryKey: queryKeys.teacher.list(filter),
+    queryKey: queryKeys.teacher.list(EMPTY_FILTER),
     queryFn: async ({ signal }) => {
-      const response = await apiClient.executeAction(
-        API_REGISTRY.DATA.QUERY,
-        { target: 'Teacher', where: filter },
-        token,
-        { signal }
+      return resolveList(
+        queryClient,
+        'teacher',
+        filter,
+        async () => {
+          const response = await apiClient.executeAction(
+            API_REGISTRY.DATA.QUERY,
+            { target: 'Teacher', where: filter },
+            token,
+            { signal }
+          );
+          return response.data?.data || [];
+        }
       );
-      return response.data?.data || [];
     },
     enabled: !!token,
     staleTime: Infinity,
@@ -62,7 +70,9 @@ export const useTeacherDetailQuery = (id) => {
     enabled: !!token && !!id,
     initialData: () => getCachedRecord(queryClient, 'teacher', id),
     initialDataUpdatedAt: () => queryClient.getQueryState(queryKeys.teacher.detail(id))?.dataUpdatedAt,
-    staleTime: 1000 * 60 * 5,
+    staleTime: 1000 * 60 * 60,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 };
 
@@ -95,7 +105,8 @@ export const useTeacherAttendanceQuery = (teacherId) => {
       });
     },
     enabled: !!token && !!teacherId,
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 1000 * 60 * 60, // 60 minutes
+    refetchOnMount: false,
     refetchOnWindowFocus: false,
   });
 };
@@ -129,7 +140,8 @@ export const useTeacherAttendanceListQuery = (date) => {
       });
     },
     enabled: !!token && !!date,
-    staleTime: 1000 * 60 * 2, // 2 minutes
+    staleTime: 1000 * 60 * 60, // 60 minutes
+    refetchOnMount: false,
     refetchOnWindowFocus: false,
   });
 };
@@ -199,7 +211,8 @@ export const useCreateTeacherMutation = () => {
       apiClient.executeAction(
         API_REGISTRY.STAFF.ONBOARD_TEACHER,
         payload,
-        token
+        token,
+        { timeout: 'DATA_MUTATION' }
       ),
     onSuccess: (response) => {
       if (response.success) {
@@ -222,7 +235,7 @@ export const useUpdateTeacherMutation = () => {
         API_REGISTRY.STAFF.UPDATE_TEACHER,
         { teacher_id: id, data },
         token,
-        options
+        { timeout: 'DATA_MUTATION', ...options }
       ),
     onSuccess: (response, { id }) => {
       if (response.success) {
@@ -248,7 +261,7 @@ export const useDeleteTeacherMutation = () => {
         API_REGISTRY.DATA.DELETE,
         { table: "Teacher", id },
         token,
-        options
+        { timeout: 'DATA_MUTATION', ...options }
       ),
     onSuccess: (response) => {
       if (response.success) {
@@ -276,7 +289,9 @@ export const useTeacherSubjectsQuery = (teacherId) => {
       return response.data?.data || [];
     },
     enabled: !!token && !!teacherId,
-    staleTime: 1000 * 60 * 5,
+    staleTime: 1000 * 60 * 60,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 };
 
@@ -354,9 +369,9 @@ export const useTeacherSalaryConfigsQuery = (teacherId, options = {}) => {
       return result;
     },
     enabled: !!token && !!teacherId,
-    staleTime: 1000 * 60 * 10, // 10 minutes cache freshness constraint
-    refetchOnMount: true,
-    refetchOnReconnect: true,
+    staleTime: 1000 * 60 * 60, // 60 minutes cache freshness constraint
+    refetchOnMount: false,
+    refetchOnReconnect: false,
     initialData: () => {
       return getCachedList(queryClient, 'teacherSalaryConfig', { teacherId });
     },
@@ -395,7 +410,9 @@ export const useTeacherDocumentsQuery = (teacherId) => {
       return response.data?.data || [];
     },
     enabled: !!token && !!teacherId,
-    staleTime: 1000 * 60 * 5,
+    staleTime: 1000 * 60 * 60,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 };
 
@@ -412,7 +429,7 @@ export const useAssignTeacherSubjectsMutation = () => {
         API_REGISTRY.STAFF.ASSIGN_SUBJECTS,
         { teacher_id: teacherId, subject_ids: subjectIds },
         token,
-        options
+        { timeout: 'DATA_MUTATION', ...options }
       ),
     onSuccess: (response, { teacherId }) => {
       if (response.success) {
@@ -564,7 +581,7 @@ export const useTeacherPaymentTransactionsQuery = (teacherId, options = {}) => {
       return result;
     },
     enabled: !!token && !!teacherId,
-    staleTime: 1000 * 60 * 10,
+    staleTime: 1000 * 60 * 60,
     initialData: () => {
       return getCachedList(queryClient, 'teacherPaymentTransaction', { teacherId });
     },

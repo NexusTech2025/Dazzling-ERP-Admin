@@ -8,6 +8,7 @@ import { useFilteredStudents } from '../../hooks/useFilteredStudents';
 import DataTable from '../../components/ui/DataTable';
 import { SearchInput, SelectFilter } from '../../components/ui/filters';
 import { createStudentColumns } from './schemas/studentSchema';
+import { queryKeys, EMPTY_FILTER } from '../../lib/react-query/queryKeys';
 
 const Students2 = () => {
   const { token } = useAuth();
@@ -33,7 +34,7 @@ const Students2 = () => {
   const deleteMutation = useMutation({
     mutationFn: (id) => deleteStudent(token, id),
     onSuccess: (_, deletedId) => {
-      queryClient.setQueryData(['students', {}], (old = []) => 
+      queryClient.setQueryData(queryKeys.student.list(EMPTY_FILTER), (old = []) => 
         old.filter(student => student.id !== deletedId)
       );
       alert('Student deleted successfully');
@@ -98,7 +99,7 @@ const Students2 = () => {
       data={filteredStudents}
       isLoading={isLoading}
       error={error}
-      onRetry={() => queryClient.invalidateQueries({ queryKey: ['students'] })}
+      onRetry={() => queryClient.invalidateQueries({ queryKey: queryKeys.student.list(EMPTY_FILTER) })}
       emptyMessage="No students found matching your filters."
       filters={filters}
       primaryAction={

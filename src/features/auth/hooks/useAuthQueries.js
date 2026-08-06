@@ -23,17 +23,16 @@ export const useRegisterUserMutation = () => {
 };
 
 /**
- * Hook for fetching all users with optional filtering (restricted to superadmin).
+ * Hook for fetching all users with optional filtering.
  * @param {object} [filter=EMPTY_FILTER] - Filters for role or status.
  * @returns {object} TanStack Query result.
  */
 export const useUsersQuery = (filter = EMPTY_FILTER) => {
-  const { token, user } = useAuth();
+  const { token } = useAuth();
   const queryClient = useQueryClient();
-  const isSuperadmin = user?.role?.toLowerCase() === 'superadmin';
 
   return useQuery({
-    queryKey: queryKeys.user.list(filter),
+    queryKey: queryKeys.user.list(EMPTY_FILTER),
     queryFn: async ({ signal }) => {
       return resolveList(
         queryClient,
@@ -49,10 +48,10 @@ export const useUsersQuery = (filter = EMPTY_FILTER) => {
         { signal }
       );
     },
-    enabled: !!token && isSuperadmin,
+    enabled: !!token,
     initialData: () => getCachedList(queryClient, 'user', filter),
-    initialDataUpdatedAt: () => queryClient.getQueryState(queryKeys.user.list(filter))?.dataUpdatedAt,
-    staleTime: Infinity,
+    initialDataUpdatedAt: () => queryClient.getQueryState(queryKeys.user.list(EMPTY_FILTER))?.dataUpdatedAt,
+    staleTime: 1000 * 60 * 60, // 60 minutes
     refetchOnMount: false,
     refetchOnWindowFocus: false,
   });

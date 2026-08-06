@@ -23,18 +23,27 @@ import {
 
 export const useCourseTypesQuery = () => {
   const { token } = useAuth();
+  const queryClient = useQueryClient();
+
   return useQuery({
     queryKey: queryKeys.course.type.list(),
     queryFn: async ({ signal }) => {
-      const response = await fetchCourseTypes(token, { signal });
-      if (!response.success) {
-        throw new Error(response.error?.message || response.message || 'Failed to fetch course types');
-      }
-      return response.data?.data || [];
+      return resolveList(
+        queryClient,
+        'courseType',
+        EMPTY_FILTER,
+        async () => {
+          const response = await fetchCourseTypes(token, { signal });
+          if (!response.success) {
+            throw new Error(response.error?.message || response.message || 'Failed to fetch course types');
+          }
+          return response.data?.data || [];
+        }
+      );
     },
     enabled: !!token,
-    staleTime: 1000 * 60 * 2.5, // 2.5 Minute Grace Window
-    refetchOnMount: true,       // Background revalidation once stale
+    staleTime: 1000 * 60 * 60, // 60 Minute Grace Window
+    refetchOnMount: false,
     refetchOnWindowFocus: false,
   });
 };
@@ -88,7 +97,7 @@ export const useCoursesQuery = (filter = EMPTY_FILTER) => {
   const queryClient = useQueryClient();
 
   return useQuery({
-    queryKey: queryKeys.course.list(filter),
+    queryKey: queryKeys.course.list(EMPTY_FILTER),
     queryFn: async ({ signal }) => {
       return resolveList(
         queryClient,
@@ -106,9 +115,9 @@ export const useCoursesQuery = (filter = EMPTY_FILTER) => {
     select: (data) => hydrateRecord('course', data, queryClient),
     enabled: !!token,
     initialData: () => getCachedList(queryClient, 'course', filter),
-    initialDataUpdatedAt: () => queryClient.getQueryState(queryKeys.course.list(filter))?.dataUpdatedAt,
-    staleTime: 1000 * 60 * 2.5, // 2.5 Minute Grace Window
-    refetchOnMount: true,       // Background revalidation once stale
+    initialDataUpdatedAt: () => queryClient.getQueryState(queryKeys.course.list(EMPTY_FILTER))?.dataUpdatedAt,
+    staleTime: 1000 * 60 * 60, // 60 Minute Grace Window
+    refetchOnMount: false,
     refetchOnWindowFocus: false,
   });
 };
@@ -140,7 +149,9 @@ export const useCourseDetailQuery = (id) => {
     select: (data) => hydrateRecord('course', data, queryClient),
     initialData: () => getCachedRecord(queryClient, 'course', id),
     initialDataUpdatedAt: () => queryClient.getQueryState(queryKeys.course.detail(id))?.dataUpdatedAt,
-    staleTime: 1000 * 60 * 5,
+    staleTime: 1000 * 60 * 60,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 };
 
@@ -214,7 +225,9 @@ export const useCourseTeachersQuery = (courseId) => {
       return response.data?.data || [];
     },
     enabled: !!token && !!courseId,
-    staleTime: 1000 * 60 * 5,
+    staleTime: 1000 * 60 * 60,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 };
 
@@ -240,7 +253,9 @@ export const useCourseAllocationsQuery = (courseId) => {
       return response.data?.data || [];
     },
     enabled: !!token && !!courseId,
-    staleTime: 1000 * 60 * 5,
+    staleTime: 1000 * 60 * 60,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 };
 

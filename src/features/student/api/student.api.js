@@ -34,7 +34,7 @@ export const fetchStudents = (token, filter = {}, options = {}) =>
       }
     },
     token,
-    options
+    { timeout: 'HYDRATED_QUERY', ...options }
   );
 
 /**
@@ -49,7 +49,7 @@ export const fetchStudents = (token, filter = {}, options = {}) =>
  * @returns {Promise<object>} Standard response envelope confirming registration status.
  */
 export const createStudent = (token, userData, profileData, options = {}) =>
-  executeAction(API_REGISTRY.STUDENT.ADD, { userData, profileData }, token, options);
+  executeAction(API_REGISTRY.STUDENT.ADD, { userData, profileData }, token, { timeout: 'DATA_MUTATION', ...options });
 
 /**
  * Captures a new flat CRM marketing lead/prospect (Quick Add).
@@ -68,7 +68,7 @@ export const createStudent = (token, userData, profileData, options = {}) =>
  * @returns {Promise<object>} Standard response envelope with the recorded Lead ID.
  */
 export const createStudentLead = (token, leadData, options = {}) =>
-  executeAction(API_REGISTRY.STUDENT.ADD_LEAD, { leadData }, token, options);
+  executeAction(API_REGISTRY.STUDENT.ADD_LEAD, { leadData }, token, { timeout: 'DATA_MUTATION', ...options });
 
 /**
  * Initiates the standard 5-step relational registration wizard transaction.
@@ -86,7 +86,7 @@ export const createStudentLead = (token, leadData, options = {}) =>
  * @returns {Promise<object>} Standard response envelope indicating transaction success.
  */
 export const registerStudentTransaction = (token, registrationData, options = {}) =>
-  executeAction(API_REGISTRY.STUDENT.REGISTER, registrationData, token, options);
+  executeAction(API_REGISTRY.STUDENT.REGISTER, registrationData, token, { timeout: 'DATA_MUTATION', ...options });
 
 /**
  * Performs a differential update of columns in a specific student profile.
@@ -100,7 +100,7 @@ export const registerStudentTransaction = (token, registrationData, options = {}
  * @returns {Promise<object>} Standard response envelope confirming modification state.
  */
 export const modifyStudent = (token, id, data, options = {}) =>
-  executeAction(API_REGISTRY.STUDENT.UPDATE, { id, data }, token, options);
+  executeAction(API_REGISTRY.STUDENT.UPDATE, { id, data }, token, { timeout: 'DATA_MUTATION', ...options });
 
 /**
  * Deletes a student and cleans up related address, contact, and enrollment rows.
@@ -119,7 +119,7 @@ export const removeStudent = (token, id, options = {}) => {
     API_REGISTRY.STUDENT.DELETE,
     { student_id: id, dryRun },
     token,
-    fetchOptions
+    { timeout: 'DATA_MUTATION', ...fetchOptions }
   );
 };
 
@@ -157,5 +157,5 @@ export const fetchEnrollments = (token, filter = {}, options = {}) => {
       }
     }
   };
-  return executeAction(API_REGISTRY.DATA.QUERY, payload, token, { signal });
+  return executeAction(API_REGISTRY.DATA.QUERY, payload, token, { timeout: 'HYDRATED_QUERY', signal, ...options });
 };

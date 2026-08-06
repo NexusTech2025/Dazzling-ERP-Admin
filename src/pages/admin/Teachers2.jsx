@@ -8,6 +8,7 @@ import { useFilteredTeachers } from '../../hooks/useFilteredTeachers';
 import DataTable from '../../components/ui/DataTable';
 import { SearchInput, SelectFilter } from '../../components/ui/filters';
 import { createTeacherColumns } from './schemas/teacherSchema';
+import { queryKeys, EMPTY_FILTER } from '../../lib/react-query/queryKeys';
 
 const Teachers2 = () => {
   const { token } = useAuth();
@@ -30,7 +31,7 @@ const Teachers2 = () => {
   const deleteMutation = useMutation({
     mutationFn: (id) => deleteTeacher(token, id),
     onSuccess: (_, deletedId) => {
-      queryClient.setQueryData(['teachers', {}], (old = []) => 
+      queryClient.setQueryData(queryKeys.teacher.list(EMPTY_FILTER), (old = []) => 
         old.filter(teacher => teacher.id !== deletedId)
       );
       alert('Teacher deleted successfully');
@@ -89,7 +90,7 @@ const Teachers2 = () => {
       data={filteredTeachers}
       isLoading={isLoading}
       error={error}
-      onRetry={() => queryClient.invalidateQueries({ queryKey: ['teachers'] })}
+      onRetry={() => queryClient.invalidateQueries({ queryKey: queryKeys.teacher.list(EMPTY_FILTER) })}
       emptyMessage="No faculty members found matching your filters."
       filters={filters}
       primaryAction={

@@ -111,10 +111,14 @@ export const queryKeys = {
     },
     category: {
       all: ['finance', 'category'],
-      list: (filter = EMPTY_FILTER) => [...queryKeys.finance.category.all, 'list', { filter }],
+      list: (filter = EMPTY_FILTER) => [...queryKeys.finance.category.all, 'list', { filter: EMPTY_FILTER }],
     },
-    overdue: (filter = EMPTY_FILTER) => ['finance', 'overdue', { filter }],
-    payments: (filter = EMPTY_FILTER) => ['finance', 'payments', { filter }],
+    payment: {
+      all: ['finance', 'payment'],
+      list: (filter = EMPTY_FILTER) => [...queryKeys.finance.payment.all, 'list', { filter: EMPTY_FILTER }],
+    },
+    overdue: (filter = EMPTY_FILTER) => ['finance', 'overdue', { filter: EMPTY_FILTER }],
+    payments: (filter = EMPTY_FILTER) => ['finance', 'payments', { filter: EMPTY_FILTER }],
     accountingData: ['finance', 'accounting-data']
   },
   enrollment: {
