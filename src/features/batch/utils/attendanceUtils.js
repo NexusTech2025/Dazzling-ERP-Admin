@@ -1,4 +1,5 @@
 import { parseISO, format } from 'date-fns';
+import { toLocalCalendarDate } from '../../../lib/dateUtils';
 
 /**
  * Parses "HH:MM" time string to structured time object.
@@ -47,10 +48,12 @@ export const normalizeAttendanceData = (records) => {
     if (!record.attendance_date) return;
 
     try {
-      // Safely parse and format using date-fns to avoid timezone bugs
-      const parsedDate = parseISO(record.attendance_date);
-      const isoDate = format(parsedDate, 'yyyy-MM-dd');
-      const yearMonth = format(parsedDate, 'yyyy-MM');
+      // Timezone-safe calendar date resolution using toLocalCalendarDate
+      const parsedCal = toLocalCalendarDate(record.attendance_date);
+      if (!parsedCal) return;
+
+      const isoDate = parsedCal.dateKey;
+      const yearMonth = parsedCal.monthKey;
 
       // Map status strings to short code
       let statusVal = record.status || 'NR';

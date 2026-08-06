@@ -3,6 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../../../lib/react-query/queryKeys';
 import {
     useBatchAttendanceQuery,
+    useBatchAllAttendanceQuery,
     useOptimizedMarkAttendanceMutation
 } from '../../batch/hooks/useAttendanceQueries';
 import {
@@ -262,6 +263,9 @@ export function useStudentAttendance(filterState, options = {}) {
     const { selectedBatchId, selectedDate } = filterState;
     const domainConfig = ATTENDANCE_DOMAINS.BATCH_STUDENTS;
 
+    // Single batch-wide fetch that populates two-level date and month caches
+    useBatchAllAttendanceQuery(selectedBatchId);
+
     // Load necessary queries to construct the baseline roster
     const { data: batchStudents = [], isLoading: isLoadingStudents } = useBatchStudentsQuery(selectedBatchId);
     const { data: batchDetail, isLoading: isLoadingDetail } = useBatchDetailQuery(selectedBatchId);
@@ -273,8 +277,37 @@ export function useStudentAttendance(filterState, options = {}) {
     // Unconditional Mutation Hook call
     const mutation = useOptimizedMarkAttendanceMutation();
 
-    const batchStartTime = batchDetail?.schedule?.start_time || '08:00';
-    const batchEndTime = batchDetail?.schedule?.end_time || '13:00';
+    // Defensive resolution of batch schedule timing with logging for fallback diagnostics
+    const { batchStartTime, batchEndTime } = useMemo(() => {
+        if (!batchDetail) {
+            return { batchStartTime: '08:00', batchEndTime: '13:00' };
+        }
+
+        let sched = batchDetail.schedule;
+        if (typeof sched === 'string') {
+            try {
+                sched = JSON.parse(sched);
+            } catch (err) {
+                console.error(`[useStudentAttendance] Error parsing JSON schedule for Batch (${selectedBatchId}):`, sched, err);
+            }
+        }
+
+        const startTime = sched?.start_time || batchDetail.start_time || null;
+        const endTime = sched?.end_time || batchDetail.end_time || null;
+
+        if (!startTime || !endTime) {
+            console.warn(
+                `[useStudentAttendance] Batch (${selectedBatchId}) schedule timing is incomplete or missing.`,
+                `Resolved schedule:`, sched,
+                `Falling back to default times (08:00 - 13:00).`
+            );
+        }
+
+        return {
+            batchStartTime: startTime || '08:00',
+            batchEndTime: endTime || '13:00'
+        };
+    }, [batchDetail, selectedBatchId]);
 
     const serverRegistry = useMemo(() => {
         if (!selectedBatchId || !selectedDate) return [];

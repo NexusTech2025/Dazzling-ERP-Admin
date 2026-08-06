@@ -10,6 +10,7 @@ import KpiGrid from '../../../../components/ui/v2/KpiGrid';
 import KpiCard from '../../../../components/ui/v2/KpiCard';
 import DataTable from '../../../../components/ui/DataTable';
 import ConfirmModal from '../../../../components/ui/ConfirmModal';
+import { SearchInput } from '../../../../components/ui/filters';
 
 const ATTENDANCE_CONFIG = [
   { label: 'P', value: 'P', activeClass: 'bg-emerald-500 text-white shadow-emerald-500/20' },
@@ -65,14 +66,14 @@ RemarksInput.displayName = 'RemarksInput';
  */
 export const StatusCell = React.memo(({ studentId, status, student = {}, updateStageField }) => {
   const handleChange = useCallback((newStatus) => {
-    const entryTime = student?.entry_time || null;
-    const exitTime = student?.exit_time || null;
+    const entryTime = student?.entry_time || student?.defaultEntryTime || null;
+    const exitTime = student?.exit_time || student?.defaultExitTime || null;
 
-    if ((newStatus === 'P' || newStatus === 'L') && (!entryTime || !exitTime)) {
+    if (newStatus === 'P' || newStatus === 'L') {
       updateStageField(studentId, {
         status: newStatus,
-        entry_time: entryTime || '08:00',
-        exit_time: exitTime || '13:00'
+        entry_time: entryTime,
+        exit_time: exitTime
       });
     } else if (newStatus === 'A') {
       updateStageField(studentId, {
@@ -164,12 +165,57 @@ ActionCell.propTypes = {
 ActionCell.displayName = 'ActionCell';
 
 /**
+ * Abstract DateNavigationStrategy Contract
+ */
+class DateNavigationStrategy {
+  execute(params) {
+    throw new Error('DateNavigationStrategy.execute must be implemented by subclass');
+  }
+}
+
+/**
+ * DirectDateSwitchStrategy: Executed when workspace is clean (isDirty === false).
+ * Immediately updates selectedDate and resets workspace buffers.
+ */
+class DirectDateSwitchStrategy extends DateNavigationStrategy {
+  execute({ targetDate, setSelectedDate, handleReset }) {
+    if (typeof handleReset === 'function') handleReset();
+    setSelectedDate(targetDate);
+  }
+}
+
+/**
+ * PromptConfirmationStrategy: Executed when unsaved changes exist (isDirty === true).
+ * Stages pending target date and opens the warning ConfirmModal.
+ */
+class PromptConfirmationStrategy extends DateNavigationStrategy {
+  execute({ targetDate, setPendingDate, setShowDateConfirmModal }) {
+    setPendingDate(targetDate);
+    setShowDateConfirmModal(true);
+  }
+}
+
+/**
+ * Strategy Resolver Factory
+ */
+export const DateNavigationStrategyResolver = {
+  directStrategy: new DirectDateSwitchStrategy(),
+  promptStrategy: new PromptConfirmationStrategy(),
+
+  resolve(isDirty) {
+    return isDirty ? this.promptStrategy : this.directStrategy;
+  }
+};
+
+/**
  * AttendanceRegisterView Component: Decoupled daily attendance registry form logic.
  */
 const AttendanceRegisterView = ({ batchId }) => {
   const isMobile = useIsMobile(768);
   const [activeMobileEditingRowId, setActiveMobileEditingRowId] = useState(null);
   const [selectedDate, setSelectedDate] = useState(() => new Date().toLocaleDateString('sv-SE'));
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('ALL');
   const [pendingDate, setPendingDate] = useState(null);
   const [showDateConfirmModal, setShowDateConfirmModal] = useState(false);
 
@@ -186,30 +232,34 @@ const AttendanceRegisterView = ({ batchId }) => {
     commitFullRosterSnapshot,
     isLoading,
     draftDeltas
-  } = useStudentAttendance({ selectedBatchId: batchId, selectedDate });
+  } = useStudentAttendance({ selectedBatchId: batchId, selectedDate, searchQuery, statusFilter });
 
   const handleMarkAllPresent = useCallback(() => {
     studentsList.forEach(rec => {
       if (rec.status !== 'P') {
+        const entryTime = rec.entry_time || rec.defaultEntryTime || null;
+        const exitTime = rec.exit_time || rec.defaultExitTime || null;
         updateStageField(rec.student_id, {
           status: 'P',
-          entry_time: rec.entry_time || '08:00',
-          exit_time: rec.exit_time || '13:00'
+          entry_time: entryTime,
+          exit_time: exitTime
         });
       }
     });
   }, [studentsList, updateStageField]);
 
-  // Intercepts date changes when unsaved edits exist in staging workspace
+  // Intercepts date changes using strategy pattern when unsaved edits exist in staging workspace
   const handleDateChange = useCallback((newDateStr) => {
-    if (isDirty) {
-      setPendingDate(newDateStr);
-      setShowDateConfirmModal(true);
-      return;
-    }
-    handleReset();
-    setSelectedDate(newDateStr);
-  }, [isDirty, handleReset, setSelectedDate]);
+    if (!newDateStr) return;
+    const strategy = DateNavigationStrategyResolver.resolve(isDirty);
+    strategy.execute({
+      targetDate: newDateStr,
+      setSelectedDate,
+      setPendingDate,
+      setShowDateConfirmModal,
+      handleReset
+    });
+  }, [isDirty, setSelectedDate, setPendingDate, setShowDateConfirmModal, handleReset]);
 
   const handleConfirmDateSwitch = useCallback(() => {
     if (pendingDate) {
@@ -377,7 +427,7 @@ const AttendanceRegisterView = ({ batchId }) => {
       <div className="bg-surface-light dark:bg-[#122131] border border-border-light dark:border-white/8 rounded-2xl shadow-sm backdrop-blur-md overflow-hidden flex flex-col justify-between min-h-[400px]">
 
         {/* Table Panel Header */}
-        <div className="p-6 border-b border-border-light dark:border-white/8 flex items-center justify-between flex-wrap gap-4">
+        <div className="p-6 border-b border-border-light dark:border-white/8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <span className="material-symbols-outlined text-indigo-500 dark:text-indigo-400">group</span>
             <div>
@@ -386,7 +436,33 @@ const AttendanceRegisterView = ({ batchId }) => {
             </div>
           </div>
 
-          <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex items-center gap-3 flex-wrap w-full sm:w-auto justify-start sm:justify-end">
+            {/* Search Input Box */}
+            <div className="w-full sm:w-48">
+              <SearchInput
+                value={searchQuery}
+                onChange={setSearchQuery}
+                placeholder="Search student..."
+              />
+            </div>
+
+            {/* Status Selection Pill Buttons */}
+            <div className="flex items-center gap-1 bg-slate-100 dark:bg-black/20 p-1 border border-border-light dark:border-white/5 rounded-xl">
+              {['ALL', 'P', 'A', 'L'].map(st => (
+                <button
+                  key={st}
+                  onClick={() => setStatusFilter(st)}
+                  className={`px-2.5 py-1 rounded-lg text-[10px] font-bold tracking-wider transition-all cursor-pointer ${
+                    statusFilter === st 
+                      ? 'bg-white dark:bg-slate-700 text-text-main dark:text-white shadow-sm ring-1 ring-black/5' 
+                      : 'text-text-secondary dark:text-slate-400 hover:text-text-main dark:hover:text-white'
+                  }`}
+                >
+                  {st === 'ALL' ? 'All' : st === 'P' ? 'Present' : st === 'A' ? 'Absent' : 'Leave'}
+                </button>
+              ))}
+            </div>
+
             <input
               type="date"
               value={selectedDate}

@@ -27,6 +27,7 @@ import { API_REGISTRY } from '../../../services/apiRegistry';
 import { queryKeys, EMPTY_FILTER } from '../../../lib/react-query/queryKeys';
 import { getCachedRecord, resolveRecord, getCachedList, resolveList } from '../../../lib/react-query/cacheHelper';
 import { normalizeRecord, hydrateRecord } from '../../../lib/react-query/hydrate.js';
+import { batchRepo } from '../utils/batchCacheHelper';
 
 /**
  * Ensures Course, Teacher, and Branch datasets are loaded in the React Query cache.
@@ -169,8 +170,6 @@ export const useBatchDetailQuery = (id) => {
     },
     enabled: !!token && !!id,
     select: (data) => hydrateRecord('batch', data, queryClient),
-    initialData: () => getCachedRecord(queryClient, 'batch', id),
-    initialDataUpdatedAt: () => queryClient.getQueryState(queryKeys.batch.detail(id))?.dataUpdatedAt,
     staleTime: 1000 * 60 * 60,
   });
 };
@@ -238,16 +237,10 @@ export const useBatchStudentsQuery = (id, searchQuery = '', options = {}) => {
 
         console.log(`[useBatchStudentsQuery] Success. Allocations found: ${allocations.length}, Total Students: ${students.length}`);
 
-        // Stitch student details into allocation records
-        const combined = allocations.map(allocation => {
-          const student = students.find(s => s.student_id === allocation.student_id);
-          return {
-            ...allocation,
-            student: student || null
-          };
-        });
+        // Delegate relational joining and deduplication to BatchRepo
+        const combined = batchRepo.resolveBatchStudents(id, { allocations, students });
 
-        console.log('[useBatchStudentsQuery] Combined Payload:', combined);
+        console.log('[useBatchStudentsQuery] Deduplicated & Hydrated Roster Payload:', combined);
 
         if (options.onSuccess) {
           options.onSuccess(combined);
