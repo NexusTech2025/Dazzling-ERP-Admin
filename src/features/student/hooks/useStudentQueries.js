@@ -5,6 +5,7 @@ import { getCachedRecord, resolveRecord, resolveList } from '../../../lib/react-
 import {
   fetchStudents,
   modifyStudent,
+  updateStudentProfile,
   removeStudent,
   registerStudentTransaction,
   createStudent,
@@ -168,6 +169,26 @@ export const useUpdateStudentMutation = () => {
         queryClient.invalidateQueries({ queryKey: queryKeys.student.all });
         queryClient.invalidateQueries({ queryKey: queryKeys.student.detail(id) });
         queryClient.invalidateQueries({ queryKey: queryKeys.student.profile(id) });
+      }
+    }
+  });
+};
+
+/**
+ * Hook for composite student profile updates (student_update_profile)
+ */
+export const useUpdateStudentProfileMutation = () => {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ payload, options }) => updateStudentProfile(token, payload, options),
+    onSuccess: (response, variables) => {
+      const studentId = variables.payload?.student_id;
+      if (response.success && studentId) {
+        queryClient.invalidateQueries({ queryKey: queryKeys.student.all });
+        queryClient.invalidateQueries({ queryKey: queryKeys.student.detail(studentId) });
+        queryClient.invalidateQueries({ queryKey: queryKeys.student.profile(studentId) });
       }
     }
   });

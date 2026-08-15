@@ -105,16 +105,65 @@ export class EnrollmentRepo {
 
     // Direct object mutation in cached list
     const { feeAccount } = targetEntry;
-    if (updateData.balance_due !== undefined) feeAccount.balance_due = updateData.balance_due;
+    if (updateData.total_fee !== undefined) feeAccount.total_fee = Number(updateData.total_fee);
+    if (updateData.discount !== undefined) feeAccount.discount = Number(updateData.discount);
+    if (updateData.final_fee !== undefined) feeAccount.final_fee = Number(updateData.final_fee);
+    if (updateData.amount_paid !== undefined) feeAccount.amount_paid = Number(updateData.amount_paid);
+    if (updateData.balance_due !== undefined) feeAccount.balance_due = Number(updateData.balance_due);
     if (updateData.next_due_date !== undefined) feeAccount.next_due_date = updateData.next_due_date;
     if (updateData.account_status || updateData.status) {
       feeAccount.status = updateData.account_status || updateData.status;
     }
+    if (updateData.adjustment_type !== undefined) feeAccount.adjustment_type = updateData.adjustment_type;
+    if (updateData.coupon_code !== undefined) feeAccount.coupon_code = updateData.coupon_code;
+    if (updateData.remarks !== undefined) feeAccount.remarks = updateData.remarks;
+    if (Array.isArray(updateData.installments)) feeAccount.installments = updateData.installments;
 
     // Write back updated dataset & re-prime maps
     queryClient.setQueryData(listKey, [...cachedList]);
     this.normalize(cachedList);
   }
+
+  /**
+   * Performs an O(1) targeted mutation on queryKeys.enrollment.list(EMPTY_FILTER) in React Query RAM cache
+   * for updated enrollment & allocation fields.
+   * 
+   * @param {import('@tanstack/react-query').QueryClient} queryClient - Active QueryClient instance.
+   * @param {string} enrollmentId - Target enrollment primary key ("ENR-xxx").
+   * @param {Object} updatedData - Updated fields { roll_number, enrollment_date, status, academic_status, metadata }.
+   * @param {Array<Object>} [updatedAllocations=[]] - Updated allocations array.
+   */
+  updateEnrollmentCache(queryClient, enrollmentId, updatedData = {}, updatedAllocations = []) {
+    const listKey = queryKeys.enrollment.list(EMPTY_FILTER);
+    const cachedList = queryClient.getQueryData(listKey) || [];
+
+    this.normalize(cachedList);
+
+    const targetEnrollment = this.getByEnrollmentId(enrollmentId);
+    if (!targetEnrollment) {
+      console.warn(`[EnrollmentRepo] Enrollment ${enrollmentId} not found in cache for fast update.`);
+      return;
+    }
+
+    if (updatedData.roll_number !== undefined) targetEnrollment.roll_number = updatedData.roll_number;
+    if (updatedData.enrollment_date !== undefined) targetEnrollment.enrollment_date = updatedData.enrollment_date;
+    if (updatedData.status !== undefined) targetEnrollment.status = updatedData.status;
+    if (updatedData.academic_status !== undefined) targetEnrollment.academic_status = updatedData.academic_status;
+    if (updatedData.metadata !== undefined) targetEnrollment.metadata = updatedData.metadata;
+
+    if (Array.isArray(updatedAllocations) && updatedAllocations.length > 0 && Array.isArray(targetEnrollment.allocations)) {
+      const allocMap = new Map(updatedAllocations.map(a => [a.allocation_id || a.id, a]));
+      targetEnrollment.allocations = targetEnrollment.allocations.map(alloc => {
+        const allocId = alloc.allocation_id || alloc.id;
+        const updatedAlloc = allocMap.get(allocId);
+        return updatedAlloc ? { ...alloc, ...updatedAlloc } : alloc;
+      });
+    }
+
+    queryClient.setQueryData(listKey, [...cachedList]);
+    this.normalize(cachedList);
+  }
+
 
   /**
    * Repository method to extract allocation view models from a hydrated Enrollment entity (Legacy / Direct Enrollment views).
@@ -234,6 +283,76 @@ export class EnrollmentRepo {
       console.warn('[EnrollmentRepo:evaluateAdmissionDate] Error:', err);
       return { isNewAdmission: false, admissionDate: null };
     }
+  }
+
+  /**
+   * Performs an O(1) targeted mutation on queryKeys.enrollment.list(EMPTY_FILTER) in React Query RAM cache
+   * for a discarded enrollment contract.
+   * 
+   * @param {import('@tanstack/react-query').QueryClient} queryClient - Active QueryClient instance.
+   * @param {string} enrollmentId - Target enrollment primary key ("ENR-xxx").
+   * @param {string} [discardMode="refund"] - Settlement strategy ("refund" | "no_refund").
+   */
+  discardEnrollmentCache(queryClient, enrollmentId, discardMode = 'refund') {
+    const listKey = queryKeys.enrollment.list(EMPTY_FILTER);
+    const cachedList = queryClient.getQueryData(listKey) || [];
+
+    this.normalize(cachedList);
+
+    const targetEnrollment = this.getByEnrollmentId(enrollmentId);
+    if (!targetEnrollment) {
+      console.warn(`[EnrollmentRepo] Enrollment ${enrollmentId} not found in cache for discard.`);
+      return;
+    }
+
+    targetEnrollment.status = 'discarded';
+    targetEnrollment.academic_status = 'withdrawn';
+
+    if (Array.isArray(targetEnrollment.allocations)) {
+      targetEnrollment.allocations.forEach(alloc => {
+        alloc.status = 'dropped';
+        alloc.dropped_at = new Date().toISOString();
+      });
+    }
+
+    if (Array.isArray(targetEnrollment.studentfeeaccounts)) {
+      targetEnrollment.studentfeeaccounts.forEach(sfa => {
+        sfa.status = discardMode === 'refund' ? 'refunded' : 'cancelled';
+        sfa.balance_due = 0;
+        if (discardMode === 'refund') sfa.amount_paid = 0;
+      });
+    }
+
+    queryClient.setQueryData(listKey, [...cachedList]);
+    this.normalize(cachedList);
+  }
+
+  /**
+   * Performs an O(1) targeted mutation on queryKeys.enrollment.list(EMPTY_FILTER) in React Query RAM cache
+   * for a migrated enrollment contract.
+   * 
+   * @param {import('@tanstack/react-query').QueryClient} queryClient - Active QueryClient instance.
+   * @param {string} oldEnrollmentId - Source enrollment primary key ("ENR-xxx").
+   * @param {Object} [newContract={}] - Hydrated new enrollment record returned by API response.
+   */
+  migrateEnrollmentCache(queryClient, oldEnrollmentId, newContract = {}) {
+    const listKey = queryKeys.enrollment.list(EMPTY_FILTER);
+    const cachedList = queryClient.getQueryData(listKey) || [];
+
+    this.normalize(cachedList);
+
+    const oldEnrollment = this.getByEnrollmentId(oldEnrollmentId);
+    if (oldEnrollment) {
+      oldEnrollment.status = 'withdrawn';
+      oldEnrollment.academic_status = 'withdrawn';
+    }
+
+    if (newContract && (newContract.enrollment_id || newContract.id)) {
+      cachedList.unshift(newContract);
+    }
+
+    queryClient.setQueryData(listKey, [...cachedList]);
+    this.normalize(cachedList);
   }
 
   /**

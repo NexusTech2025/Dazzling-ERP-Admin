@@ -19,6 +19,8 @@ import Roles from '../pages/admin/Roles';
 import Reports from '../pages/admin/Reports';
 import Settings from '../pages/admin/Settings';
 import AddStudent from '../pages/admin/AddStudent';
+import EditStudent from '../pages/admin/EditStudent';
+import EditEnrollment from '../pages/admin/EditEnrollment';
 import AddTeacher from '../pages/admin/AddTeacher';
 import StudentLeads from '../pages/admin/StudentLeads';
 import StudentAttendanceManager from '../features/student/components/StudentAttendanceManager';
@@ -94,6 +96,8 @@ const AppRoutes = () => {
         <Route path="students/attendance" element={<StudentAttendanceManager />} />
         <Route path="students/leads" element={<StudentLeads />} />
         <Route path="students/:id" element={<StudentProfile />} />
+        <Route path="students/:id/edit" element={<EditStudent />} />
+        <Route path="students/:studentId/enrollments/:enrollmentId/edit" element={<EditEnrollment />} />
 
         {/* Batch Management */}
         <Route path="batches" element={<Batches />} />

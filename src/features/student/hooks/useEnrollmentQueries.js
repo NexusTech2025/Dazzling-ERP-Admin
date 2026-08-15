@@ -1,10 +1,10 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../../context/AuthContextCore.js';
 import { queryKeys, EMPTY_FILTER } from '../../../lib/react-query/queryKeys.js';
 import { getCachedList, resolveList } from '../../../lib/react-query/cacheHelper.js';
 import { hydrateRecord } from '../../../lib/react-query/hydrate.js';
 import { resolveEnrollmentList } from '../../../lib/react-query/cacheStrategies.js';
-import { fetchEnrollments } from '../api/student.api.js';
+import { fetchEnrollments, updateEnrollment, discardEnrollment, migrateEnrollment } from '../api/student.api.js';
 import { enrollmentRepo } from '../utils/enrollmentCacheHelper.js';
 
 /**
@@ -66,5 +66,88 @@ export const useEnrollmentsQuery = (filter = EMPTY_FILTER, options = {}) => {
     staleTime: 1000 * 60 * 60, // 60 minutes cache stale window
     refetchOnMount: false,
     refetchOnWindowFocus: false
+  });
+};
+
+/**
+ * Custom TanStack Query mutation hook to update enrollment details and batch seating allocations.
+ * Updates local RAM cache via enrollmentRepo before invalidating query lists.
+ * 
+ * @function useUpdateEnrollmentMutation
+ * @returns {object} React Query mutation result object.
+ */
+export const useUpdateEnrollmentMutation = () => {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload) => updateEnrollment(token, payload),
+    onSuccess: (response, variables) => {
+      const updatedEnr = response.data?.data?.enrollment || variables;
+      const updatedAllocations = response.data?.data?.allocations || variables.allocations;
+
+      if (variables?.enrollment_id) {
+        enrollmentRepo.updateEnrollmentCache(queryClient, variables.enrollment_id, updatedEnr, updatedAllocations);
+      }
+
+      queryClient.invalidateQueries({ queryKey: queryKeys.enrollment.list(EMPTY_FILTER) });
+      queryClient.invalidateQueries({ queryKey: ['students'] });
+    }
+  });
+};
+
+/**
+ * Custom TanStack Query mutation hook to discard an enrollment contract and settle financial account.
+ * Updates local RAM cache via enrollmentRepo before invalidating query lists.
+ * 
+ * @function useDiscardEnrollmentMutation
+ * @returns {object} React Query mutation result object.
+ */
+export const useDiscardEnrollmentMutation = () => {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload) => discardEnrollment(token, payload),
+    onSuccess: (response, variables) => {
+      console.log('[useDiscardEnrollmentMutation] API Response:', response);
+      if (variables?.enrollment_id) {
+        enrollmentRepo.discardEnrollmentCache(queryClient, variables.enrollment_id, variables.discard_mode);
+      }
+      queryClient.invalidateQueries({ queryKey: queryKeys.enrollment.list(EMPTY_FILTER) });
+      queryClient.invalidateQueries({ queryKey: ['students'] });
+    },
+    onError: (err) => {
+      console.error('[useDiscardEnrollmentMutation] API Error:', err);
+    }
+  });
+};
+
+/**
+ * Custom TanStack Query mutation hook to migrate an enrollment contract to a new course/package.
+ * Updates local RAM cache via enrollmentRepo before invalidating query lists.
+ * 
+ * @function useMigrateEnrollmentMutation
+ * @returns {object} React Query mutation result object.
+ */
+export const useMigrateEnrollmentMutation = () => {
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload) => migrateEnrollment(token, payload),
+    onSuccess: (response, variables) => {
+      console.log('[useMigrateEnrollmentMutation] API Response:', response);
+      const newContract = response.data?.data?.new_contract;
+      if (variables?.enrollment_id) {
+        enrollmentRepo.migrateEnrollmentCache(queryClient, variables.enrollment_id, newContract);
+      }
+      queryClient.invalidateQueries({ queryKey: queryKeys.enrollment.list(EMPTY_FILTER) });
+      queryClient.invalidateQueries({ queryKey: ['students'] });
+      queryClient.invalidateQueries({ queryKey: ['batch_allocations'] });
+    },
+    onError: (err) => {
+      console.error('[useMigrateEnrollmentMutation] API Error:', err);
+    }
   });
 };

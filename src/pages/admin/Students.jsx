@@ -6,7 +6,7 @@ import { createStudentColumns } from './schemas/studentSchema';
 import ConfirmModal from '../../components/ui/ConfirmModal';
 import RefreshButton from '../../components/ui/btn/RefreshButton';
 import StudentDetailModal from '../../features/student/components/StudentDetailModal';
-import StudentEditModal from '../../features/student/components/StudentEditModal';
+import StudentUpdateProfileForm from '../../features/student/components/profile/StudentUpdateProfileForm';
 import DeleteDependencyModal from '../../components/ui/DeleteDependencyModal';
 import SelectionActionBar from '../../components/ui/v2/SelectionActionBar';
 import useIsMobile from '../../hooks/useIsMobile';
@@ -60,7 +60,9 @@ const Students = () => {
     handleSaveStudent
   } = modals;
 
-  const { handlers, handleRefresh, deleteMutation, deleteManyMutation } = actions;
+  const { handlers, handleRefresh, deleteMutation, deleteManyMutation, updateProfileMutation } = actions;
+
+
 
   // 1. Desktop DataTable Select-All Column Setup
   const allStudentIds = useMemo(() => filteredStudents.map(s => s.student_id), [filteredStudents]);
@@ -127,6 +129,19 @@ const Students = () => {
       </div>
     </>
   );
+
+
+  if (selectedStudentForEdit) {
+    return (
+      <StudentUpdateProfileForm
+        student={selectedStudentForEdit}
+        onClose={() => setSelectedStudentForEdit(null)}
+        onSave={handleSaveStudent}
+        isSubmitting={updateProfileMutation?.isPending}
+      />
+    );
+  }
+
 
   return (
     <>
@@ -219,15 +234,6 @@ const Students = () => {
           isOpen={!!selectedStudentForView}
           onClose={() => setSelectedStudentForView(null)}
           student={selectedStudentForView}
-        />
-      )}
-
-      {selectedStudentForEdit && (
-        <StudentEditModal
-          isOpen={!!selectedStudentForEdit}
-          onClose={() => setSelectedStudentForEdit(null)}
-          student={selectedStudentForEdit}
-          onSave={handleSaveStudent}
         />
       )}
 
