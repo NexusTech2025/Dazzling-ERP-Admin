@@ -1,6 +1,6 @@
 {
   "active_branch": "main",
-  "updated_at": "2026-08-06T06:21:26.223Z",
+  "updated_at": "2026-08-15T11:18:20.000Z",
   "branches": {
     "refactor/student-views-optimization": {
       "branch_name": "refactor/student-views-optimization",
@@ -172,6 +172,21 @@
         "3a7725c feat(api,cache): integrate query merger strategy, benchmark tests, and canonical cache keys"
       ],
       "recommendation": "🔵 Merged Upstream: This branch has been merged upstream into main. Safe to delete locally using 'git branch -d feature/request-manager'."
+    },
+    "bugfix/batch-attendance-management": {
+      "branch_name": "bugfix/batch-attendance-management",
+      "parent_branch": "main",
+      "purpose": "Feature/bugfix work on bugfix/batch-attendance-management",
+      "status": "in_progress",
+      "working_tree_clean": false,
+      "uncommitted_changes_count": 1,
+      "commits_count_ahead": 1,
+      "created_at": "2026-08-06T06:26:12.695Z",
+      "last_activity_at": "2026-08-06T11:13:38.217Z",
+      "commits_summary": [
+        "5583c8f fix(attendance,cache): implement 2-level RAM cache normalization, timezone-safe date parsing, and register strategies"
+      ],
+      "recommendation": "🟡 Active Work in Progress: You have 1 uncommitted file(s). Commit or stash your changes before merging or switching branches."
     }
   }
 }

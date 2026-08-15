@@ -6,8 +6,8 @@ const Header = ({ onMenuClick }) => {
   const { user } = useAuth();
   const { theme, toggleTheme } = useTheme();
 
-  const appVersion = import.meta.env.VITE_APP_VERSION || '0.0.1';
-  const appStage = import.meta.env.VITE_APP_STAGE || 'dev';
+  const appVersion = import.meta.env.VITE_APP_VERSION || '0.60.1';
+  const appStage = import.meta.env.VITE_APP_STAGE || 'beta-1';
 
   return (
     <header className="flex items-center justify-between whitespace-nowrap border-b border-border-light bg-surface-light dark:bg-surface-dark dark:border-border-dark px-4 lg:px-10 py-3 sticky top-0 z-50">
