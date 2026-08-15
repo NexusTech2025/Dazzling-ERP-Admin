@@ -131,6 +131,27 @@ export function filterCollection(cachedList, activeFilters) {
 }
 
 /**
+ * Universal Generic List Resolver Strategy Callback.
+ * Strict field-matching strategy for in-memory dataset filtering across any cached RAM collection.
+ * 
+ * @param {Array<object>} cachedList - Full RAM dataset array.
+ * @param {object} [filter={}] - Raw filter object.
+ * @returns {Array<object>} Filtered dataset array.
+ */
+export function resolveGenericList(cachedList, filter = {}) {
+  if (!Array.isArray(cachedList) || cachedList.length === 0) return [];
+  const activeFilters = prepareFilters(filter);
+  if (activeFilters.length === 0) return cachedList;
+
+  return cachedList.filter(item => {
+    for (const [field, value] of activeFilters) {
+      if (item[field] !== value) return false;
+    }
+    return true;
+  });
+}
+
+/**
  * Batch list resolver.
  *
  * @param {Array<object>} cachedList

@@ -22,12 +22,17 @@ import { enrollmentRepo } from '../utils/enrollmentCacheHelper.js';
 export const useEnrollmentsQuery = (filter = EMPTY_FILTER, options = {}) => {
   const { token } = useAuth();
   const queryClient = useQueryClient();
-  const { enabled = true } = options;
+  const { enabled = true, delayMs = 0 } = options;
 
   return useQuery({
     // 🔒 Stable queryKey without dynamic filter to prevent cache fragmentation
     queryKey: queryKeys.enrollment.list(EMPTY_FILTER),
     queryFn: async () => {
+      // ⏳ Stagger delay to prevent V8 container collisions on app startup
+      if (delayMs > 0) {
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+      }
+
       // 🚀 resolveList checks cache via getCachedList + strategy, or fetches network if missing
       return resolveList(
         queryClient,
@@ -58,7 +63,8 @@ export const useEnrollmentsQuery = (filter = EMPTY_FILTER, options = {}) => {
     enabled: !!token && enabled,
     initialData: () => getCachedList(queryClient, 'enrollment', filter),
     initialDataUpdatedAt: () => queryClient.getQueryState(queryKeys.enrollment.list(EMPTY_FILTER))?.dataUpdatedAt,
-    staleTime: 1000 * 60 * 5, // 5 minutes cache stale window
+    staleTime: 1000 * 60 * 60, // 60 minutes cache stale window
+    refetchOnMount: false,
     refetchOnWindowFocus: false
   });
 };

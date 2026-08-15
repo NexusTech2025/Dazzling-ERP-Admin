@@ -28,7 +28,7 @@ export const fetchCourseTypes = (token, options = {}) =>
   executeAction(API_REGISTRY.DATA.QUERY, { 
     target: 'CourseType', 
     where: { status: 'active' } 
-  }, token, options);
+  }, token, { timeout: 'STANDARD', ...options });
 
 /**
  * Creates a new Course Type segment configuration.
@@ -45,7 +45,7 @@ export const fetchCourseTypes = (token, options = {}) =>
  * @returns {Promise<object>} Returns standard GAS envelope containing the generated Segment records.
  */
 export const createCourseType = (token, data, options = {}) => 
-  executeAction(API_REGISTRY.ACADEMIC.CREATE_COURSE_TYPE, data, token, options);
+  executeAction(API_REGISTRY.ACADEMIC.CREATE_COURSE_TYPE, data, token, { timeout: 'DATA_MUTATION', ...options });
 
 // ==========================================
 // --- COURSES (SUBJECTS) SERVICE LAYER ---
@@ -69,7 +69,7 @@ export const fetchCourses = (token, filter = {}, options = {}) =>
     include: {
       coursetype: {} // Hydrates the linked Segment object
     }
-  }, token, options);
+  }, token, { timeout: 'STANDARD', ...options });
 
 /**
  * Retrieves the full profile and details for a single specific course/subject.
@@ -88,7 +88,7 @@ export const fetchCourseDetail = (token, id, options = {}) =>
     include: {
       coursetype: {}
     }
-  }, token, options);
+  }, token, { timeout: 'STANDARD', ...options });
 
 /**
  * Creates a new course configuration inside the database.
@@ -106,7 +106,7 @@ export const fetchCourseDetail = (token, id, options = {}) =>
  * @returns {Promise<object>} Returns standard GAS envelope containing the saved Course record with new ID.
  */
 export const createCourse = (token, data, options = {}) => 
-  executeAction(API_REGISTRY.ACADEMIC.CREATE_COURSE, data, token, options);
+  executeAction(API_REGISTRY.ACADEMIC.CREATE_COURSE, data, token, { timeout: 'DATA_MUTATION', ...options });
 
 /**
  * Performs a differential update of columns in a specific course record.
@@ -124,7 +124,7 @@ export const updateCourse = (token, id, data, options = {}) =>
     table: 'Course', 
     id: id, 
     data 
-  }, token, options);
+  }, token, { timeout: 'DATA_MUTATION', ...options });
 
 /**
  * Permanently deletes a specific course record from the database.
@@ -140,7 +140,7 @@ export const deleteCourse = (token, id, options = {}) =>
   executeAction(API_REGISTRY.DATA.DELETE, { 
     table: 'Course', 
     id: id 
-  }, token, options);
+  }, token, { timeout: 'DATA_MUTATION', ...options });
 
 /**
  * Performs a differential update of columns in a specific segment (CourseType) record.
@@ -158,7 +158,7 @@ export const updateCourseType = (token, id, data, options = {}) =>
     table: 'CourseType', 
     id: id, 
     data 
-  }, token, options);
+  }, token, { timeout: 'DATA_MUTATION', ...options });
 
 /**
  * Permanently deletes a specific segment (CourseType) record from the database.
@@ -174,7 +174,7 @@ export const deleteCourseType = (token, id, options = {}) =>
   executeAction(API_REGISTRY.DATA.DELETE, { 
     table: 'CourseType', 
     id: id 
-  }, token, options);
+  }, token, { timeout: 'DATA_MUTATION', ...options });
 
 // ==========================================
 // --- PACKAGES SERVICE LAYER ---
@@ -198,7 +198,7 @@ export const fetchPackages = (token, filter = {}, options = {}) =>
       packageitems: {},
       packageperks: {}
     }
-  }, token, options);
+  }, token, { timeout: 'STANDARD', ...options });
 
 /**
  * Fetches all package course items from the database.
@@ -212,7 +212,7 @@ export const fetchPackages = (token, filter = {}, options = {}) =>
 export const fetchPackageItems = (token, options = {}) =>
   executeAction(API_REGISTRY.DATA.QUERY, {
     target: 'PackageItem'
-  }, token, options);
+  }, token, { timeout: 'STANDARD', ...options });
 
 /**
  * Fetches all package perks from the database.
@@ -226,7 +226,7 @@ export const fetchPackageItems = (token, options = {}) =>
 export const fetchPackagePerks = (token, options = {}) =>
   executeAction(API_REGISTRY.DATA.QUERY, {
     target: 'PackagePerk'
-  }, token, options);
+  }, token, { timeout: 'STANDARD', ...options });
 
 /**
  * Retrieves the details for a single package.
@@ -246,7 +246,7 @@ export const fetchPackageDetail = (token, id, options = {}) =>
       packageitems: {},
       packageperks: {}
     }
-  }, token, options);
+  }, token, { timeout: 'STANDARD', ...options });
 
 /**
  * Creates a new package in the database.
@@ -259,7 +259,7 @@ export const fetchPackageDetail = (token, id, options = {}) =>
  * @returns {Promise<object>}
  */
 export const createPackage = (token, data, options = {}) =>
-  executeAction(API_REGISTRY.ACADEMIC.CREATE_PACKAGE, data, token, options);
+  executeAction(API_REGISTRY.ACADEMIC.CREATE_PACKAGE, data, token, { timeout: 'DATA_MUTATION', ...options });
 
 /**
  * Performs a differential update of columns in a specific package record.
@@ -277,7 +277,7 @@ export const updatePackage = (token, id, data, options = {}) =>
   executeAction(API_REGISTRY.ACADEMIC.UPDATE_PACKAGE, {
     package_id: id,
     ...data
-  }, token, options);
+  }, token, { timeout: 'DATA_MUTATION', ...options });
 
 /**
  * Permanently deletes a specific package record from the database.
@@ -293,7 +293,7 @@ export const updatePackage = (token, id, data, options = {}) =>
 export const deletePackage = (token, id, options = {}) =>
   executeAction(API_REGISTRY.ACADEMIC.DELETE_PACKAGE, {
     package_id: id
-  }, token, options);
+  }, token, { timeout: 'DATA_MUTATION', ...options });
 
 /**
  * Fetches all enrollments for a specific package, including the associated student record.
@@ -312,7 +312,7 @@ export const fetchPackageEnrollments = (token, packageId, options = {}) =>
     include: {
       student: {}
     }
-  }, token, options);
+  }, token, { timeout: 'STANDARD', ...options });
 
 /**
  * Fetches all StudentFeeAccount records for a specific package enrollment set,
@@ -333,4 +333,4 @@ export const fetchPackageFeeAccounts = (token, packageId, options = {}) =>
       enrollment: { where: { enrollment_type: 'package', item_id: packageId } },
       installments: {}
     }
-  }, token, options);
+  }, token, { timeout: 'STANDARD', ...options });

@@ -6,6 +6,7 @@ import {
   useUpdateBranchMutation, 
   useDeleteBranchMutation 
 } from '../../features/core/hooks/useBranchQueries';
+import { queryKeys, EMPTY_FILTER } from '../../lib/react-query/queryKeys';
 import DataTable from '../../components/ui/DataTable';
 import { SearchInput } from '../../components/ui/filters';
 import { createBranchColumns } from './schemas/branchSchema';
@@ -161,7 +162,7 @@ const Branches = () => {
             </div>
             <div className="flex items-center gap-3">
               <RefreshButton 
-                onClick={() => queryClient.invalidateQueries({ queryKey: ['branches'] })} 
+                onClick={() => queryClient.invalidateQueries({ queryKey: queryKeys.branch.list(EMPTY_FILTER) })} 
                 isLoading={isLoading} 
               />
               <button
@@ -179,7 +180,7 @@ const Branches = () => {
             data={filteredBranches}
             isLoading={isLoading}
             error={error}
-            onRetry={() => queryClient.invalidateQueries({ queryKey: ['branches'] })}
+            onRetry={() => queryClient.invalidateQueries({ queryKey: queryKeys.branch.list(EMPTY_FILTER) })}
             emptyMessage="No branches found."
             filters={filters}
           />

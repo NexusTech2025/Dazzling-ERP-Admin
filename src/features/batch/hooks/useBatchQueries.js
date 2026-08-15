@@ -95,7 +95,7 @@ export const useBatchesQuery = (filter = EMPTY_FILTER, options = {}) => {
     }
   );
   return useQuery({
-    queryKey: queryKeys.batch.list(filter),
+    queryKey: queryKeys.batch.list(EMPTY_FILTER),
     queryFn: async ({ signal }) => {
       await ensureBatchRelations(queryClient, token);
       return resolveList(
@@ -124,8 +124,8 @@ export const useBatchesQuery = (filter = EMPTY_FILTER, options = {}) => {
     select: selectFn,
     initialData: () => getCachedList(queryClient, 'batch', filter, { strict: true }),
     initialDataUpdatedAt: () => queryClient.getQueryState(queryKeys.batch.list(filter))?.dataUpdatedAt,
-    staleTime: 1000 * 60 * 2.5,
-    refetchOnMount: true,
+    staleTime: 1000 * 60 * 60,
+    refetchOnMount: false,
     refetchOnWindowFocus: false,
   });
 };
@@ -171,7 +171,7 @@ export const useBatchDetailQuery = (id) => {
     select: (data) => hydrateRecord('batch', data, queryClient),
     initialData: () => getCachedRecord(queryClient, 'batch', id),
     initialDataUpdatedAt: () => queryClient.getQueryState(queryKeys.batch.detail(id))?.dataUpdatedAt,
-    staleTime: 1000 * 60 * 5,
+    staleTime: 1000 * 60 * 60,
   });
 };
 
@@ -304,7 +304,7 @@ export const useBatchAllocationsQuery = (filter = EMPTY_FILTER, options = {}) =>
   const enabledParam = options.enabled ?? true;
 
   return useQuery({
-    queryKey: queryKeys.batch_allocation.list(filter),
+    queryKey: queryKeys.batch_allocation.list(EMPTY_FILTER),
     queryFn: async ({ signal }) => {
       return resolveList(
         queryClient,
@@ -327,7 +327,7 @@ export const useBatchAllocationsQuery = (filter = EMPTY_FILTER, options = {}) =>
     initialData: () => getCachedList(queryClient, 'batchAllocation', filter, { strict: true }),
     initialDataUpdatedAt: () =>
       queryClient.getQueryState(queryKeys.batch_allocation.list(filter))?.dataUpdatedAt,
-    staleTime: 1000 * 60 * 5,
+    staleTime: 1000 * 60 * 60,
     refetchOnMount: false,
     refetchOnWindowFocus: false,
   });
@@ -355,6 +355,9 @@ export const useWeeklyScheduleQuery = (batchId) => {
       return response.data?.data || [];
     },
     enabled: !!token && !!batchId,
+    staleTime: 1000 * 60 * 60, // 60 Minute Grace Window
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 };
 
@@ -380,6 +383,9 @@ export const useMasterTimetableQuery = (day) => {
       return response.data?.data;
     },
     enabled: !!token && !!day,
+    staleTime: 1000 * 60 * 60, // 60 Minute Grace Window
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 };
 

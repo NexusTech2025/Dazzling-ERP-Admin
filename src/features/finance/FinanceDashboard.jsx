@@ -31,29 +31,15 @@ const FinanceDashboard = () => {
   }, []);
 
   const { token } = useAuth();
-  const { data: accountingData, isLoading: isAccountingLoading, error: accountingError } = useAccountingDataQuery();
+
+  // Primary Batch Batch Request Hook for Finance Domain
+  const { data: accountingData, isLoading: isAccountingLoading, error } = useAccountingDataQuery();
+
   const { data: students = [], isLoading: isStudentsLoading } = useStudentsQuery();
   const { data: courses = [], isLoading: isCoursesLoading } = useCoursesQuery();
   const { data: packages = [], isLoading: isPackagesLoading } = usePackagesQuery();
-
-  // Fetch Enrollments and Allocations for the hydration utility
-  const { data: enrollments = [], isLoading: isEnrollmentsLoading } = useQuery({
-    queryKey: ['finance', 'dashboard-enrollments'],
-    queryFn: async () => {
-      const res = await executeAction('data_query', { target: 'Enrollment' }, token);
-      return res.data?.data || [];
-    },
-    enabled: !!token
-  });
-
-  const { data: batchAllocations = [], isLoading: isAllocationsLoading } = useQuery({
-    queryKey: ['finance', 'dashboard-allocations'],
-    queryFn: async () => {
-      const res = await executeAction('data_query', { target: 'BatchAllocation' }, token);
-      return res.data?.data || [];
-    },
-    enabled: !!token
-  });
+  const { data: enrollments = [], isLoading: isEnrollmentsLoading } = useEnrollmentsQuery();
+  const { data: batchAllocations = [], isLoading: isAllocationsLoading } = useBatchAllocationsQuery();
 
   const [selectedStudentId, setSelectedStudentId] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');

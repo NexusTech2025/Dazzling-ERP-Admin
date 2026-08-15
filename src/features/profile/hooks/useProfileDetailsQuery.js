@@ -19,5 +19,8 @@ export const useProfileDetailsQuery = (studentId) => {
       return response.data?.data || null;
     },
     enabled: !!token && !!studentId,
+    staleTime: 1000 * 60 * 60, // 60 minutes
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 };

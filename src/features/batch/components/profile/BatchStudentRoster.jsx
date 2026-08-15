@@ -15,7 +15,18 @@ const BatchStudentRoster = ({ batchId }) => {
   const [expandedIds, setExpandedIds] = useState({});
   const isMobile = useIsMobile();
 
-  const { data: students = [], isLoading } = useBatchStudentsQuery(batchId, searchQuery);
+  const { data: rawStudents = [], isLoading } = useBatchStudentsQuery(batchId);
+
+  const students = useMemo(() => {
+    if (!searchQuery || !searchQuery.trim()) return rawStudents;
+    const q = searchQuery.toLowerCase().trim();
+    return rawStudents.filter(s =>
+      s.student_name?.toLowerCase().includes(q) ||
+      s.email?.toLowerCase().includes(q) ||
+      s.phone?.includes(q) ||
+      s.student_id?.toLowerCase().includes(q)
+    );
+  }, [rawStudents, searchQuery]);
 
   const toggleExpand = (e, id) => {
     e.stopPropagation();

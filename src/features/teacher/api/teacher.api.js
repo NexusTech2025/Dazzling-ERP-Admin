@@ -19,7 +19,7 @@ import { API_REGISTRY } from '../../../services/apiRegistry';
  * @returns {Promise<object>} Standard response envelope with an array of matching teacher records.
  */
 export const fetchTeachers = (token, filter = {}, options = {}) => 
-  executeAction(API_REGISTRY.DATA.QUERY, { target: 'Teacher', where: filter }, token, options);
+  executeAction(API_REGISTRY.DATA.QUERY, { target: 'Teacher', where: filter }, token, { timeout: 'STANDARD', ...options });
 
 /**
  * Registers a new teacher profile in the database system (Onboarding).
@@ -33,7 +33,7 @@ export const fetchTeachers = (token, filter = {}, options = {}) =>
  * @returns {Promise<object>} Standard response envelope with the onboarded Teacher ID.
  */
 export const createTeacher = (token, userData, profileData, options = {}) => 
-  executeAction(API_REGISTRY.STAFF.ONBOARD_TEACHER, { userData, profileData }, token, options);
+  executeAction(API_REGISTRY.STAFF.ONBOARD_TEACHER, { userData, profileData }, token, { timeout: 'DATA_MUTATION', ...options });
 
 /**
  * Performs a differential update of columns in a specific teacher profile.
@@ -47,7 +47,7 @@ export const createTeacher = (token, userData, profileData, options = {}) =>
  * @returns {Promise<object>} Standard response envelope confirming modification state.
  */
 export const modifyTeacher = (token, id, data, options = {}) => 
-  executeAction(API_REGISTRY.STAFF.UPDATE_TEACHER, { teacher_id: id, data }, token, options);
+  executeAction(API_REGISTRY.STAFF.UPDATE_TEACHER, { teacher_id: id, data }, token, { timeout: 'DATA_MUTATION', ...options });
 
 /**
  * Permanently deletes a specific teacher record from the database.
@@ -60,4 +60,4 @@ export const modifyTeacher = (token, id, data, options = {}) =>
  * @returns {Promise<object>} Standard response envelope confirming database removal status.
  */
 export const removeTeacher = (token, id, options = {}) => 
-  executeAction(API_REGISTRY.DATA.DELETE, { table: 'Teacher', id }, token, options);
+  executeAction(API_REGISTRY.DATA.DELETE, { table: 'Teacher', id }, token, { timeout: 'DATA_MUTATION', ...options });

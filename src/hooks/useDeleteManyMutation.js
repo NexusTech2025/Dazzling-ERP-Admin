@@ -30,7 +30,8 @@ export const useDeleteManyMutation = (tableName, invalidationKeys = [], actionPa
           ids,
           dryRun
         },
-        token
+        token,
+        { timeout: 'DATA_MUTATION' }
       );
       return response;
     },

@@ -54,8 +54,8 @@ export function useBatchTestsQuery(batchId, options = {}) {
     enabled: Boolean(token) && Boolean(batchId),
     initialData: () => getCachedList(queryClient, 'test', filter, { strict: true }),
     initialDataUpdatedAt: () => queryClient.getQueryState(queryKeys.test.byBatch(batchId))?.dataUpdatedAt,
-    staleTime: 1000 * 60 * 2.5,
-    refetchOnMount: true,
+    staleTime: 1000 * 60 * 60,
+    refetchOnMount: false,
     refetchOnWindowFocus: false,
   });
 }

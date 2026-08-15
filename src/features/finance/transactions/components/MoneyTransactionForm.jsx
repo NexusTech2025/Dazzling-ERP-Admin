@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../../../../context/AuthContextCore';
-import { apiClient } from '../../../../services/apiClient';
-import { API_REGISTRY } from '../../../../services/apiRegistry';
+import { useUsersQuery } from '../../../auth/hooks/useAuthQueries';
 import { useStudentsQuery } from '../../../student/hooks/useStudentQueries';
 import { useTeachersQuery } from '../../../teacher/hooks/useTeacherQueries';
 import { 
@@ -29,21 +27,8 @@ const PAYMENT_METHODS = [
 const MoneyTransactionForm = ({ isOpen, onClose, initialData }) => {
   const { token, user } = useAuth();
 
-  // Query Users for the System Handler (by) dropdown
-  const { data: users = [] } = useQuery({
-    queryKey: ['users', 'list'],
-    queryFn: async () => {
-      const response = await apiClient.executeAction(
-        API_REGISTRY.DATA.QUERY,
-        { target: 'User', where: { status: 'active' } },
-        token
-      );
-      return response.data?.data || [];
-    },
-    enabled: !!token
-  });
-
   const queryParams = { status: 'active' };
+  const { data: users = [] } = useUsersQuery(queryParams);
   const { data: students = [] } = useStudentsQuery(queryParams);
   const { data: teachers = [] } = useTeachersQuery(queryParams);
   const { data: staffMembers = [] } = useStaffMembersQuery(queryParams);

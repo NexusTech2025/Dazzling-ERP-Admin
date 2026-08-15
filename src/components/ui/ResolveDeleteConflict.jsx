@@ -3,6 +3,7 @@ import { useQueryClient, useMutation } from '@tanstack/react-query';
 import { useAuth } from '../../context/AuthContextCore';
 import { apiClient } from '../../services/apiClient';
 import { API_REGISTRY } from '../../services/apiRegistry';
+import { getCachedRecord } from '../../lib/react-query/cacheHelper';
 import ConfirmModal from './ConfirmModal';
 
 // Dictionary to map database tables to humanized labels
@@ -89,23 +90,19 @@ export const ResolveDeleteConflict = ({
 
     try {
       if (table === 'Enrollment') {
-        const enrollments = queryClient.getQueryData(['enrollment', 'list']) || [];
-        const item = enrollments.find(e => e.enrollment_id === id);
+        const item = getCachedRecord(queryClient, 'enrollment', id);
         if (item) return item.student_name ? `Enrollment: ${item.student_name}` : item.course_name || 'Active Enrollment';
       }
       if (table === 'Batch') {
-        const batches = queryClient.getQueryData(['batch', 'list']) || [];
-        const item = batches.find(b => b.batch_id === id);
+        const item = getCachedRecord(queryClient, 'batch', id);
         if (item) return item.batch_name || 'Class Section';
       }
       if (table === 'Course') {
-        const courses = queryClient.getQueryData(['course', 'list']) || [];
-        const item = courses.find(c => c.course_id === id);
+        const item = getCachedRecord(queryClient, 'course', id);
         if (item) return item.name || 'Subject Course';
       }
       if (table === 'Package') {
-        const packages = queryClient.getQueryData(['packages', 'list']) || [];
-        const item = packages.find(p => p.package_id === id);
+        const item = getCachedRecord(queryClient, 'package', id);
         if (item) return item.name || 'Program Package';
       }
       if (table === 'Payment') {
