@@ -133,6 +133,8 @@ export class BatchSeatingAlertStrategy extends BaseAlertStrategy {
   }
 }
 
+import { SETTLEMENT_POLICY_CONFIG } from '../config/withdrawalSettlementConfig.js';
+
 /**
  * Strategy for Discard Settlement Alert.
  */
@@ -142,6 +144,25 @@ export class DiscardSettlementAlertStrategy extends BaseAlertStrategy {
       return ALERT_MESSAGE_REGISTRY.DISCARD_REFUND_SETTLEMENT(paidAmount, allocationsCount);
     }
     return ALERT_MESSAGE_REGISTRY.DISCARD_NO_REFUND_SETTLEMENT(balanceDue);
+  }
+}
+
+/**
+ * Strategy for Withdrawal Financial Settlement Impact Alert.
+ * Delegates computation dynamically to the declarative SETTLEMENT_POLICY_CONFIG registry.
+ */
+export class WithdrawalSettlementAlertStrategy extends BaseAlertStrategy {
+  evaluate(context = {}) {
+    const policyKey = context.policy || 'waive_unpaid';
+    const config = SETTLEMENT_POLICY_CONFIG[policyKey];
+    if (!config || typeof config.computeImpact !== 'function') {
+      return null;
+    }
+    const impact = config.computeImpact(context);
+    return {
+      variant: config.alertVariant || 'info',
+      ...impact
+    };
   }
 }
 

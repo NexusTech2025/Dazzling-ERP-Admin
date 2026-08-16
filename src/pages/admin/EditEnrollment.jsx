@@ -33,8 +33,9 @@ export default function EditEnrollment() {
   const [responseModalState, setResponseModalState] = useState({
     isOpen: false,
     title: '',
-    message: '',
-    type: 'success',
+    subtitle: '',
+    variant: 'success',
+    items: [],
     onCloseCallback: null
   });
 
@@ -87,11 +88,91 @@ export default function EditEnrollment() {
   const handleSave = (payload) => {
     updateEnrollmentMutation.mutate(payload, {
       onSuccess: (response) => {
+        const resData = response.data?.data || {};
+        const enr = resData.enrollment || payload || {};
+        const fee = resData.fee_account || {};
+        const fin = resData.financial_settlement || {};
+        const allocs = Array.isArray(resData.allocations) ? resData.allocations : [];
+
+        const isWithdrawnOrDiscarded = ['withdrawn', 'discarded'].includes(enr.status);
+
+        const items = [];
+
+        items.push({
+          label: 'Enrollment ID',
+          value: enr.enrollment_id || enrollmentId,
+          isMono: true
+        });
+
+        items.push({
+          label: 'Contract Status',
+          value: (enr.status || 'Active').toUpperCase(),
+          isHighlight: isWithdrawnOrDiscarded
+        });
+
+        if (isWithdrawnOrDiscarded) {
+          if (fin.policy) {
+            items.push({
+              label: 'Settlement Policy',
+              value: fin.policy.replace(/_/g, ' ').toUpperCase()
+            });
+          }
+
+          if (fee.final_fee !== undefined) {
+            items.push({
+              label: 'Revised Final Fee',
+              value: `₹${Number(fee.final_fee).toLocaleString()}`
+            });
+          }
+
+          if (fee.balance_due !== undefined) {
+            items.push({
+              label: 'Outstanding Balance',
+              value: `₹${Number(fee.balance_due).toLocaleString()}`
+            });
+          }
+
+          if (allocs.length > 0) {
+            items.push({
+              label: 'Seating Allocations',
+              value: `${allocs.length} Slot(s) Marked Dropped`
+            });
+          }
+
+          if (fee.remarks) {
+            items.push({
+              label: 'Settlement Note',
+              value: fee.remarks,
+              fullWidth: true
+            });
+          }
+        } else {
+          if (enr.roll_number) {
+            items.push({
+              label: 'Roll Number',
+              value: `#${enr.roll_number}`
+            });
+          }
+          if (enr.academic_status) {
+            items.push({
+              label: 'Academic Status',
+              value: (enr.academic_status || 'Active').toUpperCase()
+            });
+          }
+          if (allocs.length > 0) {
+            items.push({
+              label: 'Active Allocations',
+              value: `${allocs.length} Course Seat(s) Synchronized`
+            });
+          }
+        }
+
         setResponseModalState({
           isOpen: true,
-          title: 'Enrollment Saved',
-          message: `Enrollment contract [${enrollmentId}] has been updated successfully.`,
-          type: 'success',
+          title: isWithdrawnOrDiscarded ? 'Enrollment Withdrawn & Settled' : 'Enrollment Saved',
+          subtitle: `Enrollment contract [${enrollmentId}] has been updated successfully.`,
+          variant: 'success',
+          items,
           onCloseCallback: () => navigate(`/admin/students/${studentId}`)
         });
       },
@@ -111,15 +192,43 @@ export default function EditEnrollment() {
       onSuccess: (response) => {
         setIsDiscardOpen(false);
         const resData = response.data?.data || {};
-        const refundMsg = resData.discard_mode === 'refund'
-          ? `Full refund of ₹${resData.refund_amount || 0} issued.`
-          : 'Account closed without refund.';
+        const isRefund = resData.discard_mode === 'refund';
+
+        const items = [
+          {
+            label: 'Enrollment ID',
+            value: payload.enrollment_id || enrollmentId,
+            isMono: true
+          },
+          {
+            label: 'Discard Mode',
+            value: isRefund ? 'Full Refund' : 'No Refund (Waived)',
+            isHighlight: true
+          },
+          {
+            label: 'Refund Amount',
+            value: isRefund ? `₹${Number(resData.refund_amount || 0).toLocaleString()}` : '₹0'
+          },
+          {
+            label: 'Fee Account Status',
+            value: isRefund ? 'REFUNDED' : 'CLOSED'
+          }
+        ];
+
+        if (resData.remarks) {
+          items.push({
+            label: 'Audit Remarks',
+            value: resData.remarks,
+            fullWidth: true
+          });
+        }
 
         setResponseModalState({
           isOpen: true,
           title: 'Enrollment Discarded',
-          message: `Enrollment [${payload.enrollment_id}] has been discarded. ${refundMsg}`,
-          type: 'success',
+          subtitle: `Enrollment [${payload.enrollment_id}] has been discarded successfully.`,
+          variant: 'success',
+          items,
           onCloseCallback: () => navigate(`/admin/students/${studentId}`)
         });
       },
@@ -139,13 +248,38 @@ export default function EditEnrollment() {
     migrateMutation.mutate(payload, {
       onSuccess: (response) => {
         setIsMigrateOpen(false);
-        const newContractId = response.data?.data?.new_contract?.enrollment_id || 'New Contract';
+        const resData = response.data?.data || {};
+        const newEnr = resData.new_contract || {};
+        const newContractId = newEnr.enrollment_id || 'New Contract';
+
+        const items = [
+          {
+            label: 'Previous Contract',
+            value: payload.enrollment_id || enrollmentId,
+            isMono: true
+          },
+          {
+            label: 'New Contract ID',
+            value: newContractId,
+            isMono: true,
+            isHighlight: true
+          },
+          {
+            label: 'Credit Transferred',
+            value: `₹${Number(resData.credit_applied || 0).toLocaleString()}`
+          },
+          {
+            label: 'New Balance Due',
+            value: `₹${Number(resData.new_balance_due || 0).toLocaleString()}`
+          }
+        ];
 
         setResponseModalState({
           isOpen: true,
           title: 'Enrollment Migrated',
-          message: `Student successfully migrated from [${payload.enrollment_id}] to new contract [${newContractId}].`,
-          type: 'success',
+          subtitle: `Student successfully migrated from [${payload.enrollment_id}] to new contract [${newContractId}].`,
+          variant: 'success',
+          items,
           onCloseCallback: () => navigate(`/admin/students/${studentId}`)
         });
       },
@@ -232,8 +366,9 @@ export default function EditEnrollment() {
           }
         }}
         title={responseModalState.title}
-        message={responseModalState.message}
-        type={responseModalState.type}
+        subtitle={responseModalState.subtitle}
+        variant={responseModalState.variant || 'success'}
+        items={responseModalState.items || []}
       />
 
       {/* Global API Error Modal */}

@@ -126,14 +126,15 @@ export class EnrollmentRepo {
 
   /**
    * Performs an O(1) targeted mutation on queryKeys.enrollment.list(EMPTY_FILTER) in React Query RAM cache
-   * for updated enrollment & allocation fields.
+   * for updated enrollment, allocation fields, and fee account updates.
    * 
    * @param {import('@tanstack/react-query').QueryClient} queryClient - Active QueryClient instance.
    * @param {string} enrollmentId - Target enrollment primary key ("ENR-xxx").
    * @param {Object} updatedData - Updated fields { roll_number, enrollment_date, status, academic_status, metadata }.
    * @param {Array<Object>} [updatedAllocations=[]] - Updated allocations array.
+   * @param {Object} [feeAccountUpdate=null] - Updated fee account data from API response.
    */
-  updateEnrollmentCache(queryClient, enrollmentId, updatedData = {}, updatedAllocations = []) {
+  updateEnrollmentCache(queryClient, enrollmentId, updatedData = {}, updatedAllocations = [], feeAccountUpdate = null) {
     const listKey = queryKeys.enrollment.list(EMPTY_FILTER);
     const cachedList = queryClient.getQueryData(listKey) || [];
 
@@ -158,6 +159,21 @@ export class EnrollmentRepo {
         const updatedAlloc = allocMap.get(allocId);
         return updatedAlloc ? { ...alloc, ...updatedAlloc } : alloc;
       });
+    }
+
+    if (feeAccountUpdate) {
+      const accounts = Array.isArray(targetEnrollment.studentfeeaccounts)
+        ? targetEnrollment.studentfeeaccounts
+        : (Array.isArray(targetEnrollment.StudentFeeAccount) ? targetEnrollment.StudentFeeAccount : []);
+      const sfa = accounts[0];
+      if (sfa) {
+        if (feeAccountUpdate.final_fee !== undefined) sfa.final_fee = Number(feeAccountUpdate.final_fee);
+        if (feeAccountUpdate.total_fee !== undefined) sfa.total_fee = Number(feeAccountUpdate.total_fee);
+        if (feeAccountUpdate.amount_paid !== undefined) sfa.amount_paid = Number(feeAccountUpdate.amount_paid);
+        if (feeAccountUpdate.balance_due !== undefined) sfa.balance_due = Number(feeAccountUpdate.balance_due);
+        if (feeAccountUpdate.status !== undefined) sfa.status = feeAccountUpdate.status;
+        if (feeAccountUpdate.remarks !== undefined) sfa.remarks = feeAccountUpdate.remarks;
+      }
     }
 
     queryClient.setQueryData(listKey, [...cachedList]);

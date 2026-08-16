@@ -12,12 +12,14 @@ import Badge from '../../../../components/ui/Badge';
 import Card from '../../../../components/ui/Card';
 import { enrollmentUpdateSchema } from '../../schemas/enrollmentUpdateSchema';
 import { batchRepo } from '../../../batch/utils/batchCacheHelper';
+import WithdrawalSettlementSection from './WithdrawalSettlementSection';
 
 // Static dropdown options
 const ENROLLMENT_STATUS_OPTIONS = [
   { label: 'Active', value: 'active' },
   { label: 'Completed', value: 'completed' },
-  { label: 'Withdrawn', value: 'withdrawn' }
+  { label: 'Withdrawn', value: 'withdrawn' },
+  { label: 'Discarded', value: 'discarded' }
 ];
 
 const ACADEMIC_STATUS_OPTIONS = [
@@ -132,6 +134,14 @@ export default function StudentUpdateEnrollmentForm({
       academic_status: enrollment.academic_status || 'active',
       shift_preference: meta.shift_preference || 'evening',
       notes: meta.notes || '',
+      financial_settlement: {
+        policy: 'waive_unpaid',
+        required_amount: '',
+        refund_amount: '',
+        due_date: '',
+        payment_method: 'upi',
+        remarks: ''
+      },
       allocations: rawAllocations.map(alloc => {
         const res = batchRepo.resolveAllocation(alloc) || {};
         return {
@@ -148,6 +158,23 @@ export default function StudentUpdateEnrollmentForm({
       })
     };
   }, [enrollment, batches]);
+
+  // Extract financial accounting metrics for live settlement simulations
+  const financialContext = useMemo(() => {
+    const accounts = Array.isArray(enrollment?.studentfeeaccounts)
+      ? enrollment.studentfeeaccounts
+      : (Array.isArray(enrollment?.StudentFeeAccount) ? enrollment.StudentFeeAccount : []);
+    const sfa = accounts[0] || {};
+    const installments = Array.isArray(sfa.installments) ? sfa.installments : [];
+    return {
+      amountPaid: Number(sfa.amount_paid || sfa.paid_amount || 0),
+      balanceDue: Number(sfa.balance_due || sfa.balance_amount || 0),
+      totalFee: Number(sfa.total_fee || 0),
+      pendingInstallments: installments.filter(i => ['pending', 'partially_paid'].includes((i.status || '').toLowerCase())).length,
+      totalInstallments: installments.length,
+      allocationsCount: Array.isArray(enrollment?.allocations) ? enrollment.allocations.length : 0
+    };
+  }, [enrollment]);
 
   const {
     control,
@@ -202,6 +229,7 @@ export default function StudentUpdateEnrollmentForm({
   }, [allocationFields, batchesByCourse, batches]);
 
   const onSubmit = (formData) => {
+    const isWithdrawnOrDiscarded = ['withdrawn', 'discarded'].includes(formData.status);
     const payload = {
       enrollment_id: initialValues.enrollment_id,
       roll_number: formData.roll_number ? Number(formData.roll_number) : null,
@@ -217,8 +245,23 @@ export default function StudentUpdateEnrollmentForm({
         batch_id: a.batch_id,
         status: a.status,
         remarks: a.remarks || null
-      }))
+      })),
+      ...(isWithdrawnOrDiscarded ? {
+        financial_settlement: {
+          policy: formData.financial_settlement?.policy || 'waive_unpaid',
+          ...(formData.financial_settlement?.required_amount !== '' && formData.financial_settlement?.required_amount != null
+            ? { required_amount: Number(formData.financial_settlement.required_amount) }
+            : {}),
+          ...(formData.financial_settlement?.refund_amount !== '' && formData.financial_settlement?.refund_amount != null
+            ? { refund_amount: Number(formData.financial_settlement.refund_amount) }
+            : {}),
+          ...(formData.financial_settlement?.due_date ? { due_date: formData.financial_settlement.due_date } : {}),
+          ...(formData.financial_settlement?.payment_method ? { payment_method: formData.financial_settlement.payment_method } : {}),
+          ...(formData.financial_settlement?.remarks ? { remarks: formData.financial_settlement.remarks.trim() } : {})
+        }
+      } : {})
     };
+    console.log('[StudentUpdateEnrollmentForm] Submitting Request:', payload);
     onSave(payload);
   };
 
@@ -463,7 +506,7 @@ export default function StudentUpdateEnrollmentForm({
             </FormField>
           </div>
 
-          {showStatusCascadeBanner && (
+          {showStatusCascadeBanner && !['withdrawn', 'discarded'].includes(currentStatus) && (
             <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/50 text-amber-700 dark:text-amber-300 text-xs flex items-center gap-2 transition-all duration-300">
               <span className="material-symbols-outlined text-amber-500 dark:text-amber-400 text-base">warning</span>
               <span>
@@ -473,6 +516,16 @@ export default function StudentUpdateEnrollmentForm({
           )}
         </Card.Body>
       </Card>
+
+      {/* Dynamic Withdrawal & Financial Settlement Policy Section */}
+      {['withdrawn', 'discarded'].includes(currentStatus) && (
+        <WithdrawalSettlementSection
+          control={control}
+          errors={errors}
+          watch={watch}
+          financialContext={financialContext}
+        />
+      )}
 
       {/* Card 3: Batch Allocations Manager */}
       <Card className="border border-border-light dark:border-border-dark bg-surface-light dark:bg-surface-dark">

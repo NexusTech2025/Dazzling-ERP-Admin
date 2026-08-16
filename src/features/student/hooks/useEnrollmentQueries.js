@@ -83,15 +83,29 @@ export const useUpdateEnrollmentMutation = () => {
   return useMutation({
     mutationFn: (payload) => updateEnrollment(token, payload),
     onSuccess: (response, variables) => {
-      const updatedEnr = response.data?.data?.enrollment || variables;
-      const updatedAllocations = response.data?.data?.allocations || variables.allocations;
+      console.log('[useUpdateEnrollmentMutation] API Response:', response);
+      const resData = response.data?.data || {};
+      const updatedEnr = resData.enrollment || variables;
+      const updatedAllocations = resData.allocations || variables.allocations;
+      const feeAccountUpdate = resData.fee_account || null;
 
       if (variables?.enrollment_id) {
-        enrollmentRepo.updateEnrollmentCache(queryClient, variables.enrollment_id, updatedEnr, updatedAllocations);
+        enrollmentRepo.updateEnrollmentCache(
+          queryClient,
+          variables.enrollment_id,
+          updatedEnr,
+          updatedAllocations,
+          feeAccountUpdate
+        );
       }
 
       queryClient.invalidateQueries({ queryKey: queryKeys.enrollment.list(EMPTY_FILTER) });
       queryClient.invalidateQueries({ queryKey: ['students'] });
+      queryClient.invalidateQueries({ queryKey: ['batch_allocations'] });
+      queryClient.invalidateQueries({ queryKey: ['finance'] });
+    },
+    onError: (err) => {
+      console.error('[useUpdateEnrollmentMutation] API Error:', err);
     }
   });
 };
