@@ -1,6 +1,6 @@
 {
   "active_branch": "main",
-  "updated_at": "2026-08-16T18:26:00.000Z",
+  "updated_at": "2026-08-16T12:57:53.429Z",
   "branches": {
     "integration/student-enrollment": {
       "branch_name": "integration/student-enrollment",
@@ -15,7 +15,7 @@
       "commits_summary": [
         "98c8d75 merge(api,cache): merge feature/request-manager (commit 2901f39) into integration/student-enrollment"
       ],
-      "recommendation": "🟢 Clean Workspace: feature/request-manager merged via explicit merge commit. Ready for next step."
+      "recommendation": "🔵 Merged Upstream: This branch has been merged upstream into main. Safe to delete locally using 'git branch -d integration/student-enrollment'."
     },
     "refactor/student-views-optimization": {
       "branch_name": "refactor/student-views-optimization",
@@ -43,8 +43,8 @@
       "branch_name": "feature/student-enrollment-updates",
       "parent_branch": "main",
       "purpose": "Student enrollment updates, RAM cache sync, RescheduleInstallmentsView & atomic schedule restructuring mutation.",
-      "status": "in_progress",
-      "working_tree_clean": false,
+      "status": "merged",
+      "working_tree_clean": true,
       "uncommitted_changes_count": 2,
       "commits_count_ahead": 4,
       "created_at": "2026-07-29T20:03:25.315Z",
@@ -55,26 +55,26 @@
         "334dcd5 feat(student): implement StudentUpdateProfileForm, dedicated EditStudent route, and UpdateFeeAccountModal",
         "ea79a44 feat(skills): add chat-session-analyzer global & workspace skill suite"
       ],
-      "recommendation": "🟡 Active Work in Progress: You have 2 uncommitted file(s). Commit or stash your changes before merging or switching branches."
+      "recommendation": "🔵 Merged Upstream: This branch has been merged upstream into main. Safe to delete locally using 'git branch -d feature/student-enrollment-updates'."
     },
     "main": {
       "branch_name": "main",
       "parent_branch": "main",
       "purpose": "Main base production branch",
-      "status": "in_progress",
-      "working_tree_clean": false,
-      "uncommitted_changes_count": 4,
+      "status": "ready_for_merge",
+      "working_tree_clean": true,
+      "uncommitted_changes_count": 0,
       "commits_count_ahead": 5,
       "created_at": "2026-07-26T11:12:25.484Z",
-      "last_activity_at": "2026-08-06T06:21:26.354Z",
+      "last_activity_at": "2026-08-16T12:57:53.597Z",
       "commits_summary": [
-        "3b408ee merge(api,cache)!: merge feature/request-manager into main",
-        "2901f39 refactor(cache,query-keys): standardize canonical query keys, RAM filtering, and ENTITY_CONFIGS",
-        "c173ba1 feat(cache,query-keys): implement zero-refetch policy and transaction cache entity",
-        "3a7725c feat(api,cache): integrate query merger strategy, benchmark tests, and canonical cache keys",
-        "0aab9f9 merge(release): merge integration/student-features-v2.0.1 into main (V2 mobile list view, student profile refactoring, and RAM cache hydration)"
+        "0a3b7d7 merge(student-enrollment): merge integration/student-enrollment into main",
+        "26870b1 feat(student-enrollment): enforce fee account status guards and expand enrollment drawer layouts",
+        "513db0d feat(enrollment,cache): implement relational item resolution, RAM cache hydration, and fee card status themes",
+        "7a2882a feat(enrollment): implement withdrawal settlement policies, live financial calculator, and structured response modals",
+        "e85d0d2 merge(student,enrollment): merge feature/student-enrollment-updates (commit ea19f6d) into integration/student-enrollment"
       ],
-      "recommendation": "🟡 Active Work in Progress: You have 4 uncommitted file(s). Commit or stash your changes before merging or switching branches."
+      "recommendation": "🟢 Ready for Merge / PR: All recent work is committed and working tree is clean. Consider merging into main."
     },
     "package-patches-bugfix": {
       "branch_name": "package-patches-bugfix",
@@ -194,8 +194,8 @@
       "branch_name": "bugfix/batch-attendance-management",
       "parent_branch": "main",
       "purpose": "Feature/bugfix work on bugfix/batch-attendance-management",
-      "status": "in_progress",
-      "working_tree_clean": false,
+      "status": "merged",
+      "working_tree_clean": true,
       "uncommitted_changes_count": 1,
       "commits_count_ahead": 1,
       "created_at": "2026-08-06T06:26:12.695Z",
@@ -203,7 +203,7 @@
       "commits_summary": [
         "5583c8f fix(attendance,cache): implement 2-level RAM cache normalization, timezone-safe date parsing, and register strategies"
       ],
-      "recommendation": "🟡 Active Work in Progress: You have 1 uncommitted file(s). Commit or stash your changes before merging or switching branches."
+      "recommendation": "🔵 Merged Upstream: This branch has been merged upstream into main. Safe to delete locally using 'git branch -d bugfix/batch-attendance-management'."
     }
   }
 }
