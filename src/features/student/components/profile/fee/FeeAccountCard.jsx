@@ -11,6 +11,7 @@ import UpdateFeeAccountModal from './UpdateFeeAccountModal';
 import { useCoursesQuery } from '../../../../course/hooks/useCourseQueries';
 import { usePackagesQuery } from '../../../../course/hooks/usePackageQueries';
 import { resolveEnrollmentItem } from '../../../utils/enrollmentCacheHelper';
+import { evaluatePaymentEligibility } from '../../../utils/feeStatusGuards';
 
 /**
  * Visual styling and token mapping for enrollment status states.
@@ -210,14 +211,26 @@ export const FeeAccountCard = ({ enrollment, defaultExpanded = true }) => {
                 <span className="material-symbols-outlined text-base">edit</span>
                 <span className="hidden sm:inline">Update Account</span>
               </button>
-              <Link
-                to={`/admin/finance/reschedule/${feeAccount.student_fee_id}`}
-                className="px-3 py-1.5 bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-blue-700 dark:text-blue-300 text-xs font-bold rounded-xl border border-blue-200 dark:border-blue-800 transition-all flex items-center gap-1.5"
-                title="Reschedule Installment Schedule"
-              >
-                <span className="material-symbols-outlined text-base">edit_calendar</span>
-                <span className="hidden sm:inline">Reschedule Schedule</span>
-              </Link>
+              {(feeAccount?.status || 'active').toLowerCase() === 'active' ? (
+                <Link
+                  to={`/admin/finance/reschedule/${feeAccount.student_fee_id}`}
+                  className="px-3 py-1.5 bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-blue-700 dark:text-blue-300 text-xs font-bold rounded-xl border border-blue-200 dark:border-blue-800 transition-all flex items-center gap-1.5"
+                  title="Reschedule Installment Schedule"
+                >
+                  <span className="material-symbols-outlined text-base">edit_calendar</span>
+                  <span className="hidden sm:inline">Reschedule Schedule</span>
+                </Link>
+              ) : (
+                <button
+                  type="button"
+                  disabled
+                  className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800/40 text-slate-400 dark:text-slate-600 text-xs font-bold rounded-xl border border-slate-200 dark:border-slate-800 cursor-not-allowed flex items-center gap-1.5"
+                  title={`Account is ${feeAccount?.status?.toUpperCase()} — schedule cannot be rescheduled.`}
+                >
+                  <span className="material-symbols-outlined text-base">edit_calendar</span>
+                  <span className="hidden sm:inline">Reschedule</span>
+                </button>
+              )}
             </>
           )}
 
@@ -392,6 +405,9 @@ export const FeeAccountCard = ({ enrollment, defaultExpanded = true }) => {
                         if (statusStr === 'paid') statusBadgeVariant = 'success';
                         else if (statusStr === 'upcoming') statusBadgeVariant = 'info';
                         else if (statusStr === 'overdue') statusBadgeVariant = 'danger';
+                        else if (statusStr === 'cancelled') statusBadgeVariant = 'default';
+
+                        const eligibility = evaluatePaymentEligibility(feeAccount, inst);
 
                         return (
                           <tr
@@ -412,7 +428,7 @@ export const FeeAccountCard = ({ enrollment, defaultExpanded = true }) => {
                             <td className="p-3.5 text-right font-bold text-emerald-600 dark:text-emerald-400">
                               ₹{paidAmountInst.toLocaleString()}
                             </td>
-                            <td className="p-3.5 text-right text-slate-500">
+                            <td className="p-3.5 text-right font-semibold text-slate-900 dark:text-white">
                               ₹{lateFeeInst.toLocaleString()}
                             </td>
                             <td className="p-3.5 text-center">
@@ -443,13 +459,17 @@ export const FeeAccountCard = ({ enrollment, defaultExpanded = true }) => {
                                 <Button
                                   variant="outlined"
                                   size="sm"
+                                  disabled={!eligibility.isPayable}
+                                  title={eligibility.reason || 'Record Payment for this installment'}
                                   onClick={() => {
-                                    setModalTargetInstallment(inst);
-                                    setIsPaymentModalOpen(true);
+                                    if (eligibility.isPayable) {
+                                      setModalTargetInstallment(inst);
+                                      setIsPaymentModalOpen(true);
+                                    }
                                   }}
                                   className="text-[11px] py-1 px-2.5 rounded-lg"
                                 >
-                                  Record Payment
+                                  {eligibility.isPayable ? 'Record Payment' : (eligibility.reason || 'Disabled')}
                                 </Button>
                               )}
                             </td>

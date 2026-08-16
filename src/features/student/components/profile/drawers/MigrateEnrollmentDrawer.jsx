@@ -275,7 +275,7 @@ export default function MigrateEnrollmentDrawer({
         subtitle="Migrate student to another course or package contract."
         icon="published_with_changes"
         iconColor="text-primary"
-        width="max-w-3xl"
+        width="max-w-5xl"
         footer={
           <div className="flex items-center justify-end gap-3 w-full">
             <Button type="button" variant="outlined" onClick={onClose} disabled={isSubmitting}>

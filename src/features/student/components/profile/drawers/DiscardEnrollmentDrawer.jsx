@@ -95,7 +95,7 @@ export default function DiscardEnrollmentDrawer({
         subtitle="Discard this enrollment and settle financials."
         icon="delete_forever"
         iconColor="text-rose-500"
-        width="max-w-xl"
+        width="max-w-3xl"
         footer={
           <div className="flex items-center justify-end gap-3 w-full">
             <Button type="button" variant="outlined" onClick={onClose} disabled={isSubmitting}>

@@ -5,10 +5,12 @@ import Button from '../../components/ui/v2/Button';
 import TextInput from '../../components/ui/v2/TextInput';
 import FormField from '../../components/ui/v2/FormField';
 import ConfirmModal from '../../components/ui/ConfirmModal';
+import AlertCard from '../../components/ui/v2/AlertCard';
 import { useAuth } from '../../context/AuthContextCore';
 import { useRecordPaymentMutation } from './hooks/useFinanceQueries';
 import { queryKeys, EMPTY_FILTER } from '../../lib/react-query/queryKeys';
 import MoneyTransactionForm from './transactions/components/MoneyTransactionForm';
+import { evaluatePaymentEligibility } from '../student/utils/feeStatusGuards';
 
 /**
  * 2-Step Interactive Payment Recording Modal Dialog with ConfirmModal integration.
@@ -164,10 +166,20 @@ export const RecordPaymentModal = ({
     }
   };
 
+  // Payment Eligibility Guard
+  const eligibility = useMemo(() => {
+    return evaluatePaymentEligibility(feeAccount, targetInstallment);
+  }, [feeAccount, targetInstallment]);
+
   // Form Submit Handler: Opens ConfirmModal in idle mode
   const handleSubmit = (e) => {
     e.preventDefault();
     setError(null);
+
+    if (!eligibility.isPayable) {
+      setError(eligibility.reason || 'Payment recording is locked on this account.');
+      return;
+    }
 
     if (numericAmountPaid <= 0) {
       setError('Please enter a valid payment amount greater than zero.');
@@ -367,6 +379,14 @@ return (
 
         {/* Left Main Form Column (8 Columns) */}
         <div className="lg:col-span-8 space-y-6">
+
+          {!eligibility.isAccountActive && (
+            <AlertCard
+              variant="warning"
+              title="Payment Recording Locked"
+              message={`This fee account is currently marked as ${(feeAccount?.status || 'INACTIVE').toUpperCase()}. New payments cannot be recorded on settled, cancelled, or inactive accounts.`}
+            />
+          )}
 
           {error && (
             <div className="p-4 bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-400 rounded-2xl border border-rose-200 dark:border-rose-900/40 text-xs font-semibold flex items-center gap-2">
@@ -709,7 +729,9 @@ return (
           variant="contained"
           size="sm"
           startIcon="payments"
+          disabled={!eligibility.isPayable || recordMutation.isPending}
           loading={recordMutation.isPending}
+          title={!eligibility.isPayable ? (eligibility.reason || 'Payment recording locked') : 'Record Payment'}
           className="rounded-xl px-6 text-xs font-bold shadow-lg shadow-primary/25"
         >
           Record Payment
