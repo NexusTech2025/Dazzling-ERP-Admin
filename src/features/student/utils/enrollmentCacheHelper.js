@@ -379,9 +379,89 @@ export class EnrollmentRepo {
     queryClient.invalidateQueries({ queryKey: queryKeys.enrollment.all });
     queryClient.invalidateQueries({ queryKey: queryKeys.finance.all });
   }
+
+  /**
+   * Resolves and normalizes an academic item (Course or Package) for a given enrollment entity.
+   * @param {Object} enrollment - Target enrollment contract record.
+   * @param {Array<Object>} [items=[]] - Cached list of Courses or Packages.
+   * @param {string|null} [itemType=null] - Explicit domain discriminator ('course' | 'package' | 'subject').
+   * @returns {{ itemName: string, itemType: string, itemCode: string, item: Object|null }} Standardized item view model.
+   */
+  resolveItem(enrollment, items = [], itemType = null) {
+    return resolveEnrollmentItem(enrollment, items, itemType);
+  }
 }
 
 import { batchRepo } from '../../batch/utils/batchCacheHelper';
+
+/**
+ * Resolves and normalizes an enrollment's linked academic item (Course or Package) 
+ * from cached collections into a standardized View Model contract.
+ *
+ * @param {Object} enrollment - Target enrollment record containing { item_id, enrollment_type }.
+ * @param {Array<Object>} [items=[]] - Array of cached Course or Package records matching the target domain.
+ * @param {('course'|'package'|'subject'|null)} [itemType=null] - Explicit domain discriminator. If omitted, inferred from enrollment.enrollment_type or item_id prefix.
+ * @returns {{ itemName: string, itemType: string, itemCode: string, item: Object|null }} Standardized item descriptor contract.
+ */
+export function resolveEnrollmentItem(enrollment, items = [], itemType = null) {
+  if (!enrollment) {
+    return {
+      itemName: 'Academic Program',
+      itemType: 'Course',
+      itemCode: 'N/A',
+      item: null
+    };
+  }
+
+  const rawItemId = enrollment.item_id || enrollment.course_id || enrollment.package_id || '';
+  const resolvedType = (
+    itemType ||
+    enrollment.enrollment_type ||
+    (rawItemId.startsWith('PKG') ? 'package' : 'course')
+  ).toLowerCase();
+
+  const isPackage = resolvedType === 'package' || rawItemId.startsWith('PKG');
+  const normalizedDisplayType = isPackage ? 'Package' : (resolvedType === 'subject' ? 'Subject' : 'Course');
+
+  if (!rawItemId || !Array.isArray(items) || items.length === 0) {
+    return {
+      itemName: enrollment.item_name || enrollment.package_name || enrollment.course_name || (isPackage ? 'Academic Package' : 'Academic Course'),
+      itemType: normalizedDisplayType,
+      itemCode: rawItemId || 'N/A',
+      item: null
+    };
+  }
+
+  const matched = items.find(item => {
+    if (!item) return false;
+    const id = item.package_id || item.course_id || item.id;
+    return String(id).trim() === String(rawItemId).trim();
+  });
+
+  if (!matched) {
+    return {
+      itemName: enrollment.item_name || enrollment.package_name || enrollment.course_name || (isPackage ? 'Academic Package' : 'Academic Course'),
+      itemType: normalizedDisplayType,
+      itemCode: rawItemId || 'N/A',
+      item: null
+    };
+  }
+
+  const itemName = isPackage
+    ? (matched.package_name || matched.name || 'Academic Package')
+    : (matched.name || matched.course_name || 'Academic Course');
+
+  const itemCode = isPackage
+    ? (matched.package_code || matched.code || rawItemId)
+    : (matched.course_code || matched.code || rawItemId);
+
+  return {
+    itemName,
+    itemType: normalizedDisplayType,
+    itemCode,
+    item: matched
+  };
+}
 
 /**
  * Extracts normalized batch allocation view models directly from a hydrated Student object (useStudentsQuery),

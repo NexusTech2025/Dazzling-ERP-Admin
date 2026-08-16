@@ -12,7 +12,7 @@
 
 import { queryKeys, EMPTY_FILTER } from './queryKeys.js';
 import { validateRecordSchema } from './validationEngine.js';
-import { enrollmentRepo } from '../../features/student/utils/enrollmentCacheHelper.js';
+import { enrollmentRepo, resolveEnrollmentItem } from '../../features/student/utils/enrollmentCacheHelper.js';
 
 // --- UTILITY PARSERS ---
 
@@ -290,18 +290,21 @@ export function hydrateEnrollment(enrollment, queryClient) {
 
   const studentData = student || null;
 
-  // const studentfeeaccounts = (enrollment.studentfeeaccounts || []).map(account => ({
-  //   ...account,
-  //   enrollment: {
-  //     ...enrollment,
-  //     student: studentData
-  //   }
-  // }));
+  // Resolve relational course or package item
+  const rawItemId = enrollment.item_id || enrollment.course_id || enrollment.package_id || '';
+  const isPackage = (rawItemId.startsWith('PKG') || (enrollment.enrollment_type || '').toLowerCase() === 'package');
+  const targetKey = isPackage ? (queryKeys.package?.list?.(EMPTY_FILTER) || ['package', 'list']) : (queryKeys.course?.list?.(EMPTY_FILTER) || ['course', 'list']);
+  const items = queryClient.getQueryData(targetKey) || [];
+  const resolvedItem = resolveEnrollmentItem(enrollment, items, isPackage ? 'package' : (enrollment.enrollment_type || 'course'));
+
   enrollment = normalizeEnrollment(enrollment);
   return {
     ...enrollment,
     student: studentData,
-    // studentfeeaccounts
+    item_name: resolvedItem.itemName,
+    item_type: resolvedItem.itemType,
+    item_code: resolvedItem.itemCode,
+    item: resolvedItem.item
   };
 }
 

@@ -8,6 +8,60 @@ import InstallmentStepperTimeline from './InstallmentStepperTimeline';
 import InstallmentDetailPanel from './InstallmentDetailPanel';
 import RecordPaymentModal from '../../../../finance/RecordPaymentModal';
 import UpdateFeeAccountModal from './UpdateFeeAccountModal';
+import { useCoursesQuery } from '../../../../course/hooks/useCourseQueries';
+import { usePackagesQuery } from '../../../../course/hooks/usePackageQueries';
+import { resolveEnrollmentItem } from '../../../utils/enrollmentCacheHelper';
+
+/**
+ * Visual styling and token mapping for enrollment status states.
+ */
+const ENROLLMENT_STATUS_THEME = {
+  active: {
+    badgeVariant: 'success',
+    label: 'ACTIVE',
+    icon: 'check_circle',
+    headerBg: 'bg-emerald-50/60 dark:bg-emerald-950/30 border-b border-emerald-200/60 dark:border-emerald-800/40',
+    cardBorder: 'border-emerald-200/80 dark:border-emerald-800/50 shadow-emerald-500/5',
+    iconBg: 'bg-emerald-100 dark:bg-emerald-900/40',
+    iconColor: 'text-emerald-600 dark:text-emerald-400'
+  },
+  completed: {
+    badgeVariant: 'info',
+    label: 'COMPLETED',
+    icon: 'verified',
+    headerBg: 'bg-sky-50/60 dark:bg-sky-950/30 border-b border-sky-200/60 dark:border-sky-800/40',
+    cardBorder: 'border-sky-200/80 dark:border-sky-800/50 shadow-sky-500/5',
+    iconBg: 'bg-sky-100 dark:bg-sky-900/40',
+    iconColor: 'text-sky-600 dark:text-sky-400'
+  },
+  withdrawn: {
+    badgeVariant: 'danger',
+    label: 'WITHDRAWN',
+    icon: 'person_cancel',
+    headerBg: 'bg-rose-50/60 dark:bg-rose-950/30 border-b border-rose-200/60 dark:border-rose-800/40',
+    cardBorder: 'border-rose-200/80 dark:border-rose-800/50 shadow-rose-500/5',
+    iconBg: 'bg-rose-100 dark:bg-rose-900/40',
+    iconColor: 'text-rose-600 dark:text-rose-400'
+  },
+  discarded: {
+    badgeVariant: 'warning',
+    label: 'DISCARDED',
+    icon: 'delete_forever',
+    headerBg: 'bg-amber-50/60 dark:bg-amber-950/30 border-b border-amber-200/60 dark:border-amber-800/40',
+    cardBorder: 'border-amber-200/80 dark:border-amber-800/50 shadow-amber-500/5',
+    iconBg: 'bg-amber-100 dark:bg-amber-900/40',
+    iconColor: 'text-amber-600 dark:text-amber-400'
+  },
+  suspended: {
+    badgeVariant: 'warning',
+    label: 'SUSPENDED',
+    icon: 'pause_circle',
+    headerBg: 'bg-amber-50/60 dark:bg-amber-950/30 border-b border-amber-200/60 dark:border-amber-800/40',
+    cardBorder: 'border-amber-200/80 dark:border-amber-800/50 shadow-amber-500/5',
+    iconBg: 'bg-amber-100 dark:bg-amber-900/40',
+    iconColor: 'text-amber-600 dark:text-amber-400'
+  }
+};
 
 /**
  * Self-contained financial account card for a single student enrollment.
@@ -23,14 +77,37 @@ export const FeeAccountCard = ({ enrollment, defaultExpanded = true }) => {
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
   const [modalTargetInstallment, setModalTargetInstallment] = useState(null);
 
+  const { data: courses = [] } = useCoursesQuery();
+  const { data: packages = [] } = usePackagesQuery();
+
   const feeAccount = enrollment?.studentfeeaccounts?.[0];
   const feePlan = feeAccount?.feeplan || enrollment?.feeplan;
   const installments = useMemo(() => feeAccount?.installments || [], [feeAccount]);
 
-  const itemName = enrollment?.item_name || enrollment?.package_name || enrollment?.course_name || 'Academic Program';
-  const itemType = enrollment?.item_type || (enrollment?.item_id?.startsWith('PKG') ? 'Package' : 'Course');
+  const isPackage = (enrollment?.item_id || '').startsWith('PKG') || (enrollment?.enrollment_type || '').toLowerCase() === 'package';
+  const targetItems = isPackage ? packages : courses;
+  const targetType = isPackage ? 'package' : (enrollment?.enrollment_type || 'course');
+
+  const resolvedItem = useMemo(() => {
+    return resolveEnrollmentItem(enrollment, targetItems, targetType);
+  }, [enrollment, targetItems, targetType]);
+
+  const itemName = resolvedItem.itemName;
+  const itemType = resolvedItem.itemType;
+  const itemCode = resolvedItem.itemCode;
   const enrollmentId = enrollment?.enrollment_id || enrollment?.id || 'N/A';
   const enrollmentStatus = (enrollment?.status || 'active').toLowerCase();
+  const isWithdrawnOrDiscarded = ['withdrawn', 'discarded'].includes(enrollmentStatus);
+
+  const statusTheme = ENROLLMENT_STATUS_THEME[enrollmentStatus] || {
+    badgeVariant: 'default',
+    label: (enrollment?.status || 'Active').toUpperCase(),
+    icon: 'school',
+    headerBg: 'bg-slate-50/70 dark:bg-slate-800/50 border-b border-border-light dark:border-border-dark',
+    cardBorder: 'border-border-light dark:border-border-dark',
+    iconBg: 'bg-primary/10',
+    iconColor: 'text-primary'
+  };
 
   // Selected Installment State
   const defaultSelectedId = useMemo(() => {
@@ -79,11 +156,11 @@ export const FeeAccountCard = ({ enrollment, defaultExpanded = true }) => {
   };
 
   return (
-    <Card className="overflow-hidden shadow-sm transition-all duration-300">
+    <Card className={`overflow-hidden shadow-sm transition-all duration-300 ${statusTheme.cardBorder}`}>
       {/* Account Card Header */}
-      <div className="p-5 border-b border-border-light dark:border-border-dark bg-slate-50/70 dark:bg-slate-800/50 flex items-center justify-between gap-4">
+      <div className={`p-5 flex items-center justify-between gap-4 transition-colors duration-300 ${statusTheme.headerBg}`}>
         <div className="flex items-center gap-3.5 min-w-0">
-          <div className="size-11 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+          <div className={`size-11 rounded-2xl flex items-center justify-center shrink-0 transition-colors ${statusTheme.iconBg} ${statusTheme.iconColor}`}>
             <span className="material-symbols-outlined text-2xl">
               {itemType.toLowerCase() === 'package' ? 'inventory_2' : 'menu_book'}
             </span>
@@ -93,9 +170,25 @@ export const FeeAccountCard = ({ enrollment, defaultExpanded = true }) => {
               <h3 className="font-extrabold text-text-main dark:text-white text-base truncate">
                 {itemName}
               </h3>
-              <Badge variant={itemType.toLowerCase() === 'package' ? 'primary' : 'info'} className="text-[10px]">
-                {itemType}
+              <Badge variant={itemType.toLowerCase() === 'package' ? 'primary' : 'info'} className="text-[10px] gap-1">
+                <span className="material-symbols-outlined !text-[12px]">
+                  {itemType.toLowerCase() === 'package' ? 'inventory_2' : 'menu_book'}
+                </span>
+                <span>{itemType}</span>
               </Badge>
+              <Badge variant={statusTheme.badgeVariant} className="text-[10px] gap-1">
+                <span className="material-symbols-outlined !text-[12px]">{statusTheme.icon}</span>
+                <span>Enr: {statusTheme.label}</span>
+              </Badge>
+              {isWithdrawnOrDiscarded && feeAccount?.status && (
+                <Badge
+                  variant={feeAccount.status === 'completed' ? 'info' : feeAccount.status === 'refunded' ? 'info' : 'warning'}
+                  className="text-[10px] gap-1"
+                >
+                  <span className="material-symbols-outlined !text-[12px]">account_balance_wallet</span>
+                  <span>Fee: {feeAccount.status === 'completed' ? 'WAIVED / SETTLED' : feeAccount.status.toUpperCase()}</span>
+                </Badge>
+              )}
             </div>
             <p className="text-xs text-text-secondary mt-0.5 font-mono truncate">
               Enrollment ID: <span className="font-semibold text-slate-700 dark:text-slate-300">{enrollmentId}</span>
@@ -127,9 +220,7 @@ export const FeeAccountCard = ({ enrollment, defaultExpanded = true }) => {
               </Link>
             </>
           )}
-          <Badge variant={enrollmentStatus === 'active' ? 'success' : 'neutral'}>
-            {enrollmentStatus.toUpperCase()}
-          </Badge>
+
           <span className="text-xs font-bold text-slate-500 hidden sm:inline">
             {installments.length} Installments
           </span>
@@ -149,6 +240,19 @@ export const FeeAccountCard = ({ enrollment, defaultExpanded = true }) => {
       {/* Expanded Content Body */}
       {isExpanded && (
         <Card.Body className="p-6 space-y-6">
+          {/* Withdrawal / Discard Settlement Notice Banner */}
+          {isWithdrawnOrDiscarded && feeAccount?.remarks && (
+            <div className="p-3.5 rounded-xl bg-rose-50/90 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 flex items-start gap-2.5 text-xs text-rose-900 dark:text-rose-200">
+              <span className="material-symbols-outlined text-rose-500 text-base mt-0.5 shrink-0">
+                gavel
+              </span>
+              <div className="min-w-0">
+                <span className="font-bold">Withdrawal Settlement Note: </span>
+                <span className="text-rose-800 dark:text-rose-300">{feeAccount.remarks}</span>
+              </div>
+            </div>
+          )}
+
           {!feeAccount || installments.length === 0 ? (
             /* Empty Fee Schedule Card */
             <div className="p-8 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/30 text-center space-y-3">
@@ -293,9 +397,8 @@ export const FeeAccountCard = ({ enrollment, defaultExpanded = true }) => {
                           <tr
                             key={instId}
                             onClick={() => setSelectedInstallmentId(instId)}
-                            className={`cursor-pointer transition-colors hover:bg-slate-100/50 dark:hover:bg-slate-800/40 ${
-                              isSelected ? 'bg-primary/5 dark:bg-primary/10 font-medium' : ''
-                            }`}
+                            className={`cursor-pointer transition-colors hover:bg-slate-100/50 dark:hover:bg-slate-800/40 ${isSelected ? 'bg-primary/5 dark:bg-primary/10 font-medium' : ''
+                              }`}
                           >
                             <td className="p-3.5 text-center font-bold text-slate-700 dark:text-slate-300">
                               {idx + 1}
