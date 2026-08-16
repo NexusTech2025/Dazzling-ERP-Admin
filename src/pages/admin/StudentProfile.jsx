@@ -59,6 +59,8 @@ const StudentProfile = () => {
   const [deleteModalState, setDeleteModalState] = useState({
     isOpen: false,
     status: 'idle',
+    error: null,
+    responsePayload: null,
     resultMessage: null
   });
 
@@ -69,22 +71,38 @@ const StudentProfile = () => {
         setDeleteModalState({
           isOpen: true,
           status: 'success',
+          error: null,
+          responsePayload: response,
           resultMessage: response.data?.message || response.message || 'Student record has been successfully processed.'
         });
       },
       onError: (err) => {
+        const rawErr = err?.rawBackendError || err?.response?.data?.error || err;
+        const errorObj = {
+          errorCode: rawErr?.errorCode || err?.errorCode || (err.status ? `HTTP_${err.status}` : 'DELETE_ERROR'),
+          message: rawErr?.message || err?.message || 'Failed to delete student profile.',
+          type: rawErr?.type || err?.name || 'Error',
+          details: rawErr?.details || []
+        };
+
         setDeleteModalState({
           isOpen: true,
           status: 'error',
-          resultMessage: err.response?.data?.error?.message || err.message || 'Failed to delete student profile.'
+          error: errorObj,
+          responsePayload: null,
+          resultMessage: errorObj.message
         });
       }
     });
   };
 
+  const handleResetDeleteStatus = () => {
+    setDeleteModalState(prev => ({ ...prev, status: 'idle', error: null, responsePayload: null, resultMessage: null }));
+  };
+
   const handleCloseDeleteModal = () => {
     const wasSuccess = deleteModalState.status === 'success';
-    setDeleteModalState({ isOpen: false, status: 'idle', resultMessage: null });
+    setDeleteModalState({ isOpen: false, status: 'idle', error: null, responsePayload: null, resultMessage: null });
     if (wasSuccess) {
       navigate('/admin/students');
     }
@@ -217,8 +235,11 @@ const StudentProfile = () => {
           isOpen={deleteModalState.isOpen}
           onClose={handleCloseDeleteModal}
           onConfirm={handleDeleteConfirm}
+          onResetStatus={handleResetDeleteStatus}
           student={student}
           status={deleteModalState.status}
+          error={deleteModalState.error}
+          responsePayload={deleteModalState.responsePayload}
           resultMessage={deleteModalState.resultMessage}
           isProcessing={deleteMutation.isPending}
         />

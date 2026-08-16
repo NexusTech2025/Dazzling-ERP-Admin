@@ -58,6 +58,7 @@ const Students = () => {
     dependencyModal,
     handleConfirmDelete,
     handleCloseDeleteModal,
+    handleResetDeleteStatus,
     handleSaveStudent
   } = modals;
 
@@ -230,8 +231,11 @@ const Students = () => {
             isOpen={deleteModal.isOpen}
             onClose={handleCloseDeleteModal}
             onConfirm={handleConfirmDelete}
+            onResetStatus={handleResetDeleteStatus}
             student={deleteModal.student}
             status={deleteModal.status}
+            error={deleteModal.error}
+            responsePayload={deleteModal.responsePayload}
             resultMessage={deleteModal.resultMessage}
             isProcessing={deleteMutation.isPending}
           />

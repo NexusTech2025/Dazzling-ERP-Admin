@@ -102,6 +102,8 @@ export function useStudentListView() {
     student: null,
     type: 'student',
     status: 'idle',
+    error: null,
+    responsePayload: null,
     resultMessage: null
   });
 
@@ -224,12 +226,13 @@ export function useStudentListView() {
         setDeleteModal(prev => ({
           ...prev,
           status: 'success',
+          responsePayload: response,
           resultMessage: response.data?.message || response.message || 'Student record has been successfully processed.'
         }));
       },
       onError: (err) => {
         console.error('Delete Student Error:', err);
-        const rawErr = err.rawBackendError;
+        const rawErr = err?.rawBackendError || err?.response?.data?.error || err;
         if (rawErr?.details?.violations) {
           const parsedBlockers = parseDeleteBlockers(rawErr, 'Student');
           if (parsedBlockers.length > 0) {
@@ -241,10 +244,20 @@ export function useStudentListView() {
             return;
           }
         }
+
+        const errorObj = {
+          errorCode: rawErr?.errorCode || err?.errorCode || (err.status ? `HTTP_${err.status}` : 'DELETE_ERROR'),
+          message: rawErr?.message || err?.message || 'Failed to delete student record.',
+          type: rawErr?.type || err?.name || 'Error',
+          details: rawErr?.details || []
+        };
+
         setDeleteModal(prev => ({
           ...prev,
           status: 'error',
-          resultMessage: err.response?.data?.error?.message || err.message || 'Connection error. Please check your network.'
+          error: errorObj,
+          responsePayload: null,
+          resultMessage: errorObj.message
         }));
       }
     });
@@ -260,7 +273,11 @@ export function useStudentListView() {
   }, [deleteModal.id, deleteModal.type, handleBatchDelete, handleSingleDelete]);
 
   const handleCloseDeleteModal = useCallback(() => {
-    setDeleteModal({ isOpen: false, id: null, name: '', student: null, type: 'student', status: 'idle', resultMessage: null });
+    setDeleteModal({ isOpen: false, id: null, name: '', student: null, type: 'student', status: 'idle', error: null, responsePayload: null, resultMessage: null });
+  }, []);
+
+  const handleResetDeleteStatus = useCallback(() => {
+    setDeleteModal(prev => ({ ...prev, status: 'idle', error: null, responsePayload: null, resultMessage: null }));
   }, []);
 
   const handleSaveStudent = useCallback((payload) => {
@@ -305,6 +322,7 @@ export function useStudentListView() {
       },
       handleConfirmDelete,
       handleCloseDeleteModal,
+      handleResetDeleteStatus,
       handleSaveStudent
     },
     actions: {
