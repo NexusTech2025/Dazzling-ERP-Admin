@@ -22,7 +22,18 @@ export const StudentFeeTab = ({ studentId }) => {
     { enabled: !!studentId }
   );
 
-  console.log("Enrollments: ", enrollments)
+  const activePayableAccount = React.useMemo(() => {
+    return enrollments.find(e => {
+      const sfa = e.studentfeeaccounts?.[0];
+      return (sfa?.status || '').toLowerCase() === 'active' && Number(sfa?.balance_due ?? sfa?.final_fee ?? 0) > 0;
+    });
+  }, [enrollments]);
+
+  const hasActivePayableAccount = !!activePayableAccount;
+
+  const hasAnyActiveFeeAccount = React.useMemo(() => {
+    return enrollments.some(e => (e.studentfeeaccounts?.[0]?.status || '').toLowerCase() === 'active');
+  }, [enrollments]);
 
   if (isLoading) {
     return (
@@ -64,7 +75,8 @@ export const StudentFeeTab = ({ studentId }) => {
             variant="contained"
             size="sm"
             startIcon="add"
-            disabled={enrollments.length === 0}
+            disabled={!hasActivePayableAccount}
+            title={hasActivePayableAccount ? 'Record Payment' : 'No active payable fee account found'}
             onClick={() => setIsPaymentModalOpen(true)}
             className="shadow-md shadow-primary/20 rounded-xl text-xs font-bold"
           >
@@ -75,9 +87,11 @@ export const StudentFeeTab = ({ studentId }) => {
             variant="outlined"
             size="sm"
             startIcon="edit_calendar"
-            disabled={enrollments.length === 0}
+            disabled={!hasAnyActiveFeeAccount}
+            title={hasAnyActiveFeeAccount ? 'Reschedule Installments' : 'No active fee account available to reschedule'}
             onClick={() => {
-              const feeAccountId = enrollments[0]?.studentfeeaccounts?.[0]?.student_fee_id;
+              const activeEnr = enrollments.find(e => (e.studentfeeaccounts?.[0]?.status || '').toLowerCase() === 'active');
+              const feeAccountId = activeEnr?.studentfeeaccounts?.[0]?.student_fee_id;
               if (feeAccountId) {
                 navigate(`/admin/finance/reschedule/${feeAccountId}`);
               } else {
@@ -134,13 +148,13 @@ export const StudentFeeTab = ({ studentId }) => {
       )}
 
       {/* Top-Level Record Payment Modal Portal */}
-      {isPaymentModalOpen && enrollments.length > 0 && (
+      {isPaymentModalOpen && activePayableAccount && (
         <RecordPaymentModal
           isOpen={isPaymentModalOpen}
           onClose={() => setIsPaymentModalOpen(false)}
-          enrollment={enrollments[0]}
-          feeAccount={enrollments[0]?.studentfeeaccounts?.[0]}
-          installment={enrollments[0]?.studentfeeaccounts?.[0]?.installments?.[0]}
+          enrollment={activePayableAccount}
+          feeAccount={activePayableAccount?.studentfeeaccounts?.[0]}
+          installment={activePayableAccount?.studentfeeaccounts?.[0]?.installments?.find(i => (i.status || '').toLowerCase() !== 'paid') || activePayableAccount?.studentfeeaccounts?.[0]?.installments?.[0]}
         />
       )}
     </div>

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { parseISO, format, isValid } from 'date-fns';
 import Card from '../../../../components/ui/Card';
 import Badge from '../../../../components/ui/Badge';
@@ -46,7 +47,8 @@ function extractEnrollmentFeeSummary(enr) {
   };
 }
 
-const EnrollmentDetails = ({ enrollments = [], allocations = [] }) => {
+const EnrollmentDetails = ({ enrollments = [], allocations = [], studentId }) => {
+  const navigate = useNavigate();
   const activeCount = enrollments.filter(e => (e.status || '').toLowerCase() === 'active').length;
 
   return (
@@ -61,6 +63,7 @@ const EnrollmentDetails = ({ enrollments = [], allocations = [] }) => {
           {enrollments?.length > 0 ? (
             enrollments.map((enr, idx) => {
               const enrId = enr.enrollment_id || enr.id || `ENR-${idx}`;
+              const currentStudentId = studentId || enr.student_id || '';
               const feeSummary = extractEnrollmentFeeSummary(enr);
               const enrAllocations = enr.allocations || allocations.filter(a => a.enrollment_id === enrId);
 
@@ -96,6 +99,17 @@ const EnrollmentDetails = ({ enrollments = [], allocations = [] }) => {
                       <Badge variant={(enr.status || '').toLowerCase() === 'active' ? 'success' : 'default'}>
                         {(enr.status || 'ACTIVE').toUpperCase()}
                       </Badge>
+                      {currentStudentId && (
+                        <button
+                          type="button"
+                          onClick={() => navigate(`/admin/students/${currentStudentId}/enrollments/${enrId}/edit`)}
+                          className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-primary hover:text-white dark:hover:bg-primary dark:hover:text-white transition-colors"
+                          title="Edit Enrollment Contract"
+                        >
+                          <span className="material-symbols-outlined text-sm">edit</span>
+                          <span>Edit</span>
+                        </button>
+                      )}
                     </div>
                   </div>
 

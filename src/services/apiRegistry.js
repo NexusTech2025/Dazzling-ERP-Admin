@@ -19,6 +19,7 @@ export const API_REGISTRY = {
     ADD_LEAD: 'student_add_lead',
     ADD: 'addstudent',
     UPDATE: 'updatestudent',
+    UPDATE_PROFILE: 'student_update_profile',
     DELETE: 'student_delete',
     DELETE_MANY: 'student_delete_many_students'
   },
@@ -35,7 +36,9 @@ export const API_REGISTRY = {
     GENERATE_FEE_PLAN: 'generatefeeplan',
     PREVIEW_FEE: 'finance_preview_fee',
     GET_ACCOUNTING_DATA: 'sheet_get_accounting_data',
-    RESCHEDULE_INSTALLMENTS: 'finance_reschedule_installments'
+    RESCHEDULE_INSTALLMENTS: 'finance_reschedule_installments',
+    UPDATE_FEE_ACCOUNT: 'finance_update_fee_account',
+    ADJUST_FEE: 'finance_adjust_fee'
   },
   ACADEMIC: {
     CREATE_COURSE_TYPE: 'academic_create_course_type',
@@ -47,7 +50,10 @@ export const API_REGISTRY = {
     DELETE_MANY_PACKAGES: 'academic_delete_many_packages',
     DELETE_MANY_COURSES: 'academic_delete_many_courses',
     DELETE_MANY_COURSE_TYPES: 'academic_delete_many_course_types',
-    ENROLL_STUDENT: 'academic_enroll_student'
+    ENROLL_STUDENT: 'academic_enroll_student',
+    UPDATE_ENROLLMENT: 'academic_update_enrollment',
+    DISCARD_ENROLLMENT: 'academic_discard_enrollment',
+    MIGRATE_ENROLLMENT: 'academic_migrate_enrollment'
   },
   DATA: {
     QUERY: 'data_query',

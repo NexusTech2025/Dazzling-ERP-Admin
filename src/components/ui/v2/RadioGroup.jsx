@@ -3,6 +3,13 @@ import React from 'react';
 /**
  * RadioGroup: A group of radio inputs with card-style or simple list styling.
  */
+const COLUMN_CLASSES = {
+  1: 'md:grid-cols-1',
+  2: 'md:grid-cols-2',
+  3: 'md:grid-cols-3',
+  4: 'md:grid-cols-4'
+};
+
 const RadioGroup = ({
   options = [],
   value,
@@ -14,6 +21,8 @@ const RadioGroup = ({
   columns = 2,
   className = ""
 }) => {
+  const gridColClass = COLUMN_CLASSES[columns] || 'md:grid-cols-2';
+
   return (
     <div className={`flex flex-col gap-3 ${className}`}>
       {label && (
@@ -23,7 +32,7 @@ const RadioGroup = ({
       )}
 
       <div className={`
-        ${layout === "grid" ? `grid grid-cols-1 md:grid-cols-${columns} gap-4` : 'flex flex-col gap-2'}
+        ${layout === "grid" ? `grid grid-cols-1 ${gridColClass} gap-3.5` : 'flex flex-col gap-2'}
       `}>
         {options.map((option) => {
           const isSelected = value === option.value;
@@ -31,7 +40,7 @@ const RadioGroup = ({
             <label
               key={option.value}
               className={`
-                relative flex items-center gap-3 p-4 border rounded-lg cursor-pointer transition-all duration-200
+                relative flex items-start gap-3 p-3.5 border rounded-xl cursor-pointer transition-all duration-200
                 ${isSelected 
                   ? 'border-primary bg-primary/5 shadow-sm ring-1 ring-primary/20' 
                   : 'border-border-light dark:border-border-dark hover:border-slate-300 dark:hover:border-slate-700 bg-surface-light dark:bg-surface-dark'}
@@ -43,20 +52,20 @@ const RadioGroup = ({
                 value={option.value}
                 checked={isSelected}
                 onChange={(e) => onChange(e.target.value)}
-                className="text-primary focus:ring-primary h-4 w-4"
+                className="text-primary focus:ring-primary h-4 w-4 mt-0.5 shrink-0"
               />
-              <div className="flex flex-col">
-                <span className={`text-sm font-bold ${isSelected ? 'text-primary' : 'text-text-main dark:text-white'}`}>
+              <div className="flex flex-col flex-1 min-w-0">
+                <span className={`text-xs sm:text-sm font-bold break-words leading-tight ${isSelected ? 'text-primary' : 'text-text-main dark:text-white'}`}>
                   {option.label}
                 </span>
                 {option.description && (
-                  <span className="text-[10px] text-text-secondary font-medium">
+                  <span className="text-[11px] text-text-secondary font-normal leading-relaxed break-words mt-1">
                     {option.description}
                   </span>
                 )}
               </div>
               {option.icon && (
-                <span className={`material-symbols-outlined ml-auto ${isSelected ? 'text-primary' : 'text-text-secondary'}`}>
+                <span className={`material-symbols-outlined shrink-0 text-lg ${isSelected ? 'text-primary' : 'text-text-secondary'}`}>
                   {option.icon}
                 </span>
               )}

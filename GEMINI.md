@@ -109,6 +109,7 @@ We connect to a live Google Apps Script (GAS) web app backend for production CRU
        - Explicitly ask: "Do you want me to commit these changes with the drafted message?"
        - **WAIT** for user confirmation.
        - If approved, write the message to `.git/temp_commit_msg.txt`, execute `git commit -F .git/temp_commit_msg.txt`, and clean up by removing the temp file (`Remove-Item` on Windows, `rm` on Unix).
+*   **Explicit Merge Commits (Non-Fast-Forward Rule)**: Always execute git merges with an explicit merge commit using the `--no-ff` flag (e.g. `git merge --no-ff <branch_or_commit> -m "<message>"`). Never perform fast-forward merges, ensuring git branch topology, origin provenance, and merge nodes are strictly preserved in the commit history.
 
 ---
 
