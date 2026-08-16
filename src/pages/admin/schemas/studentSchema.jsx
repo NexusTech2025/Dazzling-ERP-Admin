@@ -65,7 +65,7 @@ export const createStudentColumns = ({ onView, onEdit, onDelete, isDeleting } = 
         <ActionCell 
           onView={onView ? () => onView(student) : null}
           onEdit={onEdit ? () => onEdit(student) : null}
-          onDelete={onDelete ? () => onDelete(student.student_id, student.student_name) : null}
+          onDelete={onDelete ? () => onDelete(student.student_id, student.student_name, student) : null}
           isDeleting={isDeleting}
         />
       )

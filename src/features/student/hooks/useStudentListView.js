@@ -99,6 +99,7 @@ export function useStudentListView() {
     isOpen: false,
     id: null,
     name: '',
+    student: null,
     type: 'student',
     status: 'idle',
     resultMessage: null
@@ -130,18 +131,20 @@ export function useStudentListView() {
   const handlers = useMemo(() => ({
     onView: (student) => navigate(`/admin/students/${student.student_id}`),
     onEdit: (student) => navigate(`/admin/students/${student.student_id}/edit`),
-    onDelete: (id, name) => {
+    onDelete: (id, name, studentObj = null) => {
+      const targetStudent = studentObj || students.find(s => s.student_id === id) || { student_id: id, student_name: name };
       setDeleteModal({
         isOpen: true,
         id,
-        name,
+        name: name || targetStudent.student_name,
+        student: targetStudent,
         type: 'student',
         status: 'idle',
         resultMessage: null
       });
     },
     isDeleting: deleteMutation.isPending
-  }), [navigate, deleteMutation.isPending]);
+  }), [navigate, deleteMutation.isPending, students]);
 
   const handleRefresh = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: queryKeys.student.all });
@@ -208,19 +211,20 @@ export function useStudentListView() {
     });
   }, [deleteManyMutation, selectedStudentForView, selectedStudentForEdit, selectionState]);
 
-  const handleSingleDelete = useCallback((id) => {
-    deleteMutation.mutate({ id }, {
+  const handleSingleDelete = useCallback((payloadOrId) => {
+    const studentId = typeof payloadOrId === 'string' ? payloadOrId : (payloadOrId?.student_id || payloadOrId?.id);
+    deleteMutation.mutate(payloadOrId, {
       onSuccess: (response) => {
-        if (selectedStudentForView?.student_id === id) {
+        if (selectedStudentForView?.student_id === studentId) {
           setSelectedStudentForView(null);
         }
-        if (selectedStudentForEdit?.student_id === id) {
+        if (selectedStudentForEdit?.student_id === studentId) {
           setSelectedStudentForEdit(null);
         }
         setDeleteModal(prev => ({
           ...prev,
           status: 'success',
-          resultMessage: response.data?.message || response.message || 'Student record has been successfully removed.'
+          resultMessage: response.data?.message || response.message || 'Student record has been successfully processed.'
         }));
       },
       onError: (err) => {
@@ -230,7 +234,7 @@ export function useStudentListView() {
           const parsedBlockers = parseDeleteBlockers(rawErr, 'Student');
           if (parsedBlockers.length > 0) {
             setDependencyViolations(parsedBlockers);
-            setBlockedParentId(id);
+            setBlockedParentId(studentId);
             setBlockedParentName(deleteModal.name || 'Selected Profile');
             setIsDependencyModalOpen(true);
             setDeleteModal(prev => ({ ...prev, isOpen: false }));
@@ -240,21 +244,23 @@ export function useStudentListView() {
         setDeleteModal(prev => ({
           ...prev,
           status: 'error',
-          resultMessage: err.message || 'Connection error. Please check your network.'
+          resultMessage: err.response?.data?.error?.message || err.message || 'Connection error. Please check your network.'
         }));
       }
     });
   }, [deleteMutation, selectedStudentForView, selectedStudentForEdit, deleteModal.name]);
 
-  const handleConfirmDelete = useCallback(() => {
-    if (!deleteModal.id) return;
+  const handleConfirmDelete = useCallback((payload) => {
     setDeleteModal(prev => ({ ...prev, status: 'processing' }));
-    const handler = deleteModal.type === 'bulk_student' ? handleBatchDelete : handleSingleDelete;
-    handler(deleteModal.id);
+    if (deleteModal.type === 'bulk_student') {
+      handleBatchDelete(deleteModal.id);
+    } else {
+      handleSingleDelete(payload || deleteModal.id);
+    }
   }, [deleteModal.id, deleteModal.type, handleBatchDelete, handleSingleDelete]);
 
   const handleCloseDeleteModal = useCallback(() => {
-    setDeleteModal({ isOpen: false, id: null, name: '', type: 'student', status: 'idle', resultMessage: null });
+    setDeleteModal({ isOpen: false, id: null, name: '', student: null, type: 'student', status: 'idle', resultMessage: null });
   }, []);
 
   const handleSaveStudent = useCallback((payload) => {

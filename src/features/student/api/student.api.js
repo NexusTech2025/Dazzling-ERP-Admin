@@ -117,21 +117,36 @@ export const updateStudentProfile = (token, payload, options = {}) =>
   executeAction(API_REGISTRY.STUDENT.UPDATE_PROFILE, payload, token, options);
 
 /**
- * Deletes a student and cleans up related address, contact, and enrollment rows.
- * Uses a specific relational deletion controller to prevent orphan rows.
+ * Deletes a student via the unified student_delete backend endpoint.
+ * Supports soft-delete with financial settlement, untouched clean purge, or superadmin force purge.
  * 
  * @async
  * @function removeStudent
  * @param {string} token - The active user authorization session token.
- * @param {string} id - The unique student identifier to delete.
+ * @param {string|object} payloadOrId - Target student ID string or composite payload object.
+ * @param {string} payloadOrId.student_id - Target student ID ("STU-xxx").
+ * @param {string} [payloadOrId.mode="soft"] - Deletion mode: "soft" | "hard" | "untouched".
+ * @param {boolean} [payloadOrId.force=false] - Force purge switch (superadmin only).
+ * @param {string} [payloadOrId.reason] - Administrative reason for soft delete.
+ * @param {object} [payloadOrId.financial_settlement] - Financial settlement configuration.
  * @param {object} [options={}] - HTTP fetch configuration options.
- * @returns {Promise<object>} Standard response envelope verifying cascade deletion outcomes.
+ * @returns {Promise<object>} Standard response envelope with deletion manifest.
  */
-export const removeStudent = (token, id, options = {}) => {
-  const { dryRun = false, ...fetchOptions } = options;
+export const removeStudent = (token, payloadOrId, options = {}) => {
+  const { ...fetchOptions } = options;
+  const payload = typeof payloadOrId === 'string'
+    ? { student_id: payloadOrId, mode: 'soft' }
+    : {
+        student_id: payloadOrId.student_id || payloadOrId.id,
+        mode: payloadOrId.mode || 'soft',
+        force: Boolean(payloadOrId.force),
+        reason: payloadOrId.reason || undefined,
+        financial_settlement: payloadOrId.financial_settlement || undefined
+      };
+
   return executeAction(
     API_REGISTRY.STUDENT.DELETE,
-    { student_id: id, dryRun },
+    payload,
     token,
     { timeout: 'DATA_MUTATION', ...fetchOptions }
   );

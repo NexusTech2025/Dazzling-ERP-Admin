@@ -3,11 +3,12 @@ import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useStudentById } from '../../features/student/hooks/useStudentById';
 import { useStudentFeeOverviewQuery } from '../../features/finance/hooks/useFinanceQueries';
 import { useEnrollmentsQuery } from '../../features/student/hooks/useEnrollmentQueries';
-import { useUpdateStudentMutation, useUpdateStudentProfileMutation } from '../../features/student/hooks/useStudentQueries';
+import { useUpdateStudentMutation, useUpdateStudentProfileMutation, useDeleteStudentMutation } from '../../features/student/hooks/useStudentQueries';
 import useIsMobile from '../../hooks/useIsMobile';
 
 // Shared Layout UI Primitives
 import Button from '../../components/ui/v2/Button';
+import StudentDeleteModal from '../../features/student/components/StudentDeleteModal';
 import StudentUpdateProfileForm from '../../features/student/components/profile/StudentUpdateProfileForm';
 
 // Viewport Component Controllers
@@ -51,8 +52,43 @@ const StudentProfile = () => {
 
   const updateMutation = useUpdateStudentMutation();
   const updateProfileMutation = useUpdateStudentProfileMutation();
+  const deleteMutation = useDeleteStudentMutation();
   const { student, profileData, isLoading, error } = useStudentById(id);
   const { data: installments = [] } = useStudentFeeOverviewQuery(id);
+
+  const [deleteModalState, setDeleteModalState] = useState({
+    isOpen: false,
+    status: 'idle',
+    resultMessage: null
+  });
+
+  const handleDeleteConfirm = (payload) => {
+    setDeleteModalState(prev => ({ ...prev, status: 'processing' }));
+    deleteMutation.mutate(payload, {
+      onSuccess: (response) => {
+        setDeleteModalState({
+          isOpen: true,
+          status: 'success',
+          resultMessage: response.data?.message || response.message || 'Student record has been successfully processed.'
+        });
+      },
+      onError: (err) => {
+        setDeleteModalState({
+          isOpen: true,
+          status: 'error',
+          resultMessage: err.response?.data?.error?.message || err.message || 'Failed to delete student profile.'
+        });
+      }
+    });
+  };
+
+  const handleCloseDeleteModal = () => {
+    const wasSuccess = deleteModalState.status === 'success';
+    setDeleteModalState({ isOpen: false, status: 'idle', resultMessage: null });
+    if (wasSuccess) {
+      navigate('/admin/students');
+    }
+  };
 
   const handleSaveStudent = (payload) => {
     updateProfileMutation.mutate(
@@ -169,8 +205,22 @@ const StudentProfile = () => {
           activeTab={activeTab}
           onTabChange={handleTabChange}
           onOpenEdit={() => navigate(`/admin/students/${id}/edit`)}
+          onDelete={() => setDeleteModalState({ isOpen: true, status: 'idle', resultMessage: null })}
           breadcrumbItems={breadcrumbItems}
           tabRegistry={tabRegistry}
+        />
+      )}
+
+      {/* Student Delete / Withdraw Modal */}
+      {deleteModalState.isOpen && (
+        <StudentDeleteModal
+          isOpen={deleteModalState.isOpen}
+          onClose={handleCloseDeleteModal}
+          onConfirm={handleDeleteConfirm}
+          student={student}
+          status={deleteModalState.status}
+          resultMessage={deleteModalState.resultMessage}
+          isProcessing={deleteMutation.isPending}
         />
       )}
     </>

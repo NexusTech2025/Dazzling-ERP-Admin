@@ -4,6 +4,7 @@ import DataTable from '../../components/ui/DataTable';
 import { SearchInput, SelectFilter } from '../../components/ui/filters';
 import { createStudentColumns } from './schemas/studentSchema';
 import ConfirmModal from '../../components/ui/ConfirmModal';
+import StudentDeleteModal from '../../features/student/components/StudentDeleteModal';
 import RefreshButton from '../../components/ui/btn/RefreshButton';
 import StudentDetailModal from '../../features/student/components/StudentDetailModal';
 import StudentUpdateProfileForm from '../../features/student/components/profile/StudentUpdateProfileForm';
@@ -213,20 +214,28 @@ const Students = () => {
 
       {/* Shared Modals */}
       {deleteModal.isOpen && (
-        <ConfirmModal
-          isOpen={deleteModal.isOpen}
-          onClose={handleCloseDeleteModal}
-          onConfirm={handleConfirmDelete}
-          status={deleteModal.status}
-          resultMessage={deleteModal.resultMessage}
-          title={deleteModal.type === 'bulk_student' ? 'Delete Multiple Students' : 'Delete Student'}
-          message={
-            deleteModal.type === 'bulk_student'
-              ? `Are you sure you want to permanently delete ${deleteModal.name}? This will cascadingly delete associated addresses, contacts, and education records. This action cannot be undone.`
-              : `Are you sure you want to permanently delete ${deleteModal.name}? This action cannot be undone.`
-          }
-          isProcessing={deleteModal.type === 'bulk_student' ? deleteManyMutation.isPending : deleteMutation.isPending}
-        />
+        deleteModal.type === 'bulk_student' ? (
+          <ConfirmModal
+            isOpen={deleteModal.isOpen}
+            onClose={handleCloseDeleteModal}
+            onConfirm={handleConfirmDelete}
+            status={deleteModal.status}
+            resultMessage={deleteModal.resultMessage}
+            title="Delete Multiple Students"
+            message={`Are you sure you want to permanently delete ${deleteModal.name}? This will cascadingly delete associated addresses, contacts, and education records. This action cannot be undone.`}
+            isProcessing={deleteManyMutation.isPending}
+          />
+        ) : (
+          <StudentDeleteModal
+            isOpen={deleteModal.isOpen}
+            onClose={handleCloseDeleteModal}
+            onConfirm={handleConfirmDelete}
+            student={deleteModal.student}
+            status={deleteModal.status}
+            resultMessage={deleteModal.resultMessage}
+            isProcessing={deleteMutation.isPending}
+          />
+        )
       )}
 
       {selectedStudentForView && (

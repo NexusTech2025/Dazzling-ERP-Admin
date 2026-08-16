@@ -195,22 +195,30 @@ export const useUpdateStudentProfileMutation = () => {
 };
 
 /**
- * Hook for deleting a student
+ * Custom TanStack Query mutation hook to delete a student entity.
+ * Supports soft deletion with financial settlements, untouched clean purge, or superadmin force purge.
+ * 
+ * @function useDeleteStudentMutation
+ * @returns {object} React Query mutation result object.
  */
 export const useDeleteStudentMutation = () => {
   const { token } = useAuth();
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, options }) => {
-      if (!id) {
+    mutationFn: async (payloadOrId) => {
+      const studentId = typeof payloadOrId === 'string'
+        ? payloadOrId
+        : (payloadOrId?.student_id || payloadOrId?.id);
+
+      if (!studentId) {
         throw new Error('Student ID is required for deletion.');
       }
 
-      console.log('[useDeleteStudentMutation] Initiating deletion for Student ID:', id);
+      console.log('[useDeleteStudentMutation] Initiating deletion with payload:', payloadOrId);
 
       try {
-        const response = await removeStudent(token, id, options);
+        const response = await removeStudent(token, payloadOrId);
         console.log('[useDeleteStudentMutation] API Response:', response);
         return response;
       } catch (error) {
@@ -219,11 +227,23 @@ export const useDeleteStudentMutation = () => {
       }
     },
     onSuccess: (response, variables) => {
-      console.log(`[useDeleteStudentMutation] Student ${variables.id} deleted successfully.`);
+      const studentId = typeof variables === 'string'
+        ? variables
+        : (variables?.student_id || variables?.id);
+
+      console.log(`[useDeleteStudentMutation] Student ${studentId} deleted successfully:`, response);
+      
+      // Invalidate student list, single queries, enrollment list, and finance
       queryClient.invalidateQueries({ queryKey: queryKeys.student.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.enrollment.list(EMPTY_FILTER) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.finance.all });
     },
     onError: (err, variables) => {
-      console.error(`[useDeleteStudentMutation] Failure deleting student ${variables.id}:`, err);
+      const studentId = typeof variables === 'string'
+        ? variables
+        : (variables?.student_id || variables?.id);
+
+      console.error(`[useDeleteStudentMutation] Failure deleting student ${studentId}:`, err);
     }
   });
 };
