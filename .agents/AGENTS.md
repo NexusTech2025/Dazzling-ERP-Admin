@@ -34,3 +34,12 @@ This file documents the workspace rules and guidelines to be adhered to during f
 
 9. **React Design Patterns & Architecture:**
    - Refer to [react_design_pattern.md](e:/NAST/Dazzling/ERP%20System/dazzling-erp-admin/.agents/react_design_pattern.md) for established React architectural patterns including headless hook separation, compound component structures, parallel DOM retention, and viewport-router page conventions.
+
+10. **Frontend Performance, Validation & Data Optimization Standards:**
+    - **Persistent Primary-Key Validation Caching**: Never use `WeakSet` or object-reference equality to track processed or validated states of hydrated records. Because hydrators map over records and produce new object literals on every read, object-identity checks fail. Always use persistent composite string ID sets (`Set<string>` formatted as `"${entityName}:${recordId}"`).
+    - **Schema Contract Completeness**: All synthetic properties or relational entities attached during client-side hydration (e.g. `item_name`, `item_type`, `item_code`, `item`, `allocations`) must be explicitly declared in the entity's schema definition to prevent `ValidationEngine` schema violation warnings.
+    - **Zero Logging in Render Paths & Hot Loops**: Top-level hook function bodies and record iteration utilities must remain completely silent. Synchronous `console.log` or `console.debug` statements in render paths cause main-thread serialization pauses during user keystrokes. Logging is strictly restricted to mutation callbacks (`mutationFn`, `onSuccess`, `onError`) or exceptional error boundaries.
+    - **Keystroke State Isolation**: Search inputs must encapsulate immediate input state (`localValue`) at the component boundary and debounce parent notifications (default 300ms) to prevent cascading re-renders across parent pages during active typing.
+    - **Pre-Computed KPI & Search Indexing**: Heavy calculations (fee aggregates, attendance scores, string `.toLowerCase()` conversions) must execute once during dataset enrichment (`student._kpi`, `student._searchIndex`). Filter passes and mobile card renders must strictly evaluate pre-computed boolean flags and substring indexes in $O(1)$ time.
+    - **Single-Pass Dataset Enrichment**: Consolidate dataset normalization, metric enrichment, search indexing, and dropdown options extraction into a single-pass $O(N)$ traversal rather than multiple separate `useMemo` loops.
+

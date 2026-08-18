@@ -1,12 +1,11 @@
 import { useState, useMemo } from 'react';
-import { useDebounce } from 'use-debounce';
 import { normalizeStudent } from '../lib/react-query/hydrate';
-import { enrollmentRepo, getStudentAllocationsViewModel } from '../features/student/utils/enrollmentCacheHelper';
-import { studentRepo } from '../features/student/utils/studentCacheHelper';
+import { enrichStudentWithKpi } from '../features/student/utils/studentKpiHelper';
+import { batchRepo } from '../features/batch/utils/batchCacheHelper';
 
 /**
  * Custom hook managing client-side search, filtering, and interactive KPI card filtering for Student Directory in memory.
- * Hydrates raw junction records via getStudentAllocationsViewModel for exact relational matching.
+ * Pre-enriches student records with _kpi metadata once upon dataset updates for instant O(1) keystroke filtering.
  * 
  * @param {Array<Object>} initialStudents - Master student array from useStudentsQuery.
  * @param {Array<Object>} [batches=[]] - Cached batches array from useBatchesQuery.
@@ -26,110 +25,101 @@ export const useFilteredStudents = (
   const [statusFilter, setStatusFilter] = useState('All');
   const [kpiFilter, setKpiFilter] = useState('All');
 
-  const [debouncedSearchQuery] = useDebounce(searchQuery, 300);
+  // 1. Single-Pass Enrichment Pipeline: Consolidates enrichedStudents, availableBatches, and availableCourses
+  const { enrichedStudents, availableBatches, availableCourses } = useMemo(() => {
+    if (batches.length > 0 || courses.length > 0 || courseTypes.length > 0) {
+      batchRepo.prime(batches, courses, courseTypes);
+    }
 
-  // Normalize all raw records once
-  const normalizedStudents = useMemo(() => {
-    return (initialStudents || []).map(normalizeStudent).filter(Boolean);
-  }, [initialStudents]);
+    const rawList = initialStudents || [];
+    const enriched = [];
+    const batchNamesSet = new Set();
+    const courseNamesSet = new Set();
 
-  // Derived filtered dataset via in-memory evaluation with hydrated allocations
-  const filteredStudents = useMemo(() => {
-    const searchLower = debouncedSearchQuery.trim().toLowerCase();
+    for (let i = 0; i < rawList.length; i++) {
+      const raw = rawList[i];
+      if (!raw) continue;
 
-    return normalizedStudents.filter((student) => {
-      const allocations = getStudentAllocationsViewModel(student, batches, courses, courseTypes);
+      const normalized = normalizeStudent(raw);
+      if (!normalized) continue;
 
-      // 1. Multi-field Search Matching
-      const matchesSearch = !searchLower || (
-        (student.student_name && student.student_name.toLowerCase().includes(searchLower)) ||
-        (student.student_id && student.student_id.toLowerCase().includes(searchLower)) ||
-        (student.email && student.email.toLowerCase().includes(searchLower)) ||
-        (student.phone && student.phone.includes(searchLower)) ||
-        (student.father_name && student.father_name.toLowerCase().includes(searchLower)) ||
-        allocations.some(a => 
-          (a.batchName && a.batchName.toLowerCase().includes(searchLower)) ||
-          (a.courseName && a.courseName.toLowerCase().includes(searchLower))
-        )
-      );
+      const student = enrichStudentWithKpi(normalized);
+      const allocs = student._kpi?.allocations || [];
 
-      // 2. Hydrated Batch Filter
-      const matchesBatch = batchFilter === 'All' || allocations.some(a => 
-        a.batchName === batchFilter || a.batchId === batchFilter
-      );
+      // Pre-index batch and course sets for instant O(1) matching
+      const studentBatchNames = new Set();
+      const studentCourseNames = new Set();
 
-      // 3. Hydrated Course Filter
-      const matchesCourse = courseFilter === 'All' || allocations.some(a => 
-        a.courseName === courseFilter || a.courseId === courseFilter
-      );
-
-      // 4. Status Filter
-      const matchesStatus = statusFilter === 'All' || student.status === statusFilter.toLowerCase();
-
-      // 5. Interactive KPI Card Filter
-      let matchesKpi = true;
-      if (kpiFilter !== 'All') {
-        const feeRes = enrollmentRepo.extractFeeSummary(student);
-        const enrRes = enrollmentRepo.evaluateAdmissionDate(student, 30);
-        const attnRes = studentRepo.evaluateAttendance(student, 75);
-
-        switch (kpiFilter) {
-          case 'fee_due':
-            matchesKpi = feeRes.isFeeDue;
-            break;
-          case 'overdue':
-            matchesKpi = feeRes.isOverdue;
-            break;
-          case 'paid_full':
-            matchesKpi = feeRes.isPaidFull;
-            break;
-          case 'new_admissions':
-            matchesKpi = enrRes.isNewAdmission;
-            break;
-          case 'low_attendance':
-            matchesKpi = attnRes.isLowAttendance;
-            break;
-          case 'unassigned':
-            matchesKpi = allocations.length === 0;
-            break;
-          default:
-            matchesKpi = true;
+      let allocSearchTokens = '';
+      for (let j = 0; j < allocs.length; j++) {
+        const a = allocs[j];
+        if (a.batchName && a.batchName !== 'Unassigned Batch') {
+          batchNamesSet.add(a.batchName);
+          studentBatchNames.add(a.batchName);
+          if (a.batchId) studentBatchNames.add(a.batchId);
         }
+        if (a.courseName && a.courseName !== 'Unassigned Course') {
+          courseNamesSet.add(a.courseName);
+          studentCourseNames.add(a.courseName);
+          if (a.courseId) studentCourseNames.add(a.courseId);
+        }
+        allocSearchTokens += ` ${a.batchName || ''} ${a.courseName || ''}`;
       }
 
-      return matchesSearch && matchesBatch && matchesCourse && matchesStatus && matchesKpi;
-    });
-  }, [normalizedStudents, debouncedSearchQuery, batchFilter, courseFilter, statusFilter, kpiFilter, batches, courses, courseTypes]);
+      student._batchNames = studentBatchNames;
+      student._courseNames = studentCourseNames;
 
-  // Extract unique batch options from hydrated allocations
-  const availableBatches = useMemo(() => {
-    if (!normalizedStudents.length) return ['All'];
-    const batchesSet = new Set();
-    normalizedStudents.forEach(s => {
-      const allocs = getStudentAllocationsViewModel(s, batches, courses, courseTypes);
-      allocs.forEach(a => {
-        if (a.batchName && a.batchName !== 'Unassigned Batch') {
-          batchesSet.add(a.batchName);
-        }
-      });
-    });
-    return ['All', ...Array.from(batchesSet).sort()];
-  }, [normalizedStudents, batches, courses, courseTypes]);
+      // Pre-computed lowercase search index: Eliminates 7+ toLowerCase() calls per filter pass
+      student._searchIndex = `${student.student_name || ''} ${student.student_id || ''} ${student.email || ''} ${student.phone || ''} ${student.father_name || ''} ${allocSearchTokens}`.toLowerCase();
 
-  // Extract unique course options from hydrated allocations
-  const availableCourses = useMemo(() => {
-    if (!normalizedStudents.length) return ['All'];
-    const coursesSet = new Set();
-    normalizedStudents.forEach(s => {
-      const allocs = getStudentAllocationsViewModel(s, batches, courses, courseTypes);
-      allocs.forEach(a => {
-        if (a.courseName && a.courseName !== 'Unassigned Course') {
-          coursesSet.add(a.courseName);
-        }
-      });
+      enriched.push(student);
+    }
+
+    return {
+      enrichedStudents: enriched,
+      availableBatches: ['All', ...Array.from(batchNamesSet).sort()],
+      availableCourses: ['All', ...Array.from(courseNamesSet).sort()]
+    };
+  }, [initialStudents, batches, courses, courseTypes]);
+
+  // 2. High-Speed Filter Pipeline with Short-Circuiting Order
+  const filteredStudents = useMemo(() => {
+    const searchLower = searchQuery.trim().toLowerCase();
+
+    return enrichedStudents.filter((student) => {
+      // 1. Status Filter (Fastest string equality check)
+      if (statusFilter !== 'All' && student.status !== statusFilter.toLowerCase()) {
+        return false;
+      }
+
+      // 2. Interactive KPI Card Filter (Instant O(1) boolean property lookup)
+      if (kpiFilter !== 'All' && student._kpi) {
+        if (kpiFilter === 'fee_due' && !student._kpi.isFeeDue) return false;
+        if (kpiFilter === 'overdue' && !student._kpi.isOverdue) return false;
+        if (kpiFilter === 'paid_full' && !student._kpi.isPaidFull) return false;
+        if (kpiFilter === 'new_admissions' && !student._kpi.isNewAdmission) return false;
+        if (kpiFilter === 'low_attendance' && !student._kpi.isLowAttendance) return false;
+        if (kpiFilter === 'unassigned' && !student._kpi.isUnassigned) return false;
+      }
+
+      // 3. Batch Filter (Instant O(1) Set lookup)
+      if (batchFilter !== 'All' && !student._batchNames?.has(batchFilter)) {
+        return false;
+      }
+
+      // 4. Course Filter (Instant O(1) Set lookup)
+      if (courseFilter !== 'All' && !student._courseNames?.has(courseFilter)) {
+        return false;
+      }
+
+      // 5. Multi-Field Search Matching (Single O(1) substring check on pre-indexed string)
+      if (searchLower && !student._searchIndex?.includes(searchLower)) {
+        return false;
+      }
+
+      return true;
     });
-    return ['All', ...Array.from(coursesSet).sort()];
-  }, [normalizedStudents, batches, courses, courseTypes]);
+  }, [enrichedStudents, searchQuery, batchFilter, courseFilter, statusFilter, kpiFilter]);
 
   // Helper toggle function for KPI card clicks
   const toggleKpiFilter = (targetKey) => {

@@ -17,16 +17,25 @@ export class BatchRepo {
     this.courseMap = new Map();
     this.courseTypeMap = new Map();
     this.allocationMap = new Map();
+
+    /** @type {boolean} State flag indicating whether the singleton has been primed */
+    this._isPrimed = false;
+
+    /** @type {Array<Object>|null} Cached array reference pointers for identity-based short-circuiting */
+    this._lastBatchesRef = null;
+    this._lastCoursesRef = null;
+    this._lastCourseTypesRef = null;
   }
 
   /**
    * Prime in-memory lookup maps from React Query cache datasets or passed arrays.
+   * Employs a reference-identity guard to prevent redundant Map rebuilding if identical array references are passed.
    * 
    * @param {import('@tanstack/react-query').QueryClient|Array<Object>} queryClientOrBatches
-   * @param {Array<Object>} [coursesList]
-   * @param {Array<Object>} [courseTypesList]
+   * @param {Array<Object>} [coursesList=[]]
+   * @param {Array<Object>} [courseTypesList=[]]
    */
-  prime(queryClientOrBatches, coursesList, courseTypesList) {
+  prime(queryClientOrBatches, coursesList = [], courseTypesList = []) {
     if (queryClientOrBatches && typeof queryClientOrBatches.getQueryData === 'function') {
       const batches = getCachedList(queryClientOrBatches, 'batch', EMPTY_FILTER) || [];
       const courses = getCachedList(queryClientOrBatches, 'course', EMPTY_FILTER) || [];
@@ -37,7 +46,23 @@ export class BatchRepo {
       this.courseMap = new Map(courses.map(c => [c.course_id || c.id, c]));
       this.courseTypeMap = new Map(courseTypes.map(ct => [ct.segment_id || ct.id, ct]));
       this.allocationMap = new Map(allocations.map(a => [a.allocation_id || a.id, a]));
-    } else if (Array.isArray(queryClientOrBatches)) {
+      this._isPrimed = true;
+      return;
+    }
+
+    if (Array.isArray(queryClientOrBatches)) {
+      if (
+        this._lastBatchesRef === queryClientOrBatches &&
+        this._lastCoursesRef === coursesList &&
+        this._lastCourseTypesRef === courseTypesList
+      ) {
+        return; // Short-circuit: already primed with identical memory references
+      }
+
+      this._lastBatchesRef = queryClientOrBatches;
+      this._lastCoursesRef = coursesList;
+      this._lastCourseTypesRef = courseTypesList;
+
       this.batchMap = new Map(queryClientOrBatches.map(b => [b.batch_id || b.id, b]));
       if (Array.isArray(coursesList)) {
         this.courseMap = new Map(coursesList.map(c => [c.course_id || c.id, c]));
@@ -45,6 +70,7 @@ export class BatchRepo {
       if (Array.isArray(courseTypesList)) {
         this.courseTypeMap = new Map(courseTypesList.map(ct => [ct.segment_id || ct.id, ct]));
       }
+      this._isPrimed = true;
     }
   }
 
@@ -105,6 +131,8 @@ export class BatchRepo {
 
   /**
    * Extracts and joins all allocations for a given student.
+   * Executes purely in-memory lookups (O(1)) against the primed singleton maps.
+   * Never triggers Map reconstruction or array iterations.
    * 
    * @param {Object} student - Hydrated student record.
    * @param {Array<Object>} [batches=[]] - Optional fallback batch array.
@@ -113,27 +141,19 @@ export class BatchRepo {
    * @returns {Array<Object>} Hydrated allocation view models.
    */
   getStudentAllocations(student, batches = [], courses = [], courseTypes = []) {
-    if (!student) return [];
+    if (!student || typeof student !== 'object') return [];
 
     const rawAllocs = student.allocations || student.BatchAllocation || [];
     if (!Array.isArray(rawAllocs) || rawAllocs.length === 0) return [];
 
-    if (batches.length > 0 || courses.length > 0 || courseTypes.length > 0) {
+    // Defensive fallback: If singleton has never been primed, prime once using provided fallback arrays
+    if (!this._isPrimed && (batches.length > 0 || courses.length > 0 || courseTypes.length > 0)) {
       this.prime(batches, courses, courseTypes);
     }
 
     return rawAllocs.map(alloc => this.resolveAllocation(alloc));
   }
 
-  /**
-   * Evaluates student batch allocations and determines assignment state.
-   * 
-   * @param {Object} student - Student entity record.
-   * @param {Array<Object>} [batches=[]] - Optional fallback batch array.
-   * @param {Array<Object>} [courses=[]] - Optional fallback course array.
-   * @param {Array<Object>} [courseTypes=[]] - Optional fallback courseTypes array.
-   * @returns {{ isUnassigned: boolean, allocations: Array<Object> }}
-   */
   /**
    * Evaluates student batch allocations and determines assignment state.
    * 

@@ -102,7 +102,6 @@ export class StudentRepo {
         : (Array.isArray(student.StudentAttendance) ? student.StudentAttendance : []);
 
       if (records.length === 0) {
-        console.debug(`[StudentRepo:getAttendanceFromStudent] No nested attendance records found for student ${studentId}`);
         return 0;
       }
 
@@ -138,7 +137,6 @@ export class StudentRepo {
         processedCount++;
       });
 
-      console.log(`[StudentRepo:getAttendanceFromStudent] Successfully indexed ${processedCount} attendance records for student ${studentId}`);
       return processedCount;
     } catch (error) {
       console.error('[StudentRepo:getAttendanceFromStudent] Error processing student attendance records:', {
@@ -298,8 +296,6 @@ export class StudentRepo {
 
       const totalSessions = allStudentRecords.length;
       const overallPercentage = totalSessions > 0 ? Math.round((totalPresent / totalSessions) * 100) : null;
-
-      console.debug(`[StudentRepo:calculateSummarizedAttendanceScore] Calculated score for ${studentId}: ${overallPercentage}% (${totalPresent}/${totalSessions})`);
 
       return {
         totalSessions,

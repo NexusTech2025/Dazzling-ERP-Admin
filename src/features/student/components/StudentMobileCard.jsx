@@ -6,7 +6,6 @@ import { enrollmentRepo, getStudentAllocationsViewModel, getCourseTypeSummary } 
 import { studentRepo } from '../utils/studentCacheHelper';
 import { useBatchesQuery } from '../../batch/hooks/useBatchQueries';
 import { useCoursesQuery, useCourseTypesQuery } from '../../course/hooks/useCourseQueries';
-import { useEnrollmentsQuery } from '../hooks/useEnrollmentQueries';
 
 /**
  * Safely formats numbers into localized Indian Rupee currency strings (e.g. ₹24,000) or a fallback.
@@ -122,11 +121,11 @@ const StudentMobileCardItem = ({
       .toUpperCase();
   }, [student.student_name, student.name]);
 
-  const allocations = useMemo(() => getStudentAllocationsViewModel(student, batches, courses, courseTypes), [student, batches, courses, courseTypes]);
+  const allocations = useMemo(() => student._kpi?.allocations || getStudentAllocationsViewModel(student, batches, courses, courseTypes), [student, batches, courses, courseTypes]);
   const courseTypeSummary = useMemo(() => getCourseTypeSummary(allocations), [allocations]);
-  const attendanceScore = useMemo(() => studentRepo.calculateSummarizedAttendanceScore(student), [student]);
+  const attendanceScore = useMemo(() => student._kpi?.attendanceScore || studentRepo.calculateSummarizedAttendanceScore(student), [student]);
 
-  const feeSummary = useMemo(() => extractStudentFeeSummary(student), [student, enrollmentsList]);
+  const feeSummary = useMemo(() => student._kpi?.feeSummary || extractStudentFeeSummary(student), [student, enrollmentsList]);
   const dueSummary = useMemo(() => formatDueSummary(feeSummary.balanceDue, feeSummary.nextDueDate), [feeSummary]);
 
   // Memoize Avatar Section JSX

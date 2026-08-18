@@ -10,7 +10,6 @@ import {
 } from './useStudentQueries';
 import { useBatchesQuery } from '../../batch/hooks/useBatchQueries';
 import { useCoursesQuery, useCourseTypesQuery } from '../../course/hooks/useCourseQueries';
-import { useEnrollmentsQuery } from './useEnrollmentQueries';
 import { useFilteredStudents } from '../../../hooks/useFilteredStudents';
 import useSelection from '../../../hooks/useSelection';
 import useDeleteManyMutation from '../../../hooks/useDeleteManyMutation';
@@ -52,7 +51,6 @@ export function useStudentListView() {
   const { data: batches = [] } = useBatchesQuery();
   const { data: courses = [] } = useCoursesQuery();
   const { data: courseTypes = [] } = useCourseTypesQuery();
-  const { data: enrollments = [] } = useEnrollmentsQuery();
 
   useEffect(() => {
     batchRepo.prime(batches, courses, courseTypes);
@@ -295,7 +293,6 @@ export function useStudentListView() {
       batches,
       courses,
       courseTypes,
-      enrollments,
       kpiMetrics
     },
     status: {
