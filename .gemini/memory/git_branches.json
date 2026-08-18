@@ -1,6 +1,6 @@
 {
-  "active_branch": "main",
-  "updated_at": "2026-08-18T08:31:45.729Z",
+  "active_branch": "bugfix/student-missing-kpis",
+  "updated_at": "2026-08-18T09:16:06.462Z",
   "branches": {
     "integration/student-enrollment": {
       "branch_name": "integration/student-enrollment",
@@ -226,14 +226,14 @@
       "branch_name": "bugfix/student-missing-kpis",
       "parent_branch": "main",
       "purpose": "Feature/bugfix work on bugfix/student-missing-kpis",
-      "status": "merged",
-      "working_tree_clean": true,
-      "uncommitted_changes_count": 1,
+      "status": "in_progress",
+      "working_tree_clean": false,
+      "uncommitted_changes_count": 10,
       "commits_count_ahead": 0,
       "created_at": "2026-08-18T08:25:12.268Z",
-      "last_activity_at": "2026-08-18T08:25:12.343Z",
+      "last_activity_at": "2026-08-18T09:16:06.550Z",
       "commits_summary": [],
-      "recommendation": "🔵 Merged Upstream: This branch has been merged upstream into main. Safe to delete locally using 'git branch -d bugfix/student-missing-kpis'."
+      "recommendation": "🟡 Active Work in Progress: You have 10 uncommitted file(s). Commit or stash your changes before merging or switching branches."
     }
   }
 }

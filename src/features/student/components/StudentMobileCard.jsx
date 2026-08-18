@@ -38,7 +38,7 @@ function extractStudentFeeSummary(student) {
     paidAmount: summary.paidAmount,
     balanceDue: summary.balanceDue,
     nextDueDate: summary.nextDueDate,
-    nextDueAmount: null,
+    nextDueAmount: summary.nextDueAmount,
     admissionDate
   };
 }

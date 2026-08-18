@@ -5,8 +5,8 @@
  * and full multi-step relational registration transactions.
  */
 
-import { executeAction } from '../../../services/apiClient';
-import { API_REGISTRY } from '../../../services/apiRegistry';
+import { executeAction } from '../../../services/apiClient.js';
+import { API_REGISTRY } from '../../../services/apiRegistry.js';
 
 /**
  * Fetches all student records matching optional filters (e.g. status, target student_id).
