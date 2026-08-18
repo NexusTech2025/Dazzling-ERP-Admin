@@ -13,6 +13,7 @@ export default function DesktopStudentProfile({
   activeTab,
   onTabChange,
   onOpenEdit,
+  onDelete,
   breadcrumbItems,
   tabRegistry
 }) {
@@ -27,6 +28,7 @@ export default function DesktopStudentProfile({
         activeTab={activeTab}
         onTabChange={onTabChange}
         onEdit={onOpenEdit}
+        onDelete={onDelete}
       />
 
       <div className="min-h-[400px]">

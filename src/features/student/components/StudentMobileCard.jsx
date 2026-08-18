@@ -320,7 +320,7 @@ const StudentMobileCardItem = ({
         <button
           onClick={(e) => {
             e.stopPropagation();
-            handlers.onDelete(student.student_id, student.student_name);
+            handlers.onDelete(student.student_id, student.student_name, student);
           }}
           className="px-2.5 py-1 bg-red-500/10 hover:bg-red-500/20 text-red-500 text-[10px] font-bold rounded transition-colors flex items-center gap-1"
         >

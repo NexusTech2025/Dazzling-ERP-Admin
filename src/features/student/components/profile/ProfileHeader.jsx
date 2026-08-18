@@ -1,8 +1,21 @@
 import React from 'react';
+import { format, parseISO, isValid } from 'date-fns';
 import Badge from '../../../../components/ui/Badge';
 
-const ProfileHeader = ({ student, activeTab, onTabChange, onEdit }) => {
+const ProfileHeader = ({ student, activeTab, onTabChange, onEdit, onDelete }) => {
   const tabs = ['Overview', 'Attendance', 'Fees', 'Performance', 'Documents'];
+
+  const formattedAdmissionDate = (() => {
+    if (!student?.admission_date) return 'N/A';
+    try {
+      const parsed = typeof student.admission_date === 'string'
+        ? parseISO(student.admission_date)
+        : new Date(student.admission_date);
+      return isValid(parsed) ? format(parsed, 'MMM d, yyyy') : 'N/A';
+    } catch {
+      return 'N/A';
+    }
+  })();
 
   return (
     <div className="bg-surface-light dark:bg-surface-dark rounded-xl border border-border-light dark:border-border-dark overflow-hidden shadow-sm">
@@ -35,11 +48,11 @@ const ProfileHeader = ({ student, activeTab, onTabChange, onEdit }) => {
                   {student.status?.toUpperCase()}
                 </Badge>
               </div>
-              <p className="text-text-secondary font-medium mt-1">Enrollment Date: {new Date(student.admission_date).toLocaleDateString()}</p>
+              <p className="text-text-secondary font-medium mt-1">Enrollment Date: {formattedAdmissionDate}</p>
             </div>
           </div>
           
-          <div className="flex gap-3 flex-wrap">
+          <div className="flex gap-3 flex-wrap items-center">
             <button 
               onClick={onEdit}
               className="flex items-center justify-center gap-2 rounded-lg h-10 px-4 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-text-main dark:text-white text-sm font-bold transition-colors flex-1 md:flex-auto border border-border-light dark:border-border-dark"
@@ -51,6 +64,17 @@ const ProfileHeader = ({ student, activeTab, onTabChange, onEdit }) => {
               <span className="material-symbols-outlined text-[20px]">mail</span>
               <span>Message</span>
             </button>
+            {onDelete && (
+              <button 
+                type="button"
+                onClick={onDelete}
+                className="flex items-center justify-center gap-1.5 rounded-lg h-10 px-3.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 text-sm font-bold transition-colors border border-rose-500/20"
+                title="Delete or Withdraw Student"
+              >
+                <span className="material-symbols-outlined text-[20px]">person_remove</span>
+                <span>Delete</span>
+              </button>
+            )}
           </div>
         </div>
       </div>
