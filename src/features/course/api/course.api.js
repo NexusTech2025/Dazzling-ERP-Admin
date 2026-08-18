@@ -6,8 +6,8 @@
  * Implements JSDoc type safety and maps actions through standard apiRegistry namespaces.
  */
 
-import { executeAction } from '../../../services/apiClient';
-import { API_REGISTRY } from '../../../services/apiRegistry';
+import { executeAction } from '../../../services/apiClient.js';
+import { API_REGISTRY } from '../../../services/apiRegistry.js';
 
 // ==========================================
 // --- COURSE TYPES (SEGMENTS) SERVICE LAYER ---

@@ -4,9 +4,9 @@
  * Composes domain repository calls to enrollmentRepo, studentRepo, and batchRepo.
  */
 
-import { enrollmentRepo } from './enrollmentCacheHelper';
-import { studentRepo } from './studentCacheHelper';
-import { batchRepo } from '../../batch/utils/batchCacheHelper';
+import { enrollmentRepo } from './enrollmentCacheHelper.js';
+import { studentRepo } from './studentCacheHelper.js';
+import { batchRepo } from '../../batch/utils/batchCacheHelper.js';
 
 /**
  * Evaluates and attaches all pre-computed KPI summary flags to a single student record.

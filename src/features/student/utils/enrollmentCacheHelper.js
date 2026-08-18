@@ -5,7 +5,7 @@
  * background query invalidation.
  */
 
-import { queryKeys, EMPTY_FILTER } from '../../../lib/react-query/queryKeys';
+import { queryKeys, EMPTY_FILTER } from '../../../lib/react-query/queryKeys.js';
 
 /**
  * Enterprise Repository for Hydrated Enrollment Cache wrangling and O(1) Hashmap lookups.
@@ -205,11 +205,11 @@ export class EnrollmentRepo {
    * Safely extracts fee accounting metrics for a student by querying embedded fee accounts or enrollmentRepo O(1) cache.
    * 
    * @param {Object} student - Student entity record.
-   * @returns {{ totalFees: number|null, paidAmount: number|null, balanceDue: number, nextDueDate: string|null, isOverdue: boolean, isPaidFull: boolean, isFeeDue: boolean }}
+   * @returns {{ totalFees: number|null, paidAmount: number|null, balanceDue: number, nextDueDate: string|null, nextDueAmount: number|null, isOverdue: boolean, isPaidFull: boolean, isFeeDue: boolean }}
    */
   extractFeeSummary(student) {
     if (!student || typeof student !== 'object') {
-      return { totalFees: null, paidAmount: null, balanceDue: 0, nextDueDate: null, isOverdue: false, isPaidFull: false, isFeeDue: false };
+      return { totalFees: null, paidAmount: null, balanceDue: 0, nextDueDate: null, nextDueAmount: null, isOverdue: false, isPaidFull: false, isFeeDue: false };
     }
 
     try {
@@ -243,8 +243,22 @@ export class EnrollmentRepo {
         feeAcc = feeAccounts[0] || enr?.feeAccount || enr?.student_fee_account || null;
       }
 
-      const totalFees = feeAcc?.total_amount != null ? Number(feeAcc.total_amount) : (feeAcc?.agreed_amount != null ? Number(feeAcc.agreed_amount) : null);
-      const paidAmount = feeAcc?.paid_amount != null ? Number(feeAcc.paid_amount) : null;
+      // Canonical schema resolution: final_fee -> total_fee -> total_amount -> agreed_amount
+      const totalFees = feeAcc?.final_fee != null
+        ? Number(feeAcc.final_fee)
+        : (feeAcc?.total_fee != null
+          ? Number(feeAcc.total_fee)
+          : (feeAcc?.total_amount != null
+            ? Number(feeAcc.total_amount)
+            : (feeAcc?.agreed_amount != null ? Number(feeAcc.agreed_amount) : null)));
+
+      // Canonical schema resolution: amount_paid -> paid_amount -> total_paid
+      const paidAmount = feeAcc?.amount_paid != null
+        ? Number(feeAcc.amount_paid)
+        : (feeAcc?.paid_amount != null
+          ? Number(feeAcc.paid_amount)
+          : (feeAcc?.total_paid != null ? Number(feeAcc.total_paid) : null));
+
       const balanceDue = feeAcc?.balance_due != null
         ? Number(feeAcc.balance_due)
         : (feeAcc?.balance_amount != null
@@ -252,13 +266,15 @@ export class EnrollmentRepo {
           : (totalFees != null && paidAmount != null ? Math.max(0, totalFees - paidAmount) : 0));
 
       let nextDueDate = feeAcc?.next_due_date || null;
+      let nextDueAmount = null;
 
       if (Array.isArray(feeAcc?.installments) && feeAcc.installments.length > 0) {
         const pending = feeAcc.installments
-          .filter(i => i.status === 'pending' || i.status === 'partially_paid')
+          .filter(i => (i.status || '').toLowerCase() === 'pending' || (i.status || '').toLowerCase() === 'partially_paid')
           .sort((a, b) => new Date(a.due_date) - new Date(b.due_date));
         if (pending.length > 0) {
           nextDueDate = pending[0].due_date || nextDueDate;
+          nextDueAmount = pending[0].due_amount != null ? Number(pending[0].due_amount) : null;
         }
       }
 
@@ -266,10 +282,10 @@ export class EnrollmentRepo {
       const isOverdue = !!(nextDueDate && new Date(nextDueDate) < new Date() && isFeeDue);
       const isPaidFull = balanceDue === 0 && enrollments.length > 0;
 
-      return { totalFees, paidAmount, balanceDue, nextDueDate, isOverdue, isPaidFull, isFeeDue };
+      return { totalFees, paidAmount, balanceDue, nextDueDate, nextDueAmount, isOverdue, isPaidFull, isFeeDue };
     } catch (err) {
       console.warn('[EnrollmentRepo:extractFeeSummary] Error:', err);
-      return { totalFees: null, paidAmount: null, balanceDue: 0, nextDueDate: null, isOverdue: false, isPaidFull: false, isFeeDue: false };
+      return { totalFees: null, paidAmount: null, balanceDue: 0, nextDueDate: null, nextDueAmount: null, isOverdue: false, isPaidFull: false, isFeeDue: false };
     }
   }
 
@@ -392,7 +408,7 @@ export class EnrollmentRepo {
   }
 }
 
-import { batchRepo } from '../../batch/utils/batchCacheHelper';
+import { batchRepo } from '../../batch/utils/batchCacheHelper.js';
 
 /**
  * Resolves and normalizes an enrollment's linked academic item (Course or Package) 

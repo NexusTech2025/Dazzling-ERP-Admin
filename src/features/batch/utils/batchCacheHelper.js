@@ -4,9 +4,9 @@
  * @description Centralized domain repository joining BatchAllocation junction records with Batch, Course, CourseType, and Student entities.
  */
 
-import { queryKeys, EMPTY_FILTER } from '../../../lib/react-query/queryKeys';
-import { getCachedList } from '../../../lib/react-query/cacheHelper';
-import { formatStructuredToTime, toLocalCalendarDate } from '../../../lib/dateUtils';
+import { queryKeys, EMPTY_FILTER } from '../../../lib/react-query/queryKeys.js';
+import { getCachedList } from '../../../lib/react-query/cacheHelper.js';
+import { formatStructuredToTime, toLocalCalendarDate } from '../../../lib/dateUtils.js';
 
 /**
  * Domain Repository for Academic Batches, Allocations, and Course mapping.
