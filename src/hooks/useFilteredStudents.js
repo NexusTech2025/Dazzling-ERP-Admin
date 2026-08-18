@@ -1,12 +1,12 @@
 import { useState, useMemo } from 'react';
 import { useDebounce } from 'use-debounce';
 import { normalizeStudent } from '../lib/react-query/hydrate';
-import { enrollmentRepo, getStudentAllocationsViewModel } from '../features/student/utils/enrollmentCacheHelper';
-import { studentRepo } from '../features/student/utils/studentCacheHelper';
+import { enrichStudentWithKpi } from '../features/student/utils/studentKpiHelper';
+import { batchRepo } from '../features/batch/utils/batchCacheHelper';
 
 /**
  * Custom hook managing client-side search, filtering, and interactive KPI card filtering for Student Directory in memory.
- * Hydrates raw junction records via getStudentAllocationsViewModel for exact relational matching.
+ * Pre-enriches student records with _kpi metadata once upon dataset updates for instant O(1) keystroke filtering.
  * 
  * @param {Array<Object>} initialStudents - Master student array from useStudentsQuery.
  * @param {Array<Object>} [batches=[]] - Cached batches array from useBatchesQuery.
@@ -28,17 +28,23 @@ export const useFilteredStudents = (
 
   const [debouncedSearchQuery] = useDebounce(searchQuery, 300);
 
-  // Normalize all raw records once
-  const normalizedStudents = useMemo(() => {
-    return (initialStudents || []).map(normalizeStudent).filter(Boolean);
-  }, [initialStudents]);
+  // Normalize and enrich all raw records once with pre-computed KPI and allocation metadata
+  const enrichedStudents = useMemo(() => {
+    if (batches.length > 0 || courses.length > 0 || courseTypes.length > 0) {
+      batchRepo.prime(batches, courses, courseTypes);
+    }
+    return (initialStudents || [])
+      .map(normalizeStudent)
+      .filter(Boolean)
+      .map(enrichStudentWithKpi);
+  }, [initialStudents, batches, courses, courseTypes]);
 
-  // Derived filtered dataset via in-memory evaluation with hydrated allocations
+  // Derived filtered dataset via in-memory evaluation with pre-computed allocations and KPI flags
   const filteredStudents = useMemo(() => {
     const searchLower = debouncedSearchQuery.trim().toLowerCase();
 
-    return normalizedStudents.filter((student) => {
-      const allocations = getStudentAllocationsViewModel(student, batches, courses, courseTypes);
+    return enrichedStudents.filter((student) => {
+      const allocations = student._kpi?.allocations || [];
 
       // 1. Multi-field Search Matching
       const matchesSearch = !searchLower || (
@@ -66,47 +72,27 @@ export const useFilteredStudents = (
       // 4. Status Filter
       const matchesStatus = statusFilter === 'All' || student.status === statusFilter.toLowerCase();
 
-      // 5. Interactive KPI Card Filter
-      let matchesKpi = true;
-      if (kpiFilter !== 'All') {
-        const feeRes = enrollmentRepo.extractFeeSummary(student);
-        const enrRes = enrollmentRepo.evaluateAdmissionDate(student, 30);
-        const attnRes = studentRepo.evaluateAttendance(student, 75);
-
-        switch (kpiFilter) {
-          case 'fee_due':
-            matchesKpi = feeRes.isFeeDue;
-            break;
-          case 'overdue':
-            matchesKpi = feeRes.isOverdue;
-            break;
-          case 'paid_full':
-            matchesKpi = feeRes.isPaidFull;
-            break;
-          case 'new_admissions':
-            matchesKpi = enrRes.isNewAdmission;
-            break;
-          case 'low_attendance':
-            matchesKpi = attnRes.isLowAttendance;
-            break;
-          case 'unassigned':
-            matchesKpi = allocations.length === 0;
-            break;
-          default:
-            matchesKpi = true;
-        }
-      }
+      // 5. Interactive KPI Card Filter - Instant O(1) property lookup
+      const matchesKpi = 
+        kpiFilter === 'All' ? true :
+        !student._kpi ? true :
+        kpiFilter === 'fee_due' ? student._kpi.isFeeDue :
+        kpiFilter === 'overdue' ? student._kpi.isOverdue :
+        kpiFilter === 'paid_full' ? student._kpi.isPaidFull :
+        kpiFilter === 'new_admissions' ? student._kpi.isNewAdmission :
+        kpiFilter === 'low_attendance' ? student._kpi.isLowAttendance :
+        kpiFilter === 'unassigned' ? student._kpi.isUnassigned : true;
 
       return matchesSearch && matchesBatch && matchesCourse && matchesStatus && matchesKpi;
     });
-  }, [normalizedStudents, debouncedSearchQuery, batchFilter, courseFilter, statusFilter, kpiFilter, batches, courses, courseTypes]);
+  }, [enrichedStudents, debouncedSearchQuery, batchFilter, courseFilter, statusFilter, kpiFilter]);
 
-  // Extract unique batch options from hydrated allocations
+  // Extract unique batch options from pre-computed allocations
   const availableBatches = useMemo(() => {
-    if (!normalizedStudents.length) return ['All'];
+    if (!enrichedStudents.length) return ['All'];
     const batchesSet = new Set();
-    normalizedStudents.forEach(s => {
-      const allocs = getStudentAllocationsViewModel(s, batches, courses, courseTypes);
+    enrichedStudents.forEach(s => {
+      const allocs = s._kpi?.allocations || [];
       allocs.forEach(a => {
         if (a.batchName && a.batchName !== 'Unassigned Batch') {
           batchesSet.add(a.batchName);
@@ -114,14 +100,14 @@ export const useFilteredStudents = (
       });
     });
     return ['All', ...Array.from(batchesSet).sort()];
-  }, [normalizedStudents, batches, courses, courseTypes]);
+  }, [enrichedStudents]);
 
-  // Extract unique course options from hydrated allocations
+  // Extract unique course options from pre-computed allocations
   const availableCourses = useMemo(() => {
-    if (!normalizedStudents.length) return ['All'];
+    if (!enrichedStudents.length) return ['All'];
     const coursesSet = new Set();
-    normalizedStudents.forEach(s => {
-      const allocs = getStudentAllocationsViewModel(s, batches, courses, courseTypes);
+    enrichedStudents.forEach(s => {
+      const allocs = s._kpi?.allocations || [];
       allocs.forEach(a => {
         if (a.courseName && a.courseName !== 'Unassigned Course') {
           coursesSet.add(a.courseName);
@@ -129,7 +115,7 @@ export const useFilteredStudents = (
       });
     });
     return ['All', ...Array.from(coursesSet).sort()];
-  }, [normalizedStudents, batches, courses, courseTypes]);
+  }, [enrichedStudents]);
 
   // Helper toggle function for KPI card clicks
   const toggleKpiFilter = (targetKey) => {
