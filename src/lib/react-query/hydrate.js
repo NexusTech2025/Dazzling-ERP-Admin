@@ -512,10 +512,36 @@ export function normalizeRecord(entityName, data) {
   return Array.isArray(data) ? data.map(normalizer) : normalizer(data);
 }
 
-const validatedRecords = new WeakSet();
+/**
+ * Global cache of validated entity primary keys.
+ * Uses persistent composite string keys ("entityName:recordId") instead of object references.
+ * Guarantees that freshly instantiated shallow objects from selector hydrators are not redundantly re-validated.
+ * 
+ * @type {Set<string>}
+ */
+const validatedEntityKeys = new Set();
+
+/**
+ * Extracts unique entity primary key string from a record object across known domain entities.
+ * 
+ * @param {string} entityName - Registered entity domain name.
+ * @param {Object} record - Target record object.
+ * @returns {string|null} Composite key (e.g. "enrollment:ENR-00123") or null if unidentifiable.
+ */
+function getRecordValidationKey(entityName, record) {
+  if (!record || typeof record !== 'object') return null;
+  const id = record[`${entityName}_id`] || record.id || record.student_id || record.batch_id || record.course_id || record.package_id;
+  return id ? `${entityName.toLowerCase()}:${id}` : null;
+}
 
 /**
  * Global router for record relational hydration (reads).
+ * Stitches relational dependencies and validates schema compliance exactly once per record ID.
+ * 
+ * @param {string} entityName - Registered entity domain name.
+ * @param {Object|Array<Object>} data - Raw or partially normalized record data.
+ * @param {import('@tanstack/react-query').QueryClient} queryClient - TanStack Query client.
+ * @returns {Object|Array<Object>} Relational stitched record(s).
  */
 export function hydrateRecord(entityName, data, queryClient) {
   const hydrator = HYDRATORS[entityName?.toLowerCase()];
@@ -525,14 +551,20 @@ export function hydrateRecord(entityName, data, queryClient) {
     ? data.map(record => hydrator(record, queryClient))
     : hydrator(data, queryClient);
 
-  // Validate the fully hydrated record(s) to guarantee schema compliance at read-time select
+  // Validate record(s) exactly once per entity primary key
   if (hydrated) {
     const recordsToValidate = Array.isArray(hydrated) ? hydrated : [hydrated];
-    for (const record of recordsToValidate) {
-      if (record && typeof record === 'object' && !validatedRecords.has(record)) {
-        validateRecordSchema(entityName, record, { failMode: 'lazy', context: 'read' });
-        validatedRecords.add(record);
+    for (let i = 0; i < recordsToValidate.length; i++) {
+      const record = recordsToValidate[i];
+      if (!record || typeof record !== 'object') continue;
+
+      const key = getRecordValidationKey(entityName, record);
+      if (key) {
+        if (validatedEntityKeys.has(key)) continue; // Short-circuit: already validated in this session
+        validatedEntityKeys.add(key);
       }
+
+      validateRecordSchema(entityName, record, { failMode: 'lazy', context: 'read', suppressAlert: true });
     }
   }
 

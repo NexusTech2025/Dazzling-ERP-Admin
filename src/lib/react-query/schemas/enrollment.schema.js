@@ -60,6 +60,28 @@ export const enrollmentSchema = {
       description: 'Parsed JSON metadata object including course fees.'
     },
 
+    // Synthetic Relational Read Fields (Attached via hydrateEnrollment)
+    item_name: {
+      type: 'string',
+      required: false,
+      description: 'Resolved display name of enrolled course or package.'
+    },
+    item_type: {
+      type: 'string',
+      required: false,
+      description: 'Resolved course type segment or entity descriptor.'
+    },
+    item_code: {
+      type: 'string',
+      required: false,
+      description: 'Short code or identifier of the enrolled item.'
+    },
+    item: {
+      type: 'object',
+      required: false,
+      description: 'Direct object reference to resolved course or package entity.'
+    },
+
     // Relations
     student: {
       type: 'object',
@@ -70,6 +92,11 @@ export const enrollmentSchema = {
       type: 'array',
       required: false,
       description: 'Associated Student Fee Accounts array.'
+    },
+    allocations: {
+      type: 'array',
+      required: false,
+      description: 'Linked batch allocations array.'
     }
   }
 };

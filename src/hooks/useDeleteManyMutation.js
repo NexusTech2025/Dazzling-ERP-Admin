@@ -10,13 +10,6 @@ import { API_REGISTRY } from '../services/apiRegistry';
  * @param {Array<string[]>} invalidationKeys - The react-query cache keys to invalidate on successful delete
  */
 export const useDeleteManyMutation = (tableName, invalidationKeys = [], actionPath = API_REGISTRY.DATA.DELETE_MANY) => {
-
-  console.log("Deteing many with :", {
-    tableName,
-    invalidationKeys,
-    actionPath
-  })
-
   const { token } = useAuth();
   const queryClient = useQueryClient();
 

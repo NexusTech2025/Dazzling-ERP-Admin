@@ -5,7 +5,6 @@ import Badge from '../../../components/ui/Badge';
 import { getStudentAllocationsViewModel } from '../utils/enrollmentCacheHelper';
 import { useBatchesQuery } from '../../batch/hooks/useBatchQueries';
 import { useCoursesQuery, useCourseTypesQuery } from '../../course/hooks/useCourseQueries';
-import { useEnrollmentsQuery } from '../hooks/useEnrollmentQueries';
 
 /**
  * Renders a list of student cards optimized for mobile display with inline expandable bars.
@@ -28,7 +27,6 @@ export function StudentsMobileView({
   const { data: batches = [] } = useBatchesQuery();
   const { data: courses = [] } = useCoursesQuery();
   const { data: courseTypes = [] } = useCourseTypesQuery();
-  const { data: enrollments = [] } = useEnrollmentsQuery();
 
   const toggleExpand = useCallback((e, id) => {
     e.stopPropagation();
@@ -56,7 +54,6 @@ export function StudentsMobileView({
           batches={batches}
           courses={courses}
           courseTypes={courseTypes}
-          enrollmentsList={enrollments}
           isChecked={selectedIds.includes(student.student_id)}
           isExpanded={!!expandedIds[student.student_id]}
           isSelectionMode={isSelectionMode}
