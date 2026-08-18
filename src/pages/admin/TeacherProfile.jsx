@@ -3,7 +3,7 @@ import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useQueryClient, useIsFetching } from '@tanstack/react-query';
 import { useTeacherDetailQuery, useTeacherSalaryConfigQuery, useTeacherAttendanceQuery } from '../../features/teacher/hooks/useTeacherQueries';
 import { useBatchesQuery } from '../../features/batch/hooks/useBatchQueries';
-import { queryKeys } from '../../lib/react-query/queryKeys';
+import { queryKeys, EMPTY_FILTER } from '../../lib/react-query/queryKeys';
 import { aq } from '../../lib/queryEngine'; // Unified Data Wrangling Engine
 import useIsMobile from '../../hooks/useIsMobile';
 
@@ -58,7 +58,7 @@ const TeacherProfile = () => {
   };
 
   const queryClient = useQueryClient();
-  const isFetching = useIsFetching({ queryKey: queryKeys.teacher.detail(id) }) > 0;
+  const isFetching = useIsFetching({ queryKey: queryKeys.teacher.list(EMPTY_FILTER) }) > 0;
 
   const { data: teacher, isLoading } = useTeacherDetailQuery(id);
   const { data: salaryConfig } = useTeacherSalaryConfigQuery(id);
@@ -70,10 +70,8 @@ const TeacherProfile = () => {
   const { data: attendance = [] } = useTeacherAttendanceQuery(id);
 
   const handleRefresh = useCallback(() => {
-    queryClient.invalidateQueries({ queryKey: queryKeys.teacher.detail(id) });
-    queryClient.invalidateQueries({ queryKey: [...queryKeys.teacher.detail(id), 'salaryConfig'] });
-    queryClient.invalidateQueries({ queryKey: queryKeys.teacher.attendanceProfile(id, 'all') });
-  }, [queryClient, id]);
+    queryClient.invalidateQueries({ queryKey: queryKeys.teacher.list(EMPTY_FILTER) });
+  }, [queryClient]);
 
   // Standard Navigation Core Mapping
   const breadcrumbItems = useMemo(() => [
@@ -106,6 +104,11 @@ const TeacherProfile = () => {
 
     return { totalStudents: studentsSum, attendanceRate: rate, salaryDisplay: baseSalary };
   }, [attendance, batches, salaryConfig]);
+
+  // Stable in-memory sub-tab element instances to prevent unnecessary remounts
+  const attendanceTab = useMemo(() => teacher ? <TeachersAttendance teacherId={teacher.teacher_id} /> : null, [teacher?.teacher_id]);
+  const assignedClassesTab = useMemo(() => teacher ? <TeacherAssignedClasses teacherId={teacher.teacher_id} /> : null, [teacher?.teacher_id]);
+  const salaryPayrollTab = useMemo(() => teacher ? <TeacherSalaryPayroll teacherId={teacher.teacher_id} /> : null, [teacher?.teacher_id]);
 
   // Parallel DOM Layout Registry to prevent flash-of-empty context losses
   const tabRegistry = useMemo(() => {
@@ -191,7 +194,7 @@ const TeacherProfile = () => {
               </div>
 
               {/* Enhanced Quick Actions Panel using native button specs */}
-              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-sm space-y-4">
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-4">
                 <h3 className="text-lg font-bold text-text-main dark:text-white">Quick Actions</h3>
                 <div className="flex flex-col gap-2">
                   <button type="button" onClick={() => navigate(`/admin/batches`)} className="flex items-center gap-3 p-3 rounded-lg border border-slate-150 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-left font-semibold text-sm text-text-main dark:text-white transition-colors">
@@ -216,11 +219,11 @@ const TeacherProfile = () => {
           </div>
         </div>
       ),
-      Attendance: <TeachersAttendance teacherId={teacher.teacher_id} />,
-      'Assigned Classes': <TeacherAssignedClasses teacherId={teacher.teacher_id} />,
-      'Salary & Payroll': <TeacherSalaryPayroll teacherId={teacher.teacher_id} />
+      Attendance: attendanceTab,
+      'Assigned Classes': assignedClassesTab,
+      'Salary & Payroll': salaryPayrollTab
     };
-  }, [teacher, batches, analyticsSummary, salaryConfig, navigate]);
+  }, [teacher, batches, analyticsSummary, salaryConfig, navigate, attendanceTab, assignedClassesTab, salaryPayrollTab]);
 
   if (isLoading) {
     return (

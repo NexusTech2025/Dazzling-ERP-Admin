@@ -472,8 +472,8 @@ export function getCachedList(queryClient, entity, filter = {}, options = {}) {
     }
   }
 
-  // 3. Fallback: Scan any lists matching the prefix key (only if not strict)
-  if (!strict) {
+  // 3. Fallback: Scan any lists matching the prefix key (only if not strict AND filter is completely empty)
+  if (!strict && (!filter || filter === EMPTY_FILTER || Object.keys(filter).length === 0)) {
     const listsKey = typeof config.listsKey === 'function' ? config.listsKey() : config.listsKey;
     const listQueries = queryClient.getQueriesData({ queryKey: listsKey });
     for (const [key, listData] of listQueries) {
@@ -483,7 +483,7 @@ export function getCachedList(queryClient, entity, filter = {}, options = {}) {
       }
     }
   } else {
-    console.log(`[CacheHelper:ListStrict] Strict cache match enforced. Bypassing dirty fallback scan for ${entity}.`, { filter });
+    console.log(`[CacheHelper:ListStrict] Strict cache match enforced or active filter present. Bypassing dirty fallback scan for ${entity}.`, { filter });
   }
 
   return undefined;

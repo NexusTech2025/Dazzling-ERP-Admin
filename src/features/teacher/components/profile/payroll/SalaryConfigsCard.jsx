@@ -90,7 +90,9 @@ const SalaryConfigsCard = React.memo(({ salaryConfigs = [], activeConfig, onEdit
                       {config.rate_type || 'monthly'}
                     </TableCell>
                     <TableCell className="font-mono font-bold">
-                      ₹{(config.base_value || config.base_amount || 0).toLocaleString()}
+                      {config.rate_type === 'revenue_percentage'
+                        ? (config.scope_type === 'batch_group' ? 'Multi-Rate %' : `${config.base_value || 0}%`)
+                        : `₹${(config.base_value || config.base_amount || 0).toLocaleString()}`}
                     </TableCell>
                     <TableCell className="capitalize text-xs">
                       {scopeDisplay}

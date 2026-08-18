@@ -2,7 +2,6 @@ import { useState, useMemo, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { parseISO, compareDesc } from 'date-fns';
 import { aq, op } from '../../../lib/queryEngine';
-import { getCachedList } from '../../../lib/react-query/cacheHelper';
 import {
   useTeacherSalaryConfigsQuery,
   useDeleteTeacherSalaryConfigMutation,
@@ -20,16 +19,8 @@ export const useTeacherPayroll = (teacherId) => {
   const startTime = performance.now();
 
   // Asynchronous Queries
-  const { data: salaryConfigs = [], isPending: isConfigsPending } = useTeacherSalaryConfigsQuery(teacherId, {
-    initialData: () => getCachedList(queryClient, 'teacherSalaryConfig', { teacherId })
-  });
-
-  const { data: transactions = [], isPending: isTransactionsPending } = useTeacherPaymentTransactionsQuery(teacherId, {
-    initialData: () => getCachedList(queryClient, 'teacherPaymentTransaction', { teacherId })
-  });
-
-  console.log("teachers salary data: ", salaryConfigs)
-  console.log("teachers transactions data: ", transactions)
+  const { data: salaryConfigs = [], isPending: isConfigsPending } = useTeacherSalaryConfigsQuery(teacherId);
+  const { data: transactions = [], isPending: isTransactionsPending } = useTeacherPaymentTransactionsQuery(teacherId);
 
   // Mutations
   const deleteConfigMutation = useDeleteTeacherSalaryConfigMutation();

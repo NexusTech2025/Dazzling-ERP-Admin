@@ -4,94 +4,127 @@ import { queryKeys, EMPTY_FILTER } from '../../../lib/react-query/queryKeys';
 import { apiClient } from '../../../services/apiClient';
 import { API_REGISTRY } from '../../../services/apiRegistry';
 import { getCachedRecord, resolveRecord, resolveList, getCachedList } from '../../../lib/react-query/cacheHelper';
+import { parseISO, compareDesc, isAfter, isBefore } from 'date-fns';
 import { toLocalDate, formatToKey } from '../../../lib/dateUtils';
+import { teacherRepo } from '../utils/teacherCacheHelper';
 
 /**
- * Hook for fetching all teachers
+ * Root query hook for pre-hydrated teacher datasets.
+ * Employs cacheHelper's resolveList pipeline with progressive RAM hydration and fallback fetching.
+ * Supports flexible signatures: useTeachersQuery(options) or useTeachersQuery(filter, options).
+ * 
+ * @param {Object} [filter=EMPTY_FILTER] - Filter criteria for in-memory resolution or options object.
+ * @param {Object} [options={}] - Query parameter overrides.
+ * @returns {QueryResult} TanStack Query result object with all pre-hydrated teachers.
  */
-export const useTeachersQuery = (filter = EMPTY_FILTER) => {
+export const useTeachersQuery = (filter = EMPTY_FILTER, options = {}) => {
+  const actualFilter = (filter && typeof filter === 'object' && !filter.queryKey && !filter.select)
+    ? filter
+    : EMPTY_FILTER;
+  const actualOptions = (filter && typeof filter === 'object' && (filter.queryKey || filter.select || filter.enabled !== undefined || filter.forceRefetch !== undefined))
+    ? filter
+    : options;
+
   const { token } = useAuth();
   const queryClient = useQueryClient();
+  const { enabled = true, forceRefetch = false, delayMs = 0 } = actualOptions;
 
   return useQuery({
     queryKey: queryKeys.teacher.list(EMPTY_FILTER),
     queryFn: async ({ signal }) => {
+      if (delayMs > 0) {
+        await new Promise(r => setTimeout(r, delayMs));
+      }
+
+      // Validate whether the cached list actually contains pre-hydrated relational sub-ledgers
+      const cachedTeachers = queryClient.getQueryData(queryKeys.teacher.list(EMPTY_FILTER));
+      const hasHydratedRelations = Array.isArray(cachedTeachers) &&
+        cachedTeachers.length > 0 &&
+        (cachedTeachers[0].teachersalaryconfig !== undefined ||
+         cachedTeachers[0].teachersalaryconfigs !== undefined ||
+         cachedTeachers[0].teacherSalaryConfig !== undefined);
+
+      const shouldForce = forceRefetch || !hasHydratedRelations;
+
       return resolveList(
         queryClient,
         'teacher',
-        filter,
-        async () => {
-          const response = await apiClient.executeAction(
-            API_REGISTRY.DATA.QUERY,
-            { target: 'Teacher', where: filter },
-            token,
-            { signal }
-          );
-          return response.data?.data || [];
-        }
-      );
-    },
-    enabled: !!token,
-    staleTime: Infinity,
-    refetchOnMount: false,
-    refetchOnWindowFocus: false,
-  });
-};
-
-/**
- * Hook for fetching a single teacher detail
- */
-export const useTeacherDetailQuery = (id) => {
-  const { token } = useAuth();
-  const queryClient = useQueryClient();
-
-  return useQuery({
-    queryKey: queryKeys.teacher.detail(id),
-    queryFn: async ({ signal }) => {
-      return resolveRecord(
-        queryClient,
-        'teacher',
-        id,
+        actualFilter,
         async () => {
           const response = await apiClient.executeAction(
             API_REGISTRY.DATA.QUERY,
             {
               target: 'Teacher',
-              where: { teacher_id: id },
-              pagination: { limit: 1 }
+              where: {},
+              include: {
+                teachersalaryconfig: {},
+                teacherpaymenttransaction: {},
+                teacherattendance: {}
+              },
+              pagination: { limit: 1000, offset: 0 }
             },
             token,
-            { signal }
+            { signal, timeout: 'HYDRATED_QUERY' }
           );
-          return response.data?.data?.[0] || null;
-        }
+
+          if (!response.success) {
+            throw new Error(response.message || 'Failed to fetch teachers');
+          }
+
+          const list = Array.isArray(response.data)
+            ? response.data
+            : (Array.isArray(response.data?.data) ? response.data.data : []);
+
+          return list;
+        },
+        { ...actualOptions, forceRefetch: shouldForce }
       );
     },
-    enabled: !!token && !!id,
-    initialData: () => getCachedRecord(queryClient, 'teacher', id),
-    initialDataUpdatedAt: () => queryClient.getQueryState(queryKeys.teacher.detail(id))?.dataUpdatedAt,
-    staleTime: 1000 * 60 * 60,
+    enabled: !!token && enabled,
+    initialData: () => {
+      const cached = getCachedList(queryClient, 'teacher', actualFilter);
+      const hasRelations = Array.isArray(cached) &&
+        cached.length > 0 &&
+        (cached[0].teachersalaryconfig !== undefined ||
+         cached[0].teachersalaryconfigs !== undefined ||
+         cached[0].teacherSalaryConfig !== undefined);
+      return hasRelations ? cached : undefined;
+    },
+    initialDataUpdatedAt: () => queryClient.getQueryState(queryKeys.teacher.list(EMPTY_FILTER))?.dataUpdatedAt,
+    staleTime: 1000 * 60 * 30, // 30 minutes cache freshness window
     refetchOnMount: false,
     refetchOnWindowFocus: false,
+    ...actualOptions
   });
 };
 
 /**
- * Hook for fetching teacher attendance
+ * Pure Selector: Derives a single teacher profile from the pre-hydrated root query cache.
+ * @param {string} id - Target teacher identifier.
+ * @param {Object} [options={}] - React Query overrides.
  */
-export const useTeacherAttendanceQuery = (teacherId) => {
-  const { token } = useAuth();
+export const useTeacherDetailQuery = (id, options = {}) => {
+  return useTeachersQuery({
+    select: (teachers) => {
+      if (!Array.isArray(teachers)) return null;
+      return teachers.find(t => String(t.teacher_id || t.id) === String(id)) || null;
+    },
+    enabled: !!id,
+    ...options
+  });
+};
 
-  return useQuery({
-    queryKey: queryKeys.teacher.attendanceProfile(teacherId, 'all'),
-    queryFn: async ({ signal }) => {
-      const response = await apiClient.executeAction(
-        API_REGISTRY.ATTENDANCE.TEACHER_QUERY,
-        { where: { teacher_id: teacherId } },
-        token,
-        { signal }
-      );
-      const rawData = Array.isArray(response.data) ? response.data : (response.data?.data || []);
+/**
+ * Pure Selector: Derives a teacher's attendance check-in records.
+ * @param {string} teacherId - Target teacher identifier.
+ * @param {Object} [options={}] - React Query overrides.
+ */
+export const useTeacherAttendanceQuery = (teacherId, options = {}) => {
+  return useTeachersQuery({
+    select: (teachers) => {
+      if (!Array.isArray(teachers)) return [];
+      const teacher = teachers.find(t => String(t.teacher_id || t.id) === String(teacherId));
+      const rawData = teacher?.teacherattendance || teacher?.teacherattendances || teacher?.teacherAttendance || [];
       return rawData.map(item => {
         if (item.attendance_date) {
           const localDate = toLocalDate(item.attendance_date);
@@ -104,10 +137,8 @@ export const useTeacherAttendanceQuery = (teacherId) => {
         return item;
       });
     },
-    enabled: !!token && !!teacherId,
-    staleTime: 1000 * 60 * 60, // 60 minutes
-    refetchOnMount: false,
-    refetchOnWindowFocus: false,
+    enabled: !!teacherId,
+    ...options
   });
 };
 
@@ -301,93 +332,72 @@ export const useTeacherSubjectsQuery = (teacherId) => {
  * @param {Array} salaryConfigs - The list of salary configurations.
  * @returns {Object|null} The active salary configuration or null.
  */
-const selectActiveSalaryConfig = (salaryConfigs) => {
-  if (!salaryConfigs || salaryConfigs.length === 0) return null;
+export const selectActiveSalaryConfig = (salaryConfigs) => {
+  if (!Array.isArray(salaryConfigs) || salaryConfigs.length === 0) return null;
   const now = new Date();
 
   // Active means contract_status is 'active', effective_from has passed, and effective_to has not passed.
   const active = salaryConfigs.find(row => {
     if (row.contract_status !== 'active') return false;
-    const fromDate = new Date(row.effective_from);
-    const toDate = row.effective_to ? new Date(row.effective_to) : null;
-    return fromDate <= now && (!toDate || toDate >= now);
+    const fromDate = row.effective_from ? parseISO(row.effective_from) : null;
+    const toDate = row.effective_to ? parseISO(row.effective_to) : null;
+
+    if (fromDate && isAfter(fromDate, now)) return false;
+    if (toDate && isBefore(toDate, now)) return false;
+    return true;
   });
   if (active) return active;
 
   // Fallback to the latest record regardless of lifecycle phase if none matches the dates
-  return [...salaryConfigs].sort((a, b) => new Date(b.effective_from) - new Date(a.effective_from))[0];
+  return [...salaryConfigs].sort((a, b) => {
+    const dateA = a.effective_from ? parseISO(a.effective_from) : new Date(0);
+    const dateB = b.effective_from ? parseISO(b.effective_from) : new Date(0);
+    return compareDesc(dateA, dateB);
+  })[0] || null;
 };
 
 /**
- * Hook for querying all teacher salary configuration records (historical and active).
- * Synchronized with the centralized cache architecture for progressive hydration.
+ * Pure Selector: Derives all teacher salary configuration records (historical and active) with parsed scope JSON.
  * @param {string} teacherId - The unique teacher identifier.
  * @param {Object} [options={}] - React Query overrides.
  */
 export const useTeacherSalaryConfigsQuery = (teacherId, options = {}) => {
-  const { token } = useAuth();
-  const queryClient = useQueryClient();
-
-  return useQuery({
-    queryKey: [...queryKeys.teacher.detail(teacherId), 'salaryConfigs'],
-    queryFn: async ({ signal }) => {
-      const startTime = performance.now();
-      const result = await resolveList(
-        queryClient,
-        'teacherSalaryConfig',
-        { teacherId },
-        async () => {
-          const response = await apiClient.executeAction(
-            API_REGISTRY.STAFF.GET_SALARY_CONFIGS,
-            {
-              entity_type: 'Teacher',
-              entity_id: teacherId
-            },
-            token,
-            { signal }
-          );
-          if (!response.success) {
-            throw new Error(response.message || 'Failed to fetch salary configurations');
+  return useTeachersQuery({
+    select: (teachers) => {
+      if (!Array.isArray(teachers)) return [];
+      const teacher = teachers.find(t => String(t.teacher_id || t.id) === String(teacherId));
+      const rawConfigs = teacher?.teachersalaryconfig || teacher?.teachersalaryconfigs || teacher?.teacherSalaryConfig || [];
+      return rawConfigs.map(cfg => {
+        if (cfg.scope_type === 'batch_group' && typeof cfg.scope_id === 'string' && cfg.scope_id) {
+          try {
+            return { ...cfg, scope_id: JSON.parse(cfg.scope_id) };
+          } catch (e) {
+            console.error('[useTeacherSalaryConfigsQuery] Failed to parse scope_id JSON:', e);
           }
-          const list = response.data || [];
-          return list.map(item => {
-            if (item.scope_type === 'batch_group' && typeof item.scope_id === 'string' && item.scope_id) {
-              try {
-
-                const _scope_id = JSON.parse(item.scope_id)
-                return { ...item, scope_id: _scope_id };
-              } catch (e) {
-                console.error('[useTeacherSalaryConfigsQuery] Failed to parse scope_id JSON:', e);
-              }
-            }
-            return item;
-          });
-        },
-        options
-      );
-      console.log(`[useTeacherSalaryConfigsQuery] Resolution completed in ${(performance.now() - startTime).toFixed(2)}ms`);
-      return result;
+        }
+        return cfg;
+      });
     },
-    enabled: !!token && !!teacherId,
-    staleTime: 1000 * 60 * 60, // 60 minutes cache freshness constraint
-    refetchOnMount: false,
-    refetchOnReconnect: false,
-    initialData: () => {
-      return getCachedList(queryClient, 'teacherSalaryConfig', { teacherId });
-    },
+    enabled: !!teacherId,
     ...options
   });
 };
 
 /**
- * Hook for querying active teacher salary configuration.
- * Selects the active item client-side from the cached historical configuration list.
+ * Pure Selector: Queries active teacher salary configuration.
+ * Selects the active item client-side from the pre-hydrated configuration list.
  * @param {string} teacherId - The unique teacher identifier.
  * @param {Object} [options={}] - React Query overrides.
  */
 export const useTeacherSalaryConfigQuery = (teacherId, options = {}) => {
-  return useTeacherSalaryConfigsQuery(teacherId, {
-    select: selectActiveSalaryConfig,
+  return useTeachersQuery({
+    select: (teachers) => {
+      if (!Array.isArray(teachers)) return null;
+      const teacher = teachers.find(t => String(t.teacher_id || t.id) === String(teacherId));
+      const rawConfigs = teacher?.teachersalaryconfig || teacher?.teachersalaryconfigs || teacher?.teacherSalaryConfig || [];
+      return selectActiveSalaryConfig(rawConfigs);
+    },
+    enabled: !!teacherId,
     ...options
   });
 };
@@ -469,9 +479,15 @@ export const useSetTeacherSalaryConfigMutation = () => {
         token,
         options
       ),
-    onSuccess: (response, { teacherId }) => {
-      if (response.success) {
-        queryClient.invalidateQueries({ queryKey: [...queryKeys.teacher.detail(teacherId), 'salaryConfigs'] });
+    onSuccess: (response, variables) => {
+      const teacherId = variables.teacherId || variables.entity_id;
+      if (response.success && teacherId) {
+        const newConfig = response.data || {
+          ...variables,
+          salary_config_id: response.id || `TSC-${Date.now()}`
+        };
+        teacherRepo.updateSalaryConfigCache(queryClient, teacherId, newConfig);
+        queryClient.invalidateQueries({ queryKey: queryKeys.teacher.list(EMPTY_FILTER) });
       }
     }
   });
@@ -510,9 +526,11 @@ export const useUpdateTeacherSalaryConfigMutation = () => {
         token,
         options
       ),
-    onSuccess: (response, { teacherId }) => {
+    onSuccess: (response, { teacherId, data }) => {
       if (response.success) {
-        queryClient.invalidateQueries({ queryKey: [...queryKeys.teacher.detail(teacherId), 'salaryConfigs'] });
+        const newConfig = response.data || { ...data, salary_config_id: response.id || `TSC-${Date.now()}` };
+        teacherRepo.updateSalaryConfigCache(queryClient, teacherId, newConfig);
+        queryClient.invalidateQueries({ queryKey: queryKeys.teacher.list(EMPTY_FILTER) });
       }
     }
   });
@@ -537,61 +555,35 @@ export const useDeleteTeacherSalaryConfigMutation = () => {
         token,
         options
       ),
-    onSuccess: (response, { teacherId }) => {
+    onSuccess: (response, { teacherId, salaryConfigId }) => {
       if (response.success) {
-        queryClient.invalidateQueries({ queryKey: [...queryKeys.teacher.detail(teacherId), 'salaryConfigs'] });
+        teacherRepo.deleteSalaryConfigCache(queryClient, teacherId, salaryConfigId);
+        queryClient.invalidateQueries({ queryKey: queryKeys.teacher.list(EMPTY_FILTER) });
       }
     }
   });
 };
 
 /**
- * Hook for querying payment transactions for a given teacher.
- * Resolves cached records automatically or fetches fresh logs via the generic data query action.
+ * Pure Selector: Derives payment transactions for a given teacher.
  * @param {string} teacherId - The target faculty member's system identifier.
  * @param {Object} [options={}] - Standard TanStack Query parameter overrides.
  */
 export const useTeacherPaymentTransactionsQuery = (teacherId, options = {}) => {
-  const { token } = useAuth();
-  const queryClient = useQueryClient();
-
-  return useQuery({
-    queryKey: [...queryKeys.teacher.detail(teacherId), 'paymentTransactions'],
-    queryFn: async ({ signal }) => {
-      const startTime = performance.now();
-      const result = await resolveList(
-        queryClient,
-        'teacherPaymentTransaction',
-        { teacherId },
-        async () => {
-          const response = await apiClient.executeAction(
-            API_REGISTRY.DATA.QUERY,
-            { target: 'TeacherPaymentTransaction', where: { teacher_id: teacherId } },
-            token,
-            { signal }
-          );
-          if (!response.success) {
-            throw new Error(response.message || 'Failed to fetch payment transactions');
-          }
-          return response.data?.data || [];
-        },
-        options
-      );
-      console.log(`[useTeacherPaymentTransactionsQuery] Resolution completed in ${(performance.now() - startTime).toFixed(2)}ms`);
-      return result;
+  return useTeachersQuery({
+    select: (teachers) => {
+      if (!Array.isArray(teachers)) return [];
+      const teacher = teachers.find(t => String(t.teacher_id || t.id) === String(teacherId));
+      return teacher?.teacherpaymenttransaction || teacher?.teacherpaymenttransactions || teacher?.teacherPaymentTransaction || [];
     },
-    enabled: !!token && !!teacherId,
-    staleTime: 1000 * 60 * 60,
-    initialData: () => {
-      return getCachedList(queryClient, 'teacherPaymentTransaction', { teacherId });
-    },
+    enabled: !!teacherId,
     ...options
   });
 };
 
 /**
  * Mutation hook for recording a new payment transaction entry to the ledger.
- * Invalidates the payments lists queries upon successful commitment to sheets.
+ * Optimistically updates the teacher transaction ledger in RAM before query invalidation.
  * @returns {MutationResult} React Query mutation trigger function.
  */
 export const useRecordTeacherPaymentMutation = () => {
@@ -629,7 +621,9 @@ export const useRecordTeacherPaymentMutation = () => {
     onSuccess: (response, payload) => {
       const teacherId = payload?.teacherId || payload?.teacher_id;
       if (response.success && teacherId) {
-        queryClient.invalidateQueries({ queryKey: [...queryKeys.teacher.detail(teacherId), 'paymentTransactions'] });
+        const newTx = response.data || { ...payload, transaction_id: response.id || `TPT-${Date.now()}` };
+        teacherRepo.recordPaymentCache(queryClient, teacherId, newTx);
+        queryClient.invalidateQueries({ queryKey: queryKeys.teacher.list(EMPTY_FILTER) });
       }
     }
   });

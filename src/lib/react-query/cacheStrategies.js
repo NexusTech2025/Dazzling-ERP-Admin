@@ -179,10 +179,74 @@ export function resolveEnrollmentList(cachedList, filter) {
 }
 
 /**
+ * Teacher salary config list resolver.
+ * Resolves teacher salary configuration records matching target teacher identifier.
+ * Normalizes camelCase, snake_case, and polymorphic entity foreign keys (entity_id, teacher_id, teacherId).
+ *
+ * @param {Array<object>} cachedList - In-memory RAM array of TeacherSalaryConfig records.
+ * @param {object} [filter={}] - Target query filter parameters.
+ * @returns {Array<object>} Filtered array of TeacherSalaryConfig records matching teacher entity.
+ */
+export function resolveTeacherSalaryConfigList(cachedList, filter = {}) {
+  if (!Array.isArray(cachedList) || cachedList.length === 0) return [];
+
+  const targetId = filter.teacherId || filter.teacher_id || filter.entity_id;
+  if (!targetId) return cachedList;
+
+  return cachedList.filter(item => {
+    if (!item || typeof item !== 'object') return false;
+    const itemEntityId = item.entity_id || item.teacher_id || item.teacherId;
+    const matchesEntity = itemEntityId === targetId;
+    const isTeacherType = !item.entity_type || item.entity_type === 'Teacher';
+    return matchesEntity && isTeacherType;
+  });
+}
+
+/**
+ * Teacher payment transaction list resolver.
+ * Resolves teacher payment transactions matching target teacher identifier.
+ * Normalizes camelCase and snake_case foreign keys without dropping records.
+ *
+ * @param {Array<object>} cachedList - In-memory RAM array of TeacherPaymentTransaction records.
+ * @param {object} [filter={}] - Target query filter parameters.
+ * @returns {Array<object>} Filtered array of TeacherPaymentTransaction records matching teacher.
+ */
+export function resolveTeacherPaymentTransactionList(cachedList, filter = {}) {
+  if (!Array.isArray(cachedList) || cachedList.length === 0) return [];
+
+  const targetId = filter.teacherId || filter.teacher_id || filter.entity_id;
+  if (!targetId) return cachedList;
+
+  return cachedList.filter(item => {
+    if (!item || typeof item !== 'object') return false;
+    const itemTeacherId = item.teacher_id || item.teacherId || item.entity_id;
+    return itemTeacherId === targetId;
+  });
+}
+
+/**
+ * Teacher list resolver.
+ * Filters cached teacher records in RAM by entity fields (status, branch_id, teacher_type, etc.).
+ *
+ * @param {Array<object>} cachedList - In-memory RAM array of Teacher records.
+ * @param {object} [filter={}] - Target query filter parameters.
+ * @returns {Array<object>} Filtered array of Teacher records.
+ */
+export function resolveTeacherList(cachedList, filter = {}) {
+  const activeFilters = prepareFilters(filter);
+
+  return filterCollection(cachedList, activeFilters);
+}
+
+/**
  * Registry mapping entities to their respective resolution strategy callbacks.
  * @type {Object.<string, Function>}
  */
 export const CACHE_RESOLVER_STRATEGIES = {
+  teacher: resolveTeacherList,
   batch: resolveBatchList,
-  enrollment: resolveEnrollmentList
+  enrollment: resolveEnrollmentList,
+  teacherSalaryConfig: resolveTeacherSalaryConfigList,
+  teacherPaymentTransaction: resolveTeacherPaymentTransactionList
 };
+

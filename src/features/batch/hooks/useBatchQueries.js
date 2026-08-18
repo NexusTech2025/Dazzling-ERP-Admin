@@ -52,9 +52,22 @@ export const ensureBatchRelations = async (queryClient, token) => {
     queryClient.ensureQueryData({
       queryKey: queryKeys.teacher.list(EMPTY_FILTER),
       queryFn: async () => {
-        const res = await apiClient.executeAction(API_REGISTRY.DATA.QUERY, { target: 'Teacher' }, token);
+        const res = await apiClient.executeAction(
+          API_REGISTRY.DATA.QUERY,
+          {
+            target: 'Teacher',
+            where: {},
+            include: {
+              teachersalaryconfig: {},
+              teacherpaymenttransaction: {},
+              teacherattendance: {}
+            },
+            pagination: { limit: 1000, offset: 0 }
+          },
+          token
+        );
         if (!res.success) throw new Error(res.message || 'Failed to fetch teachers');
-        return res.data?.data || [];
+        return Array.isArray(res.data) ? res.data : (res.data?.data || []);
       }
     }),
     queryClient.ensureQueryData({

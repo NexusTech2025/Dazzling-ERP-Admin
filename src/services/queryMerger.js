@@ -190,7 +190,17 @@ queryMerger.registerStrategy('DATA_QUERY_TO_BATCH_MERGER', {
             batchToProcess.forEach(q => {
               const targetName = q.payload.target;
               const category = getCategoryForTable(targetName);
-              const tableRecords = responseData[category]?.[targetName] || [];
+              let tableRecords = responseData[category]?.[targetName] || [];
+
+              // Apply where filter in-memory if specified in the original data_query payload
+              if (q.payload?.where && typeof q.payload.where === 'object' && Object.keys(q.payload.where).length > 0) {
+                tableRecords = tableRecords.filter(row => {
+                  if (!row || typeof row !== 'object') return false;
+                  return Object.entries(q.payload.where).every(([key, value]) => {
+                    return String(row[key]) === String(value);
+                  });
+                });
+              }
 
               console.log(`✅ [QueryMerger] Resolving merged data_query for '${targetName}' (${tableRecords.length} records).`);
 

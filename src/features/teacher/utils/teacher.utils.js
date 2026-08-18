@@ -18,6 +18,8 @@ export const calculateTotalAmountToPay = (configs = []) => {
   const activeConfigs = getActiveConfigs(configs);
   
   return activeConfigs.reduce((sum, c) => {
+    if (c.rate_type === 'revenue_percentage') return sum;
+
     const contractVal = Number(c.total_contract_value);
     if (!isNaN(contractVal) && contractVal > 0) return sum + contractVal;
 
@@ -36,6 +38,8 @@ export const calculateTotalAmountToPay = (configs = []) => {
 export const calculateActiveBaseRate = (configs = []) => {
   if (!configs.length) return 0;
   return getActiveConfigs(configs).reduce((sum, c) => {
+    if (c.rate_type === 'revenue_percentage') return sum;
+
     const base = Number(c.base_value || 0);
     if (base > 0) return sum + base;
     

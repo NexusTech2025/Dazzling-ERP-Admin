@@ -112,6 +112,21 @@ export const distributeWeightsRetained = (selection, currentWeights = {}) => {
   return newWeights;
 };
 
+/**
+ * Decoupled helper to map existing batch selection percentage rates without re-distributing.
+ * @param {Array} selection - Selected batch objects.
+ * @param {Object} currentRates - Already allocated rates.
+ * @param {number} [defaultRate=25] - Default percentage rate for newly added batches.
+ * @returns {Object} Key-value map of { batch_id: rate }.
+ */
+export const distributeRevenuePercentagesRetained = (selection, currentRates = {}, defaultRate = 25) => {
+  const newRates = {};
+  selection.forEach(batch => {
+    newRates[batch.batch_id] = currentRates[batch.batch_id] !== undefined ? currentRates[batch.batch_id] : defaultRate;
+  });
+  return newRates;
+};
+
 const RateTypeStrategies = {
   monthly: {
     requiresContractValue: false,
@@ -129,7 +144,7 @@ const RateTypeStrategies = {
     showDurationHelper: true,
     calculateBaseValue: () => undefined,
     calculateEffectiveTo: calculateEffectiveTo,
-    distributeWeights: distributeWeightsRetained
+    distributeWeights: distributeRevenuePercentagesRetained
   },
   yearly: {
     requiresContractValue: true,
@@ -328,7 +343,10 @@ const SalaryConfigModal = ({ isOpen, onClose, teacherId, config, onSubmitLocal }
     if (scopeType === 'single_batch') {
       setValue('scopeId', selection.batch_id, { shouldValidate: true });
     } else if (scopeType === 'batch_group') {
-      const newWeights = strategy.distributeWeights(selection, allocatedWeights);
+      const defaultRate = Number(watch('baseValue')) || 25;
+      const newWeights = rateType === 'revenue_percentage'
+        ? distributeRevenuePercentagesRetained(selection, allocatedWeights, defaultRate)
+        : strategy.distributeWeights(selection, allocatedWeights);
       setAllocatedWeights(newWeights);
       setValue('scopeId', JSON.stringify(newWeights), { shouldValidate: true });
     }
@@ -344,24 +362,39 @@ const SalaryConfigModal = ({ isOpen, onClose, teacherId, config, onSubmitLocal }
     let val = Number(rawValue);
     if (isNaN(val)) return;
     if (val < 0) val = 0;
-    if (val > 1) val = 1;
 
-    const updated = {
-      ...allocatedWeights,
-      [batchId]: Number(val.toFixed(2))
-    };
-    setAllocatedWeights(updated);
-    setValue('scopeId', JSON.stringify(updated), { shouldValidate: true });
+    if (rateType === 'revenue_percentage') {
+      if (val > 100) val = 100;
+      const updated = {
+        ...allocatedWeights,
+        [batchId]: Number(val.toFixed(2))
+      };
+      setAllocatedWeights(updated);
+      setValue('scopeId', JSON.stringify(updated), { shouldValidate: true });
+    } else {
+      if (val > 1) val = 1;
+      const updated = {
+        ...allocatedWeights,
+        [batchId]: Number(val.toFixed(2))
+      };
+      setAllocatedWeights(updated);
+      setValue('scopeId', JSON.stringify(updated), { shouldValidate: true });
+    }
   };
 
   const handleRemoveBatchFromGroup = (batchId) => {
     const updated = { ...allocatedWeights };
     delete updated[batchId];
-    // Re-distribute weights equally for the remaining selection if yearly
-    const remainingInfo = selectedBatchesInfo.filter(b => b.batch_id !== batchId);
-    const reallocated = strategy.distributeWeights(remainingInfo, updated);
-    setAllocatedWeights(reallocated);
-    setValue('scopeId', Object.keys(reallocated).length > 0 ? JSON.stringify(reallocated) : '', { shouldValidate: true });
+    if (rateType === 'revenue_percentage') {
+      setAllocatedWeights(updated);
+      setValue('scopeId', Object.keys(updated).length > 0 ? JSON.stringify(updated) : '', { shouldValidate: true });
+    } else {
+      // Re-distribute weights equally for the remaining selection if yearly
+      const remainingInfo = selectedBatchesInfo.filter(b => b.batch_id !== batchId);
+      const reallocated = strategy.distributeWeights(remainingInfo, updated);
+      setAllocatedWeights(reallocated);
+      setValue('scopeId', Object.keys(reallocated).length > 0 ? JSON.stringify(reallocated) : '', { shouldValidate: true });
+    }
   };
 
   /**
@@ -386,10 +419,12 @@ const SalaryConfigModal = ({ isOpen, onClose, teacherId, config, onSubmitLocal }
     const payload = {
       salaryConfigType: data.salaryConfigType,
       rateType: data.rateType,
-      baseValue: Number(data.baseValue),
+      baseValue: data.rateType === 'revenue_percentage' && data.scopeType === 'batch_group'
+        ? 0
+        : Number(data.baseValue),
       scopeType: data.scopeType,
       scopeId: data.scopeId || null,
-      totalContractValue: data.totalContractValue ? Number(data.totalContractValue) : null,
+      totalContractValue: (data.rateType !== 'revenue_percentage' && data.totalContractValue) ? Number(data.totalContractValue) : null,
       effectiveFrom: data.effectiveFrom,
       effectiveTo: data.effectiveTo || null,
       remark: data.remark || null,
@@ -483,6 +518,7 @@ const SalaryConfigModal = ({ isOpen, onClose, teacherId, config, onSubmitLocal }
                     <SelectInput
                       value={field.value}
                       onChange={field.onChange}
+                      disabled={rateType === 'revenue_percentage'}
                       error={errors.salaryConfigType?.message}
                       options={[
                         { value: 'recurring_monthly', label: 'Recurring Monthly' },
@@ -509,6 +545,16 @@ const SalaryConfigModal = ({ isOpen, onClose, teacherId, config, onSubmitLocal }
                         field.onChange(val);
                         const nextStrategy = RateTypeStrategies[val] || RateTypeStrategies.monthly;
                         
+                        if (val === 'revenue_percentage') {
+                          setValue('salaryConfigType', 'fixed_duration_pool', { shouldValidate: true });
+                          setValue('totalContractValue', '', { shouldValidate: true });
+                          if (scopeType === 'global') {
+                            setValue('scopeType', 'single_batch', { shouldValidate: true });
+                            setValue('scopeId', '', { shouldValidate: true });
+                            setAllocatedWeights({});
+                          }
+                        }
+
                         // Recalculate base value if needed
                         const computedBase = nextStrategy.calculateBaseValue(totalContractValue);
                         if (computedBase !== undefined) {
@@ -592,17 +638,25 @@ const SalaryConfigModal = ({ isOpen, onClose, teacherId, config, onSubmitLocal }
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <FormField label="Base Value (₹ / %)" required error={errors.baseValue?.message}>
+              <FormField
+                label={rateType === 'revenue_percentage' ? 'Revenue Share (%)' : 'Base Value (₹)'}
+                required={rateType !== 'revenue_percentage' || scopeType !== 'batch_group'}
+                error={errors.baseValue?.message}
+              >
                 <Controller
                   name="baseValue"
                   control={control}
                   render={({ field }) => (
                     <TextInput
                       type="number"
-                      value={field.value}
-                      placeholder={rateType === 'revenue_percentage' ? 'e.g. 25.0' : 'e.g. 50000'}
+                      value={rateType === 'revenue_percentage' && scopeType === 'batch_group' ? '' : field.value}
+                      placeholder={
+                        rateType === 'revenue_percentage'
+                          ? (scopeType === 'batch_group' ? 'Configured per batch below' : 'e.g. 25.0 (%)')
+                          : 'e.g. 50000 (₹)'
+                      }
                       onChange={field.onChange}
-                      disabled={strategy.isBaseValueDisabled}
+                      disabled={strategy.isBaseValueDisabled || (rateType === 'revenue_percentage' && scopeType === 'batch_group')}
                       error={errors.baseValue?.message}
                     />
                   )}
@@ -627,7 +681,10 @@ const SalaryConfigModal = ({ isOpen, onClose, teacherId, config, onSubmitLocal }
                         setAllocatedWeights({});
                       }}
                       error={errors.scopeType?.message}
-                      options={[
+                      options={rateType === 'revenue_percentage' ? [
+                        { value: 'single_batch', label: 'Single Batch' },
+                        { value: 'batch_group', label: 'Batch Group' }
+                      ] : [
                         { value: 'global', label: 'Global' },
                         { value: 'batch_group', label: 'Batch Group' },
                         { value: 'single_batch', label: 'Single Batch' }
@@ -643,7 +700,7 @@ const SalaryConfigModal = ({ isOpen, onClose, teacherId, config, onSubmitLocal }
               </FormField>
             </div>
 
-            {(salaryConfigType === 'fixed_duration_pool' || strategy.requiresContractValue) && (
+            {rateType !== 'revenue_percentage' && (salaryConfigType === 'fixed_duration_pool' || strategy.requiresContractValue) && (
               <FormField label="Total Contract Value (₹)" required error={errors.totalContractValue?.message}>
                 <Controller
                   name="totalContractValue"
@@ -701,7 +758,7 @@ const SalaryConfigModal = ({ isOpen, onClose, teacherId, config, onSubmitLocal }
                     </div>
                   )}
 
-                  {/* Render Batch Group weights list */}
+                  {/* Render Batch Group weights/rates list */}
                   {scopeType === 'batch_group' && selectedBatchesInfo.length > 0 && (
                     <div className="space-y-2 border border-border-light dark:border-border-dark rounded-xl p-3 bg-background-light/50 dark:bg-slate-950/20">
                       {selectedBatchesInfo.map(b => (
@@ -714,16 +771,18 @@ const SalaryConfigModal = ({ isOpen, onClose, teacherId, config, onSubmitLocal }
                           <div className="flex items-center gap-2">
                             <input
                               type="number"
-                              step="0.01"
+                              step={rateType === 'revenue_percentage' ? '0.5' : '0.01'}
                               min="0"
-                              max="1"
-                              placeholder="0.00"
+                              max={rateType === 'revenue_percentage' ? '100' : '1'}
+                              placeholder={rateType === 'revenue_percentage' ? '25' : '0.00'}
                               value={allocatedWeights[b.batch_id] !== undefined ? allocatedWeights[b.batch_id] : ''}
-                              onChange={(e) => handleWeightChange(b.batch_id, Math.min(1, Math.max(0, Number(e.target.value))))}
-                              className="w-16 h-8 text-center bg-background-light dark:bg-slate-950 border border-border-light dark:border-border-dark rounded-lg text-xs font-bold text-text-main dark:text-white focus:outline-none focus:border-primary"
+                              onChange={(e) => handleWeightChange(b.batch_id, e.target.value)}
+                              className="w-20 h-8 text-center bg-background-light dark:bg-slate-950 border border-border-light dark:border-border-dark rounded-lg text-xs font-bold text-text-main dark:text-white focus:outline-none focus:border-primary"
                             />
-                            <span className="text-[10px] text-text-secondary w-8 font-mono">
-                              ({Math.round((allocatedWeights[b.batch_id] || 0) * 100)}%)
+                            <span className="text-[10px] text-text-secondary w-10 font-mono">
+                              {rateType === 'revenue_percentage'
+                                ? `${allocatedWeights[b.batch_id] !== undefined && allocatedWeights[b.batch_id] !== '' ? allocatedWeights[b.batch_id] : 0}%`
+                                : `(${Math.round((allocatedWeights[b.batch_id] || 0) * 100)}%)`}
                             </span>
                             <IconButton
                               icon="delete"
@@ -735,10 +794,21 @@ const SalaryConfigModal = ({ isOpen, onClose, teacherId, config, onSubmitLocal }
                       ))}
 
                       <div className="pt-2 border-t border-border-light dark:border-border-dark flex items-center justify-between text-xs font-bold">
-                        <span className="text-text-secondary uppercase tracking-widest text-[9px]">Total Allocation Weight:</span>
-                        <span className={`${Math.abs(totalWeight - 1.0) < 0.001 ? 'text-emerald-500' : 'text-amber-500'} font-mono`}>
-                          {totalWeight.toFixed(2)} ({Math.round(totalWeight * 100)}%)
-                        </span>
+                        {rateType === 'revenue_percentage' ? (
+                          <>
+                            <span className="text-text-secondary uppercase tracking-widest text-[9px]">Configured Batches:</span>
+                            <span className="text-primary font-mono text-[11px]">
+                              {Object.keys(allocatedWeights).length} Batches (Independent % Rates)
+                            </span>
+                          </>
+                        ) : (
+                          <>
+                            <span className="text-text-secondary uppercase tracking-widest text-[9px]">Total Allocation Weight:</span>
+                            <span className={`${Math.abs(totalWeight - 1.0) < 0.001 ? 'text-emerald-500' : 'text-amber-500'} font-mono`}>
+                              {totalWeight.toFixed(2)} ({Math.round(totalWeight * 100)}%)
+                            </span>
+                          </>
+                        )}
                       </div>
                     </div>
                   )}
