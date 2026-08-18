@@ -1,6 +1,6 @@
 {
-  "active_branch": "bugfix/student-filtering-lag-issue",
-  "updated_at": "2026-08-18T08:14:27.836Z",
+  "active_branch": "main",
+  "updated_at": "2026-08-18T08:31:45.729Z",
   "branches": {
     "integration/student-enrollment": {
       "branch_name": "integration/student-enrollment",
@@ -61,20 +61,20 @@
       "branch_name": "main",
       "parent_branch": "main",
       "purpose": "Main base production branch",
-      "status": "ready_for_merge",
-      "working_tree_clean": true,
-      "uncommitted_changes_count": 0,
+      "status": "in_progress",
+      "working_tree_clean": false,
+      "uncommitted_changes_count": 5,
       "commits_count_ahead": 5,
       "created_at": "2026-07-26T11:12:25.484Z",
-      "last_activity_at": "2026-08-18T06:06:59.716Z",
+      "last_activity_at": "2026-08-18T08:31:45.811Z",
       "commits_summary": [
-        "e330776 feat(teacher,cache): implement prehydrated TeacherRepo architecture and revenue percentage salary configs",
-        "25fc7ab docs(memory): sync git branches memory store for student deletion merge",
-        "abb9777 merge(student): merge feature/student-deletion-feature into main",
-        "2ff5e33 feat(student): enrich StudentDeleteModal error/success layouts, smooth scrolling, and loading states",
-        "d4e20be docs(memory): sync git branches memory store for main merge"
+        "1784de2 merge(student): merge bugfix/student-filtering-lag-issue into main",
+        "406b21c docs(plan): add implementation plans, walkthroughs, and agent rules for student filtering lag bugfixes",
+        "85d0e35 perf(filtering): isolate search keystroke state and optimize student filtering pipeline",
+        "0b50124 fix(react-query): eliminate validation logging storm and hot-path render logs",
+        "3e2996e perf(student): refactor BatchRepo to singleton and pre-compute student KPI flags"
       ],
-      "recommendation": "🟢 Ready for Merge / PR: All recent work is committed and working tree is clean. Consider merging into main."
+      "recommendation": "🟡 Active Work in Progress: You have 5 uncommitted file(s). Commit or stash your changes before merging or switching branches."
     },
     "package-patches-bugfix": {
       "branch_name": "package-patches-bugfix",
@@ -209,8 +209,8 @@
       "branch_name": "bugfix/student-filtering-lag-issue",
       "parent_branch": "main",
       "purpose": "Feature/bugfix work on bugfix/student-filtering-lag-issue",
-      "status": "in_progress",
-      "working_tree_clean": false,
+      "status": "merged",
+      "working_tree_clean": true,
       "uncommitted_changes_count": 6,
       "commits_count_ahead": 3,
       "created_at": "2026-08-18T06:08:49.238Z",
@@ -220,7 +220,20 @@
         "0b50124 fix(react-query): eliminate validation logging storm and hot-path render logs",
         "3e2996e perf(student): refactor BatchRepo to singleton and pre-compute student KPI flags"
       ],
-      "recommendation": "🟡 Active Work in Progress: You have 6 uncommitted file(s). Commit or stash your changes before merging or switching branches."
+      "recommendation": "🔵 Merged Upstream: This branch has been merged upstream into main. Safe to delete locally using 'git branch -d bugfix/student-filtering-lag-issue'."
+    },
+    "bugfix/student-missing-kpis": {
+      "branch_name": "bugfix/student-missing-kpis",
+      "parent_branch": "main",
+      "purpose": "Feature/bugfix work on bugfix/student-missing-kpis",
+      "status": "merged",
+      "working_tree_clean": true,
+      "uncommitted_changes_count": 1,
+      "commits_count_ahead": 0,
+      "created_at": "2026-08-18T08:25:12.268Z",
+      "last_activity_at": "2026-08-18T08:25:12.343Z",
+      "commits_summary": [],
+      "recommendation": "🔵 Merged Upstream: This branch has been merged upstream into main. Safe to delete locally using 'git branch -d bugfix/student-missing-kpis'."
     }
   }
 }

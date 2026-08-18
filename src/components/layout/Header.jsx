@@ -6,7 +6,7 @@ const Header = ({ onMenuClick }) => {
   const { user } = useAuth();
   const { theme, toggleTheme } = useTheme();
 
-  const appVersion = import.meta.env.VITE_APP_VERSION || '0.60.1';
+  const appVersion = import.meta.env.VITE_APP_VERSION || '0.64.0';
   const appStage = import.meta.env.VITE_APP_STAGE || 'beta-1';
 
   return (
